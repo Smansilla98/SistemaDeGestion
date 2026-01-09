@@ -1,0 +1,146 @@
+@extends('layouts.app')
+
+@section('title', 'Gestión de Mesas')
+
+@section('content')
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h1><i class="bi bi-table"></i> Gestión de Mesas</h1>
+            <p class="text-muted">Administra las mesas del restaurante</p>
+        </div>
+        <div>
+            @can('create', App\Models\Table::class)
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTableModal">
+                <i class="bi bi-plus-circle"></i> Nueva Mesa
+            </button>
+            @endcan
+            <a href="{{ route('tables.layout') }}" class="btn btn-outline-primary">
+                <i class="bi bi-diagram-3"></i> Layout Visual
+            </a>
+        </div>
+    </div>
+</div>
+
+@foreach($sectors as $sector)
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-door-open"></i> {{ $sector->name }}
+            @if($sector->description)
+                <small class="text-muted">- {{ $sector->description }}</small>
+            @endif
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            @forelse($sector->tables as $table)
+            <div class="col-md-3 mb-3">
+                <div class="card h-100 border-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ $table->number }}</h5>
+                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
+                                {{ $table->status }}
+                            </span>
+                        </div>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
+                        </p>
+                        @if($table->current_order_id)
+                        <p class="mb-2">
+                            <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-outline-primary">
+                                Ver Pedido
+                            </a>
+                        </p>
+                        @endif
+                        <div class="d-flex gap-2 flex-wrap">
+                            @if($table->status === 'LIBRE')
+                            <a href="{{ route('orders.create', ['tableId' => $table->id]) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Pedido
+                            </a>
+                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-calendar-check"></i> Reservar
+                            </a>
+                            @elseif($table->status === 'OCUPADA')
+                            <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-eye"></i> Ver Pedido
+                            </a>
+                            @endif
+                            @can('update', $table)
+                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="col-12">
+                <p class="text-muted text-center">No hay mesas en este sector</p>
+            </div>
+            @endforelse
+        </div>
+    </div>
+</div>
+@endforeach
+
+@can('create', App\Models\Table::class)
+<!-- Modal Crear Mesa -->
+<div class="modal fade" id="createTableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('tables.store') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Mesa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sector_id" class="form-label">Sector</label>
+                        <select class="form-select" id="sector_id" name="sector_id" required>
+                            <option value="">Seleccionar sector</option>
+                            @foreach($sectors as $sector)
+                            <option value="{{ $sector->id }}">{{ $sector->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="number" class="form-label">Número de Mesa</label>
+                        <input type="text" class="form-control" id="number" name="number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="capacity" class="form-label">Capacidad</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" min="1" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="position_x" class="form-label">Posición X (opcional)</label>
+                            <input type="number" class="form-control" id="position_x" name="position_x">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="position_y" class="form-label">Posición Y (opcional)</label>
+                            <input type="number" class="form-control" id="position_y" name="position_y">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Mesa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endcan
+
+<script>
+function editTable(tableId) {
+    // TODO: Implementar edición de mesa
+    alert('Editar mesa ' + tableId);
+}
+</script>
+@endsection
+
