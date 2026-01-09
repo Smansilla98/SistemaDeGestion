@@ -1,8 +1,13 @@
-# Dockerfile para Laravel en Render
+# Dockerfile alternativo - Versión más simple y robusta
 FROM php:8.2-cli
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+# Variables de entorno
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar dependencias del sistema (en pasos separados para mejor debugging)
+RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -11,16 +16,32 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    ca-certificates
 
-# Instalar Node.js 18.x desde NodeSource (más confiable que apt)
+# Instalar extensiones PHP
+RUN docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    pdo_pgsql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip
+
+# Limpiar cache de apt
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Instalar Node.js 18.x desde NodeSource
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Verificar instalaciones
+RUN php -v && composer --version && node -v && npm -v
 
 # Establecer directorio de trabajo
 WORKDIR /var/www/html
@@ -31,10 +52,10 @@ COPY . .
 # Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Instalar dependencias Node (si package.json existe)
+# Instalar dependencias Node (si existe package.json)
 RUN if [ -f "package.json" ]; then npm install; fi
 
-# Compilar assets (si package.json existe)
+# Compilar assets (si existe package.json)
 RUN if [ -f "package.json" ]; then npm run build; fi
 
 # Configurar permisos
@@ -47,6 +68,5 @@ RUN chown -R www-data:www-data /var/www/html \
 EXPOSE ${PORT:-8000}
 
 # Comando para iniciar Laravel
-# Render proporciona $PORT como variable de entorno
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
 
