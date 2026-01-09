@@ -71,7 +71,22 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
 
 ## 🔄 Si el Error Persiste
 
-### Opción 1: Usar Dockerfile Alternativo
+### Opción 1: Usar Dockerfile Minimal (RECOMENDADO)
+
+El Dockerfile minimal solo instala lo esencial:
+
+```bash
+# Renombrar
+mv Dockerfile.minimal Dockerfile
+```
+
+Este Dockerfile:
+- Solo instala extensiones esenciales (pdo_mysql, pdo_pgsql, zip)
+- Más rápido de construir
+- Menos probabilidad de errores
+- Puedes agregar extensiones después si las necesitas
+
+### Opción 2: Usar Dockerfile Alternativo
 
 Renombrar `Dockerfile.alternativo` a `Dockerfile`:
 
@@ -124,7 +139,27 @@ Después de corregir, verificar:
    docker build -t test .
    ```
 
+## 🎯 Orden de Prueba Recomendado
+
+1. **Dockerfile actual** (ya mejorado) - Probar primero
+2. **Dockerfile.minimal** - Si el actual falla (más simple)
+3. **Dockerfile.alternativo** - Si necesitas todas las extensiones
+
+## 📝 Nota sobre Extensiones PHP
+
+Si usas `Dockerfile.minimal` y necesitas más extensiones después, puedes agregarlas:
+
+```dockerfile
+# Agregar al Dockerfile.minimal
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-install mbstring exif pcntl bcmath gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+```
+
 ---
 
-**El Dockerfile principal ya está corregido. Si el error persiste, usar `Dockerfile.alternativo`.**
+**El Dockerfile principal ya está mejorado. Si el error persiste, usar `Dockerfile.minimal` primero.**
 
