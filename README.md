@@ -375,6 +375,8 @@ Ver `CREAR_USUARIO_DOCKER.md` para más detalles.
 - `DISENO_BASE_DATOS.md` - Diseño completo de la base de datos
 - `ESTRUCTURA_PROYECTO.md` - Estructura y arquitectura del proyecto
 - `GUIA_INSTALACION_LOCAL.md` - Guía detallada de instalación local
+- `GUIA_DESPLIEGUE_WEB.md` - **Guía completa de despliegue web (Render, Supabase, Railway, VPS, etc.)**
+- `CONFIGURAR_SUPABASE.md` - **Guía rápida para configurar Supabase como base de datos**
 - `TAREAS_OPCIONALES_COMPLETADAS.md` - Funcionalidades adicionales implementadas
 - `NOTIFICACIONES_IMPRESORAS.md` - Sistema de notificaciones e impresoras
 - `PROBLEMAS_SETUP.md` - Solución de problemas comunes
