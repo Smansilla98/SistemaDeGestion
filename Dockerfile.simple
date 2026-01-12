@@ -38,3 +38,4 @@ EXPOSE 10000
 
 CMD apache2ctl -D FOREGROUND
 
+

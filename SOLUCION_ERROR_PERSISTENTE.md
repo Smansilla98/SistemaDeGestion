@@ -147,3 +147,4 @@ Si usas `Dockerfile.simple` y el build funciona, después puedes:
 
 **Recomendación**: Probar `Dockerfile.workaround` primero. Si no funciona, considerar cambiar a Railway.
 
+

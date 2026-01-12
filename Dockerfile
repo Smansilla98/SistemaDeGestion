@@ -11,8 +11,9 @@ RUN apt-get install -y --no-install-recommends git && \
     apt-get install -y --no-install-recommends curl && \
     apt-get install -y --no-install-recommends libzip-dev && \
     apt-get install -y --no-install-recommends zip && \
-    apt-get install -y --no-install-recommends unzip || \
-    (echo "Error instalando paquetes básicos" && apt-get install -y git curl libzip-dev zip unzip)
+    apt-get install -y --no-install-recommends unzip && \
+    apt-get install -y --no-install-recommends libpq-dev || \
+    (echo "Error instalando paquetes básicos" && apt-get install -y git curl libzip-dev zip unzip libpq-dev)
 
 # Instalar extensiones PHP esenciales
 RUN docker-php-ext-install zip pdo_mysql pdo_pgsql || \

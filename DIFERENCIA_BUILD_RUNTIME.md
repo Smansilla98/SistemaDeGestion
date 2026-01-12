@@ -118,3 +118,4 @@ El problema está en el **Dockerfile**, no en la configuración de la base de da
 
 **Conclusión**: El error es de construcción de la imagen Docker, no de configuración de base de datos. La base de datos se configura después, cuando la aplicación ya está ejecutándose.
 
+

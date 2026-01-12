@@ -163,3 +163,4 @@ Después del deploy exitoso, verificar en Render → Logs:
 
 **El Dockerfile principal ya está actualizado con las mejoras. Probar primero ese.**
 
+
