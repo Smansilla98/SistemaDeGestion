@@ -16,6 +16,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY . .
+RUN rm -f .env
 
 # Creamos .env dummy para que artisan no crashee
 RUN cp .env.example .env || true
