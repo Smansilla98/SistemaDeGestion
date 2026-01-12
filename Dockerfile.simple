@@ -1,6 +1,8 @@
 # Dockerfile Simple - Sin extensiones PHP problemáticas
 FROM php:8.2-cli
 
+ENV PORT=10000
+
 # Solo instalar lo mínimo necesario
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -26,7 +28,13 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Node (opcional)
 RUN if [ -f "package.json" ]; then npm install && npm run build; fi
 
-EXPOSE ${PORT:-8000}
+RUN apt-get update && apt-get install -y apache2 libapache2-mod-php8.2 && rm -rf /var/lib/apt/lists/*
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+RUN sed -i 's/Listen 80/Listen 10000/g' /etc/apache2/ports.conf
+RUN sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/g' /etc/apache2/sites-enabled/000-default.conf
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-enabled/000-default.conf
+
+EXPOSE 10000
+
+CMD apache2ctl -D FOREGROUND
 
