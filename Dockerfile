@@ -15,18 +15,19 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiamos TODO primero
 COPY . .
 
-# Instalamos dependencias ahora que artisan existe
+# Creamos .env dummy para que artisan no crashee
+RUN cp .env.example .env || true
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Permisos Laravel
 RUN mkdir -p storage bootstrap/cache && \
     chmod -R 775 storage bootstrap/cache
 
 EXPOSE 8080
 
-CMD php artisan optimize:clear && \
+CMD php artisan config:clear && \
+    php artisan cache:clear && \
     php artisan migrate --force && \
     php artisan serve --host=0.0.0.0 --port=8080
