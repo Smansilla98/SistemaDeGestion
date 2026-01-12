@@ -56,6 +56,18 @@ RUN if [ -f "package.json" ]; then npm run build || true; fi
 # Permisos básicos
 RUN chmod -R 775 storage bootstrap/cache || true
 
-EXPOSE ${PORT:-8080}
+# Crear directorios necesarios si no existen
+RUN mkdir -p storage/framework/views && \
+    mkdir -p storage/framework/cache && \
+    mkdir -p storage/framework/sessions && \
+    mkdir -p storage/logs && \
+    mkdir -p bootstrap/cache
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+EXPOSE ${PORT:-8000}
+
+# Limpiar cache y iniciar servidor
+CMD php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan view:clear && \
+    php artisan route:clear && \
+    php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
