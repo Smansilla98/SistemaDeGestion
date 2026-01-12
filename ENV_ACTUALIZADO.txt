@@ -1,0 +1,122 @@
+APP_NAME="Sistema de Gestión de Restaurante"
+APP_ENV=production
+APP_KEY=base64:BCJ4ibU3Q0uUyglsfIgY4iLbz/VEIr5hy1xugHLolus=
+APP_DEBUG=false
+APP_URL=https://sistemadegestion-production-5d57.up.railway.app
+
+LOG_CHANNEL=stack
+LOG_LEVEL=error
+LOG_DEPRECATIONS_CHANNEL=null
+
+# ============================================
+# BASE DE DATOS - PostgreSQL (Railway)
+# ============================================
+# Opción 1: Usar DATABASE_URL (Recomendado)
+DATABASE_URL=postgresql://postgres:NMcVhYKiJPmajrxvCEwXgKDUCxwxGGze@postgres.railway.internal:5432/railway
+
+# Opción 2: Variables individuales (si DATABASE_URL no funciona)
+DB_CONNECTION=pgsql
+DB_HOST=postgres.railway.internal
+DB_PORT=5432
+DB_DATABASE=railway
+DB_USERNAME=postgres
+DB_PASSWORD=NMcVhYKiJPmajrxvCEwXgKDUCxwxGGze
+
+# ============================================
+# CACHE Y SESIONES
+# ============================================
+CACHE_STORE=database
+CACHE_PREFIX=laravel_cache
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+# ============================================
+# COLA DE TRABAJOS (QUEUE)
+# ============================================
+QUEUE_CONNECTION=sync
+# Para producción, puedes usar 'database' o 'redis' si lo configuras
+# QUEUE_CONNECTION=database
+
+# ============================================
+# BROADCASTING (Notificaciones en tiempo real)
+# ============================================
+BROADCAST_DRIVER=log
+# Si usas Pusher o WebSockets, configura aquí:
+# BROADCAST_DRIVER=pusher
+# PUSHER_APP_ID=
+# PUSHER_APP_KEY=
+# PUSHER_APP_SECRET=
+# PUSHER_APP_CLUSTER=mt1
+
+# ============================================
+# FILESYSTEM (Almacenamiento de archivos)
+# ============================================
+FILESYSTEM_DISK=local
+# Para producción, puedes usar 's3' si configuras AWS S3
+# FILESYSTEM_DISK=s3
+# AWS_ACCESS_KEY_ID=
+# AWS_SECRET_ACCESS_KEY=
+# AWS_DEFAULT_REGION=us-east-1
+# AWS_BUCKET=
+# AWS_USE_PATH_STYLE_ENDPOINT=false
+
+# ============================================
+# MAIL (Correo electrónico)
+# ============================================
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="noreply@sistemadegestion.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Para producción, configura con un servicio real (SendGrid, Mailgun, etc.):
+# MAIL_MAILER=smtp
+# MAIL_HOST=smtp.mailtrap.io
+# MAIL_PORT=2525
+# MAIL_USERNAME=tu_usuario
+# MAIL_PASSWORD=tu_password
+# MAIL_ENCRYPTION=tls
+
+# ============================================
+# SERVICIOS EXTERNOS
+# ============================================
+
+# AWS (si usas S3, SQS, etc.)
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+# VITE (Frontend assets)
+VITE_APP_NAME="${APP_NAME}"
+
+# ============================================
+# SEGURIDAD
+# ============================================
+SANCTUM_STATEFUL_DOMAINS=sistemadegestion-production-5d57.up.railway.app
+SESSION_DOMAIN=null
+
+# ============================================
+# OPCIONALES
+# ============================================
+
+# SCOUT (Búsqueda - si usas Algolia, Meilisearch, etc.)
+# SCOUT_DRIVER=algolia
+# ALGOLIA_APP_ID=
+# ALGOLIA_SECRET=
+
+# HORIZON (Monitor de colas - si usas Redis)
+# HORIZON_PREFIX=horizon
+
+# TELESCOPE (Debugging - solo desarrollo)
+# TELESCOPE_ENABLED=false
+
+

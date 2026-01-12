@@ -95,7 +95,7 @@ APP_URL=https://tu-app.onrender.com
 ### Generar APP_KEY
 
 ```bash
-# En tu máquina local
+# En tu máquina local 
 php artisan key:generate --show
 # Copiar la clave generada
 ```
