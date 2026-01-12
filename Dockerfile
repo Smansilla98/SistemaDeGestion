@@ -131,8 +131,7 @@ RUN mkdir -p storage/framework/views && \
 EXPOSE ${PORT:-8000}
 
 # Limpiar cache y iniciar servidor
-CMD php artisan config:clear && \
-    php artisan cache:clear && \
-    php artisan view:clear && \
-    php artisan route:clear && \
-    php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+CMD php artisan optimize:clear && \
+    php artisan key:generate --force || true && \
+    php artisan migrate --force && \
+    php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
