@@ -28,6 +28,7 @@ return [
     |
     */
 
+<<<<<<< Updated upstream
     'compiled' => env(
         'VIEW_COMPILED_PATH',
         realpath(storage_path('framework/views'))
@@ -35,3 +36,8 @@ return [
 
 ];
 
+=======
+    'compiled' => env('VIEW_COMPILED_PATH', realpath(storage_path('framework/views'))),
+
+];
+>>>>>>> Stashed changes
