@@ -30,6 +30,9 @@ EXPOSE 8080
 
 RUN rm -rf bootstrap/cache/*
 
-CMD php artisan optimize:clear && \
+RUN rm -f /var/www/html/.env
+
+CMD php artisan config:clear && \
+    php artisan cache:clear && \
     php artisan migrate --force && \
     php artisan serve --host=0.0.0.0 --port=8080
