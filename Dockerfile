@@ -3,11 +3,7 @@ FROM php:8.2-cli
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    libpq-dev \
-    curl \
+    git unzip libzip-dev libpq-dev curl \
     && docker-php-ext-install pdo pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,23 +11,16 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# Copiar todo
 COPY . .
-RUN rm -f .env
 
-# Creamos .env dummy para que artisan no crashee
-RUN cp .env.example .env || true
-
+# Instalar dependencias
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-RUN mkdir -p storage bootstrap/cache && \
-    chmod -R 775 storage bootstrap/cache
+# Permisos
+RUN mkdir -p storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 8080
-
-RUN rm -rf bootstrap/cache/*
-
-RUN rm -f /var/www/html/.env
-
+# CMD
 CMD php artisan config:clear && \
     php artisan cache:clear && \
     php artisan migrate --force && \
