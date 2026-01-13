@@ -11,11 +11,12 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar todo
+# Dockerfile
 COPY . .
-
-# Instalar dependencias
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN php artisan config:cache
+RUN php artisan route:cache
+
 
 # Permisos
 RUN mkdir -p storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
