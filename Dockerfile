@@ -20,5 +20,5 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Permisos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Comando de inicio
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# El comando de inicio lo maneja Railway con el Start Command
+# No pongas CMD aquí
