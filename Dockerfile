@@ -12,10 +12,15 @@ RUN apt-get update && apt-get install -y \
 # Habilitar mod_rewrite de Apache
 RUN a2enmod rewrite
 
-# Configurar Apache
+# Configurar Apache para el puerto dinámico
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Configurar Apache para escuchar en el puerto dinámico
+RUN sed -i 's/Listen 80/Listen ${PORT}/' /etc/apache2/ports.conf
+RUN sed -i 's/:80/:${PORT}/' /etc/apache2/sites-available/000-default.conf
 
 # Copiar composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -31,10 +36,22 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 storage bootstrap/cache
 
-# Exponer puerto 80
-EXPOSE 80
+# Crear script de inicio
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "=== Configurando Apache en puerto $PORT ==="\n\
+sed -i "s/Listen 80/Listen $PORT/" /etc/apache2/ports.conf\n\
+sed -i "s/:80/:$PORT/" /etc/apache2/sites-available/000-default.conf\n\
+echo "=== Limpiando configuración ==="\n\
+php artisan config:clear\n\
+echo "=== Ejecutando migraciones ==="\n\
+php artisan migrate --force\n\
+echo "=== Ejecutando seeders ==="\n\
+php artisan db:seed --force\n\
+echo "=== Iniciando Apache en puerto $PORT ==="\n\
+apache2-foreground\n\
+' > /start.sh && chmod +x /start.sh
 
-# Script de inicio
-RUN echo '#!/bin/bash\nphp artisan config:clear\nphp artisan migrate --force\nphp artisan db:seed --force\napache2-foreground' > /start.sh && chmod +x /start.sh
+EXPOSE ${PORT:-8000}
 
 CMD ["/start.sh"]
