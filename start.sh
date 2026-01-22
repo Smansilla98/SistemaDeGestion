@@ -109,7 +109,7 @@ fi
 
 # Ejecutar migraciones
 echo "=== Ejecutando migraciones ==="
-if php artisan migrate --force; then
+if php artisan migrate --force -vvv; then
     echo "✓ Migraciones completadas"
 else
     echo "⚠️  Error en migraciones, continuando..."
