@@ -62,8 +62,13 @@ RUN chown -R www-data:www-data /var/www/html \
 # Copiar y dar permisos al script de inicio
 RUN chmod +x /var/www/html/start.sh || true
 
+# Limpiar cachés y optimizaciones (ejecutado durante el build)
+RUN php artisan optimize:clear || true
+RUN php artisan config:clear || true
+
 # Exponer puerto (Render/Railway usan $PORT)
 EXPOSE ${PORT:-8000}
 
 # Comando para iniciar Laravel usando el script mejorado
+# Nota: migrate --force se ejecuta en start.sh porque necesita la base de datos en runtime
 CMD ["/var/www/html/start.sh"]
