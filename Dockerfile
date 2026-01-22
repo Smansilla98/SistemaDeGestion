@@ -65,5 +65,5 @@ RUN chmod +x /var/www/html/start.sh || true
 # Exponer puerto (Render/Railway usan $PORT)
 EXPOSE ${PORT:-8000}
 
-# Comando para iniciar Laravel
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Comando para iniciar Laravel usando el script mejorado
+CMD ["/var/www/html/start.sh"]
