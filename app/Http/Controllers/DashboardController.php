@@ -46,7 +46,7 @@ class DashboardController extends Controller
                 'low_stock_products' => DB::table('stocks')
                     ->join('products', 'stocks.product_id', '=', 'products.id')
                     ->where('stocks.restaurant_id', $restaurantId)
-                    ->whereColumn('stocks.quantity', '<=', 'stocks.minimum_stock')
+                    ->whereColumn('stocks.quantity', '<=', 'products.stock_minimum')
                     ->where('stocks.quantity', '>', 0)
                     ->count(),
             ];
