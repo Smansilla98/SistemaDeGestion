@@ -11,6 +11,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Table;
 use App\Models\CashRegister;
+use App\Models\Stock;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -119,14 +121,28 @@ class DatabaseSeeder extends Seeder
 
         foreach ($products as $productData) {
             $categoryIndex = $productData['category'];
-            unset($productData['category']);
-            
-            Product::create(array_merge($productData, [
+            $hasStock = $productData['has_stock'] ?? false;
+            $minimumStock = $productData['stock_minimum'] ?? 0;
+
+            unset($productData['category'], $productData['stock_minimum']);
+
+            $product = Product::create(array_merge($productData, [
                 'restaurant_id' => $restaurant->id,
                 'category_id' => $categoryModels[$categoryIndex]->id,
                 'is_active' => true,
             ]));
+
+            // 👉 Crear stock SOLO si el producto maneja stock
+            if ($hasStock) {
+                Stock::create([
+                    'restaurant_id' => $restaurant->id,
+                    'product_id' => $product->id,
+                    'quantity' => rand($minimumStock, $minimumStock + 20),
+                    'minimum_stock' => $minimumStock,
+                ]);
+            }
         }
+
 
         // Crear mesas
         $sectorPrincipal = Sector::where('name', 'Salón Principal')->first();
