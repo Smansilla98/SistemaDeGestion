@@ -1,31 +1,69 @@
+# Dockerfile Unificado - Laravel con MySQL
 FROM php:8.2-cli
 
-WORKDIR /var/www/html
-
-# Copiar composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Variables de entorno
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PORT=8000
 
 # Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    unzip \
-    libzip-dev \
-    libpq-dev \
     curl \
-    && docker-php-ext-install pdo pdo_pgsql zip \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar código
+# Instalar extensiones PHP para MySQL
+RUN docker-php-ext-install -j$(nproc) \
+    pdo \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip
+
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Instalar Node.js 18.x desde NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Establecer directorio de trabajo
+WORKDIR /var/www/html
+
+# Copiar archivos del proyecto
 COPY . .
 
-# Instalar dependencias de Composer
+# Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Permisos
-RUN chmod -R 775 storage bootstrap/cache
+# Instalar dependencias Node (si existe package.json)
+RUN if [ -f "package.json" ]; then npm install; fi
+
+# Compilar assets (si existe package.json)
+RUN if [ -f "package.json" ]; then npm run build; fi
+
+# Configurar permisos
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 # Copiar y dar permisos al script de inicio
-RUN chmod +x /var/www/html/start.sh
+RUN chmod +x /var/www/html/start.sh || true
 
-# Comando de inicio
-CMD ["/var/www/html/start.sh"]
+# Exponer puerto (Render/Railway usan $PORT)
+EXPOSE ${PORT:-8000}
+
+# Comando para iniciar Laravel
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
