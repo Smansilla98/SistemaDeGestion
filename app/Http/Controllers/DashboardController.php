@@ -23,8 +23,14 @@ class DashboardController extends Controller
         $stats = Cache::remember("dashboard_stats_{$restaurantId}", 300, function () use ($restaurantId) {
             $today = Carbon::today();
 
+            $occupiedTables = Table::where('restaurant_id', $restaurantId)
+                ->where('status', 'OCUPADA')
+                ->count();
+            
+            $totalTables = Table::where('restaurant_id', $restaurantId)->count();
+
             return [
-                'today_sales' => Order::where('restaurant_id', $restaurantId)
+                'ventas_hoy' => Order::where('restaurant_id', $restaurantId)
                     ->where('status', 'CERRADO')
                     ->whereDate('created_at', $today)
                     ->sum('total'),
@@ -33,15 +39,15 @@ class DashboardController extends Controller
                     ->whereDate('created_at', $today)
                     ->count(),
                 
-                'active_orders' => Order::where('restaurant_id', $restaurantId)
+                'pedidos_pendientes' => Order::where('restaurant_id', $restaurantId)
                     ->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])
                     ->count(),
                 
-                'occupied_tables' => Table::where('restaurant_id', $restaurantId)
-                    ->where('status', 'OCUPADA')
-                    ->count(),
+                'mesas_ocupadas' => $occupiedTables,
                 
-                'total_tables' => Table::where('restaurant_id', $restaurantId)->count(),
+                'mesas_libres' => $totalTables - $occupiedTables,
+                
+                'total_tables' => $totalTables,
                 
                 'low_stock_products' => DB::table('stocks')
                     ->join('products', 'stocks.product_id', '=', 'products.id')
