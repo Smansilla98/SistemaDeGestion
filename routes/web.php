@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{order}/items', [OrderController::class, 'addItem'])->name('add-item');
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
+        Route::get('/{order}/summary', [OrderController::class, 'summary'])->name('summary');
         
         // Rutas de impresión
         Route::prefix('{order}/print')->name('print.')->group(function () {
