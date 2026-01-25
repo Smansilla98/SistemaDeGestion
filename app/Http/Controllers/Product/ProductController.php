@@ -66,14 +66,15 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'has_stock' => 'boolean',
+            'has_stock' => 'nullable|boolean',
             'stock_minimum' => 'required_if:has_stock,1|integer|min:0',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        $validated['has_stock'] = $request->has('has_stock');
-        $validated['is_active'] = $request->has('is_active') ? true : false;
+        // Convertir checkboxes a booleanos (si no están presentes, son false)
+        $validated['has_stock'] = $request->boolean('has_stock');
+        $validated['is_active'] = $request->boolean('is_active');
 
         $product = Product::create($validated);
 
@@ -121,13 +122,14 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'has_stock' => 'boolean',
+            'has_stock' => 'nullable|boolean',
             'stock_minimum' => 'required_if:has_stock,1|integer|min:0',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $validated['has_stock'] = $request->has('has_stock');
-        $validated['is_active'] = $request->has('is_active') ? true : false;
+        // Convertir checkboxes a booleanos (si no están presentes, son false)
+        $validated['has_stock'] = $request->boolean('has_stock');
+        $validated['is_active'] = $request->boolean('is_active');
 
         $product->update($validated);
 

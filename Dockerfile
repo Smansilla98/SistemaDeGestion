@@ -47,6 +47,9 @@ COPY . .
 # Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# Regenerar autoloader para asegurar que todas las clases estén disponibles
+RUN composer dump-autoload --optimize --no-interaction || true
+
 # Instalar dependencias Node (si existe package.json)
 RUN if [ -f "package.json" ]; then npm install; fi
 
@@ -65,6 +68,12 @@ RUN chmod +x /var/www/html/start.sh || true
 # Limpiar cachés y optimizaciones (ejecutado durante el build)
 RUN php artisan optimize:clear || true
 RUN php artisan config:clear || true
+
+# Regenerar autoloader una vez más después de limpiar cachés
+RUN composer dump-autoload --optimize --no-interaction || true
+
+# Verificar que Controller extiende correctamente (para debugging)
+RUN php -r "require 'vendor/autoload.php'; \$reflection = new ReflectionClass('App\\Http\\Controllers\\Controller'); echo 'Controller extends: ' . \$reflection->getParentClass()->getName() . PHP_EOL;" || true
 
 # Exponer puerto (Render/Railway usan $PORT)
 EXPOSE ${PORT:-8000}
