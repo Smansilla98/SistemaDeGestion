@@ -35,10 +35,16 @@ class OrderObserver
         // Registrar cambio en auditoría
         if ($order->wasChanged('status')) {
             $this->auditService->log(
-                $order->restaurant_id,
-                auth()->id(),
                 'ORDER_STATUS_CHANGED',
-                "Pedido {$order->number} cambió de {$order->getOriginal('status')} a {$order->status}"
+                Order::class,
+                $order->id,
+                [
+                    'status' => [
+                        'old' => $order->getOriginal('status'),
+                        'new' => $order->status,
+                    ],
+                    'message' => "Pedido {$order->number} cambió de {$order->getOriginal('status')} a {$order->status}"
+                ]
             );
         }
     }

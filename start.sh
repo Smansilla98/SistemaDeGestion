@@ -43,6 +43,9 @@ done
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
 
+# Regenerar autoloader de Composer (por si hay cambios en clases)
+composer dump-autoload --no-interaction --optimize || true
+
 # Storage
 echo "=== Verificando storage ==="
 php artisan storage:link || true
