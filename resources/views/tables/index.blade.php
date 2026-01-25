@@ -66,6 +66,14 @@
                             <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-eye"></i> Ver Pedido
                             </a>
+                            @can('update', $table)
+                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de cerrar esta mesa? Se cerrarán todos los pedidos activos.')">
+                                    <i class="bi bi-check-circle"></i> Cerrar Mesa
+                                </button>
+                            </form>
+                            @endcan
                             @endif
                             @can('update', $table)
                             <a href="{{ route('tables.edit', $table) }}" class="btn btn-sm btn-outline-secondary">
