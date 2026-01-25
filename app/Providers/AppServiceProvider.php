@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\Product;
@@ -37,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Forzar HTTPS en producción
         if (config('app.env') === 'production' || request()->secure()) {
-            \URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         // Registrar políticas
