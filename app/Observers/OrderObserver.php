@@ -37,7 +37,7 @@ class OrderObserver
             $this->auditService->log(
                 'ORDER_STATUS_CHANGED',
                 Order::class,
-                $order->id,
+                (int) $order->id,
                 [
                     'status' => [
                         'old' => $order->getOriginal('status'),
