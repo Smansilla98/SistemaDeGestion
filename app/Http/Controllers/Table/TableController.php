@@ -79,6 +79,21 @@ class TableController extends Controller
     }
 
     /**
+     * Mostrar formulario de edición
+     */
+    public function edit(Table $table)
+    {
+        Gate::authorize('update', $table);
+
+        $restaurantId = auth()->user()->restaurant_id;
+        $sectors = Sector::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->get();
+
+        return view('tables.edit', compact('table', 'sectors'));
+    }
+
+    /**
      * Actualizar mesa
      */
     public function update(Request $request, Table $table)
@@ -86,6 +101,7 @@ class TableController extends Controller
         Gate::authorize('update', $table);
 
         $validated = $request->validate([
+            'sector_id' => 'required|exists:sectors,id',
             'number' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1',
             'position_x' => 'nullable|integer',
