@@ -5,11 +5,17 @@ namespace App\Http\Controllers\Table;
 use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Models\Sector;
+use App\Models\Order;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 
 class TableController extends Controller
 {
+    public function __construct(
+        private OrderService $orderService
+    ) {}
     /**
      * Mostrar lista de mesas
      */
@@ -158,6 +164,83 @@ class TableController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Layout actualizado exitosamente']);
+    }
+
+    /**
+     * Cerrar mesa: cierra todos los pedidos activos y libera la mesa
+     */
+    public function closeTable(Table $table)
+    {
+        Gate::authorize('update', $table);
+
+        // Verificar que la mesa esté ocupada
+        if ($table->status !== 'OCUPADA') {
+            return back()->with('error', 'La mesa no está ocupada');
+        }
+
+        return DB::transaction(function () use ($table) {
+            // Obtener todos los pedidos activos de la mesa (no cerrados)
+            $activeOrders = Order::where('table_id', $table->id)
+                ->where('status', '!=', Order::STATUS_CERRADO)
+                ->where('status', '!=', Order::STATUS_CANCELADO)
+                ->with(['items.product'])
+                ->get();
+
+            if ($activeOrders->isEmpty()) {
+                // Si no hay pedidos activos, solo liberar la mesa
+                $table->update([
+                    'status' => 'LIBRE',
+                    'current_order_id' => null,
+                ]);
+
+                return redirect()->route('tables.index')
+                    ->with('success', 'Mesa liberada exitosamente');
+            }
+
+            // Cerrar todos los pedidos activos
+            $totalAmount = 0;
+            $ordersClosed = [];
+
+            foreach ($activeOrders as $order) {
+                // Cerrar el pedido usando el servicio
+                $this->orderService->closeOrder($order);
+                $totalAmount += $order->total;
+                $ordersClosed[] = $order;
+            }
+
+            // Liberar la mesa
+            $table->update([
+                'status' => 'LIBRE',
+                'current_order_id' => null,
+            ]);
+
+            // Redirigir a una vista de resumen con todos los pedidos cerrados
+            return redirect()->route('tables.close-summary', $table)
+                ->with('success', 'Mesa cerrada exitosamente')
+                ->with('total_amount', $totalAmount)
+                ->with('orders_closed', $ordersClosed);
+        });
+    }
+
+    /**
+     * Mostrar resumen de cierre de mesa
+     */
+    public function closeSummary(Table $table)
+    {
+        Gate::authorize('view', $table);
+
+        // Obtener los pedidos que se cerraron (los más recientes de esta mesa)
+        $closedOrders = Order::where('table_id', $table->id)
+            ->where('status', Order::STATUS_CERRADO)
+            ->whereNotNull('closed_at')
+            ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+            ->orderBy('closed_at', 'desc')
+            ->limit(10) // Últimos 10 pedidos cerrados
+            ->get();
+
+        $totalAmount = $closedOrders->sum('total');
+
+        return view('tables.close-summary', compact('table', 'closedOrders', 'totalAmount'));
     }
 }
 
