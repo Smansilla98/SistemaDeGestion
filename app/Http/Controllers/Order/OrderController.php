@@ -139,16 +139,37 @@ class OrderController extends Controller
     }
 
     /**
-     * Cerrar pedido
+     * Cerrar pedido y mostrar resumen
      */
     public function close(Order $order)
     {
         Gate::authorize('update', $order);
 
+        // Cerrar el pedido
         $this->orderService->closeOrder($order);
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Pedido cerrado exitosamente');
+        // Redirigir al resumen
+        return redirect()->route('orders.summary', $order)
+            ->with('success', 'Pedido cerrado exitosamente. Aquí está el resumen para el cliente.');
+    }
+
+    /**
+     * Mostrar resumen del pedido para el cliente
+     */
+    public function summary(Order $order)
+    {
+        Gate::authorize('view', $order);
+
+        $order->load([
+            'restaurant',
+            'table',
+            'user',
+            'items.product.category',
+            'items.modifiers',
+            'payments'
+        ]);
+
+        return view('orders.summary', compact('order'));
     }
 }
 
