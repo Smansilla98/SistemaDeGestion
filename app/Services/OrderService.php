@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Table;
+use App\Models\TableSession;
 use App\Enums\OrderStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,10 +22,24 @@ class OrderService
             // Generar número de pedido único
             $orderNumber = $this->generateOrderNumber($data['restaurant_id']);
 
+            $table = Table::findOrFail($data['table_id']);
+
+            // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
+            if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
+                $session = TableSession::create([
+                    'restaurant_id' => $table->restaurant_id,
+                    'table_id' => $table->id,
+                    'started_at' => now(),
+                ]);
+                $table->update(['current_session_id' => $session->id]);
+            }
+
+            // Crear el pedido (asociado a la sesión actual si existe)
             // Crear el pedido
             $order = Order::create([
                 'restaurant_id' => $data['restaurant_id'],
                 'table_id' => $data['table_id'],
+                'table_session_id' => $table->current_session_id,
                 'user_id' => $data['user_id'],
                 'number' => $orderNumber,
                 'status' => OrderStatus::ABIERTO->value,
@@ -32,7 +47,6 @@ class OrderService
             ]);
 
             // Actualizar estado de la mesa
-            $table = Table::find($data['table_id']);
             $table->update([
                 'status' => 'OCUPADA',
                 'current_order_id' => $order->id,

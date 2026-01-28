@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Models\Sector;
 use App\Models\Order;
+use App\Models\TableSession;
+use App\Models\Product;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +33,90 @@ class TableController extends Controller
             }])
             ->get();
 
-        return view('tables.index', compact('sectors'));
+        // Productos activos para el modal de pedidos (mozos)
+        $products = Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->with(['category'])
+            ->orderBy('name')
+            ->get()
+            ->groupBy('category.name');
+
+        return view('tables.index', compact('sectors', 'products'));
+    }
+
+    /**
+     * Crear un pedido desde el modal de mesas (AJAX)
+     * POST /tables/{table}/orders
+     */
+    public function storeOrder(Request $request, Table $table)
+    {
+        // Solo ADMIN / MOZO
+        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+            abort(403, 'No tienes permisos para crear pedidos');
+        }
+
+        // Asegurar restaurante
+        if ($table->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta mesa');
+        }
+
+        if ($table->status !== Table::STATUS_OCUPADA) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se pueden tomar pedidos en mesas ocupadas.',
+            ], 422);
+        }
+
+        if (!$table->current_session_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La mesa no tiene una sesión activa. Marcar como ocupada primero.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'observations' => 'nullable|string',
+            'send_to_kitchen' => 'nullable|boolean',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.observations' => 'nullable|string',
+        ]);
+
+        // Normalizar boolean
+        $validated['send_to_kitchen'] = $request->boolean('send_to_kitchen');
+
+        $data = [
+            'restaurant_id' => auth()->user()->restaurant_id,
+            'table_id' => $table->id,
+            'user_id' => auth()->id(),
+            'observations' => $validated['observations'] ?? null,
+            'items' => $validated['items'],
+        ];
+
+        try {
+            $order = $this->orderService->createOrder($data);
+
+            foreach ($data['items'] as $itemData) {
+                $this->orderService->addItem($order, $itemData);
+            }
+
+            if ($validated['send_to_kitchen']) {
+                $this->orderService->sendToKitchen($order);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido creado exitosamente.',
+                'order_id' => $order->id,
+                'order_number' => $order->number,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     /**
@@ -183,15 +268,29 @@ class TableController extends Controller
             'guests_count' => 'nullable|integer|min:0|max:' . $table->capacity,
         ]);
 
-        // Si el estado cambia a LIBRE, limpiar pedido actual
+        // Si el estado cambia a LIBRE, finalizar sesión y limpiar pedido actual
         if ($validated['status'] === 'LIBRE') {
+            if ($table->current_session_id) {
+                TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
+            }
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
+                'current_session_id' => null,
             ]);
         } else {
+            // Si pasa a OCUPADA y no hay sesión activa, crear una
+            if ($validated['status'] === 'OCUPADA' && !$table->current_session_id) {
+                $session = TableSession::create([
+                    'restaurant_id' => $table->restaurant_id,
+                    'table_id' => $table->id,
+                    'started_at' => now(),
+                ]);
+                $table->current_session_id = $session->id;
+            }
             $table->update([
                 'status' => $validated['status'],
+                'current_session_id' => $table->current_session_id,
             ]);
         }
 
@@ -212,8 +311,13 @@ class TableController extends Controller
         }
 
         return DB::transaction(function () use ($table) {
+            if (!$table->current_session_id) {
+                return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
+            }
+
             // Obtener todos los pedidos activos de la mesa (no cerrados)
             $activeOrders = Order::where('table_id', $table->id)
+                ->where('table_session_id', $table->current_session_id)
                 ->where('status', '!=', Order::STATUS_CERRADO)
                 ->where('status', '!=', Order::STATUS_CANCELADO)
                 ->with(['items.product'])
@@ -221,9 +325,11 @@ class TableController extends Controller
 
             if ($activeOrders->isEmpty()) {
                 // Si no hay pedidos activos, solo liberar la mesa
+                TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
                 $table->update([
                     'status' => 'LIBRE',
                     'current_order_id' => null,
+                    'current_session_id' => null,
                 ]);
 
                 return redirect()->route('tables.index')
@@ -280,14 +386,17 @@ class TableController extends Controller
             }
 
             // Liberar la mesa para nueva facturación
+            TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
+                'current_session_id' => null,
             ]);
 
             // Redirigir a vista de recibo consolidado
             return redirect()->route('tables.consolidated-receipt', $table)
                 ->with('success', 'Mesa cerrada exitosamente. Recibo consolidado generado.')
+                ->with('table_session_id', $table->current_session_id)
                 ->with('total_amount', $totalAmount)
                 ->with('total_subtotal', $totalSubtotal)
                 ->with('total_discount', $totalDiscount)
@@ -331,6 +440,7 @@ class TableController extends Controller
         $totalAmount = session('total_amount', 0);
         $totalSubtotal = session('total_subtotal', 0);
         $totalDiscount = session('total_discount', 0);
+        $sessionId = session('table_session_id');
 
         // Si no hay datos en sesión, obtener los últimos pedidos cerrados
         if ($closedOrders->isEmpty()) {
@@ -386,6 +496,29 @@ class TableController extends Controller
             'totalSubtotal',
             'totalDiscount'
         ));
+    }
+
+    /**
+     * Mostrar pedidos de la sesión actual de una mesa (no histórico)
+     */
+    public function tableOrders(Table $table)
+    {
+        Gate::authorize('view', $table);
+
+        $table->load('sector');
+
+        $sessionId = $table->current_session_id;
+        $orders = collect();
+
+        if ($sessionId) {
+            $orders = Order::where('table_id', $table->id)
+                ->where('table_session_id', $sessionId)
+                ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return view('tables.orders', compact('table', 'orders'));
     }
 
     /**

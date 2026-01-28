@@ -23,6 +23,7 @@ class Order extends Model
     protected $fillable = [
         'restaurant_id',
         'table_id',
+        'table_session_id',
         'user_id',
         'number',
         'status',
@@ -56,6 +57,11 @@ class Order extends Model
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
+    }
+
+    public function tableSession(): BelongsTo
+    {
+        return $this->belongsTo(TableSession::class, 'table_session_id');
     }
 
     /**

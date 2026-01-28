@@ -79,9 +79,11 @@
                             @elseif($table->status === 'OCUPADA')
                             {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
                             @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
-                            <a href="{{ route('orders.create', ['tableId' => $table->id]) }}" class="btn btn-sm btn-primary">
+                            <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
                                 <i class="bi bi-plus-circle"></i> Nuevo Pedido
-                            </a>
+                            </button>
                             @endif
                             <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-receipt"></i> Ver Pedidos
@@ -213,6 +215,102 @@
 </div>
 @endif
 
+@if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+<!-- Modal Nuevo Pedido (desde Mesas) -->
+<div class="modal fade" id="newOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="newOrderForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle"></i> Nuevo Pedido
+                        <small class="text-muted">- <span id="newOrderTableLabel"></span></small>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="newOrderTableId" />
+
+                    <div class="row g-3">
+                        <div class="col-lg-7">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
+                                <input type="text" class="form-control form-control-sm" id="productSearch" placeholder="Buscar producto..." style="max-width: 260px;">
+                            </div>
+
+                            <div class="accordion" id="productsAccordion">
+                                @foreach($products as $categoryName => $categoryProducts)
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading-{{ \Illuminate\Support\Str::slug($categoryName) }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ \Illuminate\Support\Str::slug($categoryName) }}">
+                                                {{ $categoryName }}
+                                                <span class="badge bg-secondary ms-2">{{ $categoryProducts->count() }}</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-{{ \Illuminate\Support\Str::slug($categoryName) }}" class="accordion-collapse collapse" data-bs-parent="#productsAccordion">
+                                            <div class="accordion-body">
+                                                <div class="row">
+                                                    @foreach($categoryProducts as $product)
+                                                        <div class="col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}">
+                                                            <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                                                <div class="me-2">
+                                                                    <strong>{{ $product->name }}</strong>
+                                                                    @if($product->description)
+                                                                        <div class="text-muted small">{{ $product->description }}</div>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <div><strong>${{ number_format($product->price, 2) }}</strong></div>
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-primary mt-1"
+                                                                            onclick="addModalItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }})">
+                                                                        <i class="bi bi-plus"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5">
+                            <h6 class="mb-2"><i class="bi bi-receipt"></i> Pedido</h6>
+
+                            <div class="mb-2">
+                                <label class="form-label">Observaciones (opcional)</label>
+                                <textarea class="form-control" id="newOrderObservations" rows="2" placeholder="Ej: sin sal, alergias, etc."></textarea>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="sendToKitchen" checked>
+                                <label class="form-check-label" for="sendToKitchen">Enviar a cocina al confirmar</label>
+                            </div>
+
+                            <div id="modalItemsEmpty" class="text-muted">No hay items en el pedido.</div>
+                            <div id="modalItemsList"></div>
+
+                            <div class="border-top pt-3 mt-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Total:</strong> <span id="modalTotal">$0.00</span>
+                                </div>
+                                <button type="submit" class="btn btn-success" id="confirmOrderBtn" disabled>
+                                    <i class="bi bi-check-circle"></i> Confirmar Pedido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 <script>
 function openChangeStatusModal(tableId, currentStatus, capacity) {
     const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
@@ -333,6 +431,197 @@ function confirmCloseTable(tableId) {
         }
     });
 }
+
+// ===== Modal Nuevo Pedido =====
+let newOrderModal;
+let modalItems = [];
+let modalItemCounter = 0;
+
+function openNewOrderModal(tableId, tableLabel) {
+    if (!newOrderModal) {
+        newOrderModal = new bootstrap.Modal(document.getElementById('newOrderModal'));
+    }
+
+    document.getElementById('newOrderTableId').value = tableId;
+    document.getElementById('newOrderTableLabel').textContent = tableLabel;
+    document.getElementById('newOrderObservations').value = '';
+    document.getElementById('sendToKitchen').checked = true;
+    document.getElementById('productSearch').value = '';
+
+    modalItems = [];
+    modalItemCounter = 0;
+    renderModalItems();
+    filterProducts('');
+
+    newOrderModal.show();
+}
+
+function addModalItem(productId, name, price) {
+    const existing = modalItems.find(i => i.product_id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        modalItemCounter++;
+        modalItems.push({
+            id: modalItemCounter,
+            product_id: productId,
+            name,
+            price,
+            quantity: 1,
+            observations: ''
+        });
+    }
+    renderModalItems();
+}
+
+function removeModalItem(itemId) {
+    modalItems = modalItems.filter(i => i.id !== itemId);
+    renderModalItems();
+}
+
+function updateModalQty(itemId, qty) {
+    const item = modalItems.find(i => i.id === itemId);
+    if (!item) return;
+    item.quantity = Math.max(1, parseInt(qty || '1', 10));
+    renderModalItems();
+}
+
+function updateModalObs(itemId, obs) {
+    const item = modalItems.find(i => i.id === itemId);
+    if (!item) return;
+    item.observations = obs || '';
+}
+
+function renderModalItems() {
+    const list = document.getElementById('modalItemsList');
+    const empty = document.getElementById('modalItemsEmpty');
+    const totalEl = document.getElementById('modalTotal');
+    const btn = document.getElementById('confirmOrderBtn');
+
+    if (modalItems.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        totalEl.textContent = '$0.00';
+        btn.disabled = true;
+        return;
+    }
+
+    empty.style.display = 'none';
+    btn.disabled = false;
+
+    let total = 0;
+    list.innerHTML = modalItems.map(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        return `
+            <div class="border rounded p-2 mb-2">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="me-2">
+                        <strong>${item.name}</strong>
+                        <div class="text-muted small">$${item.price.toFixed(2)} c/u</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeModalItem(${item.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="row g-2 mt-2">
+                    <div class="col-4">
+                        <label class="small">Cant.</label>
+                        <input type="number" class="form-control form-control-sm" min="1" value="${item.quantity}"
+                               onchange="updateModalQty(${item.id}, this.value)">
+                    </div>
+                    <div class="col-8">
+                        <label class="small">Obs. (opcional)</label>
+                        <input type="text" class="form-control form-control-sm" value="${item.observations || ''}"
+                               oninput="updateModalObs(${item.id}, this.value)">
+                    </div>
+                </div>
+                <div class="text-end mt-2"><strong>Subtotal: $${subtotal.toFixed(2)}</strong></div>
+            </div>
+        `;
+    }).join('');
+
+    totalEl.textContent = `$${total.toFixed(2)}`;
+}
+
+function filterProducts(term) {
+    const t = (term || '').toLowerCase().trim();
+    document.querySelectorAll('.product-item').forEach(el => {
+        const name = el.getAttribute('data-name') || '';
+        el.style.display = (!t || name.includes(t)) ? '' : 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const search = document.getElementById('productSearch');
+    if (search) {
+        search.addEventListener('input', (e) => filterProducts(e.target.value));
+    }
+
+    const form = document.getElementById('newOrderForm');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (modalItems.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pedido vacío',
+                    text: 'Agregá al menos un producto.',
+                    confirmButtonColor: '#1e8081'
+                });
+                return;
+            }
+
+            const tableId = document.getElementById('newOrderTableId').value;
+            const payload = {
+                observations: document.getElementById('newOrderObservations').value || null,
+                send_to_kitchen: document.getElementById('sendToKitchen').checked,
+                items: modalItems.map(i => ({
+                    product_id: i.product_id,
+                    quantity: i.quantity,
+                    observations: i.observations || null,
+                }))
+            };
+
+            try {
+                const res = await fetch(`/tables/${tableId}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'No se pudo crear el pedido');
+                }
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Pedido creado (${data.order_number})`,
+                    showConfirmButton: false,
+                    timer: 2200,
+                    timerProgressBar: true,
+                });
+
+                newOrderModal.hide();
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.message || 'No se pudo crear el pedido',
+                    confirmButtonColor: '#c94a2d',
+                });
+            }
+        });
+    }
+});
 </script>
 @endsection
 
