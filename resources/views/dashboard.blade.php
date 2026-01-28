@@ -5,7 +5,7 @@
 @push('styles')
 <style>
     .mosaic-dashboard {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 50%, #6b9f3d 100%);
         min-height: 100vh;
         padding: 2rem 0;
     }
@@ -37,28 +37,28 @@
     }
 
     .mosaic-card-primary {
-        --card-gradient-start: #667eea;
-        --card-gradient-end: #764ba2;
+        --card-gradient-start: #2d5016;
+        --card-gradient-end: #4a7c2a;
     }
 
     .mosaic-card-success {
-        --card-gradient-start: #11998e;
-        --card-gradient-end: #38ef7d;
+        --card-gradient-start: #2d5016;
+        --card-gradient-end: #4a7c2a;
     }
 
     .mosaic-card-warning {
-        --card-gradient-start: #f093fb;
-        --card-gradient-end: #f5576c;
+        --card-gradient-start: #d4a574;
+        --card-gradient-end: #8b6f47;
     }
 
     .mosaic-card-info {
-        --card-gradient-start: #4facfe;
-        --card-gradient-end: #00f2fe;
+        --card-gradient-start: #4a7c2a;
+        --card-gradient-end: #6b9f3d;
     }
 
     .mosaic-card-danger {
-        --card-gradient-start: #fa709a;
-        --card-gradient-end: #fee140;
+        --card-gradient-start: #c94a2d;
+        --card-gradient-end: #e67e51;
     }
 
     .mosaic-card-purple {
@@ -147,7 +147,7 @@
 
     .mosaic-section-title i {
         font-size: 1.5rem;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #2d5016, #4a7c2a);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -207,7 +207,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #2d5016, #4a7c2a);
         color: white;
         display: flex;
         align-items: center;
@@ -374,7 +374,7 @@
                             <i class="bi bi-receipt"></i>
                             <span>Pedidos Recientes</span>
                         </div>
-                        <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px;">
+                        <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #2d5016, #4a7c2a); color: white; border: none; border-radius: 10px;">
                             Ver todos
                         </a>
                     </div>
@@ -395,7 +395,7 @@
                                     @foreach($recentOrders as $order)
                                     <tr>
                                         <td>
-                                            <a href="{{ route('orders.show', $order) }}" style="color: #667eea; font-weight: 600; text-decoration: none;">
+                                            <a href="{{ route('orders.show', $order) }}" style="color: #2d5016; font-weight: 600; text-decoration: none;">
                                                 {{ $order->number }}
                                             </a>
                                         </td>
@@ -439,7 +439,7 @@
                                 <div class="mosaic-list-content">
                                     <div class="mosaic-list-title">{{ $product->name }}</div>
                                 </div>
-                                <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                                <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #2d5016, #4a7c2a); color: white;">
                                     {{ $product->total_quantity }}
                                 </span>
                             </div>

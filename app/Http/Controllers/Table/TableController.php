@@ -167,7 +167,35 @@ class TableController extends Controller
     }
 
     /**
-     * Cerrar mesa: cierra todos los pedidos activos y libera la mesa
+     * Actualizar estado de mesa con cantidad de personas
+     */
+    public function updateStatus(Request $request, Table $table)
+    {
+        Gate::authorize('update', $table);
+
+        $validated = $request->validate([
+            'status' => 'required|in:' . implode(',', Table::getStatuses()),
+            'guests_count' => 'nullable|integer|min:0|max:' . $table->capacity,
+        ]);
+
+        // Si el estado cambia a LIBRE, limpiar pedido actual
+        if ($validated['status'] === 'LIBRE') {
+            $table->update([
+                'status' => 'LIBRE',
+                'current_order_id' => null,
+            ]);
+        } else {
+            $table->update([
+                'status' => $validated['status'],
+            ]);
+        }
+
+        return redirect()->route('tables.index')
+            ->with('success', 'Estado de mesa actualizado exitosamente');
+    }
+
+    /**
+     * Cerrar mesa: cierra todos los pedidos activos y genera recibo único consolidado
      */
     public function closeTable(Table $table)
     {
@@ -200,25 +228,61 @@ class TableController extends Controller
             // Cerrar todos los pedidos activos
             $totalAmount = 0;
             $ordersClosed = [];
+            $allItems = collect();
+            $totalSubtotal = 0;
+            $totalDiscount = 0;
 
             foreach ($activeOrders as $order) {
-                // Cerrar el pedido usando el servicio
-                $this->orderService->closeOrder($order);
+                // Cargar items con productos
+                $order->load(['items.product.category', 'items.modifiers']);
+                
+                // Cerrar el pedido sin liberar la mesa (lo haremos después)
+                $this->orderService->closeOrder($order, false);
+                
                 $totalAmount += $order->total;
+                $totalSubtotal += $order->subtotal;
+                $totalDiscount += $order->discount;
+                
+                // Agrupar items por producto para consolidar
+                foreach ($order->items as $item) {
+                    $existingItem = $allItems->first(function ($i) use ($item) {
+                        return $i['product_id'] === $item->product_id && 
+                               $i['unit_price'] === $item->unit_price;
+                    });
+                    
+                    if ($existingItem) {
+                        $existingItem['quantity'] += $item->quantity;
+                        $existingItem['subtotal'] += $item->subtotal;
+                    } else {
+                        $allItems->push([
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name,
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'subtotal' => $item->subtotal,
+                            'modifiers' => $item->modifiers,
+                            'observations' => $item->observations,
+                        ]);
+                    }
+                }
+                
                 $ordersClosed[] = $order;
             }
 
-            // Liberar la mesa
+            // Liberar la mesa para nueva facturación
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
             ]);
 
-            // Redirigir a una vista de resumen con todos los pedidos cerrados
-            return redirect()->route('tables.close-summary', $table)
-                ->with('success', 'Mesa cerrada exitosamente')
+            // Redirigir a vista de recibo consolidado
+            return redirect()->route('tables.consolidated-receipt', $table)
+                ->with('success', 'Mesa cerrada exitosamente. Recibo consolidado generado.')
                 ->with('total_amount', $totalAmount)
-                ->with('orders_closed', $ordersClosed);
+                ->with('total_subtotal', $totalSubtotal)
+                ->with('total_discount', $totalDiscount)
+                ->with('orders_closed', $ordersClosed)
+                ->with('consolidated_items', $allItems);
         });
     }
 
@@ -241,6 +305,71 @@ class TableController extends Controller
         $totalAmount = $closedOrders->sum('total');
 
         return view('tables.close-summary', compact('table', 'closedOrders', 'totalAmount'));
+    }
+
+    /**
+     * Mostrar recibo consolidado de todos los pedidos de la mesa
+     */
+    public function consolidatedReceipt(Table $table)
+    {
+        Gate::authorize('view', $table);
+
+        // Obtener los pedidos cerrados más recientes (de la sesión actual)
+        $closedOrders = session('orders_closed', collect());
+        $consolidatedItems = session('consolidated_items', collect());
+        $totalAmount = session('total_amount', 0);
+        $totalSubtotal = session('total_subtotal', 0);
+        $totalDiscount = session('total_discount', 0);
+
+        // Si no hay datos en sesión, obtener los últimos pedidos cerrados
+        if ($closedOrders->isEmpty()) {
+            $closedOrders = Order::where('table_id', $table->id)
+                ->where('status', Order::STATUS_CERRADO)
+                ->whereNotNull('closed_at')
+                ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+                ->orderBy('closed_at', 'desc')
+                ->limit(10)
+                ->get();
+
+            // Consolidar items
+            $consolidatedItems = collect();
+            foreach ($closedOrders as $order) {
+                foreach ($order->items as $item) {
+                    $existingItem = $consolidatedItems->first(function ($i) use ($item) {
+                        return $i['product_id'] === $item->product_id && 
+                               $i['unit_price'] === $item->unit_price;
+                    });
+                    
+                    if ($existingItem) {
+                        $existingItem['quantity'] += $item->quantity;
+                        $existingItem['subtotal'] += $item->subtotal;
+                    } else {
+                        $consolidatedItems->push([
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name,
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'subtotal' => $item->subtotal,
+                            'modifiers' => $item->modifiers,
+                            'observations' => $item->observations,
+                        ]);
+                    }
+                }
+            }
+            
+            $totalAmount = $closedOrders->sum('total');
+            $totalSubtotal = $closedOrders->sum('subtotal');
+            $totalDiscount = $closedOrders->sum('discount');
+        }
+
+        return view('tables.consolidated-receipt', compact(
+            'table', 
+            'closedOrders', 
+            'consolidatedItems', 
+            'totalAmount',
+            'totalSubtotal',
+            'totalDiscount'
+        ));
     }
 }
 

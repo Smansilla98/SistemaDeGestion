@@ -40,6 +40,8 @@
             @foreach($tables as $table)
             <div class="table-item" 
                  data-table-id="{{ $table->id }}"
+                 data-initial-x="{{ $table->position_x ?? 50 }}"
+                 data-initial-y="{{ $table->position_y ?? 50 }}"
                  style="position: absolute; 
                         left: {{ $table->position_x ?? 50 }}px; 
                         top: {{ $table->position_y ?? 50 }}px;
@@ -164,18 +166,22 @@ function saveLayout() {
     }
     
     const tables = [];
+    const canvas = document.getElementById('layoutCanvas');
+    
     document.querySelectorAll('.table-item').forEach(item => {
         const tableId = item.getAttribute('data-table-id');
-        const canvas = document.getElementById('layoutCanvas');
-        const canvasRect = canvas.getBoundingClientRect();
-        const itemRect = item.getBoundingClientRect();
         
-        // Calcular posición relativa al canvas
+        // Obtener posición inicial desde el atributo style
+        const initialLeft = parseFloat(item.style.left) || parseFloat(item.getAttribute('data-initial-x')) || 0;
+        const initialTop = parseFloat(item.style.top) || parseFloat(item.getAttribute('data-initial-y')) || 0;
+        
+        // Obtener offset del drag (data-x y data-y)
         const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
         const offsetY = parseFloat(item.getAttribute('data-y')) || 0;
         
-        const positionX = Math.max(0, Math.round(itemRect.left - canvasRect.left + offsetX));
-        const positionY = Math.max(0, Math.round(itemRect.top - canvasRect.top + offsetY));
+        // Calcular posición final
+        const positionX = Math.max(0, Math.round(initialLeft + offsetX));
+        const positionY = Math.max(0, Math.round(initialTop + offsetY));
         
         tables.push({
             id: tableId,
@@ -200,19 +206,30 @@ function saveLayout() {
     .then(data => {
         if (data.success) {
             alert('Layout guardado exitosamente');
-            // Resetear transformaciones y actualizar posiciones absolutas
+            // Actualizar posiciones absolutas y resetear transformaciones
             document.querySelectorAll('.table-item').forEach(item => {
                 const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
                 const offsetY = parseFloat(item.getAttribute('data-y')) || 0;
                 const currentLeft = parseFloat(item.style.left) || 0;
                 const currentTop = parseFloat(item.style.top) || 0;
                 
-                item.style.left = (currentLeft + offsetX) + 'px';
-                item.style.top = (currentTop + offsetY) + 'px';
+                // Nueva posición absoluta
+                const newLeft = currentLeft + offsetX;
+                const newTop = currentTop + offsetY;
+                
+                item.style.left = newLeft + 'px';
+                item.style.top = newTop + 'px';
                 item.style.transform = '';
+                item.setAttribute('data-initial-x', newLeft);
+                item.setAttribute('data-initial-y', newTop);
                 item.removeAttribute('data-x');
                 item.removeAttribute('data-y');
             });
+            
+            // Recargar la página después de un breve delay para mostrar los cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         } else {
             alert('Error al guardar: ' + (data.message || 'Error desconocido'));
         }

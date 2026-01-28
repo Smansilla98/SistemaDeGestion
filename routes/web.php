@@ -43,10 +43,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/{table}/edit', [TableController::class, 'edit'])->name('edit');
         Route::get('/{table}/reserve', [\App\Http\Controllers\TableReservationController::class, 'create'])->name('reserve');
         Route::get('/{table}/close-summary', [TableController::class, 'closeSummary'])->name('close-summary');
+        Route::get('/{table}/consolidated-receipt', [TableController::class, 'consolidatedReceipt'])->name('consolidated-receipt');
         Route::post('/', [TableController::class, 'store'])->name('store');
         Route::post('/layout', [TableController::class, 'updateLayout'])->name('update-layout');
         Route::post('/{table}/reserve', [\App\Http\Controllers\TableReservationController::class, 'store'])->name('reserve.store');
         Route::post('/{table}/close', [TableController::class, 'closeTable'])->name('close');
+        Route::put('/{table}/status', [TableController::class, 'updateStatus'])->name('update-status');
         Route::put('/{table}', [TableController::class, 'update'])->name('update');
         Route::delete('/{table}', [TableController::class, 'destroy'])->name('destroy');
     });
