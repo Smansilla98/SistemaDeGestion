@@ -50,8 +50,25 @@ class OrderController extends Controller
 
         $restaurantId = auth()->user()->restaurant_id;
 
+        // Si se especifica una mesa, verificar que esté OCUPADA
+        if ($tableId) {
+            $selectedTable = Table::findOrFail($tableId);
+            
+            // Verificar que la mesa pertenezca al restaurante del usuario
+            if ($selectedTable->restaurant_id !== $restaurantId) {
+                abort(403, 'No tienes acceso a esta mesa');
+            }
+            
+            // Verificar que la mesa esté OCUPADA para poder tomar pedidos
+            if ($selectedTable->status !== 'OCUPADA') {
+                return redirect()->route('tables.index')
+                    ->with('error', 'Solo se pueden tomar pedidos en mesas ocupadas. Por favor, cambia el estado de la mesa a OCUPADA primero.');
+            }
+        }
+
+        // Solo mostrar mesas OCUPADAS para seleccionar
         $tables = Table::where('restaurant_id', $restaurantId)
-            ->where('status', '!=', 'CERRADA')
+            ->where('status', 'OCUPADA')
             ->get();
 
         $products = Product::where('restaurant_id', $restaurantId)
@@ -79,6 +96,18 @@ class OrderController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
+
+        // Verificar que la mesa esté OCUPADA para poder crear pedidos
+        $table = Table::findOrFail($validated['table_id']);
+        if ($table->status !== 'OCUPADA') {
+            return back()->with('error', 'Solo se pueden tomar pedidos en mesas ocupadas. Por favor, cambia el estado de la mesa a OCUPADA primero.')
+                ->withInput();
+        }
+
+        // Verificar que la mesa pertenezca al restaurante del usuario
+        if ($table->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta mesa');
+        }
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
         $validated['user_id'] = auth()->id();

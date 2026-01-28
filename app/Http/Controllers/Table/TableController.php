@@ -144,7 +144,10 @@ class TableController extends Controller
      */
     public function updateLayout(Request $request)
     {
-        Gate::authorize('update', Table::class);
+        // Verificar permisos: solo ADMIN y MOZO pueden actualizar layouts
+        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+            abort(403, 'No tienes permisos para actualizar el layout');
+        }
 
         $validated = $request->validate([
             'sector_id' => 'required|exists:sectors,id',
@@ -155,12 +158,14 @@ class TableController extends Controller
         ]);
 
         foreach ($validated['tables'] as $tableData) {
-            Table::where('id', $tableData['id'])
-                ->where('sector_id', $validated['sector_id'])
-                ->update([
+            $table = Table::find($tableData['id']);
+            if ($table) {
+                Gate::authorize('update', $table);
+                $table->update([
                     'position_x' => $tableData['position_x'],
                     'position_y' => $tableData['position_y'],
                 ]);
+            }
         }
 
         return response()->json(['success' => true, 'message' => 'Layout actualizado exitosamente']);
