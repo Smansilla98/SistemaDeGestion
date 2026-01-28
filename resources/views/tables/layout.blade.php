@@ -161,7 +161,13 @@ function loadSector(sectorId) {
 
 function saveLayout() {
     if (!{{ $selectedSector ? 'true' : 'false' }}) {
-        alert('Debes seleccionar un sector primero');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sector Requerido',
+            text: 'Debes seleccionar un sector primero',
+            confirmButtonColor: '#1e8081',
+            confirmButtonText: 'Entendido'
+        });
         return;
     }
     
@@ -205,7 +211,15 @@ function saveLayout() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Layout guardado exitosamente');
+            Swal.fire({
+                icon: 'success',
+                title: 'Éxito',
+                text: 'Layout guardado exitosamente',
+                confirmButtonColor: '#1e8081',
+                confirmButtonText: 'Entendido',
+                timer: 1500,
+                timerProgressBar: true
+            });
             // Actualizar posiciones absolutas y resetear transformaciones
             document.querySelectorAll('.table-item').forEach(item => {
                 const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
@@ -231,12 +245,24 @@ function saveLayout() {
                 window.location.reload();
             }, 500);
         } else {
-            alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al guardar: ' + (data.message || 'Error desconocido'),
+                confirmButtonColor: '#c94a2d',
+                confirmButtonText: 'Entendido'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al guardar el layout');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al guardar el layout',
+            confirmButtonColor: '#c94a2d',
+            confirmButtonText: 'Entendido'
+        });
     });
 }
 

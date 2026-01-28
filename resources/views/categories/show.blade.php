@@ -97,10 +97,10 @@
                     </a>
                     @endcan
                     @can('delete', $category)
-                    <form action="{{ route('categories.destroy', $category) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta categoría?');">
+                    <form action="{{ route('categories.destroy', $category) }}" method="POST" id="deleteCategoryForm{{ $category->id }}">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger w-100">
+                        <button type="button" class="btn btn-danger w-100" onclick="confirmDeleteCategory({{ $category->id }}, '{{ $category->name }}')">
                             <i class="bi bi-trash"></i> Eliminar Categoría
                         </button>
                     </form>
@@ -110,5 +110,26 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeleteCategory(categoryId, categoryName) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Categoría?',
+        html: `¿Estás seguro de eliminar la categoría <strong>${categoryName}</strong>?<br><small class="text-muted">Esta acción no se puede deshacer.</small>`,
+        showCancelButton: true,
+        confirmButtonColor: '#c94a2d',
+        cancelButtonColor: '#7b7d84',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deleteCategoryForm' + categoryId).submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 

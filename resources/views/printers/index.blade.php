@@ -92,10 +92,10 @@
                                 </form>
                                 @endcan
                                 @can('delete', $printer)
-                                <form action="{{ route('printers.destroy', $printer) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta impresora?');">
+                                <form action="{{ route('printers.destroy', $printer) }}" method="POST" class="d-inline" id="deletePrinterForm{{ $printer->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeletePrinter({{ $printer->id }}, '{{ $printer->name }}')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -115,5 +115,26 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeletePrinter(printerId, printerName) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Impresora?',
+        html: `¿Estás seguro de eliminar la impresora <strong>${printerName}</strong>?<br><small class="text-muted">Esta acción no se puede deshacer.</small>`,
+        showCancelButton: true,
+        confirmButtonColor: '#c94a2d',
+        cancelButtonColor: '#7b7d84',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deletePrinterForm' + printerId).submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 
