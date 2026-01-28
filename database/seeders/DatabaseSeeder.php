@@ -67,9 +67,10 @@ class DatabaseSeeder extends Seeder
 
         // Crear sectores
         $sectors = [
-            ['name' => 'Salón Principal', 'description' => 'Salón principal del restaurante'],
-            ['name' => 'Terraza', 'description' => 'Terraza al aire libre'],
-            ['name' => 'Sector VIP', 'description' => 'Sector privado'],
+            ['name' => 'Barra', 'description' => 'Barra fija con 4 lugares disponibles'],
+            ['name' => 'Salón principal', 'description' => 'Salón principal del restaurante'],
+            ['name' => 'Patio murales', 'description' => 'Patio con murales'],
+            ['name' => 'Patio Diego', 'description' => 'Patio Diego'],
         ];
 
         foreach ($sectors as $sectorData) {
@@ -145,7 +146,7 @@ class DatabaseSeeder extends Seeder
 
 
         // Crear mesas
-        $sectorPrincipal = Sector::where('name', 'Salón Principal')->first();
+        $sectorPrincipal = Sector::where('name', 'Salón principal')->first();
         for ($i = 1; $i <= 10; $i++) {
             Table::create([
                 'restaurant_id' => $restaurant->id,
@@ -156,6 +157,22 @@ class DatabaseSeeder extends Seeder
                 'position_x' => rand(50, 800),
                 'position_y' => rand(50, 600),
             ]);
+        }
+        
+        // Crear 4 lugares fijos en la Barra
+        $sectorBarra = Sector::where('name', 'Barra')->first();
+        if ($sectorBarra) {
+            for ($i = 1; $i <= 4; $i++) {
+                Table::create([
+                    'restaurant_id' => $restaurant->id,
+                    'sector_id' => $sectorBarra->id,
+                    'number' => "Barra {$i}",
+                    'capacity' => 1,
+                    'status' => 'LIBRE',
+                    'position_x' => 50 + ($i * 100),
+                    'position_y' => 50,
+                ]);
+            }
         }
 
         // Crear caja registradora

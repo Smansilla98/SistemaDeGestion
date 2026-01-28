@@ -12,20 +12,26 @@
     @stack('styles')
     <style>
         :root {
-            --mosaic-primary: #667eea;
-            --mosaic-secondary: #764ba2;
-            --mosaic-success: #11998e;
-            --mosaic-success-end: #38ef7d;
-            --mosaic-warning: #f093fb;
-            --mosaic-warning-end: #f5576c;
-            --mosaic-info: #4facfe;
-            --mosaic-info-end: #00f2fe;
-            --mosaic-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            /* Paleta Conurbania - Colores naturales y terrosos */
+            --conurbania-primary: #2d5016; /* Verde oscuro natural */
+            --conurbania-secondary: #4a7c2a; /* Verde medio */
+            --conurbania-accent: #6b9f3d; /* Verde claro */
+            --conurbania-earth: #8b6f47; /* Marrón terroso */
+            --conurbania-warm: #d4a574; /* Beige cálido */
+            --conurbania-success: #2d5016;
+            --conurbania-success-end: #4a7c2a;
+            --conurbania-warning: #d4a574;
+            --conurbania-warning-end: #8b6f47;
+            --conurbania-info: #4a7c2a;
+            --conurbania-info-end: #6b9f3d;
+            --conurbania-danger: #c94a2d;
+            --conurbania-danger-end: #e67e51;
+            --mosaic-bg: linear-gradient(135deg, #2d5016 0%, #4a7c2a 50%, #6b9f3d 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #1a2e0f 0%, #2d5016 50%, #4a7c2a 100%);
             --mosaic-card-bg: #ffffff;
             --mosaic-text-primary: #1a202c;
-            --mosaic-text-secondary: #718096;
-            --mosaic-border: #e2e8f0;
+            --mosaic-text-secondary: #4a5568;
+            --mosaic-border: #cbd5e0;
         }
 
         * {
@@ -86,18 +92,12 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
-        .nova-sidebar-header .logo i {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 2rem;
+        .nova-sidebar-header .logo img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
         }
 
         .nova-sidebar-nav {
@@ -137,16 +137,16 @@
         .nova-nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border-left-color: #667eea;
+            border-left-color: #6b9f3d;
             transform: translateX(5px);
         }
 
         .nova-nav-item.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.3), rgba(74, 124, 42, 0.3));
             color: white;
-            border-left-color: #667eea;
+            border-left-color: #6b9f3d;
             font-weight: 600;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(107, 159, 61, 0.3);
         }
 
         .nova-nav-item i {
@@ -191,13 +191,13 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.4);
         }
 
         .nova-user-info {
@@ -250,7 +250,7 @@
 
         .nova-sidebar-toggle {
             display: none;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             border: none;
             font-size: 1.25rem;
             color: white;
@@ -258,12 +258,12 @@
             padding: 0.75rem;
             border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
         }
 
         .nova-sidebar-toggle:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -275,7 +275,7 @@
         .nova-header-title {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -305,9 +305,9 @@
         }
 
         .nova-header-dropdown-toggle:hover {
-            border-color: var(--mosaic-primary);
+            border-color: var(--conurbania-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.2);
         }
 
         .nova-header-dropdown-menu {
@@ -351,8 +351,8 @@
         }
 
         .nova-dropdown-item:hover {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-            color: var(--mosaic-primary);
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            color: var(--conurbania-primary);
             transform: translateX(5px);
         }
 
@@ -387,7 +387,7 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
             border-bottom: 2px solid var(--mosaic-border);
             padding: 1.5rem;
             font-weight: 700;
@@ -414,43 +414,43 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             color: white;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #764ba2, #667eea);
+            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
             color: white;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #11998e, #38ef7d);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             color: white;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
+            background: linear-gradient(135deg, #d4a574, #8b6f47);
             color: white;
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
             color: white;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #fa709a, #fee140);
+            background: linear-gradient(135deg, #c94a2d, #e67e51);
             color: white;
         }
 
         .btn-outline-primary {
-            border: 2px solid var(--mosaic-primary);
-            color: var(--mosaic-primary);
+            border: 2px solid var(--conurbania-primary);
+            color: var(--conurbania-primary);
             background: transparent;
         }
 
         .btn-outline-primary:hover {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             color: white;
             border-color: transparent;
         }
@@ -464,27 +464,27 @@
         }
 
         .alert-success {
-            background: linear-gradient(135deg, rgba(17, 153, 142, 0.1), rgba(56, 239, 125, 0.1));
-            color: #22543d;
-            border-left: 4px solid #11998e;
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            color: #1a2e0f;
+            border-left: 4px solid #2d5016;
         }
 
         .alert-danger {
-            background: linear-gradient(135deg, rgba(250, 112, 154, 0.1), rgba(254, 225, 64, 0.1));
+            background: linear-gradient(135deg, rgba(201, 74, 45, 0.1), rgba(230, 126, 81, 0.1));
             color: #742a2a;
-            border-left: 4px solid #fa709a;
+            border-left: 4px solid #c94a2d;
         }
 
         .alert-warning {
-            background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
-            color: #744210;
-            border-left: 4px solid #f093fb;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(139, 111, 71, 0.1));
+            color: #5a4a2e;
+            border-left: 4px solid #d4a574;
         }
 
         .alert-info {
-            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1));
-            color: #2c5282;
-            border-left: 4px solid #4facfe;
+            background: linear-gradient(135deg, rgba(74, 124, 42, 0.1), rgba(107, 159, 61, 0.1));
+            color: #2d5016;
+            border-left: 4px solid #4a7c2a;
         }
 
         /* Tables Mosaic Style */
@@ -494,7 +494,7 @@
         }
 
         .table thead th {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
             color: var(--mosaic-text-primary);
             font-weight: 700;
             text-transform: uppercase;
@@ -511,7 +511,7 @@
         }
 
         .table tbody tr:hover {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.05), rgba(74, 124, 42, 0.05));
             transform: scale(1.01);
             transition: all 0.2s ease;
         }
@@ -535,8 +535,8 @@
 
         .form-control:focus,
         .form-select:focus {
-            border-color: var(--mosaic-primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--conurbania-primary);
+            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
         }
 
         /* Overlay para móvil */
@@ -572,12 +572,12 @@
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2d5016, #4a7c2a);
             border-radius: 4px;
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #764ba2, #667eea);
+            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
         }
 
         /* Modal Mosaic Style */
@@ -588,7 +588,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
             border-bottom: 2px solid var(--mosaic-border);
             border-radius: 20px 20px 0 0;
             padding: 1.5rem;
@@ -606,8 +606,8 @@
     <aside class="nova-sidebar" id="novaSidebar">
         <div class="nova-sidebar-header">
             <a href="{{ route('dashboard') }}" class="logo">
-                <i class="bi bi-cup-hot"></i>
-                <span>Restaurante</span>
+                <img src="https://conurbaniaparque.com/wp-content/uploads/cropped-Logo-Conurbania.png" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <span style="display: none;">Conurbania</span>
             </a>
         </div>
 

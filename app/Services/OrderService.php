@@ -137,10 +137,11 @@ class OrderService
 
     /**
      * Cerrar pedido
+     * @param bool $freeTable Si es true, libera la mesa. Si es false, solo cierra el pedido.
      */
-    public function closeOrder(Order $order): Order
+    public function closeOrder(Order $order, bool $freeTable = true): Order
     {
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $freeTable) {
             if ($order->status === OrderStatus::CERRADO->value) {
                 throw new \Exception('El pedido ya está cerrado');
             }
@@ -150,12 +151,16 @@ class OrderService
                 'closed_at' => now(),
             ]);
 
-            // Liberar la mesa
-            $table = $order->table;
-            $table->update([
-                'status' => 'LIBRE',
-                'current_order_id' => null,
-            ]);
+            // Liberar la mesa solo si se solicita (por defecto sí, para compatibilidad)
+            if ($freeTable) {
+                $table = $order->table;
+                if ($table) {
+                    $table->update([
+                        'status' => 'LIBRE',
+                        'current_order_id' => null,
+                    ]);
+                }
+            }
 
             return $order->fresh();
         });

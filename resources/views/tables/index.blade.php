@@ -40,14 +40,23 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="card-title mb-0">{{ $table->number }}</h5>
+                            @can('update', $table)
+                            <button type="button" 
+                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} border-0"
+                                    style="cursor: pointer;"
+                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
+                                {{ $table->status }}
+                            </button>
+                            @else
                             <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
                                 {{ $table->status }}
                             </span>
+                            @endcan
                         </div>
                         <p class="text-muted mb-2">
                             <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
                         </p>
-                        @if($table->current_order_id)
+                        @if($table->current_order_id && $table->currentOrder)
                         <p class="mb-2">
                             <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-outline-primary">
                                 Ver Pedido
@@ -63,9 +72,11 @@
                                 <i class="bi bi-calendar-check"></i> Reservar
                             </a>
                             @elseif($table->status === 'OCUPADA')
+                            @if($table->current_order_id && $table->currentOrder)
                             <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-eye"></i> Ver Pedido
                             </a>
+                            @endif
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline">
                                 @csrf
@@ -144,7 +155,74 @@
 </div>
 @endcan
 
+@can('update', App\Models\Table::class)
+<!-- Modal Cambiar Estado de Mesa -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="changeStatusForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title">Cambiar Estado de Mesa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="LIBRE">Libre</option>
+                            <option value="OCUPADA">Ocupada</option>
+                            <option value="RESERVADA">Reservada</option>
+                            <option value="CERRADA">Cerrada</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="guests_count" class="form-label">Cantidad de Personas</label>
+                        <input type="number" class="form-control" id="guests_count" name="guests_count" min="1" value="1" required>
+                        <small class="text-muted">Capacidad máxima: <span id="maxCapacity">0</span> personas</small>
+                    </div>
+                    <input type="hidden" id="tableId" name="table_id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endcan
+
 <script>
+function openChangeStatusModal(tableId, currentStatus, capacity) {
+    const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+    const form = document.getElementById('changeStatusForm');
+    const statusSelect = document.getElementById('status');
+    const guestsInput = document.getElementById('guests_count');
+    const tableIdInput = document.getElementById('tableId');
+    const maxCapacitySpan = document.getElementById('maxCapacity');
+    
+    // Configurar formulario
+    form.action = `/tables/${tableId}/status`;
+    tableIdInput.value = tableId;
+    statusSelect.value = currentStatus;
+    maxCapacitySpan.textContent = capacity;
+    guestsInput.max = capacity;
+    guestsInput.value = 1;
+    
+    // Si cambia a LIBRE, resetear cantidad de personas
+    statusSelect.addEventListener('change', function() {
+        if (this.value === 'LIBRE') {
+            guestsInput.value = 0;
+        } else {
+            guestsInput.value = 1;
+        }
+    });
+    
+    modal.show();
+}
+
 function editTable(tableId) {
     // TODO: Implementar edición de mesa
     alert('Editar mesa ' + tableId);
