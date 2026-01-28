@@ -65,13 +65,24 @@
                         @endif
                         <div class="d-flex gap-2 flex-wrap">
                             @if($table->status === 'LIBRE')
-                            <a href="{{ route('orders.create', ['tableId' => $table->id]) }}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-plus-circle"></i> Pedido
-                            </a>
+                            {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
                             <a href="{{ route('tables.reserve', $table) }}" class="btn btn-sm btn-outline-info">
                                 <i class="bi bi-calendar-check"></i> Reservar
                             </a>
+                            @can('update', $table)
+                            <button type="button" 
+                                    class="btn btn-sm btn-primary"
+                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
+                                <i class="bi bi-check-circle"></i> Marcar Ocupada
+                            </button>
+                            @endcan
                             @elseif($table->status === 'OCUPADA')
+                            {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
+                            @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                            <a href="{{ route('orders.create', ['tableId' => $table->id]) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nuevo Pedido
+                            </a>
+                            @endif
                             @if($table->current_order_id && $table->currentOrder)
                             <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-eye"></i> Ver Pedido
@@ -80,10 +91,19 @@
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline">
                                 @csrf
-                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de cerrar esta mesa? Se cerrarán todos los pedidos activos.')">
+                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de cerrar esta mesa? Se cerrarán todos los pedidos activos y se generará el recibo consolidado.')">
                                     <i class="bi bi-check-circle"></i> Cerrar Mesa
                                 </button>
                             </form>
+                            @endcan
+                            @elseif($table->status === 'RESERVADA')
+                            {{-- Mesa RESERVADA: Puede cambiar estado --}}
+                            @can('update', $table)
+                            <button type="button" 
+                                    class="btn btn-sm btn-primary"
+                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
+                                <i class="bi bi-check-circle"></i> Cambiar Estado
+                            </button>
                             @endcan
                             @endif
                             @can('update', $table)
@@ -176,8 +196,9 @@
                             <option value="RESERVADA">Reservada</option>
                             <option value="CERRADA">Cerrada</option>
                         </select>
+                        <small class="text-muted" id="statusHelp"></small>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3" id="guestsCountContainer">
                         <label for="guests_count" class="form-label">Cantidad de Personas</label>
                         <input type="number" class="form-control" id="guests_count" name="guests_count" min="1" value="1" required>
                         <small class="text-muted">Capacidad máxima: <span id="maxCapacity">0</span> personas</small>
@@ -200,26 +221,90 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
     const form = document.getElementById('changeStatusForm');
     const statusSelect = document.getElementById('status');
     const guestsInput = document.getElementById('guests_count');
+    const guestsContainer = document.getElementById('guestsCountContainer');
     const tableIdInput = document.getElementById('tableId');
     const maxCapacitySpan = document.getElementById('maxCapacity');
+    const statusHelp = document.getElementById('statusHelp');
     
     // Configurar formulario
     form.action = `/tables/${tableId}/status`;
     tableIdInput.value = tableId;
-    statusSelect.value = currentStatus;
     maxCapacitySpan.textContent = capacity;
     guestsInput.max = capacity;
-    guestsInput.value = 1;
     
-    // Si cambia a LIBRE, resetear cantidad de personas
-    statusSelect.addEventListener('change', function() {
-        if (this.value === 'LIBRE') {
+    // Limpiar event listeners anteriores
+    const newStatusSelect = statusSelect.cloneNode(true);
+    statusSelect.parentNode.replaceChild(newStatusSelect, statusSelect);
+    const newStatusSelectRef = document.getElementById('status');
+    
+    // Configurar opciones según el estado actual
+    function updateStatusOptions() {
+        // Limpiar opciones
+        newStatusSelectRef.innerHTML = '';
+        
+        if (currentStatus === 'LIBRE') {
+            // Si está LIBRE, solo puede cambiar a OCUPADA o RESERVADA
+            newStatusSelectRef.innerHTML = `
+                <option value="OCUPADA">Ocupada</option>
+                <option value="RESERVADA">Reservada</option>
+            `;
+            statusHelp.textContent = 'Una mesa libre solo puede marcarse como Ocupada o Reservada.';
+            guestsContainer.style.display = 'block';
+            guestsInput.required = true;
+            guestsInput.value = 1;
+        } else if (currentStatus === 'OCUPADA') {
+            // Si está OCUPADA, puede cambiar a LIBRE o CERRADA
+            newStatusSelectRef.innerHTML = `
+                <option value="LIBRE">Libre</option>
+                <option value="CERRADA">Cerrada</option>
+            `;
+            statusHelp.textContent = 'Para cerrar la mesa y generar el recibo, usa el botón "Cerrar Mesa" en lugar de cambiar el estado.';
+            guestsContainer.style.display = 'none';
+            guestsInput.required = false;
             guestsInput.value = 0;
+        } else if (currentStatus === 'RESERVADA') {
+            // Si está RESERVADA, puede cambiar a OCUPADA o LIBRE
+            newStatusSelectRef.innerHTML = `
+                <option value="LIBRE">Libre</option>
+                <option value="OCUPADA">Ocupada</option>
+            `;
+            statusHelp.textContent = 'Una mesa reservada puede marcarse como Ocupada o Libre.';
+            guestsContainer.style.display = 'block';
+            guestsInput.required = true;
+            guestsInput.value = 1;
         } else {
+            // Cualquier otro estado, permitir todos los cambios
+            newStatusSelectRef.innerHTML = `
+                <option value="LIBRE">Libre</option>
+                <option value="OCUPADA">Ocupada</option>
+                <option value="RESERVADA">Reservada</option>
+                <option value="CERRADA">Cerrada</option>
+            `;
+            statusHelp.textContent = '';
+            guestsContainer.style.display = 'block';
+            guestsInput.required = true;
             guestsInput.value = 1;
         }
-    });
+        
+        // Actualizar cuando cambie el estado seleccionado
+        newStatusSelectRef.addEventListener('change', function() {
+            if (this.value === 'LIBRE') {
+                guestsContainer.style.display = 'none';
+                guestsInput.required = false;
+                guestsInput.value = 0;
+            } else if (this.value === 'OCUPADA' || this.value === 'RESERVADA') {
+                guestsContainer.style.display = 'block';
+                guestsInput.required = true;
+                guestsInput.value = 1;
+            } else {
+                guestsContainer.style.display = 'none';
+                guestsInput.required = false;
+                guestsInput.value = 0;
+            }
+        });
+    }
     
+    updateStatusOptions();
     modal.show();
 }
 
