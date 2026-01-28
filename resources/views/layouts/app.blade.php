@@ -12,26 +12,26 @@
     @stack('styles')
     <style>
         :root {
-            /* Paleta Conurbania - Colores naturales y terrosos */
-            --conurbania-primary: #2d5016; /* Verde oscuro natural */
-            --conurbania-secondary: #4a7c2a; /* Verde medio */
-            --conurbania-accent: #6b9f3d; /* Verde claro */
-            --conurbania-earth: #8b6f47; /* Marrón terroso */
-            --conurbania-warm: #d4a574; /* Beige cálido */
-            --conurbania-success: #2d5016;
-            --conurbania-success-end: #4a7c2a;
-            --conurbania-warning: #d4a574;
-            --conurbania-warning-end: #8b6f47;
-            --conurbania-info: #4a7c2a;
-            --conurbania-info-end: #6b9f3d;
+            /* Paleta Conurbania - Colores oficiales */
+            --conurbania-primary: #1e8081; /* Verde azulado principal */
+            --conurbania-secondary: #22565e; /* Verde oscuro */
+            --conurbania-dark: #262c3b; /* Gris azulado oscuro */
+            --conurbania-medium: #7b7d84; /* Gris medio */
+            --conurbania-light: #cfcecd; /* Gris claro */
+            --conurbania-success: #1e8081;
+            --conurbania-success-end: #22565e;
+            --conurbania-warning: #7b7d84;
+            --conurbania-warning-end: #22565e;
+            --conurbania-info: #1e8081;
+            --conurbania-info-end: #22565e;
             --conurbania-danger: #c94a2d;
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, #2d5016 0%, #4a7c2a 50%, #6b9f3d 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #1a2e0f 0%, #2d5016 50%, #4a7c2a 100%);
+            --mosaic-bg: linear-gradient(135deg, #1e8081 0%, #22565e 50%, #262c3b 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, #22565e 50%, #1e8081 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #1a202c;
-            --mosaic-text-secondary: #4a5568;
-            --mosaic-border: #cbd5e0;
+            --mosaic-text-primary: #262c3b;
+            --mosaic-text-secondary: #7b7d84;
+            --mosaic-border: #cfcecd;
         }
 
         * {
@@ -91,13 +91,20 @@
             text-decoration: none;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.75rem;
         }
 
         .nova-sidebar-header .logo img {
             height: 50px;
             width: auto;
+            max-width: 200px;
             object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        .nova-sidebar-header .logo span {
+            display: none;
         }
 
         .nova-sidebar-nav {
@@ -137,16 +144,16 @@
         .nova-nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border-left-color: #6b9f3d;
+            border-left-color: #1e8081;
             transform: translateX(5px);
         }
 
         .nova-nav-item.active {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.3), rgba(74, 124, 42, 0.3));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.3), rgba(34, 86, 94, 0.3));
             color: white;
-            border-left-color: #6b9f3d;
+            border-left-color: #1e8081;
             font-weight: 600;
-            box-shadow: 0 4px 15px rgba(107, 159, 61, 0.3);
+            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.3);
         }
 
         .nova-nav-item i {
@@ -191,13 +198,13 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.4);
+            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.4);
         }
 
         .nova-user-info {
@@ -250,7 +257,7 @@
 
         .nova-sidebar-toggle {
             display: none;
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             border: none;
             font-size: 1.25rem;
             color: white;
@@ -258,12 +265,12 @@
             padding: 0.75rem;
             border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
+            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.3);
         }
 
         .nova-sidebar-toggle:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
+            box-shadow: 0 6px 20px rgba(30, 128, 129, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -275,7 +282,7 @@
         .nova-header-title {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -307,7 +314,7 @@
         .nova-header-dropdown-toggle:hover {
             border-color: var(--conurbania-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.2);
+            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.2);
         }
 
         .nova-header-dropdown-menu {
@@ -351,7 +358,7 @@
         }
 
         .nova-dropdown-item:hover {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
             color: var(--conurbania-primary);
             transform: translateX(5px);
         }
@@ -387,7 +394,7 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
             border-bottom: 2px solid var(--mosaic-border);
             padding: 1.5rem;
             font-weight: 700;
@@ -414,27 +421,27 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             color: white;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
+            background: linear-gradient(135deg, #22565e, #1e8081);
             color: white;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             color: white;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #d4a574, #8b6f47);
+            background: linear-gradient(135deg, #7b7d84, #22565e);
             color: white;
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             color: white;
         }
 
@@ -450,7 +457,7 @@
         }
 
         .btn-outline-primary:hover {
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             color: white;
             border-color: transparent;
         }
@@ -464,9 +471,9 @@
         }
 
         .alert-success {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
-            color: #1a2e0f;
-            border-left: 4px solid #2d5016;
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            color: #22565e;
+            border-left: 4px solid #1e8081;
         }
 
         .alert-danger {
@@ -476,15 +483,15 @@
         }
 
         .alert-warning {
-            background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(139, 111, 71, 0.1));
-            color: #5a4a2e;
-            border-left: 4px solid #d4a574;
+            background: linear-gradient(135deg, rgba(123, 125, 132, 0.1), rgba(34, 86, 94, 0.1));
+            color: #262c3b;
+            border-left: 4px solid #7b7d84;
         }
 
         .alert-info {
-            background: linear-gradient(135deg, rgba(74, 124, 42, 0.1), rgba(107, 159, 61, 0.1));
-            color: #2d5016;
-            border-left: 4px solid #4a7c2a;
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            color: #22565e;
+            border-left: 4px solid #1e8081;
         }
 
         /* Tables Mosaic Style */
@@ -494,7 +501,7 @@
         }
 
         .table thead th {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
             color: var(--mosaic-text-primary);
             font-weight: 700;
             text-transform: uppercase;
@@ -511,7 +518,7 @@
         }
 
         .table tbody tr:hover {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.05), rgba(74, 124, 42, 0.05));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.05), rgba(34, 86, 94, 0.05));
             transform: scale(1.01);
             transition: all 0.2s ease;
         }
@@ -536,7 +543,7 @@
         .form-control:focus,
         .form-select:focus {
             border-color: var(--conurbania-primary);
-            box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
+            box-shadow: 0 0 0 3px rgba(30, 128, 129, 0.1);
         }
 
         /* Overlay para móvil */
@@ -572,12 +579,12 @@
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #2d5016, #4a7c2a);
+            background: linear-gradient(135deg, #1e8081, #22565e);
             border-radius: 4px;
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #4a7c2a, #6b9f3d);
+            background: linear-gradient(135deg, #22565e, #1e8081);
         }
 
         /* Modal Mosaic Style */
@@ -588,7 +595,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, rgba(45, 80, 22, 0.1), rgba(74, 124, 42, 0.1));
+            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
             border-bottom: 2px solid var(--mosaic-border);
             border-radius: 20px 20px 0 0;
             padding: 1.5rem;
@@ -606,7 +613,7 @@
     <aside class="nova-sidebar" id="novaSidebar">
         <div class="nova-sidebar-header">
             <a href="{{ route('dashboard') }}" class="logo">
-                <img src="https://conurbaniaparque.com/wp-content/uploads/cropped-Logo-Conurbania.png" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <span style="display: none;">Conurbania</span>
             </a>
         </div>

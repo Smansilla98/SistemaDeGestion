@@ -5,7 +5,7 @@
 @push('styles')
 <style>
     .mosaic-dashboard {
-        background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 50%, #6b9f3d 100%);
+        background: linear-gradient(135deg, #1e8081 0%, #22565e 50%, #262c3b 100%);
         min-height: 100vh;
         padding: 2rem 0;
     }
@@ -37,23 +37,23 @@
     }
 
     .mosaic-card-primary {
-        --card-gradient-start: #2d5016;
-        --card-gradient-end: #4a7c2a;
+        --card-gradient-start: #1e8081;
+        --card-gradient-end: #22565e;
     }
 
     .mosaic-card-success {
-        --card-gradient-start: #2d5016;
-        --card-gradient-end: #4a7c2a;
+        --card-gradient-start: #1e8081;
+        --card-gradient-end: #22565e;
     }
 
     .mosaic-card-warning {
-        --card-gradient-start: #d4a574;
-        --card-gradient-end: #8b6f47;
+        --card-gradient-start: #7b7d84;
+        --card-gradient-end: #22565e;
     }
 
     .mosaic-card-info {
-        --card-gradient-start: #4a7c2a;
-        --card-gradient-end: #6b9f3d;
+        --card-gradient-start: #1e8081;
+        --card-gradient-end: #22565e;
     }
 
     .mosaic-card-danger {
@@ -147,7 +147,7 @@
 
     .mosaic-section-title i {
         font-size: 1.5rem;
-        background: linear-gradient(135deg, #2d5016, #4a7c2a);
+        background: linear-gradient(135deg, #1e8081, #22565e);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -207,7 +207,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #2d5016, #4a7c2a);
+        background: linear-gradient(135deg, #1e8081, #22565e);
         color: white;
         display: flex;
         align-items: center;
@@ -374,7 +374,7 @@
                             <i class="bi bi-receipt"></i>
                             <span>Pedidos Recientes</span>
                         </div>
-                        <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #2d5016, #4a7c2a); color: white; border: none; border-radius: 10px;">
+                        <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white; border: none; border-radius: 10px;">
                             Ver todos
                         </a>
                     </div>
@@ -395,7 +395,7 @@
                                     @foreach($recentOrders as $order)
                                     <tr>
                                         <td>
-                                            <a href="{{ route('orders.show', $order) }}" style="color: #2d5016; font-weight: 600; text-decoration: none;">
+                                            <a href="{{ route('orders.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
                                                 {{ $order->number }}
                                             </a>
                                         </td>
@@ -439,7 +439,7 @@
                                 <div class="mosaic-list-content">
                                     <div class="mosaic-list-title">{{ $product->name }}</div>
                                 </div>
-                                <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #2d5016, #4a7c2a); color: white;">
+                                <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
                                     {{ $product->total_quantity }}
                                 </span>
                             </div>

@@ -155,7 +155,7 @@
 </div>
 @endcan
 
-@can('update', App\Models\Table::class)
+@if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
 <!-- Modal Cambiar Estado de Mesa -->
 <div class="modal fade" id="changeStatusModal" tabindex="-1">
     <div class="modal-dialog">
@@ -192,7 +192,7 @@
         </div>
     </div>
 </div>
-@endcan
+@endif
 
 <script>
 function openChangeStatusModal(tableId, currentStatus, capacity) {
