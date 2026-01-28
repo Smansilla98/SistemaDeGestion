@@ -54,7 +54,7 @@ class OrderService
             if ($product->has_stock) {
                 $currentStock = $product->getCurrentStock($order->restaurant_id);
                 if ($currentStock < $itemData['quantity']) {
-                    throw new \Exception("Stock insuficiente. Disponible: {$currentStock}");
+                    throw new \Exception("Stock insuficiente para '{$product->name}'. Disponible: {$currentStock}, Solicitado: {$itemData['quantity']}");
                 }
             }
 

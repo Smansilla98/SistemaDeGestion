@@ -56,10 +56,10 @@
                         <p class="text-muted mb-2">
                             <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
                         </p>
-                        @if($table->current_order_id && $table->currentOrder)
+                        @if($table->status === 'OCUPADA' || $table->status === 'LIBRE')
                         <p class="mb-2">
-                            <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-outline-primary">
-                                Ver Pedido
+                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-receipt"></i> Ver Pedidos
                             </a>
                         </p>
                         @endif
@@ -83,11 +83,9 @@
                                 <i class="bi bi-plus-circle"></i> Nuevo Pedido
                             </a>
                             @endif
-                            @if($table->current_order_id && $table->currentOrder)
-                            <a href="{{ route('orders.show', $table->currentOrder) }}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-eye"></i> Ver Pedido
+                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-receipt"></i> Ver Pedidos
                             </a>
-                            @endif
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline">
                                 @csrf
