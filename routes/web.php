@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/layout/{sectorId?}', [TableController::class, 'layout'])->name('layout');
         Route::get('/{table}/edit', [TableController::class, 'edit'])->name('edit');
         Route::get('/{table}/reserve', [\App\Http\Controllers\TableReservationController::class, 'create'])->name('reserve');
+        Route::get('/{table}/orders', [TableController::class, 'tableOrders'])->name('orders');
         Route::get('/{table}/close-summary', [TableController::class, 'closeSummary'])->name('close-summary');
         Route::get('/{table}/consolidated-receipt', [TableController::class, 'consolidatedReceipt'])->name('consolidated-receipt');
         Route::post('/', [TableController::class, 'store'])->name('store');

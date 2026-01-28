@@ -112,15 +112,32 @@ class OrderController extends Controller
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
         $validated['user_id'] = auth()->id();
 
-        $order = $this->orderService->createOrder($validated);
+        try {
+            $order = $this->orderService->createOrder($validated);
 
-        // Agregar items al pedido
-        foreach ($validated['items'] as $itemData) {
-            $this->orderService->addItem($order, $itemData);
+            // Agregar items al pedido
+            foreach ($validated['items'] as $itemData) {
+                try {
+                    $this->orderService->addItem($order, $itemData);
+                } catch (\Exception $e) {
+                    // Si es un error de stock, retornar con el mensaje
+                    if (str_contains($e->getMessage(), 'Stock insuficiente')) {
+                        return back()
+                            ->with('error', $e->getMessage())
+                            ->withInput();
+                    }
+                    // Re-lanzar otras excepciones
+                    throw $e;
+                }
+            }
+
+            return redirect()->route('orders.show', $order)
+                ->with('success', 'Pedido creado exitosamente');
+        } catch (\Exception $e) {
+            return back()
+                ->with('error', $e->getMessage())
+                ->withInput();
         }
-
-        return redirect()->route('orders.show', $order)
-            ->with('success', 'Pedido creado exitosamente');
     }
 
     /**
@@ -150,9 +167,20 @@ class OrderController extends Controller
             'modifiers.*' => 'exists:product_modifiers,id',
         ]);
 
-        $this->orderService->addItem($order, $validated);
+        try {
+            $this->orderService->addItem($order, $validated);
 
-        return back()->with('success', 'Item agregado al pedido');
+            return back()->with('success', 'Item agregado al pedido');
+        } catch (\Exception $e) {
+            // Si es un error de stock, retornar con el mensaje
+            if (str_contains($e->getMessage(), 'Stock insuficiente')) {
+                return back()
+                    ->with('error', $e->getMessage())
+                    ->withInput();
+            }
+            // Re-lanzar otras excepciones
+            throw $e;
+        }
     }
 
     /**

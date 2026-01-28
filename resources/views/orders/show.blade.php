@@ -175,5 +175,41 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Mostrar alerta de error si hay un error de stock
+@if(session('error'))
+    @if(str_contains(session('error'), 'Stock insuficiente'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Stock Insuficiente',
+            text: '{{ session('error') }}',
+            confirmButtonColor: '#c94a2d',
+            confirmButtonText: 'Entendido'
+        });
+    @else
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '{{ session('error') }}',
+            confirmButtonColor: '#c94a2d',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
+@endif
+
+// Mostrar alerta de éxito
+@if(session('success'))
+    Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: '{{ session('success') }}',
+        confirmButtonColor: '#1e8081',
+        confirmButtonText: 'Entendido'
+    });
+@endif
+</script>
+@endpush
 @endsection
 

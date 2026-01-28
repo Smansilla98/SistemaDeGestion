@@ -320,8 +320,9 @@ class TableController extends Controller
         Gate::authorize('view', $table);
 
         // Obtener los pedidos cerrados más recientes (de la sesión actual)
-        $closedOrders = session('orders_closed', collect());
-        $consolidatedItems = session('consolidated_items', collect());
+        // Asegurarse de que siempre sea una colección
+        $closedOrders = collect(session('orders_closed', []));
+        $consolidatedItems = collect(session('consolidated_items', []));
         $totalAmount = session('total_amount', 0);
         $totalSubtotal = session('total_subtotal', 0);
         $totalDiscount = session('total_discount', 0);
@@ -375,6 +376,24 @@ class TableController extends Controller
             'totalSubtotal',
             'totalDiscount'
         ));
+    }
+
+    /**
+     * Mostrar todos los pedidos de una mesa
+     */
+    public function tableOrders(Table $table)
+    {
+        Gate::authorize('view', $table);
+
+        // Cargar la relación del sector
+        $table->load('sector');
+
+        $orders = Order::where('table_id', $table->id)
+            ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('tables.orders', compact('table', 'orders'));
     }
 }
 
