@@ -87,9 +87,9 @@
                                 <i class="bi bi-receipt"></i> Ver Pedidos
                             </a>
                             @can('update', $table)
-                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline">
+                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline" id="closeTableForm{{ $table->id }}">
                                 @csrf
-                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Está seguro de cerrar esta mesa? Se cerrarán todos los pedidos activos y se generará el recibo consolidado.')">
+                                <button type="button" class="btn btn-sm btn-success" onclick="confirmCloseTable({{ $table->id }})">
                                     <i class="bi bi-check-circle"></i> Cerrar Mesa
                                 </button>
                             </form>
@@ -308,7 +308,30 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
 
 function editTable(tableId) {
     // TODO: Implementar edición de mesa
-    alert('Editar mesa ' + tableId);
+    Swal.fire({
+        icon: 'info',
+        title: 'Editar Mesa',
+        text: 'Funcionalidad de edición de mesa ' + tableId + ' en desarrollo',
+        confirmButtonColor: '#1e8081',
+        confirmButtonText: 'Entendido'
+    });
+}
+
+function confirmCloseTable(tableId) {
+    Swal.fire({
+        icon: 'question',
+        title: '¿Cerrar Mesa?',
+        text: 'Se cerrarán todos los pedidos activos y se generará el recibo consolidado.',
+        showCancelButton: true,
+        confirmButtonColor: '#1e8081',
+        cancelButtonColor: '#7b7d84',
+        confirmButtonText: 'Sí, cerrar mesa',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('closeTableForm' + tableId).submit();
+        }
+    });
 }
 </script>
 @endsection

@@ -249,16 +249,21 @@ class TableController extends Controller
                 $totalDiscount += $order->discount;
                 
                 // Agrupar items por producto para consolidar
+                // Se agrupan solo por product_id, sumando cantidades y subtotales
                 foreach ($order->items as $item) {
+                    // Buscar si ya existe un item con el mismo product_id
                     $existingItem = $allItems->first(function ($i) use ($item) {
-                        return $i['product_id'] === $item->product_id && 
-                               $i['unit_price'] === $item->unit_price;
+                        return $i['product_id'] === $item->product_id;
                     });
                     
                     if ($existingItem) {
+                        // Si existe, sumar cantidad y subtotal
                         $existingItem['quantity'] += $item->quantity;
                         $existingItem['subtotal'] += $item->subtotal;
+                        // Recalcular precio unitario promedio
+                        $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
                     } else {
+                        // Si no existe, agregar nuevo item
                         $allItems->push([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
@@ -338,18 +343,23 @@ class TableController extends Controller
                 ->get();
 
             // Consolidar items
+            // Se agrupan solo por product_id, sumando cantidades y subtotales
             $consolidatedItems = collect();
             foreach ($closedOrders as $order) {
                 foreach ($order->items as $item) {
+                    // Buscar si ya existe un item con el mismo product_id
                     $existingItem = $consolidatedItems->first(function ($i) use ($item) {
-                        return $i['product_id'] === $item->product_id && 
-                               $i['unit_price'] === $item->unit_price;
+                        return $i['product_id'] === $item->product_id;
                     });
                     
                     if ($existingItem) {
+                        // Si existe, sumar cantidad y subtotal
                         $existingItem['quantity'] += $item->quantity;
                         $existingItem['subtotal'] += $item->subtotal;
+                        // Recalcular precio unitario promedio
+                        $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
                     } else {
+                        // Si no existe, agregar nuevo item
                         $consolidatedItems->push([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
