@@ -521,22 +521,7 @@ class TableController extends Controller
         return view('tables.orders', compact('table', 'orders'));
     }
 
-    /**
-     * Mostrar todos los pedidos de una mesa
-     */
-    public function tableOrders(Table $table)
-    {
-        Gate::authorize('view', $table);
-
-        // Cargar la relación del sector
-        $table->load('sector');
-
-        $orders = Order::where('table_id', $table->id)
-            ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('tables.orders', compact('table', 'orders'));
-    }
+    // (el método "Mostrar todos los pedidos de una mesa" fue reemplazado por
+    //  "Mostrar pedidos de la sesión actual de una mesa (no histórico)")
 }
 
