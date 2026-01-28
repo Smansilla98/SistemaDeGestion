@@ -53,9 +53,9 @@
                                                 <br><small class="text-muted">{{ $item->observations }}</small>
                                                 @endif
                                             </div>
-                                            <form action="{{ route('kitchen.update-item-status', $item) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('kitchen.update-item-status', $item) }}" method="POST" class="d-inline js-item-status-form" data-item-name="{{ $item->product->name }}" data-table-name="{{ $order->table->number }}">
                                                 @csrf
-                                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                                <select name="status" class="form-select form-select-sm js-item-status-select" style="width: auto;">
                                                     <option value="PENDIENTE" {{ $item->status === 'PENDIENTE' ? 'selected' : '' }}>Pendiente</option>
                                                     <option value="EN_PREPARACION" {{ $item->status === 'EN_PREPARACION' ? 'selected' : '' }}>Preparando</option>
                                                     <option value="LISTO" {{ $item->status === 'LISTO' ? 'selected' : '' }}>Listo</option>
@@ -81,11 +81,76 @@
 </div>
 @endif
 
+@push('scripts')
 <script>
-// Auto-refresh cada 30 segundos
+// Auto-refresh cada 30 segundos (solo si no estamos interactuando)
+let kitchenInteracting = false;
 setTimeout(function() {
-    location.reload();
+    if (!kitchenInteracting) {
+        location.reload();
+    }
 }, 30000);
+
+document.querySelectorAll('.js-item-status-select').forEach((select) => {
+    select.addEventListener('focus', () => kitchenInteracting = true);
+    select.addEventListener('blur', () => kitchenInteracting = false);
+});
+
+document.querySelectorAll('.js-item-status-form').forEach((form) => {
+    form.addEventListener('change', async (e) => {
+        const select = form.querySelector('.js-item-status-select');
+        const newStatus = select.value;
+
+        const itemName = form.dataset.itemName || 'Item';
+        const tableName = form.dataset.tableName || 'Mesa';
+
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ status: newStatus }).toString(),
+            });
+
+            if (!res.ok) {
+                throw new Error('No se pudo actualizar el estado');
+            }
+
+            if (newStatus === 'ENTREGADO') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `✅ Pedido “${itemName}” entregado en ${tableName}`,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true,
+                });
+            } else {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Estado actualizado: ${itemName} → ${newStatus}`,
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true,
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo actualizar el estado del item.',
+                confirmButtonColor: '#c94a2d',
+            });
+        }
+    });
+});
 </script>
+@endpush
 @endsection
 

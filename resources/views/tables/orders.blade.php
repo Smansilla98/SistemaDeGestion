@@ -24,7 +24,13 @@
                 <h5 class="mb-0">Todos los Pedidos</h5>
             </div>
             <div class="card-body">
-                @if($orders->count() > 0)
+                @if($table->current_session_id === null)
+                <div class="text-center py-5">
+                    <i class="bi bi-info-circle" style="font-size: 3rem; color: var(--conurbania-medium);"></i>
+                    <p class="text-muted mt-3 mb-0">La mesa no tiene una sesión activa.</p>
+                    <p class="text-muted">Solo se muestran pedidos de la ocupación actual.</p>
+                </div>
+                @elseif($orders->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -90,7 +96,7 @@
                 @else
                 <div class="text-center py-5">
                     <i class="bi bi-inbox" style="font-size: 3rem; color: var(--conurbania-medium);"></i>
-                    <p class="text-muted mt-3">Esta mesa no tiene pedidos registrados</p>
+                    <p class="text-muted mt-3">No hay pedidos en la sesión actual de esta mesa</p>
                 </div>
                 @endif
             </div>

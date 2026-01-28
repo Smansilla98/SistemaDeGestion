@@ -26,6 +26,7 @@ class Table extends Model
         'position_y',
         'status',
         'current_order_id',
+        'current_session_id',
     ];
 
     protected $casts = [
@@ -59,11 +60,27 @@ class Table extends Model
     }
 
     /**
+     * Relación: la sesión actual (si existe)
+     */
+    public function currentSession(): BelongsTo
+    {
+        return $this->belongsTo(TableSession::class, 'current_session_id');
+    }
+
+    /**
      * Relación: Una mesa tiene muchos pedidos
      */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Relación: Una mesa tiene muchas sesiones
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(TableSession::class);
     }
 
     /**
