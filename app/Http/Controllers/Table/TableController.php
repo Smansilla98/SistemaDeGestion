@@ -12,6 +12,7 @@ use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TableController extends Controller
 {
@@ -240,6 +241,10 @@ class TableController extends Controller
             'tables.*.id' => 'required|exists:tables,id',
             'tables.*.position_x' => 'required|integer|min:0',
             'tables.*.position_y' => 'required|integer|min:0',
+            'fixtures' => 'nullable|array',
+            'fixtures.*.id' => 'required_with:fixtures|string|max:50',
+            'fixtures.*.position_x' => 'required_with:fixtures|integer|min:0',
+            'fixtures.*.position_y' => 'required_with:fixtures|integer|min:0',
         ]);
 
         foreach ($validated['tables'] as $tableData) {
@@ -250,6 +255,24 @@ class TableController extends Controller
                     'position_x' => $tableData['position_x'],
                     'position_y' => $tableData['position_y'],
                 ]);
+            }
+        }
+
+        // Guardar elementos fijos del sector (ej: escenario) en layout_config
+        if (!empty($validated['fixtures'])) {
+            $sector = Sector::find($validated['sector_id']);
+            if ($sector) {
+                $layoutConfig = is_array($sector->layout_config) ? $sector->layout_config : [];
+                $layoutConfig['fixtures'] = $layoutConfig['fixtures'] ?? [];
+
+                foreach ($validated['fixtures'] as $fixture) {
+                    $layoutConfig['fixtures'][$fixture['id']] = [
+                        'x' => (int) $fixture['position_x'],
+                        'y' => (int) $fixture['position_y'],
+                    ];
+                }
+
+                $sector->update(['layout_config' => $layoutConfig]);
             }
         }
 
@@ -281,12 +304,25 @@ class TableController extends Controller
         } else {
             // Si pasa a OCUPADA y no hay sesión activa, crear una
             if ($validated['status'] === 'OCUPADA' && !$table->current_session_id) {
-                $session = TableSession::create([
-                    'restaurant_id' => $table->restaurant_id,
-                    'table_id' => $table->id,
-                    'started_at' => now(),
-                ]);
-                $table->current_session_id = $session->id;
+                // Fallback defensivo: si en prod aún no corrieron migraciones, evitar fatal
+                if (!Schema::hasTable('table_sessions')) {
+                    return redirect()->route('tables.index')
+                        ->with('error', 'Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+                }
+                
+                try {
+                    $session = TableSession::create([
+                        'restaurant_id' => $table->restaurant_id,
+                        'table_id' => $table->id,
+                        'started_at' => now(),
+                    ]);
+                    $table->current_session_id = $session->id;
+                } catch (\Exception $e) {
+                    // Si falla la creación de sesión, registrar error pero permitir continuar
+                    \Log::error('Error al crear sesión de mesa: ' . $e->getMessage());
+                    return redirect()->route('tables.index')
+                        ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: ' . $e->getMessage());
+                }
             }
             $table->update([
                 'status' => $validated['status'],

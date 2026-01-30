@@ -36,7 +36,40 @@
         <h5 class="mb-0">Sector: {{ $selectedSector->name }}</h5>
     </div>
     <div class="card-body">
+        @php
+            $sectorNameLower = strtolower($selectedSector->name ?? '');
+            $isSalon = str_contains($sectorNameLower, 'salon') || str_contains($sectorNameLower, 'salón');
+            $fixtures = is_array($selectedSector->layout_config) ? ($selectedSector->layout_config['fixtures'] ?? []) : [];
+            $stageX = $fixtures['stage']['x'] ?? 380;
+            $stageY = $fixtures['stage']['y'] ?? 30;
+        @endphp
         <div id="layoutCanvas" style="position: relative; width: 100%; min-height: 600px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; overflow: hidden;">
+            @if($isSalon)
+                <!-- Barra fija (4 lugares) - lado izquierdo -->
+                <div class="bar-area">
+                    <div class="bar-title">
+                        <i class="bi bi-cup-straw"></i> Barra
+                        <small class="text-muted d-block">4 lugares</small>
+                    </div>
+                    <div class="bar-seats">
+                        @for($i = 1; $i <= 4; $i++)
+                            <div class="bar-seat" title="Lugar {{ $i }}">{{ $i }}</div>
+                        @endfor
+                    </div>
+                </div>
+
+                <!-- Escenario (draggable) -->
+                <div class="fixture-item fixture-stage"
+                     data-fixture-id="stage"
+                     data-initial-x="{{ $stageX }}"
+                     data-initial-y="{{ $stageY }}"
+                     style="left: {{ $stageX }}px; top: {{ $stageY }}px;">
+                    <div class="fixture-title">
+                        <i class="bi bi-music-note-beamed"></i> Escenario
+                    </div>
+                    <div class="fixture-subtitle">Arrastrable</div>
+                </div>
+            @endif
             @foreach($tables as $table)
             <div class="table-item" 
                  data-table-id="{{ $table->id }}"
@@ -87,6 +120,86 @@
     opacity: 0.7;
     z-index: 1000 !important;
 }
+
+/* Barra fija (salón) */
+.bar-area {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    bottom: 12px;
+    width: 140px;
+    background: #ffffff;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+.bar-title {
+    font-weight: 800;
+    color: #262c3b;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+.bar-seats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: center;
+    flex: 1;
+}
+.bar-seat {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e8081, #22565e);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(30, 128, 129, 0.25);
+    user-select: none;
+}
+
+/* Fixture: Escenario */
+.fixture-item {
+    position: absolute;
+    width: 220px;
+    height: 90px;
+    background: linear-gradient(135deg, rgba(38, 44, 59, 0.95), rgba(34, 86, 94, 0.95));
+    border: 2px solid rgba(0,0,0,0.25);
+    border-radius: 14px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: move;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    z-index: 6;
+    user-select: none;
+}
+.fixture-item:hover {
+    transform: scale(1.02);
+}
+.fixture-item.dragging {
+    opacity: 0.85;
+    z-index: 1000 !important;
+}
+.fixture-title {
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+.fixture-subtitle {
+    font-size: 12px;
+    opacity: 0.85;
+}
 </style>
 @endpush
 
@@ -101,8 +214,8 @@ function toggleEditMode() {
     const text = document.getElementById('editModeText');
     text.textContent = editMode ? 'Modo Visualización' : 'Modo Edición';
     
-    const tables = document.querySelectorAll('.table-item');
-    tables.forEach(table => {
+    const items = document.querySelectorAll('.table-item, .fixture-item');
+    items.forEach(table => {
         if (editMode) {
             table.style.cursor = 'move';
         } else {
@@ -145,10 +258,40 @@ function initDragAndDrop() {
         ],
         inertia: false
     });
+
+    // Drag para elementos fijos (escenario)
+    interact('.fixture-item').draggable({
+        listeners: {
+            start(event) {
+                event.target.classList.add('dragging');
+                draggedElement = event.target;
+            },
+            move(event) {
+                const target = event.target;
+                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                target.style.transform = `translate(${x}px, ${y}px)`;
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
+            },
+            end(event) {
+                event.target.classList.remove('dragging');
+            }
+        },
+        modifiers: [
+            interact.modifiers.restrictRect({
+                restriction: 'parent',
+                endOnly: true
+            })
+        ],
+        inertia: false
+    });
 }
 
 function destroyDragAndDrop() {
     interact('.table-item').unset();
+    interact('.fixture-item').unset();
 }
 
 function loadSector(sectorId) {
@@ -172,6 +315,7 @@ function saveLayout() {
     }
     
     const tables = [];
+    const fixtures = [];
     const canvas = document.getElementById('layoutCanvas');
     
     document.querySelectorAll('.table-item').forEach(item => {
@@ -195,6 +339,23 @@ function saveLayout() {
             position_y: positionY
         });
     });
+
+    // Guardar fixtures (ej: escenario)
+    document.querySelectorAll('.fixture-item').forEach(item => {
+        const fixtureId = item.getAttribute('data-fixture-id');
+        const initialLeft = parseFloat(item.style.left) || parseFloat(item.getAttribute('data-initial-x')) || 0;
+        const initialTop = parseFloat(item.style.top) || parseFloat(item.getAttribute('data-initial-y')) || 0;
+        const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
+        const offsetY = parseFloat(item.getAttribute('data-y')) || 0;
+        const positionX = Math.max(0, Math.round(initialLeft + offsetX));
+        const positionY = Math.max(0, Math.round(initialTop + offsetY));
+
+        fixtures.push({
+            id: fixtureId,
+            position_x: positionX,
+            position_y: positionY
+        });
+    });
     
     fetch('{{ route('tables.update-layout') }}', {
         method: 'POST',
@@ -205,7 +366,8 @@ function saveLayout() {
         },
         body: JSON.stringify({
             sector_id: {{ $selectedSector->id ?? 'null' }},
-            tables: tables
+            tables: tables,
+            fixtures: fixtures
         })
     })
     .then(response => response.json())
@@ -231,6 +393,24 @@ function saveLayout() {
                 const newLeft = currentLeft + offsetX;
                 const newTop = currentTop + offsetY;
                 
+                item.style.left = newLeft + 'px';
+                item.style.top = newTop + 'px';
+                item.style.transform = '';
+                item.setAttribute('data-initial-x', newLeft);
+                item.setAttribute('data-initial-y', newTop);
+                item.removeAttribute('data-x');
+                item.removeAttribute('data-y');
+            });
+
+            // Reset fixtures
+            document.querySelectorAll('.fixture-item').forEach(item => {
+                const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
+                const offsetY = parseFloat(item.getAttribute('data-y')) || 0;
+                const currentLeft = parseFloat(item.style.left) || 0;
+                const currentTop = parseFloat(item.style.top) || 0;
+                const newLeft = currentLeft + offsetX;
+                const newTop = currentTop + offsetY;
+
                 item.style.left = newLeft + 'px';
                 item.style.top = newTop + 'px';
                 item.style.transform = '';
@@ -269,8 +449,9 @@ function saveLayout() {
 // Inicializar drag and drop si hay mesas
 document.addEventListener('DOMContentLoaded', function() {
     const tables = document.querySelectorAll('.table-item');
+    const fixtures = document.querySelectorAll('.fixture-item');
     
-    if (tables.length > 0) {
+    if (tables.length > 0 || fixtures.length > 0) {
         // Activar modo edición por defecto si hay mesas
         editMode = true;
         document.getElementById('editModeText').textContent = 'Modo Visualización';

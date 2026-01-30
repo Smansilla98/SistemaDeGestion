@@ -9,6 +9,7 @@ use App\Models\Table;
 use App\Models\TableSession;
 use App\Enums\OrderStatus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class OrderService
@@ -26,12 +27,22 @@ class OrderService
 
             // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
             if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
-                $session = TableSession::create([
-                    'restaurant_id' => $table->restaurant_id,
-                    'table_id' => $table->id,
-                    'started_at' => now(),
-                ]);
-                $table->update(['current_session_id' => $session->id]);
+                // Verificar que la tabla existe antes de crear sesión
+                if (!Schema::hasTable('table_sessions')) {
+                    throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+                }
+                
+                try {
+                    $session = TableSession::create([
+                        'restaurant_id' => $table->restaurant_id,
+                        'table_id' => $table->id,
+                        'started_at' => now(),
+                    ]);
+                    $table->update(['current_session_id' => $session->id]);
+                } catch (\Exception $e) {
+                    \Log::error('Error al crear sesión de mesa en OrderService: ' . $e->getMessage());
+                    throw new \Exception('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
+                }
             }
 
             // Crear el pedido (asociado a la sesión actual si existe)
