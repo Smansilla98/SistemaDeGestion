@@ -43,6 +43,13 @@ done
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
 
+# Migraciones (necesarias para table_sessions y cambios de esquema)
+echo "=== Ejecutando migraciones ==="
+php artisan migrate --force --no-interaction || {
+    echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
+    echo "   El sistema puede funcionar con funcionalidad limitada."
+}
+
 # Regenerar autoloader de Composer (por si hay cambios en clases)
 composer dump-autoload --no-interaction --optimize || true
 
