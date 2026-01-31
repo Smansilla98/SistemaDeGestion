@@ -724,34 +724,89 @@
 
     <!-- Main Content -->
     <main class="nova-main">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-circle"></i> {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle"></i> <strong>Error:</strong>
-                <ul class="mb-0">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         @yield('content')
     </main>
+
+    <!-- Scripts para feedback visual mejorado -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar toasts para mensajes flash
+            @if(session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: '{{ session('success') }}',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#e6ffed',
+                    color: '#1e8081',
+                    iconColor: '#1e8081',
+                });
+            @endif
+
+            @if(session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: '{{ session('error') }}',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true,
+                    background: '#ffe6e6',
+                    color: '#c94a2d',
+                    iconColor: '#c94a2d',
+                });
+            @endif
+
+            @if(session('warning'))
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Advertencia',
+                    text: '{{ session('warning') }}',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#fff3cd',
+                    color: '#856404',
+                    iconColor: '#ffc107',
+                });
+            @endif
+
+            @if(session('info'))
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Información',
+                    text: '{{ session('info') }}',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#d1ecf1',
+                    color: '#0c5460',
+                    iconColor: '#17a2b8',
+                });
+            @endif
+
+            @if($errors->any())
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Validación',
+                    html: '<ul style="text-align: left; margin: 1rem 0;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+                    confirmButtonColor: '#c94a2d',
+                    confirmButtonText: 'Entendido',
+                    width: '500px',
+                });
+            @endif
+        });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ secure_asset('js/drag-drop.js') }}"></script>

@@ -63,6 +63,15 @@ class KitchenController extends Controller
             $order->update(['status' => 'EN_PREPARACION']);
         }
 
+        if (request()->wantsJson() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'item' => $item->fresh(['product']),
+                'order' => $order->fresh(),
+            ]);
+        }
+
         return back()->with('success', 'Estado actualizado');
     }
 

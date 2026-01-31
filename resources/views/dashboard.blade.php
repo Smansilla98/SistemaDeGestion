@@ -454,6 +454,71 @@
                 </div>
             </div>
         </div>
+
+        <!-- Alertas de Stock -->
+        @if($outOfStockProducts->count() > 0 || $lowStockProducts->count() > 0)
+        <div class="row g-4 mt-4">
+            @if($outOfStockProducts->count() > 0)
+            <div class="col-lg-6">
+                <div class="mosaic-section-card" style="border-left: 6px solid #dc3545;">
+                    <div class="mosaic-section-header">
+                        <div class="mosaic-section-title">
+                            <i class="bi bi-exclamation-triangle-fill" style="color: #dc3545;"></i>
+                            <span style="color: #dc3545;">Productos Sin Stock</span>
+                        </div>
+                        <span class="badge bg-danger fs-6">{{ $outOfStockProducts->count() }}</span>
+                    </div>
+                    <div>
+                        @foreach($outOfStockProducts as $product)
+                        <div class="mosaic-list-item" style="border-left: 3px solid #dc3545;">
+                            <div class="mosaic-list-content">
+                                <div class="mosaic-list-title">{{ $product->name }}</div>
+                                <small class="text-muted">{{ $product->category->name ?? 'Sin categoría' }}</small>
+                            </div>
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle-fill"></i> Sin Stock
+                            </span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($lowStockProducts->count() > 0)
+            <div class="col-lg-6">
+                <div class="mosaic-section-card" style="border-left: 6px solid #ffc107;">
+                    <div class="mosaic-section-header">
+                        <div class="mosaic-section-title">
+                            <i class="bi bi-exclamation-circle-fill" style="color: #ffc107;"></i>
+                            <span style="color: #856404;">Productos con Stock Bajo</span>
+                        </div>
+                        <span class="badge bg-warning text-dark fs-6">{{ $lowStockProducts->count() }}</span>
+                    </div>
+                    <div>
+                        @foreach($lowStockProducts as $product)
+                        @php
+                            $currentStock = $product->getCurrentStock(auth()->user()->restaurant_id);
+                        @endphp
+                        <div class="mosaic-list-item" style="border-left: 3px solid #ffc107;">
+                            <div class="mosaic-list-content">
+                                <div class="mosaic-list-title">{{ $product->name }}</div>
+                                <small class="text-muted">{{ $product->category->name ?? 'Sin categoría' }}</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark">
+                                    Stock: {{ $currentStock }}
+                                </span>
+                                <small class="text-muted">(Mín: {{ $product->stock_minimum }})</small>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+        @endif
     </div>
 </div>
 @endsection
