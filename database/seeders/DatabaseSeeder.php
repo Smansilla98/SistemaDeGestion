@@ -145,21 +145,7 @@ class DatabaseSeeder extends Seeder
         }
 
 
-        // Crear mesas
-        $sectorPrincipal = Sector::where('name', 'Salón principal')->first();
-        for ($i = 1; $i <= 10; $i++) {
-            Table::create([
-                'restaurant_id' => $restaurant->id,
-                'sector_id' => $sectorPrincipal->id,
-                'number' => "Mesa {$i}",
-                'capacity' => rand(2, 8),
-                'status' => 'LIBRE',
-                'position_x' => rand(50, 800),
-                'position_y' => rand(50, 600),
-            ]);
-        }
-        
-        // Crear 4 lugares fijos en la Barra
+        // Crear 4 lugares fijos en la Barra (sector separado)
         $sectorBarra = Sector::where('name', 'Barra')->first();
         if ($sectorBarra) {
             for ($i = 1; $i <= 4; $i++) {
@@ -174,6 +160,9 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+
+        // Los layouts predeterminados del salón se crearán con PredeterminedLayoutsSeeder
+        // para tener una distribución más realista
 
         // Crear caja registradora
         CashRegister::create([

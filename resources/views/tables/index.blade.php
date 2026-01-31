@@ -394,6 +394,7 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
             guestsInput.value = 1;
+            // Inicialmente oculto, se mostrará si selecciona OCUPADA
             waiterContainer.style.display = 'none';
             waiterSelect.required = false;
             waiterSelect.value = '';
@@ -417,6 +418,7 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
             guestsInput.value = 1;
+            // Inicialmente oculto, se mostrará si selecciona OCUPADA
             waiterContainer.style.display = 'none';
             waiterSelect.required = false;
             waiterSelect.value = '';
@@ -432,27 +434,43 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
             guestsInput.value = 1;
+            // Inicialmente oculto, se mostrará si selecciona OCUPADA
+            waiterContainer.style.display = 'none';
+            waiterSelect.required = false;
+            waiterSelect.value = '';
         }
         
         // Actualizar cuando cambie el estado seleccionado
         newStatusSelectRef.addEventListener('change', function() {
-            if (this.value === 'LIBRE') {
+            updateFieldsForStatus(this.value);
+        });
+        
+        // Configurar opciones iniciales
+        updateStatusOptions();
+        
+        // Función para mostrar/ocultar campos según el estado
+        function updateFieldsForStatus(status) {
+            if (status === 'OCUPADA') {
+                guestsContainer.style.display = 'block';
+                guestsInput.required = true;
+                if (!guestsInput.value || guestsInput.value === '0') {
+                    guestsInput.value = 1;
+                }
+                waiterContainer.style.display = 'block';
+                waiterSelect.required = true;
+            } else if (status === 'LIBRE') {
                 guestsContainer.style.display = 'none';
                 guestsInput.required = false;
                 guestsInput.value = 0;
                 waiterContainer.style.display = 'none';
                 waiterSelect.required = false;
                 waiterSelect.value = '';
-            } else if (this.value === 'OCUPADA') {
+            } else if (status === 'RESERVADA') {
                 guestsContainer.style.display = 'block';
                 guestsInput.required = true;
-                guestsInput.value = 1;
-                waiterContainer.style.display = 'block';
-                waiterSelect.required = true;
-            } else if (this.value === 'RESERVADA') {
-                guestsContainer.style.display = 'block';
-                guestsInput.required = true;
-                guestsInput.value = 1;
+                if (!guestsInput.value || guestsInput.value === '0') {
+                    guestsInput.value = 1;
+                }
                 waiterContainer.style.display = 'none';
                 waiterSelect.required = false;
                 waiterSelect.value = '';
@@ -460,13 +478,27 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
                 guestsContainer.style.display = 'none';
                 guestsInput.required = false;
                 guestsInput.value = 0;
+                waiterContainer.style.display = 'none';
+                waiterSelect.required = false;
+                waiterSelect.value = '';
             }
+        }
+        
+        // Verificar el estado inicial después de configurar las opciones
+        setTimeout(() => {
+            const initialValue = newStatusSelectRef.value;
+            updateFieldsForStatus(initialValue);
+        }, 50);
+        
+        // También verificar cuando el modal se muestra completamente
+        const modalElement = document.getElementById('changeStatusModal');
+        modalElement.addEventListener('shown.bs.modal', function() {
+            const currentValue = newStatusSelectRef.value;
+            updateFieldsForStatus(currentValue);
         });
+        
+        modal.show();
     }
-    
-    updateStatusOptions();
-    modal.show();
-}
 
 function editTable(tableId) {
     // TODO: Implementar edición de mesa

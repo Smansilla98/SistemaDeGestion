@@ -23,6 +23,8 @@ class User extends Authenticatable
     const ROLE_CAJERO = 'CAJERO';
     const ROLE_MOZO = 'MOZO';
     const ROLE_COCINA = 'COCINA';
+    const ROLE_SUPERVISOR = 'SUPERVISOR';
+    const ROLE_ENCARGADO = 'ENCARGADO';
 
     protected $fillable = [
         'restaurant_id',
@@ -109,6 +111,8 @@ class User extends Authenticatable
             self::ROLE_CAJERO,
             self::ROLE_MOZO,
             self::ROLE_COCINA,
+            self::ROLE_SUPERVISOR,
+            self::ROLE_ENCARGADO,
         ];
     }
 
@@ -142,5 +146,40 @@ class User extends Authenticatable
     public function isCajero(): bool
     {
         return $this->role === self::ROLE_CAJERO;
+    }
+
+    /**
+     * Verificar si el usuario es supervisor
+     */
+    public function isSupervisor(): bool
+    {
+        return $this->role === self::ROLE_SUPERVISOR;
+    }
+
+    /**
+     * Verificar si el usuario es encargado
+     */
+    public function isEncargado(): bool
+    {
+        return $this->role === self::ROLE_ENCARGADO;
+    }
+
+    /**
+     * Relación: Un usuario tiene muchas sesiones de mesa como mozo
+     */
+    public function tableSessionsAsWaiter(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TableSession::class, 'waiter_id');
+    }
+
+    /**
+     * Obtener mesas asignadas actualmente (sesiones abiertas)
+     */
+    public function getActiveAssignedTables()
+    {
+        return Table::whereHas('currentSession', function ($query) {
+            $query->where('waiter_id', $this->id)
+                  ->where('status', TableSession::STATUS_OPEN);
+        })->with(['currentSession', 'sector'])->get();
     }
 }

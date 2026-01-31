@@ -651,6 +651,10 @@
             @endif
 
             @if(auth()->user()->role === 'ADMIN')
+            <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i>
+                <span>Usuarios</span>
+            </a>
             <a href="{{ route('products.index') }}" class="nova-nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
                 <i class="bi bi-box-seam"></i>
                 <span>Productos</span>
