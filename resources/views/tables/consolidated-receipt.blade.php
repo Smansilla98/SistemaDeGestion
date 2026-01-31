@@ -216,6 +216,51 @@
         </div>
     </div>
 
+    @if($payments && $payments->count() > 0)
+    <div class="orders-list" style="margin-top: 2rem;">
+        <h5 class="mb-3"><i class="bi bi-credit-card"></i> Métodos de Pago</h5>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Método</th>
+                    <th>Monto</th>
+                    <th>N° Operación</th>
+                    <th>Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($payments as $payment)
+                <tr>
+                    <td>
+                        @if($payment->payment_method === 'EFECTIVO')
+                            <span class="badge bg-success"><i class="bi bi-cash"></i> Efectivo</span>
+                        @elseif($payment->payment_method === 'DEBITO')
+                            <span class="badge bg-primary"><i class="bi bi-credit-card"></i> Débito</span>
+                        @elseif($payment->payment_method === 'CREDITO')
+                            <span class="badge bg-info"><i class="bi bi-credit-card-2-front"></i> Crédito</span>
+                        @elseif($payment->payment_method === 'TRANSFERENCIA')
+                            <span class="badge bg-secondary"><i class="bi bi-bank"></i> Transferencia</span>
+                        @endif
+                    </td>
+                    <td><strong>${{ number_format($payment->amount, 2) }}</strong></td>
+                    <td>{{ $payment->operation_number ?? '-' }}</td>
+                    <td>{{ $payment->notes ?? '-' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th>Total Pagado:</th>
+                    <th colspan="3" class="text-end">${{ number_format($payments->sum('amount'), 2) }}</th>
+                </tr>
+            </tfoot>
+        </table>
+        <p class="text-muted mt-2 mb-0">
+            <small>Procesado por: {{ $payments->first()->user->name ?? 'N/A' }} - {{ $payments->first()->created_at->format('d/m/Y H:i') }}</small>
+        </p>
+    </div>
+    @endif
+
     @if($closedOrders->count() > 0)
     <div class="orders-list">
         <h5 class="mb-3"><i class="bi bi-receipt"></i> Pedidos Incluidos</h5>

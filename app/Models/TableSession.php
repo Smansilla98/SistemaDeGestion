@@ -54,6 +54,11 @@ class TableSession extends Model
         return $this->hasMany(Order::class, 'table_session_id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'table_session_id');
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_OPEN && $this->ended_at === null;

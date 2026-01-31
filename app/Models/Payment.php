@@ -19,11 +19,13 @@ class Payment extends Model
     protected $fillable = [
         'restaurant_id',
         'order_id',
+        'table_session_id',
         'cash_register_session_id',
         'user_id',
         'payment_method',
         'amount',
         'reference',
+        'operation_number',
         'notes',
     ];
 
@@ -61,6 +63,14 @@ class Payment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relación: Un pago pertenece a una sesión de mesa
+     */
+    public function tableSession(): BelongsTo
+    {
+        return $this->belongsTo(TableSession::class);
     }
 
     /**

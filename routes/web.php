@@ -46,10 +46,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/{table}/orders', [TableController::class, 'storeOrder'])->name('orders.store');
         Route::get('/{table}/close-summary', [TableController::class, 'closeSummary'])->name('close-summary');
         Route::get('/{table}/consolidated-receipt', [TableController::class, 'consolidatedReceipt'])->name('consolidated-receipt');
+        Route::get('/{table}/close', [TableController::class, 'showCloseTable'])->name('show-close');
+        Route::post('/{table}/close', [TableController::class, 'closeTable'])->name('close');
+        Route::post('/{table}/process-payment', [TableController::class, 'processPayment'])->name('process-payment');
         Route::post('/', [TableController::class, 'store'])->name('store');
         Route::post('/layout', [TableController::class, 'updateLayout'])->name('update-layout');
         Route::post('/{table}/reserve', [\App\Http\Controllers\TableReservationController::class, 'store'])->name('reserve.store');
-        Route::post('/{table}/close', [TableController::class, 'closeTable'])->name('close');
         Route::put('/{table}/status', [TableController::class, 'updateStatus'])->name('update-status');
         Route::put('/{table}', [TableController::class, 'update'])->name('update');
         Route::delete('/{table}', [TableController::class, 'destroy'])->name('destroy');
@@ -160,5 +162,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/sales/export', [\App\Http\Controllers\Report\ReportController::class, 'exportSales'])->name('sales.export');
         Route::get('/products', [\App\Http\Controllers\Report\ReportController::class, 'products'])->name('products');
         Route::get('/staff', [\App\Http\Controllers\Report\ReportController::class, 'staff'])->name('staff');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gestión de Usuarios (Solo ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('users')->name('users.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\User\UserController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\User\UserController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\User\UserController::class, 'store'])->name('store');
+        Route::get('/{user}', [\App\Http\Controllers\User\UserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [\App\Http\Controllers\User\UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [\App\Http\Controllers\User\UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [\App\Http\Controllers\User\UserController::class, 'destroy'])->name('destroy');
     });
 });

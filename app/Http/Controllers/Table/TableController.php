@@ -8,6 +8,7 @@ use App\Models\Sector;
 use App\Models\Order;
 use App\Models\TableSession;
 use App\Models\Product;
+use App\Models\Payment;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -391,23 +392,109 @@ class TableController extends Controller
     }
 
     /**
-     * Cerrar mesa: cierra todos los pedidos activos y genera recibo único consolidado
+     * Mostrar resumen y modal de pago antes de cerrar mesa
      */
-    public function closeTable(Table $table)
+    public function showCloseTable(Table $table)
     {
         Gate::authorize('update', $table);
 
-        // Verificar que la mesa esté ocupada
         if ($table->status !== 'OCUPADA') {
             return back()->with('error', 'La mesa no está ocupada');
         }
 
-        return DB::transaction(function () use ($table) {
-            if (!$table->current_session_id) {
-                return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
-            }
+        if (!$table->current_session_id) {
+            return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
+        }
 
-            // Obtener todos los pedidos activos de la mesa (no cerrados)
+        // Obtener todos los pedidos activos de la mesa
+        $activeOrders = Order::where('table_id', $table->id)
+            ->where('table_session_id', $table->current_session_id)
+            ->where('status', '!=', Order::STATUS_CERRADO)
+            ->where('status', '!=', Order::STATUS_CANCELADO)
+            ->with(['items.product.category', 'items.modifiers'])
+            ->get();
+
+        if ($activeOrders->isEmpty()) {
+            // Si no hay pedidos, solo liberar la mesa
+            TableSession::where('id', $table->current_session_id)->update([
+                'ended_at' => now(),
+                'status' => TableSession::STATUS_CLOSED,
+            ]);
+            $table->update([
+                'status' => 'LIBRE',
+                'current_order_id' => null,
+                'current_session_id' => null,
+            ]);
+
+            return redirect()->route('tables.index')
+                ->with('success', 'Mesa liberada exitosamente');
+        }
+
+        // Calcular totales
+        $totalAmount = 0;
+        $totalSubtotal = 0;
+        $totalDiscount = 0;
+        $allItems = collect();
+
+        foreach ($activeOrders as $order) {
+            $order->load(['items.product.category', 'items.modifiers']);
+            $totalAmount += $order->total;
+            $totalSubtotal += $order->subtotal;
+            $totalDiscount += $order->discount;
+
+            foreach ($order->items as $item) {
+                $existingItem = $allItems->first(function ($i) use ($item) {
+                    return $i['product_id'] === $item->product_id;
+                });
+
+                if ($existingItem) {
+                    $existingItem['quantity'] += $item->quantity;
+                    $existingItem['subtotal'] += $item->subtotal;
+                    $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
+                } else {
+                    $allItems->push([
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'subtotal' => $item->subtotal,
+                        'modifiers' => $item->modifiers,
+                        'observations' => $item->observations,
+                    ]);
+                }
+            }
+        }
+
+        $table->load('currentSession.waiter', 'sector');
+
+        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems'));
+    }
+
+    /**
+     * Procesar pago y cerrar mesa
+     */
+    public function processPayment(Request $request, Table $table)
+    {
+        Gate::authorize('update', $table);
+
+        if ($table->status !== 'OCUPADA') {
+            return back()->with('error', 'La mesa no está ocupada');
+        }
+
+        if (!$table->current_session_id) {
+            return back()->with('error', 'La mesa no tiene una sesión activa');
+        }
+
+        $validated = $request->validate([
+            'payments' => 'required|array|min:1',
+            'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA',
+            'payments.*.amount' => 'required|numeric|min:0.01',
+            'payments.*.operation_number' => 'nullable|string|max:255',
+            'payments.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($table, $validated) {
+            // Obtener todos los pedidos activos
             $activeOrders = Order::where('table_id', $table->id)
                 ->where('table_session_id', $table->current_session_id)
                 ->where('status', '!=', Order::STATUS_CERRADO)
@@ -416,55 +503,42 @@ class TableController extends Controller
                 ->get();
 
             if ($activeOrders->isEmpty()) {
-                // Si no hay pedidos activos, solo liberar la mesa
-                TableSession::where('id', $table->current_session_id)->update([
-                    'ended_at' => now(),
-                    'status' => TableSession::STATUS_CLOSED,
-                ]);
-                $table->update([
-                    'status' => 'LIBRE',
-                    'current_order_id' => null,
-                    'current_session_id' => null,
-                ]);
-
-                return redirect()->route('tables.index')
-                    ->with('success', 'Mesa liberada exitosamente');
+                return back()->with('error', 'No hay pedidos activos para cerrar');
             }
 
-            // Cerrar todos los pedidos activos
-            $totalAmount = 0;
+            // Calcular total
+            $totalAmount = $activeOrders->sum('total');
+            $totalPaid = collect($validated['payments'])->sum('amount');
+
+            // Validar que el total pagado sea igual al total
+            if (abs($totalPaid - $totalAmount) > 0.01) {
+                return back()->with('error', "El total pagado ($${totalPaid}) no coincide con el total a pagar ($${totalAmount})")
+                    ->withInput();
+            }
+
+            // Cerrar todos los pedidos
             $ordersClosed = [];
             $allItems = collect();
             $totalSubtotal = 0;
             $totalDiscount = 0;
 
             foreach ($activeOrders as $order) {
-                // Cargar items con productos
                 $order->load(['items.product.category', 'items.modifiers']);
-                
-                // Cerrar el pedido sin liberar la mesa (lo haremos después)
                 $this->orderService->closeOrder($order, false);
                 
-                $totalAmount += $order->total;
                 $totalSubtotal += $order->subtotal;
                 $totalDiscount += $order->discount;
                 
-                // Agrupar items por producto para consolidar
-                // Se agrupan solo por product_id, sumando cantidades y subtotales
                 foreach ($order->items as $item) {
-                    // Buscar si ya existe un item con el mismo product_id
                     $existingItem = $allItems->first(function ($i) use ($item) {
                         return $i['product_id'] === $item->product_id;
                     });
                     
                     if ($existingItem) {
-                        // Si existe, sumar cantidad y subtotal
                         $existingItem['quantity'] += $item->quantity;
                         $existingItem['subtotal'] += $item->subtotal;
-                        // Recalcular precio unitario promedio
                         $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
                     } else {
-                        // Si no existe, agregar nuevo item
                         $allItems->push([
                             'product_id' => $item->product_id,
                             'product_name' => $item->product->name,
@@ -476,11 +550,28 @@ class TableController extends Controller
                         ]);
                     }
                 }
-                
                 $ordersClosed[] = $order;
             }
 
-            // Liberar la mesa para nueva facturación
+            // Crear pagos consolidados por sesión de mesa
+            // Asociar cada pago al primer pedido (para mantener relación con order_id) pero con table_session_id
+            $firstOrder = $ordersClosed->first();
+            $paymentsCreated = [];
+            foreach ($validated['payments'] as $paymentData) {
+                $payment = Payment::create([
+                    'restaurant_id' => $table->restaurant_id,
+                    'order_id' => $firstOrder->id, // Asociar al primer pedido para mantener relación
+                    'table_session_id' => $table->current_session_id, // Asociar a la sesión de mesa para arqueo
+                    'user_id' => auth()->id(),
+                    'payment_method' => $paymentData['payment_method'],
+                    'amount' => $paymentData['amount'],
+                    'operation_number' => $paymentData['operation_number'] ?? null,
+                    'notes' => $paymentData['notes'] ?? null,
+                ]);
+                $paymentsCreated[] = $payment;
+            }
+
+            // Liberar la mesa
             TableSession::where('id', $table->current_session_id)->update([
                 'ended_at' => now(),
                 'status' => TableSession::STATUS_CLOSED,
@@ -491,16 +582,26 @@ class TableController extends Controller
                 'current_session_id' => null,
             ]);
 
-            // Redirigir a vista de recibo consolidado
             return redirect()->route('tables.consolidated-receipt', $table)
-                ->with('success', 'Mesa cerrada exitosamente. Recibo consolidado generado.')
+                ->with('success', 'Mesa cerrada y pago procesado exitosamente.')
                 ->with('table_session_id', $table->current_session_id)
                 ->with('total_amount', $totalAmount)
                 ->with('total_subtotal', $totalSubtotal)
                 ->with('total_discount', $totalDiscount)
                 ->with('orders_closed', $ordersClosed)
-                ->with('consolidated_items', $allItems);
+                ->with('consolidated_items', $allItems)
+                ->with('payments', collect($paymentsCreated));
         });
+    }
+
+    /**
+     * Cerrar mesa: cierra todos los pedidos activos y genera recibo único consolidado
+     * @deprecated Usar showCloseTable y processPayment en su lugar
+     */
+    public function closeTable(Table $table)
+    {
+        // Redirigir al nuevo flujo de pago
+        return redirect()->route('tables.show-close', $table);
     }
 
     /**
@@ -539,6 +640,17 @@ class TableController extends Controller
         $totalSubtotal = session('total_subtotal', 0);
         $totalDiscount = session('total_discount', 0);
         $sessionId = session('table_session_id');
+        $payments = collect(session('payments', []));
+        
+        // Si hay sessionId, obtener pagos de la base de datos
+        if ($sessionId) {
+            $dbPayments = Payment::where('table_session_id', $sessionId)
+                ->with('user')
+                ->get();
+            if ($dbPayments->isNotEmpty()) {
+                $payments = $dbPayments;
+            }
+        }
 
         // Si no hay datos en sesión, obtener los últimos pedidos cerrados
         if ($closedOrders->isEmpty()) {
@@ -592,7 +704,8 @@ class TableController extends Controller
             'consolidatedItems', 
             'totalAmount',
             'totalSubtotal',
-            'totalDiscount'
+            'totalDiscount',
+            'payments'
         ));
     }
 
@@ -622,4 +735,5 @@ class TableController extends Controller
     // (el método "Mostrar todos los pedidos de una mesa" fue reemplazado por
     //  "Mostrar pedidos de la sesión actual de una mesa (no histórico)")
 }
+
 
