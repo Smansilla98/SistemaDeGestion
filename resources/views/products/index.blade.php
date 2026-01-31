@@ -64,11 +64,30 @@
                         <td><strong>${{ number_format($product->price, 2) }}</strong></td>
                         <td>
                             @if($product->has_stock)
-                            <span class="badge bg-{{ $product->getCurrentStock(auth()->user()->restaurant_id) <= $product->stock_minimum ? 'danger' : 'success' }}">
-                                {{ $product->getCurrentStock(auth()->user()->restaurant_id) }}
-                            </span>
+                                @php
+                                    $currentStock = $product->getCurrentStock(auth()->user()->restaurant_id);
+                                    $isLowStock = $currentStock <= $product->stock_minimum;
+                                    $isOutOfStock = $currentStock <= 0;
+                                @endphp
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-{{ $isOutOfStock ? 'danger' : ($isLowStock ? 'warning' : 'success') }} fs-6">
+                                        {{ $currentStock }}
+                                    </span>
+                                    @if($isOutOfStock)
+                                        <span class="badge bg-danger" title="Sin stock">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> Sin Stock
+                                        </span>
+                                    @elseif($isLowStock)
+                                        <span class="badge bg-warning text-dark" title="Stock bajo">
+                                            <i class="bi bi-exclamation-circle-fill"></i> Stock Bajo
+                                        </span>
+                                    @endif
+                                    @if($product->stock_minimum > 0)
+                                        <small class="text-muted">(Mín: {{ $product->stock_minimum }})</small>
+                                    @endif
+                                </div>
                             @else
-                            <span class="text-muted">-</span>
+                                <span class="text-muted">Sin control de stock</span>
                             @endif
                         </td>
                         <td>

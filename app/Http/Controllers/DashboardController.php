@@ -81,6 +81,32 @@ class DashboardController extends Controller
                 ->get();
         });
 
-        return view('dashboard', compact('stats', 'recentOrders', 'topProducts'));
+        // Productos con stock bajo (sin cache para datos en tiempo real)
+        $lowStockProducts = Product::where('restaurant_id', $restaurantId)
+            ->where('has_stock', true)
+            ->where('is_active', true)
+            ->with('category')
+            ->get()
+            ->filter(function ($product) use ($restaurantId) {
+                $currentStock = $product->getCurrentStock($restaurantId);
+                return $currentStock <= $product->stock_minimum && $currentStock > 0;
+            })
+            ->sortBy(function ($product) use ($restaurantId) {
+                return $product->getCurrentStock($restaurantId);
+            })
+            ->take(10);
+
+        // Productos sin stock
+        $outOfStockProducts = Product::where('restaurant_id', $restaurantId)
+            ->where('has_stock', true)
+            ->where('is_active', true)
+            ->with('category')
+            ->get()
+            ->filter(function ($product) use ($restaurantId) {
+                return $product->getCurrentStock($restaurantId) <= 0;
+            })
+            ->take(10);
+
+        return view('dashboard', compact('stats', 'recentOrders', 'topProducts', 'lowStockProducts', 'outOfStockProducts'));
     }
 }

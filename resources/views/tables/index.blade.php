@@ -56,6 +56,13 @@
                         <p class="text-muted mb-2">
                             <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
                         </p>
+                        @if($table->status === 'OCUPADA' && $table->currentSession && $table->currentSession->waiter)
+                        <p class="mb-2">
+                            <span class="badge bg-info">
+                                <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
+                            </span>
+                        </p>
+                        @endif
                         @if($table->status === 'OCUPADA' || $table->status === 'LIBRE')
                         <p class="mb-2">
                             <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-outline-primary">
@@ -198,9 +205,19 @@
                         </select>
                         <small class="text-muted" id="statusHelp"></small>
                     </div>
+                    <div class="mb-3" id="waiterContainer" style="display: none;">
+                        <label for="waiter_id" class="form-label">Asignar Mozo <span class="text-danger">*</span></label>
+                        <select class="form-select" id="waiter_id" name="waiter_id">
+                            <option value="">Seleccionar mozo...</option>
+                            @foreach($waiters as $waiter)
+                            <option value="{{ $waiter->id }}">{{ $waiter->name }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Selecciona el mozo que atenderá esta mesa</small>
+                    </div>
                     <div class="mb-3" id="guestsCountContainer">
                         <label for="guests_count" class="form-label">Cantidad de Personas</label>
-                        <input type="number" class="form-control" id="guests_count" name="guests_count" min="1" value="1" required>
+                        <input type="number" class="form-control" id="guests_count" name="guests_count" min="1" value="1">
                         <small class="text-muted">Capacidad máxima: <span id="maxCapacity">0</span> personas</small>
                     </div>
                     <input type="hidden" id="tableId" name="table_id">
@@ -251,19 +268,46 @@
                                             <div class="accordion-body">
                                                 <div class="row">
                                                     @foreach($categoryProducts as $product)
+                                                        @php
+                                                            $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
+                                                            $isOutOfStock = $currentStock !== null && $currentStock <= 0;
+                                                            $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
+                                                        @endphp
                                                         <div class="col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}">
-                                                            <div class="d-flex justify-content-between align-items-center border rounded p-2">
-                                                                <div class="me-2">
-                                                                    <strong>{{ $product->name }}</strong>
+                                                            <div class="d-flex justify-content-between align-items-center border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
+                                                                <div class="me-2 flex-grow-1">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <strong>{{ $product->name }}</strong>
+                                                                        @if($isOutOfStock)
+                                                                            <span class="badge bg-danger" title="Sin stock disponible">
+                                                                                <i class="bi bi-x-circle-fill"></i> Sin Stock
+                                                                            </span>
+                                                                        @elseif($isLowStock)
+                                                                            <span class="badge bg-warning text-dark" title="Stock bajo">
+                                                                                <i class="bi bi-exclamation-circle-fill"></i> Stock Bajo
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
                                                                     @if($product->description)
                                                                         <div class="text-muted small">{{ $product->description }}</div>
+                                                                    @endif
+                                                                    @if($product->has_stock && $currentStock !== null)
+                                                                        <div class="small mt-1">
+                                                                            <span class="badge bg-{{ $isOutOfStock ? 'danger' : ($isLowStock ? 'warning' : 'success') }}">
+                                                                                Stock: {{ $currentStock }}
+                                                                                @if($product->stock_minimum > 0)
+                                                                                    (Mín: {{ $product->stock_minimum }})
+                                                                                @endif
+                                                                            </span>
+                                                                        </div>
                                                                     @endif
                                                                 </div>
                                                                 <div class="text-end">
                                                                     <div><strong>${{ number_format($product->price, 2) }}</strong></div>
                                                                     <button type="button"
-                                                                            class="btn btn-sm btn-outline-primary mt-1"
-                                                                            onclick="addModalItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }})">
+                                                                            class="btn btn-sm btn-outline-primary mt-1 {{ $isOutOfStock ? 'disabled' : '' }}"
+                                                                            onclick="addModalItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ $currentStock ?? 'null' }}, {{ $product->stock_minimum ?? 0 }})"
+                                                                            {{ $isOutOfStock ? 'disabled title="Producto sin stock"' : '' }}>
                                                                         <i class="bi bi-plus"></i>
                                                                     </button>
                                                                 </div>
@@ -318,6 +362,8 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
     const statusSelect = document.getElementById('status');
     const guestsInput = document.getElementById('guests_count');
     const guestsContainer = document.getElementById('guestsCountContainer');
+    const waiterContainer = document.getElementById('waiterContainer');
+    const waiterSelect = document.getElementById('waiter_id');
     const tableIdInput = document.getElementById('tableId');
     const maxCapacitySpan = document.getElementById('maxCapacity');
     const statusHelp = document.getElementById('statusHelp');
@@ -348,6 +394,9 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
             guestsInput.value = 1;
+            waiterContainer.style.display = 'none';
+            waiterSelect.required = false;
+            waiterSelect.value = '';
         } else if (currentStatus === 'OCUPADA') {
             // Si está OCUPADA, puede cambiar a LIBRE o CERRADA
             newStatusSelectRef.innerHTML = `
@@ -368,6 +417,9 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
             guestsInput.value = 1;
+            waiterContainer.style.display = 'none';
+            waiterSelect.required = false;
+            waiterSelect.value = '';
         } else {
             // Cualquier otro estado, permitir todos los cambios
             newStatusSelectRef.innerHTML = `
@@ -388,10 +440,22 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
                 guestsContainer.style.display = 'none';
                 guestsInput.required = false;
                 guestsInput.value = 0;
-            } else if (this.value === 'OCUPADA' || this.value === 'RESERVADA') {
+                waiterContainer.style.display = 'none';
+                waiterSelect.required = false;
+                waiterSelect.value = '';
+            } else if (this.value === 'OCUPADA') {
                 guestsContainer.style.display = 'block';
                 guestsInput.required = true;
                 guestsInput.value = 1;
+                waiterContainer.style.display = 'block';
+                waiterSelect.required = true;
+            } else if (this.value === 'RESERVADA') {
+                guestsContainer.style.display = 'block';
+                guestsInput.required = true;
+                guestsInput.value = 1;
+                waiterContainer.style.display = 'none';
+                waiterSelect.required = false;
+                waiterSelect.value = '';
             } else {
                 guestsContainer.style.display = 'none';
                 guestsInput.required = false;
@@ -456,8 +520,56 @@ function openNewOrderModal(tableId, tableLabel) {
     newOrderModal.show();
 }
 
-function addModalItem(productId, name, price) {
-    const existing = modalItems.find(i => i.product_id === productId);
+function addModalItem(productId, name, price, currentStock, stockMinimum) {
+    // Validar stock si aplica
+    if (currentStock !== null && currentStock !== undefined) {
+        const existing = modalItems.find(i => i.product_id === productId);
+        const requestedQty = existing ? existing.quantity + 1 : 1;
+        
+        if (currentStock <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin Stock',
+                text: `El producto "${name}" no tiene stock disponible.`,
+                confirmButtonColor: '#c94a2d',
+                confirmButtonText: 'Entendido'
+            });
+            return;
+        }
+        
+        if (requestedQty > currentStock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock Insuficiente',
+                html: `El producto "${name}" tiene stock limitado.<br><strong>Disponible: ${currentStock}</strong><br>Solicitado: ${requestedQty}`,
+                confirmButtonColor: '#ffc107',
+                confirmButtonText: 'Entendido'
+            });
+            return;
+        }
+        
+        if (currentStock <= stockMinimum && stockMinimum > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock Bajo',
+                html: `El producto "${name}" tiene stock bajo.<br><strong>Disponible: ${currentStock}</strong><br>Mínimo recomendado: ${stockMinimum}`,
+                confirmButtonColor: '#ffc107',
+                confirmButtonText: 'Continuar',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    addItemToModal(productId, name, price, existing);
+                }
+            });
+            return;
+        }
+    }
+    
+    addItemToModal(productId, name, price, modalItems.find(i => i.product_id === productId));
+}
+
+function addItemToModal(productId, name, price, existing) {
     if (existing) {
         existing.quantity += 1;
     } else {

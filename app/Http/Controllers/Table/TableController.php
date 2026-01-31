@@ -25,13 +25,44 @@ class TableController extends Controller
     public function index(Request $request)
     {
         $restaurantId = auth()->user()->restaurant_id;
+        $user = auth()->user();
+
+        // Si es MOZO, solo ver mesas asignadas a él o libres
+        $tablesQuery = Table::where('restaurant_id', $restaurantId);
+        
+        if ($user->role === 'MOZO') {
+            $tablesQuery->where(function ($q) use ($user) {
+                $q->where('status', 'LIBRE')
+                  ->orWhereHas('currentSession', function ($sq) use ($user) {
+                      $sq->where('waiter_id', $user->id)
+                        ->where('status', TableSession::STATUS_OPEN);
+                  });
+            });
+        }
 
         $sectors = Sector::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
-            ->with(['tables' => function ($query) {
+            ->with(['tables' => function ($query) use ($tablesQuery) {
                 $query->orderBy('number')
-                    ->with(['currentOrder']); // Eager loading de pedido actual
+                    ->with(['currentOrder', 'currentSession.waiter']); // Eager loading de pedido actual y sesión con mozo
             }])
+            ->get();
+
+        // Filtrar mesas por sector según el query del mozo
+        if ($user->role === 'MOZO') {
+            $allowedTableIds = $tablesQuery->pluck('id')->toArray();
+            foreach ($sectors as $sector) {
+                $sector->setRelation('tables', $sector->tables->filter(function ($table) use ($allowedTableIds) {
+                    return in_array($table->id, $allowedTableIds);
+                }));
+            }
+        }
+
+        // Obtener mozos disponibles para asignación
+        $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
+            ->where('role', 'MOZO')
+            ->where('is_active', true)
+            ->orderBy('name')
             ->get();
 
         // Productos activos para el modal de pedidos (mozos)
@@ -42,7 +73,7 @@ class TableController extends Controller
             ->get()
             ->groupBy('category.name');
 
-        return view('tables.index', compact('sectors', 'products'));
+        return view('tables.index', compact('sectors', 'products', 'waiters'));
     }
 
     /**
@@ -289,12 +320,16 @@ class TableController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:' . implode(',', Table::getStatuses()),
             'guests_count' => 'nullable|integer|min:0|max:' . $table->capacity,
+            'waiter_id' => 'nullable|exists:users,id', // Requerido solo si pasa a OCUPADA
         ]);
 
         // Si el estado cambia a LIBRE, finalizar sesión y limpiar pedido actual
         if ($validated['status'] === 'LIBRE') {
             if ($table->current_session_id) {
-                TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
+                TableSession::where('id', $table->current_session_id)->update([
+                    'ended_at' => now(),
+                    'status' => TableSession::STATUS_CLOSED,
+                ]);
             }
             $table->update([
                 'status' => 'LIBRE',
@@ -304,6 +339,24 @@ class TableController extends Controller
         } else {
             // Si pasa a OCUPADA y no hay sesión activa, crear una
             if ($validated['status'] === 'OCUPADA' && !$table->current_session_id) {
+                // Requerir waiter_id al abrir mesa
+                if (empty($validated['waiter_id'])) {
+                    return redirect()->route('tables.index')
+                        ->with('error', 'Debes asignar un mozo al abrir la mesa.');
+                }
+                
+                // Verificar que el waiter_id sea un MOZO del mismo restaurante
+                $waiter = \App\Models\User::where('id', $validated['waiter_id'])
+                    ->where('restaurant_id', $table->restaurant_id)
+                    ->where('role', 'MOZO')
+                    ->where('is_active', true)
+                    ->first();
+                
+                if (!$waiter) {
+                    return redirect()->route('tables.index')
+                        ->with('error', 'El mozo seleccionado no es válido o no pertenece a este restaurante.');
+                }
+                
                 // Fallback defensivo: si en prod aún no corrieron migraciones, evitar fatal
                 if (!Schema::hasTable('table_sessions')) {
                     return redirect()->route('tables.index')
@@ -314,7 +367,10 @@ class TableController extends Controller
                     $session = TableSession::create([
                         'restaurant_id' => $table->restaurant_id,
                         'table_id' => $table->id,
+                        'waiter_id' => $validated['waiter_id'],
+                        'opened_by_user_id' => auth()->id(),
                         'started_at' => now(),
+                        'status' => TableSession::STATUS_OPEN,
                     ]);
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
@@ -361,7 +417,10 @@ class TableController extends Controller
 
             if ($activeOrders->isEmpty()) {
                 // Si no hay pedidos activos, solo liberar la mesa
-                TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
+                TableSession::where('id', $table->current_session_id)->update([
+                    'ended_at' => now(),
+                    'status' => TableSession::STATUS_CLOSED,
+                ]);
                 $table->update([
                     'status' => 'LIBRE',
                     'current_order_id' => null,
@@ -422,7 +481,10 @@ class TableController extends Controller
             }
 
             // Liberar la mesa para nueva facturación
-            TableSession::where('id', $table->current_session_id)->update(['ended_at' => now()]);
+            TableSession::where('id', $table->current_session_id)->update([
+                'ended_at' => now(),
+                'status' => TableSession::STATUS_CLOSED,
+            ]);
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
