@@ -74,9 +74,33 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('orders.show', $order) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-eye"></i> Ver Detalle
-                                    </a>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{{ route('orders.show', $order) }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                        
+                                        @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                                            @if($order->status === 'ABIERTO')
+                                                <form action="{{ route('orders.update-status', $order) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="status" value="EN_PREPARACION">
+                                                    <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
+                                                        <i class="bi bi-gear"></i> En Preparación
+                                                    </button>
+                                                </form>
+                                            @elseif($order->status === 'EN_PREPARACION')
+                                                <form action="{{ route('orders.update-status', $order) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="status" value="ENTREGADO">
+                                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
+                                                        <i class="bi bi-check-circle"></i> Entregado
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach

@@ -228,6 +228,47 @@ class OrderController extends Controller
 
         return view('orders.summary', compact('order'));
     }
+
+    /**
+     * Cambiar estado del pedido (simplificado: solo mozo puede cambiar)
+     * Flujo: ABIERTO -> EN_PREPARACION -> ENTREGADO
+     */
+    public function updateStatus(Request $request, Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        $validated = $request->validate([
+            'status' => 'required|in:EN_PREPARACION,ENTREGADO'
+        ]);
+
+        $newStatus = $validated['status'];
+        $currentStatus = $order->status;
+
+        // Validar transiciones permitidas
+        $allowedTransitions = [
+            'ABIERTO' => ['EN_PREPARACION'],
+            'EN_PREPARACION' => ['ENTREGADO'],
+        ];
+
+        if (!isset($allowedTransitions[$currentStatus]) || !in_array($newStatus, $allowedTransitions[$currentStatus])) {
+            return back()->with('error', "No se puede cambiar el estado de {$currentStatus} a {$newStatus}");
+        }
+
+        // Actualizar estado
+        $order->status = $newStatus;
+        
+        if ($newStatus === 'EN_PREPARACION' && !$order->sent_at) {
+            $order->sent_at = now();
+        }
+        
+        if ($newStatus === 'ENTREGADO') {
+            // Opcional: marcar como listo para cerrar
+        }
+        
+        $order->save();
+
+        return back()->with('success', "Estado del pedido actualizado a {$newStatus}");
+    }
 }
 
 
