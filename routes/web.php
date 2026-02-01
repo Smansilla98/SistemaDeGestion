@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
         Route::get('/{order}/summary', [OrderController::class, 'summary'])->name('summary');
+        Route::delete('/{order}', [OrderController::class, 'destroy'])->name('destroy');
         
         // Rutas de impresión
         Route::prefix('{order}/print')->name('print.')->group(function () {
@@ -115,6 +116,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/sessions/{session}', [CashRegisterController::class, 'session'])->name('session');
         Route::post('/sessions/{session}/close', [CashRegisterController::class, 'closeSession'])->name('close-session');
         Route::post('/orders/{order}/payment', [CashRegisterController::class, 'processPayment'])->name('process-payment');
+        Route::delete('/movements/{movement}', [CashRegisterController::class, 'destroyMovement'])->name('destroy-movement');
     });
 
     /*

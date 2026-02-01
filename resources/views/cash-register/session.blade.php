@@ -187,6 +187,9 @@
                                 <th>Descripción</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
+                                @if(auth()->user()->role === 'ADMIN' && $session->status === 'ABIERTA')
+                                <th>Acciones</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -200,6 +203,23 @@
                                 <td>{{ $movement->description }}</td>
                                 <td>${{ number_format($movement->amount, 2) }}</td>
                                 <td>{{ $movement->created_at->format('H:i') }}</td>
+                                @if(auth()->user()->role === 'ADMIN' && $session->status === 'ABIERTA')
+                                <td>
+                                    <form action="{{ route('cash-register.destroy-movement', $movement) }}" 
+                                          method="POST" 
+                                          class="d-inline" 
+                                          id="deleteMovementForm{{ $movement->id }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDeleteMovement({{ $movement->id }}, '{{ addslashes($movement->description) }}')"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                @endif
                             </tr>
                             @endforeach
                         </tbody>
@@ -209,5 +229,45 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeleteMovement(movementId, description) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Movimiento?',
+        html: `
+            <p>¿Estás seguro de eliminar el movimiento:</p>
+            <p><strong>${description}</strong>?</p>
+            <div class="alert alert-warning mt-3">
+                <small><i class="bi bi-info-circle"></i> Solo se pueden eliminar movimientos de sesiones abiertas.</small>
+            </div>
+            <p class="text-danger small mt-2"><strong>Esta acción no se puede deshacer.</strong></p>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('deleteMovementForm' + movementId).submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 

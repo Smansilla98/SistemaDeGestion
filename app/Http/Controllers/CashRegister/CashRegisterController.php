@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CashRegister;
 use App\Http\Controllers\Controller;
 use App\Models\CashRegister;
 use App\Models\CashRegisterSession;
+use App\Models\CashMovement;
 use App\Models\Order;
 use App\Services\CashRegisterService;
 use Illuminate\Http\Request;
@@ -126,6 +127,36 @@ class CashRegisterController extends Controller
         }
 
         return back()->with('success', 'Pago registrado exitosamente');
+    }
+
+    /**
+     * Eliminar movimiento de caja
+     * Solo ADMIN puede eliminar movimientos, y solo si la sesión está abierta
+     */
+    public function destroyMovement(CashMovement $movement)
+    {
+        // Solo ADMIN puede eliminar movimientos
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden eliminar movimientos de caja');
+        }
+
+        // Verificar que la sesión esté abierta
+        $session = $movement->cashRegisterSession;
+        if ($session->status !== 'ABIERTA') {
+            return back()->with('error', 'Solo se pueden eliminar movimientos de sesiones abiertas');
+        }
+
+        // Verificar que pertenezca al restaurante del usuario
+        if ($movement->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a este movimiento');
+        }
+
+        try {
+            $movement->delete();
+            return back()->with('success', 'Movimiento eliminado exitosamente');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al eliminar el movimiento: ' . $e->getMessage());
+        }
     }
 }
 
