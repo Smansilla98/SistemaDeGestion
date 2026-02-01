@@ -356,10 +356,13 @@ class TableController extends Controller
         // Si el estado cambia a LIBRE, finalizar sesión y limpiar pedido actual
         if ($validated['status'] === 'LIBRE') {
             if ($table->current_session_id) {
-                TableSession::where('id', $table->current_session_id)->update([
-                    'ended_at' => now(),
-                    'status' => TableSession::STATUS_CERRADA,
-                ]);
+                DB::table('table_sessions')
+                    ->where('id', $table->current_session_id)
+                    ->update([
+                        'ended_at' => now(),
+                        'status' => 'CERRADA', // Usar string directo
+                        'updated_at' => now(),
+                    ]);
             }
             $table->update([
                 'status' => 'LIBRE',
@@ -445,10 +448,13 @@ class TableController extends Controller
 
         if ($activeOrders->isEmpty()) {
             // Si no hay pedidos, solo liberar la mesa
-            TableSession::where('id', $table->current_session_id)->update([
-                'ended_at' => now(),
-                'status' => TableSession::STATUS_CERRADA,
-            ]);
+                DB::table('table_sessions')
+                    ->where('id', $table->current_session_id)
+                    ->update([
+                        'ended_at' => now(),
+                        'status' => 'CERRADA', // Usar string directo
+                        'updated_at' => now(),
+                    ]);
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
@@ -659,10 +665,14 @@ class TableController extends Controller
             }
 
             // Liberar la mesa
-            TableSession::where('id', $table->current_session_id)->update([
-                'ended_at' => now(),
-                'status' => TableSession::STATUS_CERRADA,
-            ]);
+            // Usar DB::statement para asegurar que el enum se actualice correctamente
+            DB::table('table_sessions')
+                ->where('id', $table->current_session_id)
+                ->update([
+                    'ended_at' => now(),
+                    'status' => 'CERRADA', // Usar string directo para evitar problemas con el enum
+                    'updated_at' => now(),
+                ]);
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
