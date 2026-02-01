@@ -519,6 +519,124 @@
             @endif
         </div>
         @endif
+
+        <!-- MÓDULO 5: Ventas por Mozo e Ingresos por Método -->
+        <div class="row g-4 mt-4">
+            @if(isset($salesByWaiter) && $salesByWaiter->count() > 0)
+            <div class="col-lg-6">
+                <div class="mosaic-section-card">
+                    <div class="mosaic-section-header">
+                        <div class="mosaic-section-title">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Ventas por Mozo (Hoy)</span>
+                        </div>
+                    </div>
+                    <div>
+                        @foreach($salesByWaiter as $index => $waiter)
+                        <div class="mosaic-list-item">
+                            <div class="mosaic-list-number">{{ $index + 1 }}</div>
+                            <div class="mosaic-list-content">
+                                <div class="mosaic-list-title">{{ $waiter->name }}</div>
+                                <small class="text-muted">{{ $waiter->payment_count }} pagos</small>
+                            </div>
+                            <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
+                                ${{ number_format($waiter->total_sales, 2) }}
+                            </span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if(isset($incomeByMethod) && $incomeByMethod->count() > 0)
+            <div class="col-lg-6">
+                <div class="mosaic-section-card">
+                    <div class="mosaic-section-header">
+                        <div class="mosaic-section-title">
+                            <i class="bi bi-wallet2"></i>
+                            <span>Ingresos por Método (Hoy)</span>
+                        </div>
+                    </div>
+                    <div>
+                        @foreach($incomeByMethod as $method)
+                        <div class="mosaic-list-item">
+                            <div class="mosaic-list-content">
+                                <div class="mosaic-list-title">
+                                    @if($method->payment_method === 'EFECTIVO')
+                                        <i class="bi bi-cash text-success"></i> Efectivo
+                                    @elseif($method->payment_method === 'DEBITO')
+                                        <i class="bi bi-credit-card text-primary"></i> Débito
+                                    @elseif($method->payment_method === 'CREDITO')
+                                        <i class="bi bi-credit-card-2-front text-info"></i> Crédito
+                                    @elseif($method->payment_method === 'TRANSFERENCIA')
+                                        <i class="bi bi-bank text-secondary"></i> Transferencia
+                                    @elseif($method->payment_method === 'QR')
+                                        <i class="bi bi-qr-code text-warning"></i> QR
+                                    @elseif($method->payment_method === 'MIXTO')
+                                        <i class="bi bi-wallet2 text-dark"></i> Mixto
+                                    @else
+                                        {{ $method->payment_method }}
+                                    @endif
+                                </div>
+                            </div>
+                            <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
+                                ${{ number_format($method->total, 2) }}
+                            </span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        <!-- MÓDULO 5: Mesas Activas -->
+        @if(isset($activeTables) && $activeTables->count() > 0)
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="mosaic-section-card">
+                    <div class="mosaic-section-header">
+                        <div class="mosaic-section-title">
+                            <i class="bi bi-table"></i>
+                            <span>Mesas Activas</span>
+                        </div>
+                        <a href="{{ route('tables.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white; border: none; border-radius: 10px;">
+                            Ver todas
+                        </a>
+                    </div>
+                    <div class="row g-3">
+                        @foreach($activeTables as $table)
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card border-warning" style="border-width: 2px;">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-2">
+                                        <i class="bi bi-table"></i> Mesa {{ $table->number }}
+                                    </h6>
+                                    @if($table->currentSession && $table->currentSession->waiter)
+                                    <p class="card-text small mb-1">
+                                        <i class="bi bi-person-badge"></i> {{ $table->currentSession->waiter->name }}
+                                    </p>
+                                    @endif
+                                    @if($table->sector)
+                                    <p class="card-text small mb-2 text-muted">
+                                        <i class="bi bi-door-open"></i> {{ $table->sector->name }}
+                                    </p>
+                                    @endif
+                                    @if($table->currentSession && $table->currentSession->started_at)
+                                    <p class="card-text small text-muted mb-0">
+                                        <i class="bi bi-clock"></i> {{ $table->currentSession->started_at->format('H:i') }}
+                                    </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endsection

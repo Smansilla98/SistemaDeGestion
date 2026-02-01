@@ -262,10 +262,21 @@ class OrderController extends Controller
         }
         
         if ($newStatus === 'ENTREGADO') {
-            // Opcional: marcar como listo para cerrar
+            // MÓDULO 2: Notificar que el pedido fue entregado
+            // La notificación se mostrará en la vista mediante JavaScript
+            $order->load(['table']);
         }
         
         $order->save();
+
+        // MÓDULO 2: Mensaje especial para pedidos entregados
+        if ($newStatus === 'ENTREGADO') {
+            return back()->with('success', "✅ Pedido #{$order->number} entregado en Mesa {$order->table->number}")
+                         ->with('order_delivered', [
+                             'order_number' => $order->number,
+                             'table_number' => $order->table->number
+                         ]);
+        }
 
         return back()->with('success', "Estado del pedido actualizado a {$newStatus}");
     }

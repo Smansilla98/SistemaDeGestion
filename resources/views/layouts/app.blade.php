@@ -809,6 +809,92 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ secure_asset('js/drag-drop.js') }}"></script>
     <script src="{{ secure_asset('js/notifications.js') }}"></script>
+    
+    <!-- UI/UX: Sistema de Toasts y Confirmaciones Mejorado -->
+    <script>
+        // Helper global para toasts
+        window.showToast = function(type, title, message, duration = 4000) {
+            const configs = {
+                success: {
+                    icon: 'success',
+                    iconColor: '#1e8081',
+                    background: '#e6ffed',
+                    color: '#1e8081'
+                },
+                error: {
+                    icon: 'error',
+                    iconColor: '#c94a2d',
+                    background: '#ffe6e6',
+                    color: '#c94a2d'
+                },
+                warning: {
+                    icon: 'warning',
+                    iconColor: '#ffc107',
+                    background: '#fff3cd',
+                    color: '#856404'
+                },
+                info: {
+                    icon: 'info',
+                    iconColor: '#17a2b8',
+                    background: '#d1ecf1',
+                    color: '#0c5460'
+                }
+            };
+            
+            const config = configs[type] || configs.info;
+            
+            Swal.fire({
+                icon: config.icon,
+                title: title,
+                text: message,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: duration,
+                timerProgressBar: true,
+                background: config.background,
+                color: config.color,
+                iconColor: config.iconColor,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+        };
+        
+        // Helper global para confirmaciones
+        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#1e8081') {
+            return Swal.fire({
+                icon: 'question',
+                title: title,
+                text: message,
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#7b7d84',
+                confirmButtonText: confirmText,
+                cancelButtonText: cancelText
+            });
+        };
+        
+        // Helper para mostrar spinner de carga
+        window.showLoading = function(message = 'Cargando...') {
+            Swal.fire({
+                title: message,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        };
+        
+        // Helper para ocultar loading
+        window.hideLoading = function() {
+            Swal.close();
+        };
+    </script>
+    
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('novaSidebar');

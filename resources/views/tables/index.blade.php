@@ -409,13 +409,13 @@
                             <h5 class="card-title table-card-title mb-0">{{ $table->number }}</h5>
                             @can('update', $table)
                             <button type="button" 
-                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} border-0 table-status-badge"
+                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : ($table->status === 'RESERVADA' ? 'info' : 'secondary')) }} border-0 table-status-badge"
                                     style="cursor: pointer;"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
                                 {{ $table->status }}
                             </button>
                             @else
-                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} table-status-badge">
+                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : ($table->status === 'RESERVADA' ? 'info' : 'secondary')) }} table-status-badge">
                                 {{ $table->status }}
                             </span>
                             @endcan
@@ -425,12 +425,19 @@
                             <p class="text-muted mb-2">
                                 <i class="bi bi-people"></i> <strong>Capacidad:</strong> {{ $table->capacity }} personas
                             </p>
-                            @if($table->status === 'OCUPADA' && $table->currentSession && $table->currentSession->waiter)
-                            <p class="mb-0">
-                                <span class="badge bg-info">
-                                    <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
-                                </span>
-                            </p>
+                            @if($table->status === 'OCUPADA' && $table->currentSession)
+                                @if($table->currentSession->waiter)
+                                <p class="mb-1">
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
+                                    </span>
+                                </p>
+                                @endif
+                                @if($table->currentSession->started_at)
+                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-clock"></i> Abierta: {{ $table->currentSession->started_at->format('H:i') }}
+                                </p>
+                                @endif
                             @endif
                         </div>
                         
@@ -1158,6 +1165,68 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // MÓDULO 3: Sistema de notificaciones para pedidos listos
+    let lastNotificationCheck = null;
+    let notifiedOrders = new Set();
+    
+    async function checkReadyOrders() {
+        try {
+            const response = await fetch('/api/notifications/ready-orders', {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            if (data.success && data.orders) {
+                data.orders.forEach(order => {
+                    // Solo notificar si no se ha notificado antes
+                    if (!notifiedOrders.has(order.id)) {
+                        notifiedOrders.add(order.id);
+                        
+                        // Mostrar notificación toast
+                        Swal.fire({
+                            icon: 'success',
+                            title: '🍽️ Pedido Listo',
+                            html: `Pedido <strong>#${order.number}</strong> listo en <strong>Mesa ${order.table_number}</strong>`,
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Ver Pedidos',
+                            confirmButtonColor: '#1e8081',
+                            timer: 10000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Redirigir a ver pedidos de la mesa
+                                window.location.href = `/tables/${order.table_id || ''}/orders`;
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error checking ready orders:', error);
+        }
+    }
+    
+    // Iniciar polling cada 10 segundos si el usuario es MOZO
+    @if(auth()->user()->role === 'MOZO')
+        if (typeof checkReadyOrders === 'function') {
+            // Primera verificación después de 2 segundos
+            setTimeout(checkReadyOrders, 2000);
+            // Luego cada 10 segundos
+            setInterval(checkReadyOrders, 10000);
+        }
+    @endif
 });
 </script>
 @endsection

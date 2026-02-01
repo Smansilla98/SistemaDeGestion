@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\Product;
+use App\Models\User;
+use App\Models\Payment;
+use App\Models\TableSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +110,44 @@ class DashboardController extends Controller
             })
             ->take(10);
 
-        return view('dashboard', compact('stats', 'recentOrders', 'topProducts', 'lowStockProducts', 'outOfStockProducts'));
+        // MÓDULO 5: Ventas por mozo del día
+        $salesByWaiter = Cache::remember("sales_by_waiter_today_{$restaurantId}", 300, function () use ($restaurantId) {
+            return Payment::where('payments.restaurant_id', $restaurantId)
+                ->whereDate('payments.created_at', Carbon::today())
+                ->join('table_sessions', 'payments.table_session_id', '=', 'table_sessions.id')
+                ->join('users', 'table_sessions.waiter_id', '=', 'users.id')
+                ->select('users.name', 'users.id', DB::raw('SUM(payments.amount) as total_sales'), DB::raw('COUNT(DISTINCT payments.id) as payment_count'))
+                ->groupBy('users.id', 'users.name')
+                ->orderBy('total_sales', 'desc')
+                ->get();
+        });
+
+        // MÓDULO 5: Mesas activas con información de sesión
+        $activeTables = Table::where('restaurant_id', $restaurantId)
+            ->where('status', 'OCUPADA')
+            ->with(['currentSession.waiter', 'sector'])
+            ->orderBy('number')
+            ->get();
+
+        // MÓDULO 5: Ingresos del día por método de pago
+        $incomeByMethod = Cache::remember("income_by_method_today_{$restaurantId}", 300, function () use ($restaurantId) {
+            return Payment::where('restaurant_id', $restaurantId)
+                ->whereDate('created_at', Carbon::today())
+                ->select('payment_method', DB::raw('SUM(amount) as total'))
+                ->groupBy('payment_method')
+                ->orderBy('total', 'desc')
+                ->get();
+        });
+
+        return view('dashboard', compact(
+            'stats', 
+            'recentOrders', 
+            'topProducts', 
+            'lowStockProducts', 
+            'outOfStockProducts',
+            'salesByWaiter',
+            'activeTables',
+            'incomeByMethod'
+        ));
     }
 }
