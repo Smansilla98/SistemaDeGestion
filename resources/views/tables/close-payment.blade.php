@@ -398,27 +398,72 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Por favor espera mientras se procesa el pago',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             // Enviar formulario
             fetch(this.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
+            .then(async response => {
+                // Verificar si la respuesta es una redirección
                 if (response.redirected) {
                     window.location.href = response.url;
-                } else {
-                    return response.json();
+                    return;
                 }
-            })
-            .then(data => {
-                if (data && data.error) {
+
+                // Verificar el content-type
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Si hay una URL de redirección, usarla
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        // Mostrar errores de validación
+                        let errorMessage = data.message || 'Ocurrió un error al procesar el pago';
+                        
+                        if (data.errors) {
+                            const errorList = Object.values(data.errors).flat().join('<br>');
+                            errorMessage = errorList;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            html: errorMessage,
+                            confirmButtonColor: '#c94a2d'
+                        });
+                    }
+                } else {
+                    // Si no es JSON, probablemente es HTML (página de error)
+                    const text = await response.text();
+                    
+                    // Intentar extraer mensajes de error del HTML si es posible
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: data.error,
+                        html: 'Ocurrió un error al procesar el pago. Por favor, verifica los datos e intenta nuevamente.',
                         confirmButtonColor: '#c94a2d'
                     });
                 }
@@ -427,8 +472,8 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
                 console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al procesar el pago.',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión e intenta nuevamente.',
                     confirmButtonColor: '#c94a2d'
                 });
             });

@@ -477,23 +477,49 @@ class TableController extends Controller
     {
         Gate::authorize('update', $table);
 
+        // Helper para devolver respuesta JSON o HTML según el tipo de petición
+        $respond = function ($success, $message, $data = null) use ($request) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => $success,
+                    'message' => $message,
+                    'data' => $data
+                ], $success ? 200 : 422);
+            }
+            return $success 
+                ? redirect()->back()->with('success', $message)
+                : redirect()->back()->with('error', $message)->withInput();
+        };
+
         if ($table->status !== 'OCUPADA') {
-            return back()->with('error', 'La mesa no está ocupada');
+            return $respond(false, 'La mesa no está ocupada');
         }
 
         if (!$table->current_session_id) {
-            return back()->with('error', 'La mesa no tiene una sesión activa');
+            return $respond(false, 'La mesa no tiene una sesión activa');
         }
 
-        $validated = $request->validate([
-            'payments' => 'required|array|min:1',
-            'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA',
-            'payments.*.amount' => 'required|numeric|min:0.01',
-            'payments.*.operation_number' => 'nullable|string|max:255',
-            'payments.*.notes' => 'nullable|string|max:500',
-        ]);
+        try {
+            $validated = $request->validate([
+                'payments' => 'required|array|min:1',
+                'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA',
+                'payments.*.amount' => 'required|numeric|min:0.01',
+                'payments.*.operation_number' => 'nullable|string|max:255',
+                'payments.*.notes' => 'nullable|string|max:500',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        }
 
-        return DB::transaction(function () use ($table, $validated) {
+        try {
+            return DB::transaction(function () use ($table, $validated, $request, $respond) {
             // Obtener todos los pedidos activos
             $activeOrders = Order::where('table_id', $table->id)
                 ->where('table_session_id', $table->current_session_id)
@@ -503,7 +529,7 @@ class TableController extends Controller
                 ->get();
 
             if ($activeOrders->isEmpty()) {
-                return back()->with('error', 'No hay pedidos activos para cerrar');
+                return $respond(false, 'No hay pedidos activos para cerrar');
             }
 
             // Calcular total
@@ -512,8 +538,7 @@ class TableController extends Controller
 
             // Validar que el total pagado sea igual al total
             if (abs($totalPaid - $totalAmount) > 0.01) {
-                return back()->with('error', "El total pagado ($${totalPaid}) no coincide con el total a pagar ($${totalAmount})")
-                    ->withInput();
+                return $respond(false, "El total pagado ($${totalPaid}) no coincide con el total a pagar ($${totalAmount})");
             }
 
             // Cerrar todos los pedidos
@@ -555,7 +580,11 @@ class TableController extends Controller
 
             // Crear pagos consolidados por sesión de mesa
             // Asociar cada pago al primer pedido (para mantener relación con order_id) pero con table_session_id
-            $firstOrder = $ordersClosed->first();
+            $firstOrder = !empty($ordersClosed) ? $ordersClosed[0] : null;
+            if (!$firstOrder) {
+                return $respond(false, 'No se pudo obtener el pedido para asociar el pago');
+            }
+            
             $paymentsCreated = [];
             foreach ($validated['payments'] as $paymentData) {
                 $payment = Payment::create([
@@ -582,6 +611,15 @@ class TableController extends Controller
                 'current_session_id' => null,
             ]);
 
+            // Si es petición AJAX, devolver JSON
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Mesa cerrada y pago procesado exitosamente.',
+                    'redirect' => route('tables.consolidated-receipt', $table)
+                ]);
+            }
+
             return redirect()->route('tables.consolidated-receipt', $table)
                 ->with('success', 'Mesa cerrada y pago procesado exitosamente.')
                 ->with('table_session_id', $table->current_session_id)
@@ -591,7 +629,25 @@ class TableController extends Controller
                 ->with('orders_closed', $ordersClosed)
                 ->with('consolidated_items', $allItems)
                 ->with('payments', collect($paymentsCreated));
-        });
+            });
+        } catch (\Exception $e) {
+            \Log::error('Error al procesar pago: ' . $e->getMessage(), [
+                'table_id' => $table->id,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al procesar el pago: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Ocurrió un error al procesar el pago. Por favor, intenta nuevamente.')
+                ->withInput();
+        }
     }
 
     /**

@@ -273,8 +273,8 @@
 <div class="mosaic-dashboard">
     <div class="container-fluid">
         <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
+<div class="row mb-4">
+    <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
@@ -298,9 +298,9 @@
                     <div class="mosaic-trend mosaic-trend-up">
                         <i class="bi bi-arrow-up"></i>
                         <span>Activas</span>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
 
             <div class="col-md-6 col-lg-3">
                 <div class="mosaic-card mosaic-card-success">
@@ -326,9 +326,9 @@
                     <div class="mosaic-trend mosaic-trend-up">
                         <i class="bi bi-hourglass-split"></i>
                         <span>En proceso</span>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
 
             <div class="col-md-6 col-lg-3">
                 <div class="mosaic-card mosaic-card-info">
@@ -352,7 +352,7 @@
                 <div class="mosaic-card mosaic-card-danger">
                     <div class="mosaic-icon">
                         <i class="bi bi-exclamation-triangle"></i>
-                    </div>
+    </div>
                     <div class="mosaic-label">Productos Bajo Stock</div>
                     <div class="mosaic-value">{{ $stats['low_stock_products'] }}</div>
                     <div class="mosaic-trend mosaic-trend-down">
@@ -373,45 +373,45 @@
                         <div class="mosaic-section-title">
                             <i class="bi bi-receipt"></i>
                             <span>Pedidos Recientes</span>
-                        </div>
+    </div>
                         <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white; border: none; border-radius: 10px;">
                             Ver todos
                         </a>
-                    </div>
+            </div>
                     <div class="table-responsive">
                         @if($recentOrders->count() > 0)
                             <table class="mosaic-table">
-                                <thead>
-                                    <tr>
-                                        <th>Número</th>
-                                        <th>Mesa</th>
-                                        <th>Mozo</th>
-                                        <th>Estado</th>
-                                        <th>Total</th>
-                                        <th>Fecha</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentOrders as $order)
-                                    <tr>
-                                        <td>
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Mesa</th>
+                                    <th>Mozo</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($recentOrders as $order)
+                                <tr>
+                                    <td>
                                             <a href="{{ route('orders.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
                                                 {{ $order->number }}
                                             </a>
-                                        </td>
-                                        <td>{{ $order->table->number }}</td>
-                                        <td>{{ $order->user->name }}</td>
-                                        <td>
+                                    </td>
+                                    <td>{{ $order->table->number }}</td>
+                                    <td>{{ $order->user->name }}</td>
+                                    <td>
                                             <span class="mosaic-badge" style="background: {{ $order->status === 'CERRADO' ? '#c6f6d5' : ($order->status === 'LISTO' ? '#bee3f8' : '#fed7d7') }}; color: {{ $order->status === 'CERRADO' ? '#22543d' : ($order->status === 'LISTO' ? '#2c5282' : '#742a2a') }};">
-                                                {{ $order->status }}
-                                            </span>
-                                        </td>
+                                            {{ $order->status }}
+                                        </span>
+                                    </td>
                                         <td style="font-weight: 600; color: #2d3748;">${{ number_format($order->total, 2) }}</td>
                                         <td style="color: #718096;">{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                         @else
                             <div class="mosaic-empty-state">
                                 <i class="bi bi-inbox"></i>
@@ -444,16 +444,16 @@
                                 </span>
                             </div>
                             @endforeach
-                        </div>
-                    @else
+                    </div>
+                @else
                         <div class="mosaic-empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>No hay datos disponibles</p>
                         </div>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
+    </div>
 
         <!-- Alertas de Stock -->
         @if($outOfStockProducts->count() > 0 || $lowStockProducts->count() > 0)
