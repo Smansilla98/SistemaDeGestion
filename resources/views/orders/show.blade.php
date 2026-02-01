@@ -91,16 +91,29 @@
                 <h5 class="mb-0">Acciones</h5>
             </div>
             <div class="card-body">
-                @if($order->status === 'ABIERTO')
-                <form action="{{ route('orders.send-to-kitchen', $order) }}" method="POST" class="mb-2">
-                    @csrf
-                    <button type="submit" class="btn btn-warning w-100">
-                        <i class="bi bi-send"></i> Enviar a Cocina
-                    </button>
-                </form>
+                @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                    @if($order->status === 'ABIERTO')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="EN_PREPARACION">
+                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
+                                <i class="bi bi-gear"></i> Marcar en Preparación
+                            </button>
+                        </form>
+                    @elseif($order->status === 'EN_PREPARACION')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="ENTREGADO">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
+                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            </button>
+                        </form>
+                    @endif
                 @endif
 
-                @if($order->status === 'LISTO' || $order->status === 'ENTREGADO')
+                @if($order->status === 'ENTREGADO' || $order->status === 'CERRADO')
                 @can('update', $order)
                 <form action="{{ route('orders.close', $order) }}" method="POST" class="mb-2">
                     @csrf

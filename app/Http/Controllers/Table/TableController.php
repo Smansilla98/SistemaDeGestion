@@ -134,15 +134,15 @@ class TableController extends Controller
                 $this->orderService->addItem($order, $itemData);
             }
 
-            if ($validated['send_to_kitchen']) {
-                $this->orderService->sendToKitchen($order);
-            }
+            // La comanda se imprime automáticamente al crear el pedido
+            // El mozo luego cambia el estado a EN_PREPARACION cuando lo necesite
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente.',
+                'message' => 'Pedido creado exitosamente. La comanda se ha impreso automáticamente.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -611,6 +611,9 @@ class TableController extends Controller
                 'current_session_id' => null,
             ]);
 
+            // Guardar el table_session_id antes de limpiarlo
+            $savedSessionId = $table->current_session_id;
+            
             // Si es petición AJAX, devolver JSON
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
@@ -622,7 +625,7 @@ class TableController extends Controller
 
             return redirect()->route('tables.consolidated-receipt', $table)
                 ->with('success', 'Mesa cerrada y pago procesado exitosamente.')
-                ->with('table_session_id', $table->current_session_id)
+                ->with('table_session_id', $savedSessionId) // Usar el ID guardado antes de limpiarlo
                 ->with('total_amount', $totalAmount)
                 ->with('total_subtotal', $totalSubtotal)
                 ->with('total_discount', $totalDiscount)
@@ -708,14 +711,45 @@ class TableController extends Controller
             }
         }
 
-        // Si no hay datos en sesión, obtener los últimos pedidos cerrados
+        // Si no hay datos en sesión, intentar obtenerlos de la base de datos
         if ($closedOrders->isEmpty()) {
-            $closedOrders = Order::where('table_id', $table->id)
+            // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
+            if (!$sessionId) {
+                $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
+                    ->whereHas('order', function($query) use ($table) {
+                        $query->where('table_id', $table->id);
+                    })
+                    ->whereNotNull('table_session_id')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($recentPayment) {
+                    $sessionId = $recentPayment->table_session_id;
+                } else {
+                    // Si no hay pagos, obtener la última sesión cerrada de la mesa
+                    $lastSession = \App\Models\TableSession::where('table_id', $table->id)
+                        ->where('status', \App\Models\TableSession::STATUS_CLOSED)
+                        ->orderBy('ended_at', 'desc')
+                        ->first();
+                    
+                    if ($lastSession) {
+                        $sessionId = $lastSession->id;
+                    }
+                }
+            }
+            
+            // Obtener pedidos cerrados filtrando por table_session_id si está disponible
+            $query = Order::where('table_id', $table->id)
                 ->where('status', Order::STATUS_CERRADO)
-                ->whereNotNull('closed_at')
-                ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+                ->whereNotNull('closed_at');
+            
+            // CRÍTICO: Filtrar por table_session_id si está disponible
+            if ($sessionId) {
+                $query->where('table_session_id', $sessionId);
+            }
+            
+            $closedOrders = $query->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
                 ->orderBy('closed_at', 'desc')
-                ->limit(10)
                 ->get();
 
             // Consolidar items

@@ -1040,16 +1040,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 Swal.fire({
-                    toast: true,
-                    position: 'top-end',
                     icon: 'success',
-                    title: `Pedido creado (${data.order_number})`,
-                    showConfirmButton: false,
-                    timer: 2200,
-                    timerProgressBar: true,
+                    title: 'Pedido creado',
+                    html: `
+                        <p>Pedido <strong>${data.order_number}</strong> creado exitosamente.</p>
+                        <p class="text-muted small">La comanda se ha impreso automáticamente.</p>
+                        ${data.comanda_url ? `<a href="${data.comanda_url}" target="_blank" class="btn btn-sm btn-primary mt-2">Ver Comanda</a>` : ''}
+                    `,
+                    confirmButtonColor: '#1e8081',
+                    confirmButtonText: 'Entendido',
+                    showCancelButton: data.comanda_url ? true : false,
+                    cancelButtonText: 'Ver Comanda',
+                    cancelButtonColor: '#007bff'
+                }).then((result) => {
+                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel && data.comanda_url) {
+                        window.open(data.comanda_url, '_blank');
+                    }
                 });
 
                 newOrderModal.hide();
+                
+                // Recargar la página para actualizar la lista de pedidos
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } catch (err) {
                 Swal.fire({
                     icon: 'error',

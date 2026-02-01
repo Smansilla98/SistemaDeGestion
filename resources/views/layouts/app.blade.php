@@ -636,12 +636,6 @@
             </a>
             @endif
 
-            @if(in_array(auth()->user()->role, ['ADMIN', 'COCINA']))
-            <a href="{{ route('kitchen.index') }}" class="nova-nav-item {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
-                <i class="bi bi-fire"></i>
-                <span>Cocina</span>
-            </a>
-            @endif
 
             @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
             <a href="{{ route('cash-register.index') }}" class="nova-nav-item {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
