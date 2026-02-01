@@ -106,10 +106,13 @@
                                 </a>
                                 @endcan
                                 @can('delete', $product)
-                                <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline" data-confirm-delete>
+                                <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline" id="deleteProductForm{{ $product->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger">
+                                    <button type="button" 
+                                            class="btn btn-outline-danger" 
+                                            onclick="confirmDeleteProduct({{ $product->id }}, '{{ addslashes($product->name) }}')"
+                                            title="Eliminar">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -131,5 +134,44 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeleteProduct(productId, productName) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Producto?',
+        html: `
+            <p>¿Estás seguro de eliminar el producto <strong>${productName}</strong>?</p>
+            <div class="alert alert-warning mt-3">
+                <small><i class="bi bi-info-circle"></i> Esta acción eliminará el producto permanentemente. Si tiene pedidos asociados, se mantendrán en el historial.</small>
+            </div>
+            <p class="text-danger small mt-2"><strong>Esta acción no se puede deshacer.</strong></p>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('deleteProductForm' + productId).submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 

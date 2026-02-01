@@ -73,9 +73,23 @@
                         <td><strong>${{ number_format($order->total, 2) }}</strong></td>
                         <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <a href="{{ route('orders.show', $order) }}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                @can('delete', $order)
+                                <form action="{{ route('orders.destroy', $order) }}" method="POST" class="d-inline" id="deleteOrderForm{{ $order->id }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" 
+                                            class="btn btn-outline-danger" 
+                                            onclick="confirmDeleteOrder({{ $order->id }}, '{{ $order->number }}')"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                @endcan
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -92,5 +106,44 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeleteOrder(orderId, orderNumber) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Pedido?',
+        html: `
+            <p>¿Estás seguro de eliminar el pedido <strong>#${orderNumber}</strong>?</p>
+            <div class="alert alert-warning mt-3">
+                <small><i class="bi bi-info-circle"></i> Solo se pueden eliminar pedidos en estado <strong>ABIERTO</strong> o <strong>CANCELADO</strong> sin pagos asociados.</small>
+            </div>
+            <p class="text-danger small mt-2"><strong>Esta acción no se puede deshacer.</strong></p>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('deleteOrderForm' + orderId).submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 

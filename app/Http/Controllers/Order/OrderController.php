@@ -280,6 +280,38 @@ class OrderController extends Controller
 
         return back()->with('success', "Estado del pedido actualizado a {$newStatus}");
     }
+
+    /**
+     * Eliminar pedido
+     * Solo ADMIN puede eliminar pedidos en estado ABIERTO o CANCELADO
+     */
+    public function destroy(Order $order)
+    {
+        Gate::authorize('delete', $order);
+
+        // Verificar que el pedido esté en un estado que permita eliminación
+        if (!in_array($order->status, ['ABIERTO', 'CANCELADO'])) {
+            return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO o CANCELADO');
+        }
+
+        // Verificar que no tenga pagos asociados
+        if ($order->payments()->count() > 0) {
+            return back()->with('error', 'No se puede eliminar un pedido que tiene pagos asociados');
+        }
+
+        try {
+            // Eliminar items primero (si hay restricciones de foreign key)
+            $order->items()->delete();
+            
+            // Eliminar el pedido
+            $order->delete();
+
+            return redirect()->route('orders.index')
+                ->with('success', 'Pedido eliminado exitosamente');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al eliminar el pedido: ' . $e->getMessage());
+        }
+    }
 }
 
 
