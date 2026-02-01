@@ -280,6 +280,21 @@ class TableController extends Controller
             return back()->with('error', 'No se puede eliminar una mesa con pedido activo');
         }
 
+        // Verificar que no tenga sesión activa
+        if ($table->current_session_id) {
+            $session = TableSession::find($table->current_session_id);
+            if ($session && $session->isOpen()) {
+                return back()->with('error', 'No se puede eliminar una mesa con sesión abierta. Cerrá la sesión primero.');
+            }
+        }
+
+        // Verificar que no tenga pedidos asociados (históricos)
+        $hasOrders = Order::where('table_id', $table->id)->exists();
+        if ($hasOrders) {
+            // Aunque tenga pedidos históricos, permitir eliminación pero advertir
+            // (opcional: podrías requerir confirmación adicional aquí)
+        }
+
         $table->delete();
 
         return redirect()->route('tables.index')
