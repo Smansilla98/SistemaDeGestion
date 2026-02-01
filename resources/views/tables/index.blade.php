@@ -374,131 +374,128 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
     maxCapacitySpan.textContent = capacity;
     guestsInput.max = capacity;
     
-    // Limpiar event listeners anteriores
+    // Limpiar event listeners anteriores clonando el select
     const newStatusSelect = statusSelect.cloneNode(true);
     statusSelect.parentNode.replaceChild(newStatusSelect, statusSelect);
     const newStatusSelectRef = document.getElementById('status');
     
-    // Configurar opciones según el estado actual
-    function updateStatusOptions() {
-        // Limpiar opciones
-        newStatusSelectRef.innerHTML = '';
-        
-        if (currentStatus === 'LIBRE') {
-            // Si está LIBRE, solo puede cambiar a OCUPADA o RESERVADA
-            newStatusSelectRef.innerHTML = `
-                <option value="OCUPADA">Ocupada</option>
-                <option value="RESERVADA">Reservada</option>
-            `;
-            statusHelp.textContent = 'Una mesa libre solo puede marcarse como Ocupada o Reservada.';
+    // Función para mostrar/ocultar campos según el estado
+    function updateFieldsForStatus(status) {
+        if (status === 'OCUPADA') {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
-            guestsInput.value = 1;
-            // Inicialmente oculto, se mostrará si selecciona OCUPADA
-            waiterContainer.style.display = 'none';
-            waiterSelect.required = false;
-            waiterSelect.value = '';
-        } else if (currentStatus === 'OCUPADA') {
-            // Si está OCUPADA, puede cambiar a LIBRE o CERRADA
-            newStatusSelectRef.innerHTML = `
-                <option value="LIBRE">Libre</option>
-                <option value="CERRADA">Cerrada</option>
-            `;
-            statusHelp.textContent = 'Para cerrar la mesa y generar el recibo, usa el botón "Cerrar Mesa" en lugar de cambiar el estado.';
+            if (!guestsInput.value || guestsInput.value === '0') {
+                guestsInput.value = 1;
+            }
+            waiterContainer.style.display = 'block';
+            waiterSelect.required = true;
+        } else if (status === 'LIBRE') {
             guestsContainer.style.display = 'none';
             guestsInput.required = false;
             guestsInput.value = 0;
-        } else if (currentStatus === 'RESERVADA') {
-            // Si está RESERVADA, puede cambiar a OCUPADA o LIBRE
-            newStatusSelectRef.innerHTML = `
-                <option value="LIBRE">Libre</option>
-                <option value="OCUPADA">Ocupada</option>
-            `;
-            statusHelp.textContent = 'Una mesa reservada puede marcarse como Ocupada o Libre.';
+            waiterContainer.style.display = 'none';
+            waiterSelect.required = false;
+            waiterSelect.value = '';
+        } else if (status === 'RESERVADA') {
             guestsContainer.style.display = 'block';
             guestsInput.required = true;
-            guestsInput.value = 1;
-            // Inicialmente oculto, se mostrará si selecciona OCUPADA
+            if (!guestsInput.value || guestsInput.value === '0') {
+                guestsInput.value = 1;
+            }
             waiterContainer.style.display = 'none';
             waiterSelect.required = false;
             waiterSelect.value = '';
         } else {
-            // Cualquier otro estado, permitir todos los cambios
-            newStatusSelectRef.innerHTML = `
-                <option value="LIBRE">Libre</option>
-                <option value="OCUPADA">Ocupada</option>
-                <option value="RESERVADA">Reservada</option>
-                <option value="CERRADA">Cerrada</option>
-            `;
-            statusHelp.textContent = '';
-            guestsContainer.style.display = 'block';
-            guestsInput.required = true;
-            guestsInput.value = 1;
-            // Inicialmente oculto, se mostrará si selecciona OCUPADA
+            guestsContainer.style.display = 'none';
+            guestsInput.required = false;
+            guestsInput.value = 0;
             waiterContainer.style.display = 'none';
             waiterSelect.required = false;
             waiterSelect.value = '';
         }
-        
-        // Actualizar cuando cambie el estado seleccionado
-        newStatusSelectRef.addEventListener('change', function() {
-            updateFieldsForStatus(this.value);
-        });
-        
-        // Configurar opciones iniciales
-        updateStatusOptions();
-        
-        // Función para mostrar/ocultar campos según el estado
-        function updateFieldsForStatus(status) {
-            if (status === 'OCUPADA') {
-                guestsContainer.style.display = 'block';
-                guestsInput.required = true;
-                if (!guestsInput.value || guestsInput.value === '0') {
-                    guestsInput.value = 1;
-                }
-                waiterContainer.style.display = 'block';
-                waiterSelect.required = true;
-            } else if (status === 'LIBRE') {
-                guestsContainer.style.display = 'none';
-                guestsInput.required = false;
-                guestsInput.value = 0;
-                waiterContainer.style.display = 'none';
-                waiterSelect.required = false;
-                waiterSelect.value = '';
-            } else if (status === 'RESERVADA') {
-                guestsContainer.style.display = 'block';
-                guestsInput.required = true;
-                if (!guestsInput.value || guestsInput.value === '0') {
-                    guestsInput.value = 1;
-                }
-                waiterContainer.style.display = 'none';
-                waiterSelect.required = false;
-                waiterSelect.value = '';
-            } else {
-                guestsContainer.style.display = 'none';
-                guestsInput.required = false;
-                guestsInput.value = 0;
-                waiterContainer.style.display = 'none';
-                waiterSelect.required = false;
-                waiterSelect.value = '';
-            }
-        }
-        
-        // Verificar el estado inicial después de configurar las opciones
-        setTimeout(() => {
-            const initialValue = newStatusSelectRef.value;
-            updateFieldsForStatus(initialValue);
-        }, 50);
-        
-        // También verificar cuando el modal se muestra completamente
-        const modalElement = document.getElementById('changeStatusModal');
-        modalElement.addEventListener('shown.bs.modal', function() {
-            const currentValue = newStatusSelectRef.value;
-            updateFieldsForStatus(currentValue);
-        });
-        
-        modal.show();
     }
+    
+    // Configurar opciones según el estado actual
+    newStatusSelectRef.innerHTML = '';
+    
+    if (currentStatus === 'LIBRE') {
+        // Si está LIBRE, solo puede cambiar a OCUPADA o RESERVADA
+        newStatusSelectRef.innerHTML = `
+            <option value="OCUPADA">Ocupada</option>
+            <option value="RESERVADA">Reservada</option>
+        `;
+        statusHelp.textContent = 'Una mesa libre solo puede marcarse como Ocupada o Reservada.';
+        guestsContainer.style.display = 'block';
+        guestsInput.required = true;
+        guestsInput.value = 1;
+        waiterContainer.style.display = 'none';
+        waiterSelect.required = false;
+        waiterSelect.value = '';
+    } else if (currentStatus === 'OCUPADA') {
+        // Si está OCUPADA, puede cambiar a LIBRE o CERRADA
+        newStatusSelectRef.innerHTML = `
+            <option value="LIBRE">Libre</option>
+            <option value="CERRADA">Cerrada</option>
+        `;
+        statusHelp.textContent = 'Para cerrar la mesa y generar el recibo, usa el botón "Cerrar Mesa" en lugar de cambiar el estado.';
+        guestsContainer.style.display = 'none';
+        guestsInput.required = false;
+        guestsInput.value = 0;
+        waiterContainer.style.display = 'none';
+        waiterSelect.required = false;
+        waiterSelect.value = '';
+    } else if (currentStatus === 'RESERVADA') {
+        // Si está RESERVADA, puede cambiar a OCUPADA o LIBRE
+        newStatusSelectRef.innerHTML = `
+            <option value="LIBRE">Libre</option>
+            <option value="OCUPADA">Ocupada</option>
+        `;
+        statusHelp.textContent = 'Una mesa reservada puede marcarse como Ocupada o Libre.';
+        guestsContainer.style.display = 'block';
+        guestsInput.required = true;
+        guestsInput.value = 1;
+        waiterContainer.style.display = 'none';
+        waiterSelect.required = false;
+        waiterSelect.value = '';
+    } else {
+        // Cualquier otro estado, permitir todos los cambios
+        newStatusSelectRef.innerHTML = `
+            <option value="LIBRE">Libre</option>
+            <option value="OCUPADA">Ocupada</option>
+            <option value="RESERVADA">Reservada</option>
+            <option value="CERRADA">Cerrada</option>
+        `;
+        statusHelp.textContent = '';
+        guestsContainer.style.display = 'block';
+        guestsInput.required = true;
+        guestsInput.value = 1;
+        waiterContainer.style.display = 'none';
+        waiterSelect.required = false;
+        waiterSelect.value = '';
+    }
+    
+    // Actualizar cuando cambie el estado seleccionado
+    newStatusSelectRef.addEventListener('change', function() {
+        updateFieldsForStatus(this.value);
+    });
+    
+    // Verificar el estado inicial después de configurar las opciones
+    setTimeout(() => {
+        const initialValue = newStatusSelectRef.value;
+        updateFieldsForStatus(initialValue);
+    }, 50);
+    
+    // También verificar cuando el modal se muestra completamente
+    const modalElement = document.getElementById('changeStatusModal');
+    const handleShown = function() {
+        const currentValue = newStatusSelectRef.value;
+        updateFieldsForStatus(currentValue);
+        modalElement.removeEventListener('shown.bs.modal', handleShown);
+    };
+    modalElement.addEventListener('shown.bs.modal', handleShown);
+    
+    modal.show();
+}
 
 function editTable(tableId) {
     // TODO: Implementar edición de mesa
