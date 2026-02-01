@@ -150,7 +150,83 @@
                 @endif
             </div>
         </div>
+
+        @can('delete', $table)
+        <div class="card mt-3 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Zona de Peligro</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Eliminar esta mesa es una acción permanente. Asegurate de que no tenga pedidos activos o sesiones abiertas.
+                </p>
+                @if($table->current_order_id || $table->current_session_id)
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>No se puede eliminar:</strong>
+                    <ul class="mb-0 mt-2">
+                        @if($table->current_order_id)
+                        <li>La mesa tiene un pedido activo</li>
+                        @endif
+                        @if($table->current_session_id)
+                        <li>La mesa tiene una sesión abierta</li>
+                        @endif
+                    </ul>
+                </div>
+                @else
+                <form id="deleteTableForm" action="{{ route('tables.destroy', $table) }}" method="POST" class="mt-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" 
+                            class="btn btn-danger w-100" 
+                            onclick="confirmDeleteTable()">
+                        <i class="bi bi-trash"></i> Eliminar Mesa
+                    </button>
+                </form>
+                @endif
+            </div>
+        </div>
+        @endcan
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeleteTable() {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar Mesa?',
+        html: `
+            <p>Esta acción <strong>no se puede deshacer</strong>.</p>
+            <p>Se eliminará permanentemente la mesa <strong>{{ $table->number }}</strong>.</p>
+            <div class="alert alert-warning mt-3">
+                <small><i class="bi bi-info-circle"></i> Asegurate de que la mesa no tenga pedidos activos o sesiones abiertas.</small>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('deleteTableForm').submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
 
