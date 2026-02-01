@@ -182,4 +182,30 @@ class User extends Authenticatable
                   ->where('status', TableSession::STATUS_OPEN);
         })->with(['currentSession', 'sector'])->get();
     }
+
+    /**
+     * Accessor para last_login_at que siempre devuelve Carbon o null
+     */
+    public function getLastLoginAtAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+        
+        // Si ya es un objeto Carbon, devolverlo
+        if ($value instanceof \Carbon\Carbon) {
+            return $value;
+        }
+        
+        // Si es string, convertirlo a Carbon
+        if (is_string($value)) {
+            try {
+                return \Carbon\Carbon::parse($value);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        
+        return $value;
+    }
 }

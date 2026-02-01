@@ -92,21 +92,82 @@
                         <thead>
                             <tr>
                                 <th>Pedido</th>
+                                <th>Mesa</th>
+                                <th>Mozo</th>
                                 <th>Método</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
+                                <th>Notas</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($session->payments as $payment)
+                            @forelse($session->payments as $payment)
                             <tr>
-                                <td>{{ $payment->order->number }}</td>
-                                <td>{{ $payment->payment_method }}</td>
-                                <td>${{ number_format($payment->amount, 2) }}</td>
-                                <td>{{ $payment->created_at->format('H:i') }}</td>
+                                <td>
+                                    @if($payment->order)
+                                        {{ $payment->order->number }}
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($payment->order && $payment->order->table)
+                                        Mesa {{ $payment->order->table->number }}
+                                    @elseif($payment->notes && str_contains($payment->notes, 'Mesa:'))
+                                        @php
+                                            preg_match('/Mesa:\s*(\d+)/', $payment->notes, $matches);
+                                            echo isset($matches[1]) ? 'Mesa ' . $matches[1] : 'N/A';
+                                        @endphp
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($payment->order && $payment->order->user)
+                                        {{ $payment->order->user->name }}
+                                    @elseif($payment->notes && str_contains($payment->notes, 'Mozo:'))
+                                        @php
+                                            preg_match('/Mozo:\s*([^|]+)/', $payment->notes, $matches);
+                                            echo isset($matches[1]) ? trim($matches[1]) : 'N/A';
+                                        @endphp
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ $payment->payment_method === 'EFECTIVO' ? 'success' : ($payment->payment_method === 'DEBITO' ? 'primary' : ($payment->payment_method === 'CREDITO' ? 'info' : 'secondary')) }}">
+                                        {{ $payment->payment_method }}
+                                    </span>
+                                </td>
+                                <td><strong>${{ number_format($payment->amount, 2) }}</strong></td>
+                                <td>{{ $payment->created_at->format('d/m H:i') }}</td>
+                                <td>
+                                    @if($payment->notes && !str_contains($payment->notes, 'Mesa:') && !str_contains($payment->notes, 'Mozo:'))
+                                        <small class="text-muted">{{ Str::limit($payment->notes, 30) }}</small>
+                                    @elseif($payment->operation_number)
+                                        <small class="text-muted">Op: {{ $payment->operation_number }}</small>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    No hay pagos registrados en esta sesión
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
+                        @if($session->payments->count() > 0)
+                        <tfoot>
+                            <tr>
+                                <th colspan="4" class="text-end">Total:</th>
+                                <th>${{ number_format($session->payments->sum('amount'), 2) }}</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                        @endif
                     </table>
                 </div>
             </div>

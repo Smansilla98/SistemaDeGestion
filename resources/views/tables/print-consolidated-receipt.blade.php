@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>RECEIPT - {{ $order->number }}</title>
+    <title>RECEIPT - Mesa {{ $table->number }}</title>
     <style>
         * {
             margin: 0;
@@ -140,6 +140,13 @@
             font-size: 8px;
             color: #666;
         }
+        .orders-info {
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed #000;
+            font-size: 9px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -162,22 +169,25 @@
     <div class="dashed-line"></div>
 
     <div class="order-info">
-        <p><strong>Ticket:</strong> {{ $order->number }}</p>
-        <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
-        @if($order->user)
-        <p><strong>Mozo:</strong> {{ $order->user->name }}</p>
+        <p><strong>Mesa:</strong> {{ $table->number }}</p>
+        <p><strong>Sector:</strong> {{ $table->sector->name ?? 'N/A' }}</p>
+        @if($closedOrders->count() > 0 && $closedOrders->first()->user)
+        <p><strong>Mozo:</strong> {{ $closedOrders->first()->user->name }}</p>
+        @endif
+        @if($closedOrders->count() > 0)
+        <p><strong>Pedidos:</strong> {{ $closedOrders->count() }}</p>
         @endif
     </div>
 
     <div class="dashed-line"></div>
 
     <div class="items">
-        @foreach($order->items as $item)
+        @foreach($consolidatedItems as $item)
         <div class="item">
             <div class="item-line">
-                <span class="item-quantity">{{ $item->quantity }} x</span>
-                <span class="item-name">{{ $item->product->name }}</span>
-                <span class="item-price">${{ number_format($item->subtotal, 2) }}</span>
+                <span class="item-quantity">{{ $item['quantity'] }} x</span>
+                <span class="item-name">{{ $item['product_name'] }}</span>
+                <span class="item-price">${{ number_format($item['subtotal'], 2) }}</span>
             </div>
         </div>
         @endforeach
@@ -188,27 +198,27 @@
     <div class="totals">
         <div class="total-line">
             <span>Subtotal:</span>
-            <span>${{ number_format($order->subtotal, 2) }}</span>
+            <span>${{ number_format($totalSubtotal, 2) }}</span>
         </div>
-        @if($order->discount > 0)
+        @if($totalDiscount > 0)
         <div class="total-line">
             <span>Descuento:</span>
-            <span>-${{ number_format($order->discount, 2) }}</span>
+            <span>-${{ number_format($totalDiscount, 2) }}</span>
         </div>
         @endif
         <div class="total-line final">
             <span>TOTAL AMOUNT:</span>
-            <span>${{ number_format($order->total, 2) }}</span>
+            <span>${{ number_format($totalAmount, 2) }}</span>
         </div>
     </div>
 
-    @if($order->payments && $order->payments->count() > 0)
+    @if($payments && $payments->count() > 0)
     <div class="payments">
         @php
-            $totalPaid = $order->payments->sum('amount');
-            $change = $totalPaid - $order->total;
+            $totalPaid = $payments->sum('amount');
+            $change = $totalPaid - $totalAmount;
         @endphp
-        @foreach($order->payments as $payment)
+        @foreach($payments as $payment)
         <div class="payment-line">
             <span>{{ $payment->payment_method }}:</span>
             <span>${{ number_format($payment->amount, 2) }}</span>
@@ -235,6 +245,16 @@
     </div>
     @endif
 
+    @if($closedOrders->count() > 0)
+    <div class="orders-info">
+        <p><strong>Pedidos:</strong> 
+        @foreach($closedOrders as $order)
+            {{ $order->number }}{{ !$loop->last ? ', ' : '' }}
+        @endforeach
+        </p>
+    </div>
+    @endif
+
     <div class="dashed-line"></div>
 
     <div class="footer">
@@ -250,3 +270,4 @@
     </div>
 </body>
 </html>
+

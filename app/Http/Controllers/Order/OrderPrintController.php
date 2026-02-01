@@ -58,14 +58,14 @@ class OrderPrintController extends Controller
     }
 
     /**
-     * Generar PDF de factura
+     * Generar PDF de factura (formato ticket térmico 80mm)
      */
     public function invoice(Order $order)
     {
-        $order->load(['table', 'items.product', 'items.modifiers', 'user', 'payments']);
+        $order->load(['table', 'items.product', 'items.modifiers', 'user', 'payments', 'restaurant']);
 
         $pdf = Pdf::loadView('orders.print-invoice', compact('order'))
-            ->setPaper('a4', 'portrait')
+            ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("factura-{$order->number}.pdf");

@@ -280,8 +280,11 @@
 
     <div class="text-center mt-4">
         <div class="btn-group" role="group">
-            <button onclick="window.print()" class="btn btn-primary">
-                <i class="bi bi-printer"></i> Imprimir Recibo
+            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-primary">
+                <i class="bi bi-printer"></i> Imprimir Recibo (Ticket)
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="bi bi-printer"></i> Imprimir Vista
             </button>
             <a href="{{ route('tables.index') }}" class="btn btn-success">
                 <i class="bi bi-check-circle"></i> Finalizar

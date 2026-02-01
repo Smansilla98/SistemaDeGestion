@@ -4,6 +4,82 @@
 
 @push('styles')
 <style>
+    /* Estilos generales para botones de mesas */
+    .table-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .table-actions .btn {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.875rem 1.25rem;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.625rem;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+    }
+    
+    .table-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .table-actions .btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    
+    .table-actions .btn i {
+        font-size: 1.25rem;
+    }
+    
+    /* Colores específicos para cada acción */
+    .btn-reservar {
+        background: linear-gradient(135deg, #17a2b8, #138496) !important;
+        color: white !important;
+    }
+    
+    .btn-ocupar {
+        background: linear-gradient(135deg, #28a745, #218838) !important;
+        color: white !important;
+    }
+    
+    .btn-pedido {
+        background: linear-gradient(135deg, #007bff, #0056b3) !important;
+        color: white !important;
+    }
+    
+    .btn-ver-pedidos {
+        background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+        color: #000 !important;
+        font-weight: 800 !important;
+    }
+    
+    .btn-cerrar {
+        background: linear-gradient(135deg, #dc3545, #c82333) !important;
+        color: white !important;
+    }
+    
+    .btn-editar {
+        background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+        color: white !important;
+    }
+    
+    .btn-cambiar-estado {
+        background: linear-gradient(135deg, #6610f2, #520dc2) !important;
+        color: white !important;
+    }
+    
     /* Mejoras para móvil */
     @media (max-width: 768px) {
         /* Header más compacto */
@@ -68,34 +144,36 @@
             justify-content: center;
         }
         
-        /* Botones más grandes y táctiles (mínimo 44x44px) */
+        /* Botones más grandes y táctiles (mínimo 48x48px) */
         .table-card .btn {
-            min-height: 44px;
-            padding: 0.75rem 1rem !important;
-            font-size: 0.875rem !important;
-            font-weight: 600 !important;
-            border-radius: 12px !important;
+            min-height: 48px;
+            padding: 0.875rem 1.25rem !important;
+            font-size: 0.9375rem !important;
+            font-weight: 700 !important;
+            border-radius: 14px !important;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
             flex: 1;
             min-width: 0;
+            border: none !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .table-card .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .table-card .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
         
         .table-card .btn i {
-            font-size: 1rem;
-        }
-        
-        .table-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            width: 100%;
-        }
-        
-        .table-actions .btn {
-            width: 100%;
+            font-size: 1.25rem;
         }
         
         /* Información de mesa más clara */
@@ -359,33 +437,33 @@
                         <div class="table-actions">
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
-                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-outline-info">
-                                <i class="bi bi-calendar-check"></i> <span>Reservar</span>
+                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar">
+                                <i class="bi bi-calendar-check"></i> <span>📅 Reservar</span>
                             </a>
                             @can('update', $table)
                             <button type="button" 
-                                    class="btn btn-primary"
+                                    class="btn btn-ocupar"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> <span>Marcar Ocupada</span>
+                                <i class="bi bi-check-circle"></i> <span>✅ Marcar Ocupada</span>
                             </button>
                             @endcan
                             @elseif($table->status === 'OCUPADA')
                             {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
                             @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
                             <button type="button"
-                                    class="btn btn-primary"
+                                    class="btn btn-pedido"
                                     onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
-                                <i class="bi bi-plus-circle"></i> <span>Nuevo Pedido</span>
+                                <i class="bi bi-plus-circle"></i> <span>➕ Nuevo Pedido</span>
                             </button>
                             @endif
-                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-warning">
-                                <i class="bi bi-receipt"></i> <span>Ver Pedidos</span>
+                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-ver-pedidos">
+                                <i class="bi bi-receipt"></i> <span>📋 Ver Pedidos</span>
                             </a>
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline w-100" id="closeTableForm{{ $table->id }}">
                                 @csrf
-                                <button type="button" class="btn btn-success w-100" onclick="confirmCloseTable({{ $table->id }})">
-                                    <i class="bi bi-check-circle"></i> <span>Cerrar Mesa</span>
+                                <button type="button" class="btn btn-cerrar w-100" onclick="confirmCloseTable({{ $table->id }})">
+                                    <i class="bi bi-x-circle"></i> <span>💳 Cerrar Mesa</span>
                                 </button>
                             </form>
                             @endcan
@@ -393,15 +471,15 @@
                             {{-- Mesa RESERVADA: Puede cambiar estado --}}
                             @can('update', $table)
                             <button type="button" 
-                                    class="btn btn-primary"
+                                    class="btn btn-cambiar-estado"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> <span>Cambiar Estado</span>
+                                <i class="bi bi-arrow-repeat"></i> <span>🔄 Cambiar Estado</span>
                             </button>
                             @endcan
                             @endif
                             @can('update', $table)
-                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-pencil"></i> <span>Editar</span>
+                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-editar">
+                                <i class="bi bi-pencil"></i> <span>✏️ Editar</span>
                             </a>
                             @endcan
                         </div>
@@ -1044,17 +1122,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: 'Pedido creado',
                     html: `
                         <p>Pedido <strong>${data.order_number}</strong> creado exitosamente.</p>
-                        <p class="text-muted small">La comanda se ha impreso automáticamente.</p>
-                        ${data.comanda_url ? `<a href="${data.comanda_url}" target="_blank" class="btn btn-sm btn-primary mt-2">Ver Comanda</a>` : ''}
+                        <p class="text-muted small">${data.message || 'La comanda de cocina se ha impreso automáticamente.'}</p>
+                        ${data.kitchen_ticket_url ? `
+                            <div class="mt-3">
+                                <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-printer"></i> Ver Ticket Cocina
+                                </a>
+                            </div>
+                        ` : ''}
                     `,
                     confirmButtonColor: '#1e8081',
                     confirmButtonText: 'Entendido',
-                    showCancelButton: data.comanda_url ? true : false,
-                    cancelButtonText: 'Ver Comanda',
+                    showCancelButton: data.kitchen_ticket_url ? true : false,
+                    cancelButtonText: 'Ver Ticket',
                     cancelButtonColor: '#007bff'
                 }).then((result) => {
-                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel && data.comanda_url) {
-                        window.open(data.comanda_url, '_blank');
+                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel && data.kitchen_ticket_url) {
+                        window.open(data.kitchen_ticket_url, '_blank');
                     }
                 });
 

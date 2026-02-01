@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Ticket - {{ $order->number }}</title>
+    <title>RECEIPT - {{ $order->number }}</title>
     <style>
         * {
             margin: 0;
@@ -14,27 +14,52 @@
             font-size: 11px;
             width: 80mm;
             padding: 5mm;
+            line-height: 1.3;
+        }
+        .border-asterisk {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 1px;
+            margin: 5px 0;
         }
         .header {
             text-align: center;
-            border-bottom: 2px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .logo-container img {
+            max-width: 60mm;
+            max-height: 30mm;
+            object-fit: contain;
         }
         .header h1 {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            margin: 5px 0;
+        }
+        .dashed-line {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
         }
         .order-info {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 10px;
         }
         .order-info p {
             margin: 2px 0;
         }
         .items {
-            margin: 10px 0;
+            margin: 8px 0;
         }
         .item {
             margin-bottom: 5px;
@@ -43,26 +68,29 @@
         .item-line {
             display: flex;
             justify-content: space-between;
+            font-size: 10px;
+        }
+        .item-quantity {
+            margin-right: 5px;
+            font-weight: bold;
         }
         .item-name {
             flex: 1;
         }
-        .item-quantity {
-            margin-right: 5px;
-        }
         .item-price {
             text-align: right;
             min-width: 50px;
+            font-weight: bold;
         }
         .totals {
-            margin-top: 10px;
-            border-top: 2px dashed #000;
+            margin-top: 8px;
             padding-top: 5px;
         }
         .total-line {
             display: flex;
             justify-content: space-between;
             margin: 3px 0;
+            font-size: 10px;
         }
         .total-line.final {
             font-weight: bold;
@@ -71,46 +99,91 @@
             padding-top: 5px;
             margin-top: 5px;
         }
-        .footer {
-            margin-top: 15px;
-            text-align: center;
-            border-top: 2px dashed #000;
-            padding-top: 5px;
-            font-size: 9px;
-        }
         .payments {
-            margin-top: 10px;
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed #000;
             font-size: 10px;
         }
         .payment-line {
             display: flex;
             justify-content: space-between;
-            margin: 2px 0;
+            margin: 3px 0;
+        }
+        .payment-total {
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        .change-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 10px;
+        }
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            font-size: 9px;
+        }
+        .thank-you {
+            text-align: center;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .barcode-placeholder {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 8px;
+            color: #666;
         }
     </style>
 </head>
 <body>
+    <div class="border-asterisk">********************************</div>
+    
     <div class="header">
-        <h1>{{ $order->restaurant->name ?? 'RESTAURANTE' }}</h1>
-        <p>Ticket #{{ $order->number }}</p>
+        <div class="logo-container">
+            <img src="{{ public_path('logo.png') }}" alt="Logo" onerror="this.style.display='none';">
+        </div>
+        <h1>RECEIPT</h1>
     </div>
+    
+    <div class="border-asterisk">********************************</div>
+    
+    <div class="header-info">
+        <span>Terminal#1</span>
+        <span>{{ now()->format('d-m-Y') }} {{ now()->format('h:iA') }}</span>
+    </div>
+    
+    <div class="dashed-line"></div>
 
     <div class="order-info">
-        <p>Mesa: {{ $order->table->number }}</p>
-        <p>Fecha: {{ $order->created_at->format('d/m/Y H:i') }}</p>
+        <p><strong>Ticket:</strong> {{ $order->number }}</p>
+        <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @if($order->user)
+        <p><strong>Mozo:</strong> {{ $order->user->name }}</p>
+        @endif
     </div>
+
+    <div class="dashed-line"></div>
 
     <div class="items">
         @foreach($order->items as $item)
         <div class="item">
             <div class="item-line">
-                <span class="item-quantity">{{ $item->quantity }}x</span>
+                <span class="item-quantity">{{ $item->quantity }} x</span>
                 <span class="item-name">{{ $item->product->name }}</span>
                 <span class="item-price">${{ number_format($item->subtotal, 2) }}</span>
             </div>
         </div>
         @endforeach
     </div>
+
+    <div class="dashed-line"></div>
 
     <div class="totals">
         <div class="total-line">
@@ -124,26 +197,56 @@
         </div>
         @endif
         <div class="total-line final">
-            <span>TOTAL:</span>
+            <span>TOTAL AMOUNT:</span>
             <span>${{ number_format($order->total, 2) }}</span>
         </div>
     </div>
 
-    @if($order->payments->count() > 0)
+    @if($order->payments && $order->payments->count() > 0)
     <div class="payments">
-        <strong>Pagos:</strong>
+        @php
+            $totalPaid = $order->payments->sum('amount');
+            $change = $totalPaid - $order->total;
+        @endphp
         @foreach($order->payments as $payment)
         <div class="payment-line">
             <span>{{ $payment->payment_method }}:</span>
             <span>${{ number_format($payment->amount, 2) }}</span>
         </div>
+        @if($payment->operation_number)
+        <div class="payment-line" style="font-size: 9px; color: #666;">
+            <span>Approval#:</span>
+            <span>{{ $payment->operation_number }}</span>
+        </div>
+        @endif
         @endforeach
+        <div class="payment-total">
+            <div class="payment-line">
+                <span>Total Pagado:</span>
+                <span>${{ number_format($totalPaid, 2) }}</span>
+            </div>
+        </div>
+        @if($change > 0)
+        <div class="change-line">
+            <span>CHANGE:</span>
+            <span>${{ number_format($change, 2) }}</span>
+        </div>
+        @endif
     </div>
     @endif
 
+    <div class="dashed-line"></div>
+
     <div class="footer">
+        <div class="border-asterisk">********************************</div>
+        <div class="thank-you">THANK YOU!</div>
+        <div class="border-asterisk">********************************</div>
+        <div class="barcode-placeholder">
+            <div style="height: 40px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
+                [BARCODE]
+            </div>
+        </div>
         <p>{{ now()->format('d/m/Y H:i:s') }}</p>
-        <p>Gracias por su visita</p>
     </div>
 </body>
 </html>

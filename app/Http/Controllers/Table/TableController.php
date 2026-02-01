@@ -9,7 +9,9 @@ use App\Models\Order;
 use App\Models\TableSession;
 use App\Models\Product;
 use App\Models\Payment;
+use App\Models\CashRegisterSession;
 use App\Services\OrderService;
+use App\Services\PrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,8 @@ use Illuminate\Support\Facades\Schema;
 class TableController extends Controller
 {
     public function __construct(
-        private OrderService $orderService
+        private OrderService $orderService,
+        private PrintService $printService
     ) {}
     /**
      * Mostrar lista de mesas
@@ -134,14 +137,29 @@ class TableController extends Controller
                 $this->orderService->addItem($order, $itemData);
             }
 
-            // La comanda se imprime automáticamente al crear el pedido
-            // El mozo luego cambia el estado a EN_PREPARACION cuando lo necesite
+            // Recargar el pedido con sus relaciones para la impresión
+            $order->load(['table', 'items.product', 'items.modifiers']);
+
+            // Imprimir automáticamente la comanda de cocina
+            try {
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'kitchen');
+                $this->printService->printKitchenTicket($order, $printer);
+                $printMessage = 'La comanda de cocina se ha impreso automáticamente.';
+            } catch (\Exception $printError) {
+                // Si falla la impresión, no fallar el pedido, solo registrar el error
+                \Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
+                    'order_id' => $order->id,
+                    'order_number' => $order->number
+                ]);
+                $printMessage = 'Pedido creado. La comanda está disponible para imprimir manualmente.';
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. La comanda se ha impreso automáticamente.',
+                'message' => 'Pedido creado exitosamente. ' . $printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
@@ -585,17 +603,45 @@ class TableController extends Controller
                 return $respond(false, 'No se pudo obtener el pedido para asociar el pago');
             }
             
+            // Obtener la sesión de caja activa del restaurante
+            $cashRegisterSession = CashRegisterSession::where('restaurant_id', $table->restaurant_id)
+                ->where('status', CashRegisterSession::STATUS_ABIERTA)
+                ->orderBy('opened_at', 'desc')
+                ->first();
+            
+            // Si no hay sesión de caja activa, registrar en logs pero continuar
+            if (!$cashRegisterSession) {
+                \Log::warning('No se encontró sesión de caja activa al procesar pago', [
+                    'table_id' => $table->id,
+                    'restaurant_id' => $table->restaurant_id,
+                    'user_id' => auth()->id()
+                ]);
+            }
+            
+            // Obtener información del mozo (del primer pedido)
+            $waiterName = $firstOrder->user->name ?? 'N/A';
+            
             $paymentsCreated = [];
             foreach ($validated['payments'] as $paymentData) {
+                // Construir notas con información de mesa y mozo
+                $notes = $paymentData['notes'] ?? '';
+                $additionalInfo = "Mesa: {$table->number} | Mozo: {$waiterName}";
+                if ($notes) {
+                    $notes = "{$additionalInfo} | {$notes}";
+                } else {
+                    $notes = $additionalInfo;
+                }
+                
                 $payment = Payment::create([
                     'restaurant_id' => $table->restaurant_id,
                     'order_id' => $firstOrder->id, // Asociar al primer pedido para mantener relación
                     'table_session_id' => $table->current_session_id, // Asociar a la sesión de mesa para arqueo
+                    'cash_register_session_id' => $cashRegisterSession->id ?? null, // Asociar a la sesión de caja
                     'user_id' => auth()->id(),
                     'payment_method' => $paymentData['payment_method'],
                     'amount' => $paymentData['amount'],
                     'operation_number' => $paymentData['operation_number'] ?? null,
-                    'notes' => $paymentData['notes'] ?? null,
+                    'notes' => $notes,
                 ]);
                 $paymentsCreated[] = $payment;
             }
@@ -797,6 +843,83 @@ class TableController extends Controller
             'totalDiscount',
             'payments'
         ));
+    }
+
+    /**
+     * Imprimir recibo consolidado (formato ticket térmico 80mm)
+     */
+    public function printConsolidatedReceipt(Table $table)
+    {
+        Gate::authorize('view', $table);
+
+        // Obtener los datos de la sesión o de la base de datos
+        $closedOrders = collect(session('orders_closed', []));
+        $consolidatedItems = collect(session('consolidated_items', []));
+        $totalAmount = session('total_amount', 0);
+        $totalSubtotal = session('total_subtotal', 0);
+        $totalDiscount = session('total_discount', 0);
+        $sessionId = session('table_session_id');
+        $payments = collect(session('payments', []));
+
+        // Si no hay datos en sesión, obtenerlos de la base de datos
+        if ($closedOrders->isEmpty() && $sessionId) {
+            $closedOrders = Order::where('table_id', $table->id)
+                ->where('table_session_id', $sessionId)
+                ->where('status', Order::STATUS_CERRADO)
+                ->with(['items.product', 'user'])
+                ->get();
+
+            $consolidatedItems = collect();
+            foreach ($closedOrders as $order) {
+                foreach ($order->items as $item) {
+                    $existingItem = $consolidatedItems->first(function ($i) use ($item) {
+                        return $i['product_id'] === $item->product_id;
+                    });
+                    
+                    if ($existingItem) {
+                        $existingItem['quantity'] += $item->quantity;
+                        $existingItem['subtotal'] += $item->subtotal;
+                        $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
+                    } else {
+                        $consolidatedItems->push([
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name,
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'subtotal' => $item->subtotal,
+                        ]);
+                    }
+                }
+            }
+            
+            $totalAmount = $closedOrders->sum('total');
+            $totalSubtotal = $closedOrders->sum('subtotal');
+            $totalDiscount = $closedOrders->sum('discount');
+        }
+
+        // Obtener pagos de la base de datos si hay sessionId
+        if ($sessionId && $payments->isEmpty()) {
+            $dbPayments = Payment::where('table_session_id', $sessionId)
+                ->with('user')
+                ->get();
+            if ($dbPayments->isNotEmpty()) {
+                $payments = $dbPayments;
+            }
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tables.print-consolidated-receipt', compact(
+            'table',
+            'closedOrders',
+            'consolidatedItems',
+            'totalAmount',
+            'totalSubtotal',
+            'totalDiscount',
+            'payments'
+        ))
+            ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
+            ->setOption('enable-local-file-access', true);
+
+        return $pdf->stream("recibo-consolidado-mesa-{$table->number}.pdf");
     }
 
     /**

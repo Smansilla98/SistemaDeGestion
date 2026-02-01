@@ -45,12 +45,14 @@ class OrderPolicy
             return false;
         }
 
-        // Solo mozos y admin pueden editar pedidos abiertos
+        // ADMIN y MOZO pueden cambiar el estado de pedidos en flujo activo
+        // Flujo simplificado: ABIERTO -> EN_PREPARACION -> ENTREGADO
         if (in_array($user->role, ['ADMIN', 'MOZO'])) {
-            return $order->status === 'ABIERTO';
+            return in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'ENTREGADO']);
         }
 
-        // Cocina puede actualizar estado de items
+        // Cocina ya no tiene acceso (módulo eliminado)
+        // Se mantiene por compatibilidad pero no se usa
         if ($user->role === 'COCINA') {
             return in_array($order->status, ['ENVIADO', 'EN_PREPARACION', 'LISTO']);
         }

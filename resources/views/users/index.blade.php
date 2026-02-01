@@ -105,8 +105,21 @@
                             @endif
                         </td>
                         <td>
-                            @if($user->last_login_at)
-                                <small class="text-muted">{{ $user->last_login_at->diffForHumans() }}</small>
+                            @php
+                                $lastLogin = null;
+                                if ($user->last_login_at) {
+                                    try {
+                                        // Intentar convertir a Carbon si es string
+                                        $lastLogin = is_string($user->last_login_at) 
+                                            ? \Carbon\Carbon::parse($user->last_login_at) 
+                                            : $user->last_login_at;
+                                    } catch (\Exception $e) {
+                                        $lastLogin = null;
+                                    }
+                                }
+                            @endphp
+                            @if($lastLogin)
+                                <small class="text-muted">{{ $lastLogin->diffForHumans() }}</small>
                             @else
                                 <small class="text-muted">Nunca</small>
                             @endif
