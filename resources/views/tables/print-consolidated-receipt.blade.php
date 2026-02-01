@@ -182,23 +182,34 @@
     <div class="dashed-line"></div>
 
     <div class="items">
-        @foreach($consolidatedItems as $item)
+        @forelse($consolidatedItems as $item)
         <div class="item">
             <div class="item-line">
-                <span class="item-quantity">{{ $item['quantity'] }} x</span>
-                <span class="item-name">{{ $item['product_name'] }}</span>
-                <span class="item-price">${{ number_format($item['subtotal'], 2) }}</span>
+                <span class="item-quantity">{{ $item['quantity'] ?? 0 }} x</span>
+                <span class="item-name">{{ $item['product_name'] ?? 'Producto' }}</span>
+                <span class="item-price">${{ number_format($item['subtotal'] ?? 0, 2) }}</span>
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="item">
+            <div class="item-line" style="color: #999; font-style: italic;">
+                <span>No hay items en este pedido</span>
+            </div>
+        </div>
+        @endforelse
     </div>
 
     <div class="dashed-line"></div>
 
     <div class="totals">
+        @php
+            // Calcular subtotal desde items si no está disponible
+            $calculatedSubtotal = $totalSubtotal > 0 ? $totalSubtotal : $consolidatedItems->sum('subtotal');
+            $calculatedTotal = $totalAmount > 0 ? $totalAmount : ($calculatedSubtotal - $totalDiscount);
+        @endphp
         <div class="total-line">
             <span>Subtotal:</span>
-            <span>${{ number_format($totalSubtotal, 2) }}</span>
+            <span>${{ number_format($calculatedSubtotal, 2) }}</span>
         </div>
         @if($totalDiscount > 0)
         <div class="total-line">
@@ -208,15 +219,16 @@
         @endif
         <div class="total-line final">
             <span>TOTAL AMOUNT:</span>
-            <span>${{ number_format($totalAmount, 2) }}</span>
+            <span>${{ number_format($calculatedTotal, 2) }}</span>
         </div>
     </div>
 
     @if($payments && $payments->count() > 0)
     <div class="payments">
         @php
+            $calculatedTotal = $totalAmount > 0 ? $totalAmount : ($consolidatedItems->sum('subtotal') - $totalDiscount);
             $totalPaid = $payments->sum('amount');
-            $change = $totalPaid - $totalAmount;
+            $change = $totalPaid - $calculatedTotal;
         @endphp
         @foreach($payments as $payment)
         <div class="payment-line">
