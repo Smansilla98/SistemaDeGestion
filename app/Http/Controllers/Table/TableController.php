@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 class TableController extends Controller
 {
@@ -157,7 +158,7 @@ class TableController extends Controller
                 $printMessage = 'La comanda de cocina se ha impreso automáticamente.';
             } catch (\Exception $printError) {
                 // Si falla la impresión, no fallar el pedido, solo registrar el error
-                \Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
+                Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
                     'order_id' => $order->id,
                     'order_number' => $order->number
                 ]);
@@ -404,7 +405,7 @@ class TableController extends Controller
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
                     // Si falla la creación de sesión, registrar error pero permitir continuar
-                    \Log::error('Error al crear sesión de mesa: ' . $e->getMessage());
+                    Log::error('Error al crear sesión de mesa: ' . $e->getMessage());
                     return redirect()->route('tables.index')
                         ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: ' . $e->getMessage());
                 }
@@ -622,7 +623,7 @@ class TableController extends Controller
             
             // Si no hay sesión de caja activa, registrar en logs pero continuar
             if (!$cashRegisterSession) {
-                \Log::warning('No se encontró sesión de caja activa al procesar pago', [
+                Log::warning('No se encontró sesión de caja activa al procesar pago', [
                     'table_id' => $table->id,
                     'restaurant_id' => $table->restaurant_id,
                     'user_id' => auth()->id()
@@ -691,7 +692,7 @@ class TableController extends Controller
                 ->with('payments', collect($paymentsCreated));
             });
         } catch (\Exception $e) {
-            \Log::error('Error al procesar pago: ' . $e->getMessage(), [
+            Log::error('Error al procesar pago: ' . $e->getMessage(), [
                 'table_id' => $table->id,
                 'user_id' => auth()->id(),
                 'trace' => $e->getTraceAsString()
