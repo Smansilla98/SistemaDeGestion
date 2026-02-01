@@ -39,7 +39,7 @@ class TableController extends Controller
                 $q->where('status', 'LIBRE')
                   ->orWhereHas('currentSession', function ($sq) use ($user) {
                       $sq->where('waiter_id', $user->id)
-                        ->where('status', TableSession::STATUS_OPEN);
+                        ->where('status', TableSession::STATUS_ABIERTA);
                   });
             });
         }
@@ -103,10 +103,20 @@ class TableController extends Controller
             ], 422);
         }
 
+        // MÓDULO 2: Validar que la mesa tenga sesión ABIERTA
         if (!$table->current_session_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'La mesa no tiene una sesión activa. Marcar como ocupada primero.',
+            ], 422);
+        }
+
+        // Verificar que la sesión esté ABIERTA
+        $session = TableSession::find($table->current_session_id);
+        if (!$session || !$session->isOpen()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La sesión de la mesa no está abierta. No se pueden crear pedidos.',
             ], 422);
         }
 
@@ -339,7 +349,7 @@ class TableController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:' . implode(',', Table::getStatuses()),
             'guests_count' => 'nullable|integer|min:0|max:' . $table->capacity,
-            'waiter_id' => 'nullable|exists:users,id', // Requerido solo si pasa a OCUPADA
+            'waiter_id' => 'required_if:status,OCUPADA|nullable|exists:users,id', // OBLIGATORIO si pasa a OCUPADA
         ]);
 
         // Si el estado cambia a LIBRE, finalizar sesión y limpiar pedido actual
@@ -347,7 +357,7 @@ class TableController extends Controller
             if ($table->current_session_id) {
                 TableSession::where('id', $table->current_session_id)->update([
                     'ended_at' => now(),
-                    'status' => TableSession::STATUS_CLOSED,
+                    'status' => TableSession::STATUS_CERRADA,
                 ]);
             }
             $table->update([
@@ -389,7 +399,7 @@ class TableController extends Controller
                         'waiter_id' => $validated['waiter_id'],
                         'opened_by_user_id' => auth()->id(),
                         'started_at' => now(),
-                        'status' => TableSession::STATUS_OPEN,
+                        'status' => TableSession::STATUS_ABIERTA,
                     ]);
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
@@ -436,7 +446,7 @@ class TableController extends Controller
             // Si no hay pedidos, solo liberar la mesa
             TableSession::where('id', $table->current_session_id)->update([
                 'ended_at' => now(),
-                'status' => TableSession::STATUS_CLOSED,
+                'status' => TableSession::STATUS_CERRADA,
             ]);
             $table->update([
                 'status' => 'LIBRE',
@@ -518,9 +528,10 @@ class TableController extends Controller
         }
 
         try {
+            // MÓDULO 4: Validación de métodos de pago incluyendo QR y MIXTO
             $validated = $request->validate([
                 'payments' => 'required|array|min:1',
-                'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA',
+                'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA,QR,MIXTO',
                 'payments.*.amount' => 'required|numeric|min:0.01',
                 'payments.*.operation_number' => 'nullable|string|max:255',
                 'payments.*.notes' => 'nullable|string|max:500',
@@ -649,7 +660,7 @@ class TableController extends Controller
             // Liberar la mesa
             TableSession::where('id', $table->current_session_id)->update([
                 'ended_at' => now(),
-                'status' => TableSession::STATUS_CLOSED,
+                'status' => TableSession::STATUS_CERRADA,
             ]);
             $table->update([
                 'status' => 'LIBRE',
@@ -774,7 +785,7 @@ class TableController extends Controller
                 } else {
                     // Si no hay pagos, obtener la última sesión cerrada de la mesa
                     $lastSession = \App\Models\TableSession::where('table_id', $table->id)
-                        ->where('status', \App\Models\TableSession::STATUS_CLOSED)
+                        ->where('status', \App\Models\TableSession::STATUS_CERRADA)
                         ->orderBy('ended_at', 'desc')
                         ->first();
                     

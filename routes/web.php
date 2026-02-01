@@ -92,6 +92,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [KitchenController::class, 'index'])->name('index');
         Route::post('/items/{item}/status', [KitchenController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/orders/{order}/ready', [KitchenController::class, 'markOrderReady'])->name('mark-ready');
+        Route::put('/orders/{order}/status', [KitchenController::class, 'updateOrderStatus'])->name('update-order-status');
+    });
+    
+    /*
+    |--------------------------------------------------------------------------
+    | API para Notificaciones (MÓDULO 3)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::get('/notifications/ready-orders', [KitchenController::class, 'getReadyOrdersNotifications'])->name('ready-orders');
     });
 
     /*

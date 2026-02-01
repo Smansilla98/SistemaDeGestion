@@ -214,13 +214,31 @@
 
 // Mostrar alerta de éxito
 @if(session('success'))
-    Swal.fire({
-        icon: 'success',
-        title: 'Éxito',
-        text: '{{ session('success') }}',
-        confirmButtonColor: '#1e8081',
-        confirmButtonText: 'Entendido'
-    });
+    @if(session('order_delivered'))
+        // MÓDULO 2: Alerta flotante especial para pedidos entregados
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Pedido Entregado',
+            html: `Pedido #{{ session('order_delivered.order_number') }} entregado en Mesa {{ session('order_delivered.table_number') }}`,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+    @else
+        Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: '{{ session('success') }}',
+            confirmButtonColor: '#1e8081',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
 @endif
 </script>
 @endpush

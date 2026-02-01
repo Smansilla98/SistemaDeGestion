@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('table_sessions', function (Blueprint $table) {
             $table->foreignId('waiter_id')->nullable()->after('table_id')->constrained('users')->onDelete('set null');
             $table->foreignId('opened_by_user_id')->nullable()->after('waiter_id')->constrained('users')->onDelete('set null');
-            $table->enum('status', ['OPEN', 'CLOSED'])->default('OPEN')->after('ended_at');
+            $table->enum('status', ['ABIERTA', 'CERRADA'])->default('ABIERTA')->after('ended_at');
             
             $table->index('waiter_id');
             $table->index('status');

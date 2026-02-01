@@ -11,8 +11,13 @@ class TableSession extends Model
 {
     use HasFactory;
 
-    const STATUS_OPEN = 'OPEN';
-    const STATUS_CLOSED = 'CLOSED';
+    // Estados de sesión
+    const STATUS_ABIERTA = 'ABIERTA';
+    const STATUS_CERRADA = 'CERRADA';
+    
+    // Mantener compatibilidad con código antiguo
+    const STATUS_OPEN = 'ABIERTA';
+    const STATUS_CLOSED = 'CERRADA';
 
     protected $fillable = [
         'restaurant_id',
@@ -22,11 +27,17 @@ class TableSession extends Model
         'started_at',
         'ended_at',
         'status',
+        'total_amount',
+        'paid_at',
+        'payment_method',
+        'cash_register_id',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'total_amount' => 'decimal:2',
     ];
 
     public function restaurant(): BelongsTo
@@ -59,19 +70,52 @@ class TableSession extends Model
         return $this->hasMany(Payment::class, 'table_session_id');
     }
 
+    /**
+     * Relación: Una sesión pertenece a una caja
+     */
+    public function cashRegister(): BelongsTo
+    {
+        return $this->belongsTo(CashRegister::class, 'cash_register_id');
+    }
+
+    /**
+     * Verificar si la sesión está activa (abierta y sin cerrar)
+     */
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_OPEN && $this->ended_at === null;
+        return $this->status === self::STATUS_ABIERTA && $this->ended_at === null;
     }
 
+    /**
+     * Verificar si la sesión está abierta
+     */
     public function isOpen(): bool
     {
-        return $this->status === self::STATUS_OPEN;
+        return $this->status === self::STATUS_ABIERTA;
     }
 
+    /**
+     * Verificar si la sesión está cerrada
+     */
     public function isClosed(): bool
     {
-        return $this->status === self::STATUS_CLOSED;
+        return $this->status === self::STATUS_CERRADA;
+    }
+    
+    /**
+     * Calcular total de la sesión desde sus pedidos
+     */
+    public function calculateTotal(): float
+    {
+        return $this->orders()->sum('total');
+    }
+    
+    /**
+     * Verificar si la sesión está pagada
+     */
+    public function isPaid(): bool
+    {
+        return $this->paid_at !== null;
     }
 }
 

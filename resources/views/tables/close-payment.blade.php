@@ -208,9 +208,13 @@ let totalAmount = {{ $totalAmount }};
 let paymentCounter = 0;
 
 const paymentMethodOptions = {
+    // MÓDULO 4: Métodos de pago completos incluyendo QR y MIXTO
     'EFECTIVO': { icon: 'bi-cash', label: 'Efectivo', color: '#28a745' },
     'DEBITO': { icon: 'bi-credit-card', label: 'Tarjeta Débito', color: '#007bff' },
     'CREDITO': { icon: 'bi-credit-card-2-front', label: 'Tarjeta Crédito', color: '#6f42c1' },
+    'TRANSFERENCIA': { icon: 'bi-bank', label: 'Transferencia', color: '#17a2b8' },
+    'QR': { icon: 'bi-qr-code', label: 'QR', color: '#fd7e14' },
+    'MIXTO': { icon: 'bi-wallet2', label: 'Mixto', color: '#6c757d' },
     'TRANSFERENCIA': { icon: 'bi-bank', label: 'Transferencia', color: '#17a2b8' }
 };
 
