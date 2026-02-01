@@ -80,7 +80,7 @@
                                     @elseif($isLowStock)
                                         <span class="badge bg-warning text-dark" title="Stock bajo">
                                             <i class="bi bi-exclamation-circle-fill"></i> Stock Bajo
-                                        </span>
+                            </span>
                                     @endif
                                     @if($product->stock_minimum > 0)
                                         <small class="text-muted">(Mín: {{ $product->stock_minimum }})</small>

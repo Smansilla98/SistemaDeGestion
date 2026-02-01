@@ -2,21 +2,310 @@
 
 @section('title', 'Gestión de Mesas')
 
+@push('styles')
+<style>
+    /* Mejoras para móvil */
+    @media (max-width: 768px) {
+        /* Header más compacto */
+        .tables-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+        
+        .tables-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tables-header .text-muted {
+            font-size: 0.875rem;
+        }
+        
+        .tables-header-actions {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .tables-header-actions .btn {
+            flex: 1;
+            min-width: 120px;
+            font-size: 0.875rem;
+            padding: 0.625rem 1rem;
+        }
+        
+        /* Tarjetas de mesas más grandes y táctiles */
+        .table-card {
+            margin-bottom: 1rem !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.2s ease;
+        }
+        
+        .table-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .table-card-body {
+            padding: 1.25rem !important;
+        }
+        
+        .table-card-title {
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .table-status-badge {
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem !important;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Botones más grandes y táctiles (mínimo 44x44px) */
+        .table-card .btn {
+            min-height: 44px;
+            padding: 0.75rem 1rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .table-card .btn i {
+            font-size: 1rem;
+        }
+        
+        .table-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+        
+        .table-actions .btn {
+            width: 100%;
+        }
+        
+        /* Información de mesa más clara */
+        .table-info {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+        }
+        
+        .table-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .table-info p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Sector header más compacto */
+        .sector-header {
+            padding: 1rem !important;
+        }
+        
+        .sector-header h5 {
+            font-size: 1.125rem !important;
+        }
+        
+        /* Modales fullscreen en móvil */
+        .modal-dialog {
+            margin: 0;
+            max-width: 100%;
+            height: 100%;
+        }
+        
+        .modal-content {
+            height: 100%;
+            border-radius: 0;
+            border: none;
+        }
+        
+        .modal-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 2px solid var(--mosaic-border);
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+        
+        .modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.25rem;
+            border-top: 2px solid var(--mosaic-border);
+            position: sticky;
+            bottom: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .modal-footer .btn {
+            min-height: 48px;
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        /* Formularios en móvil */
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control,
+        .form-select {
+            min-height: 48px;
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+        }
+        
+        /* Modal de nuevo pedido optimizado para móvil */
+        #newOrderModal .modal-dialog {
+            height: 100vh;
+        }
+        
+        #newOrderModal .modal-body {
+            padding: 1rem;
+        }
+        
+        #newOrderModal .row {
+            flex-direction: column;
+        }
+        
+        #newOrderModal .col-lg-7,
+        #newOrderModal .col-lg-5 {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        #newOrderModal .product-item {
+            width: 100% !important;
+            margin-bottom: 0.75rem;
+        }
+        
+        #newOrderModal .product-item .btn {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        #productSearch {
+            max-width: 100% !important;
+            min-height: 44px;
+            font-size: 1rem;
+        }
+        
+        .accordion-button {
+            min-height: 48px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+        
+        /* Botón de confirmar pedido fijo en móvil */
+        #newOrderModal .col-lg-5 {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding-top: 1rem;
+            border-top: 2px solid var(--mosaic-border);
+            margin-top: 1rem;
+        }
+        
+        #confirmOrderBtn {
+            width: 100%;
+            min-height: 52px;
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+        
+        /* Mejoras de scroll */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #1e8081;
+            border-radius: 3px;
+        }
+        
+        /* Espaciado mejorado */
+        .card-body {
+            padding: 1rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        /* Badges más grandes */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+        }
+    }
+    
+    /* Mejoras generales para touch */
+    @media (hover: none) and (pointer: coarse) {
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .table-card:active {
+            transform: scale(0.98);
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center">
+    <div class="col-12 tables-header d-flex justify-content-between align-items-center">
         <div>
             <h1><i class="bi bi-table"></i> Gestión de Mesas</h1>
             <p class="text-muted">Administra las mesas del restaurante</p>
         </div>
-        <div>
+        <div class="tables-header-actions">
             @can('create', App\Models\Table::class)
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTableModal">
-                <i class="bi bi-plus-circle"></i> Nueva Mesa
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Nueva Mesa</span>
             </button>
             @endcan
             <a href="{{ route('tables.layout') }}" class="btn btn-outline-primary">
-                <i class="bi bi-diagram-3"></i> Layout Visual
+                <i class="bi bi-diagram-3"></i> <span class="d-none d-sm-inline">Layout</span>
             </a>
         </div>
     </div>
@@ -24,82 +313,79 @@
 
 @foreach($sectors as $sector)
 <div class="card mb-4">
-    <div class="card-header">
+    <div class="card-header sector-header">
         <h5 class="mb-0">
             <i class="bi bi-door-open"></i> {{ $sector->name }}
             @if($sector->description)
-                <small class="text-muted">- {{ $sector->description }}</small>
+                <small class="text-muted d-none d-sm-inline">- {{ $sector->description }}</small>
             @endif
         </h5>
     </div>
     <div class="card-body">
         <div class="row">
             @forelse($sector->tables as $table)
-            <div class="col-md-3 mb-3">
-                <div class="card h-100 border-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0">{{ $table->number }}</h5>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+                <div class="card h-100 table-card border-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
+                    <div class="card-body table-card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title table-card-title mb-0">{{ $table->number }}</h5>
                             @can('update', $table)
                             <button type="button" 
-                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} border-0"
+                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} border-0 table-status-badge"
                                     style="cursor: pointer;"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
                                 {{ $table->status }}
                             </button>
                             @else
-                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
+                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }} table-status-badge">
                                 {{ $table->status }}
                             </span>
                             @endcan
                         </div>
-                        <p class="text-muted mb-2">
-                            <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
-                        </p>
-                        @if($table->status === 'OCUPADA' && $table->currentSession && $table->currentSession->waiter)
-                        <p class="mb-2">
-                            <span class="badge bg-info">
-                                <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
-                            </span>
-                        </p>
-                        @endif
-                        @if($table->status === 'OCUPADA' || $table->status === 'LIBRE')
-                        <p class="mb-2">
-                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-receipt"></i> Ver Pedidos
-                            </a>
-                        </p>
-                        @endif
-                        <div class="d-flex gap-2 flex-wrap">
+                        
+                        <div class="table-info">
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-people"></i> <strong>Capacidad:</strong> {{ $table->capacity }} personas
+                            </p>
+                            @if($table->status === 'OCUPADA' && $table->currentSession && $table->currentSession->waiter)
+                            <p class="mb-0">
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
+                                </span>
+                            </p>
+                            @endif
+                        </div>
+                        
+                        <div class="table-actions">
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
-                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-sm btn-outline-info">
-                                <i class="bi bi-calendar-check"></i> Reservar
+                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-outline-info">
+                                <i class="bi bi-calendar-check"></i> <span>Reservar</span>
                             </a>
                             @can('update', $table)
                             <button type="button" 
-                                    class="btn btn-sm btn-primary"
+                                    class="btn btn-primary"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> Marcar Ocupada
+                                <i class="bi bi-check-circle"></i> <span>Marcar Ocupada</span>
                             </button>
                             @endcan
                             @elseif($table->status === 'OCUPADA')
                             {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
                             @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
                             <button type="button"
-                                    class="btn btn-sm btn-primary"
+                                    class="btn btn-primary"
                                     onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
-                                <i class="bi bi-plus-circle"></i> Nuevo Pedido
+                                <i class="bi bi-plus-circle"></i> <span>Nuevo Pedido</span>
                             </button>
                             @endif
-                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-receipt"></i> Ver Pedidos
+                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-warning">
+                                <i class="bi bi-receipt"></i> <span>Ver Pedidos</span>
                             </a>
                             @can('update', $table)
-                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline" id="closeTableForm{{ $table->id }}">
+                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline w-100" id="closeTableForm{{ $table->id }}">
                                 @csrf
-                                <button type="button" class="btn btn-sm btn-success" onclick="confirmCloseTable({{ $table->id }})">
-                                    <i class="bi bi-check-circle"></i> Cerrar Mesa
+                                <button type="button" class="btn btn-success w-100" onclick="confirmCloseTable({{ $table->id }})">
+                                    <i class="bi bi-check-circle"></i> <span>Cerrar Mesa</span>
                                 </button>
                             </form>
                             @endcan
@@ -107,15 +393,15 @@
                             {{-- Mesa RESERVADA: Puede cambiar estado --}}
                             @can('update', $table)
                             <button type="button" 
-                                    class="btn btn-sm btn-primary"
+                                    class="btn btn-primary"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> Cambiar Estado
+                                <i class="bi bi-check-circle"></i> <span>Cambiar Estado</span>
                             </button>
                             @endcan
                             @endif
                             @can('update', $table)
-                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-pencil"></i>
+                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil"></i> <span>Editar</span>
                             </a>
                             @endcan
                         </div>
@@ -124,7 +410,7 @@
             </div>
             @empty
             <div class="col-12">
-                <p class="text-muted text-center">No hay mesas en este sector</p>
+                <p class="text-muted text-center py-4">No hay mesas en este sector</p>
             </div>
             @endforelse
         </div>
@@ -135,7 +421,7 @@
 @can('create', App\Models\Table::class)
 <!-- Modal Crear Mesa -->
 <div class="modal fade" id="createTableModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('tables.store') }}" method="POST">
                 @csrf
@@ -185,7 +471,7 @@
 @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
 <!-- Modal Cambiar Estado de Mesa -->
 <div class="modal fade" id="changeStatusModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form id="changeStatusForm" method="POST">
                 @csrf
@@ -235,24 +521,25 @@
 @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
 <!-- Modal Nuevo Pedido (desde Mesas) -->
 <div class="modal fade" id="newOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-fullscreen-md-down modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <form id="newOrderForm">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="bi bi-plus-circle"></i> Nuevo Pedido
-                        <small class="text-muted">- <span id="newOrderTableLabel"></span></small>
+                        <small class="text-muted d-none d-sm-inline">- <span id="newOrderTableLabel"></span></small>
+                        <span class="d-inline d-sm-none"><span id="newOrderTableLabelMobile"></span></span>
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="newOrderTableId" />
 
                     <div class="row g-3">
                         <div class="col-lg-7">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
                                 <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
-                                <input type="text" class="form-control form-control-sm" id="productSearch" placeholder="Buscar producto..." style="max-width: 260px;">
+                                <input type="text" class="form-control" id="productSearch" placeholder="Buscar producto..." style="max-width: 100%;">
                             </div>
 
                             <div class="accordion" id="productsAccordion">
@@ -273,11 +560,11 @@
                                                             $isOutOfStock = $currentStock !== null && $currentStock <= 0;
                                                             $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
                                                         @endphp
-                                                        <div class="col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}">
-                                                            <div class="d-flex justify-content-between align-items-center border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
+                                                        <div class="col-12 col-md-6 mb-3 product-item" data-name="{{ strtolower($product->name) }}">
+                                                            <div class="d-flex justify-content-between align-items-start border rounded p-3 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
                                                                 <div class="me-2 flex-grow-1">
-                                                                    <div class="d-flex align-items-center gap-2">
-                                                                        <strong>{{ $product->name }}</strong>
+                                                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                                        <strong class="fs-6">{{ $product->name }}</strong>
                                                                         @if($isOutOfStock)
                                                                             <span class="badge bg-danger" title="Sin stock disponible">
                                                                                 <i class="bi bi-x-circle-fill"></i> Sin Stock
@@ -289,10 +576,10 @@
                                                                         @endif
                                                                     </div>
                                                                     @if($product->description)
-                                                                        <div class="text-muted small">{{ $product->description }}</div>
+                                                                        <div class="text-muted small mb-1">{{ $product->description }}</div>
                                                                     @endif
                                                                     @if($product->has_stock && $currentStock !== null)
-                                                                        <div class="small mt-1">
+                                                                        <div class="small mb-2">
                                                                             <span class="badge bg-{{ $isOutOfStock ? 'danger' : ($isLowStock ? 'warning' : 'success') }}">
                                                                                 Stock: {{ $currentStock }}
                                                                                 @if($product->stock_minimum > 0)
@@ -301,14 +588,15 @@
                                                                             </span>
                                                                         </div>
                                                                     @endif
+                                                                    <div class="fs-5 fw-bold text-primary">${{ number_format($product->price, 2) }}</div>
                                                                 </div>
-                                                                <div class="text-end">
-                                                                    <div><strong>${{ number_format($product->price, 2) }}</strong></div>
+                                                                <div class="ms-2">
                                                                     <button type="button"
-                                                                            class="btn btn-sm btn-outline-primary mt-1 {{ $isOutOfStock ? 'disabled' : '' }}"
+                                                                            class="btn btn-primary {{ $isOutOfStock ? 'disabled' : '' }}"
+                                                                            style="min-width: 48px; min-height: 48px;"
                                                                             onclick="addModalItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ $currentStock ?? 'null' }}, {{ $product->stock_minimum ?? 0 }})"
                                                                             {{ $isOutOfStock ? 'disabled title="Producto sin stock"' : '' }}>
-                                                                        <i class="bi bi-plus"></i>
+                                                                        <i class="bi bi-plus-lg"></i>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -323,28 +611,32 @@
                         </div>
 
                         <div class="col-lg-5">
-                            <h6 class="mb-2"><i class="bi bi-receipt"></i> Pedido</h6>
+                            <div class="sticky-top" style="top: 70px;">
+                                <h6 class="mb-3"><i class="bi bi-receipt"></i> Pedido</h6>
 
-                            <div class="mb-2">
-                                <label class="form-label">Observaciones (opcional)</label>
-                                <textarea class="form-control" id="newOrderObservations" rows="2" placeholder="Ej: sin sal, alergias, etc."></textarea>
-                            </div>
-
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" role="switch" id="sendToKitchen" checked>
-                                <label class="form-check-label" for="sendToKitchen">Enviar a cocina al confirmar</label>
-                            </div>
-
-                            <div id="modalItemsEmpty" class="text-muted">No hay items en el pedido.</div>
-                            <div id="modalItemsList"></div>
-
-                            <div class="border-top pt-3 mt-3 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>Total:</strong> <span id="modalTotal">$0.00</span>
+                                <div class="mb-3">
+                                    <label class="form-label">Observaciones (opcional)</label>
+                                    <textarea class="form-control" id="newOrderObservations" rows="3" placeholder="Ej: sin sal, alergias, etc."></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-success" id="confirmOrderBtn" disabled>
-                                    <i class="bi bi-check-circle"></i> Confirmar Pedido
-                                </button>
+
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="sendToKitchen" checked style="min-width: 48px; min-height: 24px;">
+                                    <label class="form-check-label ms-2" for="sendToKitchen" style="font-size: 0.875rem;">Enviar a cocina al confirmar</label>
+                                </div>
+
+                                <div id="modalItemsEmpty" class="text-muted text-center py-3">No hay items en el pedido.</div>
+                                <div id="modalItemsList" class="mb-3"></div>
+
+                                <div class="border-top pt-3 pb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <strong class="fs-5">Total:</strong> <span id="modalTotal" class="fs-4 fw-bold text-primary">$0.00</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
+                                        <i class="bi bi-check-circle"></i> Confirmar Pedido
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -537,6 +829,7 @@ function openNewOrderModal(tableId, tableLabel) {
 
     document.getElementById('newOrderTableId').value = tableId;
     document.getElementById('newOrderTableLabel').textContent = tableLabel;
+    document.getElementById('newOrderTableLabelMobile').textContent = tableLabel;
     document.getElementById('newOrderObservations').value = '';
     document.getElementById('sendToKitchen').checked = true;
     document.getElementById('productSearch').value = '';
@@ -655,29 +948,34 @@ function renderModalItems() {
         const subtotal = item.price * item.quantity;
         total += subtotal;
         return `
-            <div class="border rounded p-2 mb-2">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="me-2">
-                        <strong>${item.name}</strong>
-                        <div class="text-muted small">$${item.price.toFixed(2)} c/u</div>
+            <div class="border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <strong class="d-block mb-1">${item.name}</strong>
+                        <div class="text-muted small mb-2">$${item.price.toFixed(2)} c/u</div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeModalItem(${item.id})">
+                    <button type="button" class="btn btn-outline-danger ms-2" onclick="removeModalItem(${item.id})" style="min-width: 44px; min-height: 44px;">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
-                <div class="row g-2 mt-2">
-                    <div class="col-4">
-                        <label class="small">Cant.</label>
-                        <input type="number" class="form-control form-control-sm" min="1" value="${item.quantity}"
-                               onchange="updateModalQty(${item.id}, this.value)">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="small fw-semibold">Cantidad</label>
+                        <input type="number" class="form-control" min="1" value="${item.quantity}"
+                               onchange="updateModalQty(${item.id}, this.value)" style="min-height: 44px;">
                     </div>
-                    <div class="col-8">
-                        <label class="small">Obs. (opcional)</label>
-                        <input type="text" class="form-control form-control-sm" value="${item.observations || ''}"
-                               oninput="updateModalObs(${item.id}, this.value)">
+                    <div class="col-6">
+                        <label class="small fw-semibold">Subtotal</label>
+                        <div class="form-control bg-light" style="min-height: 44px; display: flex; align-items: center;">
+                            <strong class="text-primary">$${subtotal.toFixed(2)}</strong>
+                        </div>
                     </div>
                 </div>
-                <div class="text-end mt-2"><strong>Subtotal: $${subtotal.toFixed(2)}</strong></div>
+                <div class="mt-2">
+                    <label class="small fw-semibold">Observaciones (opcional)</label>
+                    <input type="text" class="form-control" value="${item.observations || ''}"
+                           oninput="updateModalObs(${item.id}, this.value)" placeholder="Ej: sin sal..." style="min-height: 44px;">
+                </div>
             </div>
         `;
     }).join('');
