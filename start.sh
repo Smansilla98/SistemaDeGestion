@@ -43,12 +43,45 @@ done
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
 
-# Migraciones (necesarias para table_sessions y cambios de esquema)
-echo "=== Ejecutando migraciones ==="
-php artisan migrate --force --no-interaction || {
-    echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
-    echo "   El sistema puede funcionar con funcionalidad limitada."
+# Verificar si la base de datos tiene tablas
+echo "=== Verificando estado de la base de datos ==="
+DB_HAS_TABLES=$(php -r "
+try {
+    \$pdo = new PDO(
+        'mysql:host='.(getenv('DB_HOST') ?: '127.0.0.1').
+        ';port='.(getenv('DB_PORT') ?: '3306').
+        ';dbname='.(getenv('DB_DATABASE') ?: ''),
+        getenv('DB_USERNAME') ?: 'root',
+        getenv('DB_PASSWORD') ?: ''
+    );
+    \$stmt = \$pdo->query('SHOW TABLES');
+    \$tables = \$stmt->fetchAll(PDO::FETCH_COLUMN);
+    echo count(\$tables) > 0 ? 'yes' : 'no';
+} catch (Exception \$e) {
+    echo 'no';
 }
+" 2>/dev/null || echo "no")
+
+if [ "$DB_HAS_TABLES" = "yes" ]; then
+    echo "✓ Base de datos tiene tablas existentes"
+    echo "=== Ejecutando migraciones (modo seguro) ==="
+    php artisan migrate --force --no-interaction || {
+        echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
+        echo "   El sistema puede funcionar con funcionalidad limitada."
+    }
+    
+    # Corregir enum de table_sessions si es necesario
+    echo "=== Verificando y corrigiendo enum de table_sessions ==="
+    php artisan fix:table-sessions-enum || {
+        echo "⚠️  ADVERTENCIA: No se pudo corregir el enum. Continuando..."
+    }
+else
+    echo "Base de datos vacía"
+    echo "=== Ejecutando migraciones iniciales ==="
+    php artisan migrate --force --no-interaction || {
+        echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
+    }
+fi
 
 # Regenerar autoloader de Composer (por si hay cambios en clases)
 composer dump-autoload --no-interaction --optimize || true
