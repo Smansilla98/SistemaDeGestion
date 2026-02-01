@@ -60,7 +60,14 @@ class CashRegisterController extends Controller
      */
     public function session(CashRegisterSession $session)
     {
-        $session->load(['cashRegister', 'user', 'payments.order', 'cashMovements']);
+        $session->load([
+            'cashRegister', 
+            'user', 
+            'payments.order.table', 
+            'payments.order.user',
+            'payments.user',
+            'cashMovements'
+        ]);
 
         // Calcular totales
         $totalPayments = $session->payments()->sum('amount');
