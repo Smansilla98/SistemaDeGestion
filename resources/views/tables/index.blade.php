@@ -445,13 +445,13 @@
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
                             <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar">
-                                <i class="bi bi-calendar-check"></i> <span>📅 Reservar</span>
+                                <i class="bi bi-calendar-check"></i> <span>Reservar</span>
                             </a>
                             @can('update', $table)
                             <button type="button" 
                                     class="btn btn-ocupar"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> <span>✅ Marcar Ocupada</span>
+                                <i class="bi bi-check-circle"></i> <span>Marcar Ocupada</span>
                             </button>
                             @endcan
                             @elseif($table->status === 'OCUPADA')
@@ -460,17 +460,17 @@
                             <button type="button"
                                     class="btn btn-pedido"
                                     onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
-                                <i class="bi bi-plus-circle"></i> <span>➕ Nuevo Pedido</span>
+                                <i class="bi bi-plus-circle"></i> <span>Nuevo Pedido</span>
                             </button>
                             @endif
                             <a href="{{ route('tables.orders', $table) }}" class="btn btn-ver-pedidos">
-                                <i class="bi bi-receipt"></i> <span>📋 Ver Pedidos</span>
+                                <i class="bi bi-receipt"></i> <span>Ver Pedidos</span>
                             </a>
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline w-100" id="closeTableForm{{ $table->id }}">
                                 @csrf
                                 <button type="button" class="btn btn-cerrar w-100" onclick="confirmCloseTable({{ $table->id }})">
-                                    <i class="bi bi-x-circle"></i> <span>💳 Cerrar Mesa</span>
+                                    <i class="bi bi-x-circle"></i> <span>Cerrar Mesa</span>
                                 </button>
                             </form>
                             @endcan
@@ -480,13 +480,13 @@
                             <button type="button" 
                                     class="btn btn-cambiar-estado"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-arrow-repeat"></i> <span>🔄 Cambiar Estado</span>
+                                <i class="bi bi-arrow-repeat"></i> <span>Cambiar Estado</span>
                             </button>
                             @endcan
                             @endif
                             @can('update', $table)
                             <a href="{{ route('tables.edit', $table) }}" class="btn btn-editar">
-                                <i class="bi bi-pencil"></i> <span>✏️ Editar</span>
+                                <i class="bi bi-pencil"></i> <span>Editar</span>
                             </a>
                             @endcan
                         </div>
