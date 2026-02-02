@@ -12,27 +12,60 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('styles')
     <style>
+        @php
+            // Obtener configuraciones visuales del restaurante
+            $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
+            $settings = $restaurant?->settings ?? [];
+            $colors = $settings['colors'] ?? [
+                'primary' => '#1e8081',
+                'secondary' => '#22565e',
+                'accent' => '#c94a2d',
+            ];
+            $fonts = $settings['fonts'] ?? [
+                'primary' => 'Inter',
+                'secondary' => 'Roboto',
+            ];
+            
+            // Cargar fuentes de Google Fonts
+            $primaryFont = str_replace(' ', '+', $fonts['primary']);
+            $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
+        @endphp
+        
+        @if($primaryFont !== $secondaryFont)
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&family={{ $secondaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        @else
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        @endif
+
         :root {
-            /* Paleta Conurbania - Colores oficiales */
-            --conurbania-primary: #1e8081; /* Verde azulado principal */
-            --conurbania-secondary: #22565e; /* Verde oscuro */
-            --conurbania-dark: #262c3b; /* Gris azulado oscuro */
-            --conurbania-medium: #7b7d84; /* Gris medio */
-            --conurbania-light: #cfcecd; /* Gris claro */
-            --conurbania-success: #1e8081;
-            --conurbania-success-end: #22565e;
+            /* Paleta personalizable - Colores del restaurante */
+            --conurbania-primary: {{ $colors['primary'] }};
+            --conurbania-secondary: {{ $colors['secondary'] }};
+            --conurbania-dark: #262c3b;
+            --conurbania-medium: #7b7d84;
+            --conurbania-light: #cfcecd;
+            --conurbania-success: {{ $colors['primary'] }};
+            --conurbania-success-end: {{ $colors['secondary'] }};
             --conurbania-warning: #7b7d84;
-            --conurbania-warning-end: #22565e;
-            --conurbania-info: #1e8081;
-            --conurbania-info-end: #22565e;
-            --conurbania-danger: #c94a2d;
+            --conurbania-warning-end: {{ $colors['secondary'] }};
+            --conurbania-info: {{ $colors['primary'] }};
+            --conurbania-info-end: {{ $colors['secondary'] }};
+            --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, #1e8081 0%, #22565e 50%, #262c3b 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, #22565e 50%, #1e8081 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #262c3b 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
             --mosaic-card-bg: #ffffff;
             --mosaic-text-primary: #262c3b;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
+            
+            /* Fuentes personalizables */
+            --font-primary: '{{ $fonts['primary'] }}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-secondary: '{{ $fonts['secondary'] }}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         * {
@@ -42,10 +75,14 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: var(--font-primary);
             background: var(--mosaic-bg);
             color: var(--mosaic-text-primary);
             overflow-x: hidden;
+        }
+        
+        .font-secondary {
+            font-family: var(--font-secondary);
         }
 
         /* Sidebar Mosaic Style */
@@ -614,8 +651,17 @@
     <aside class="nova-sidebar" id="novaSidebar">
         <div class="nova-sidebar-header">
             <a href="{{ route('dashboard') }}" class="logo">
-                <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <span style="display: none;">Conurbania</span>
+                @php
+                    $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
+                    $settings = $restaurant?->settings ?? [];
+                    $logo = $settings['logo'] ?? null;
+                @endphp
+                @if($logo && Storage::disk('public')->exists($logo))
+                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 50px; max-width: 200px;">
+                @else
+                    <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span style="display: none;">Conurbania</span>
+                @endif
             </a>
         </div>
 
@@ -660,6 +706,10 @@
             <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="bi bi-graph-up"></i>
                 <span>Reportes</span>
+            </a>
+            <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i>
+                <span>Configuración</span>
             </a>
             @endif
         </nav>
