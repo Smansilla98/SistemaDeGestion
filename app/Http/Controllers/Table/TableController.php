@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\CashRegisterSession;
 use App\Services\OrderService;
 use App\Services\PrintService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,8 @@ class TableController extends Controller
 {
     public function __construct(
         private OrderService $orderService,
-        private PrintService $printService
+        private PrintService $printService,
+        private StockService $stockService
     ) {}
     /**
      * Mostrar lista de mesas
@@ -627,6 +629,35 @@ class TableController extends Controller
                     }
                 }
                 $ordersClosed[] = $order;
+            }
+
+            // Verificar stock después de cerrar los pedidos
+            // Recorrer todos los items de todos los pedidos para verificar stock
+            $stockVerificationErrors = [];
+            foreach ($ordersClosed as $order) {
+                foreach ($order->items as $item) {
+                    if ($item->product->has_stock) {
+                        $currentStock = $item->product->getCurrentStock($order->restaurant_id);
+                        $expectedStock = $item->product->getCurrentStock($order->restaurant_id);
+                        
+                        // Verificar que el stock se haya reducido correctamente
+                        // El stock debería haberse reducido cuando se agregó el item al pedido
+                        // Aquí solo verificamos que no haya inconsistencias
+                        if ($currentStock < 0) {
+                            $stockVerificationErrors[] = "Stock negativo detectado para '{$item->product->name}': {$currentStock}";
+                        }
+                    }
+                }
+            }
+            
+            // Si hay errores de stock, registrar en logs pero no bloquear el cierre
+            if (!empty($stockVerificationErrors)) {
+                Log::warning('Errores de verificación de stock al cerrar mesa', [
+                    'table_id' => $table->id,
+                    'restaurant_id' => $table->restaurant_id,
+                    'errors' => $stockVerificationErrors,
+                    'user_id' => auth()->id()
+                ]);
             }
 
             // Crear pagos consolidados por sesión de mesa
