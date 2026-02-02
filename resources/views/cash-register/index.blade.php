@@ -171,5 +171,4 @@ function confirmDeleteCashRegister(cashRegisterId, cashRegisterName) {
 </script>
 @endpush
 @endsection
-@endsection
 
