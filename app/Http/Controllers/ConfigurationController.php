@@ -57,6 +57,14 @@ class ConfigurationController extends Controller
         ]);
 
         $settings = $restaurant->settings ?? [];
+        
+        // Inicializar arrays si no existen
+        if (!isset($settings['colors'])) {
+            $settings['colors'] = [];
+        }
+        if (!isset($settings['fonts'])) {
+            $settings['fonts'] = [];
+        }
 
         // Manejar logo
         if ($request->hasFile('logo')) {
