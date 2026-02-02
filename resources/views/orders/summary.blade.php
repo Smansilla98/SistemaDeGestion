@@ -16,7 +16,7 @@
     <div class="col-lg-10 col-xl-8">
         <div class="card shadow-lg border-0">
             <div class="card-header bg-primary text-white text-center py-4">
-                <h1 class="mb-2"><i class="bi bi-receipt-cutoff"></i> Resumen del Pedido</h1>
+                <h1 class="mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt-cutoff"></i> Resumen del Pedido</h1>
                 <h3 class="mb-0">{{ $order->restaurant->name ?? 'Restaurante' }}</h3>
                 @if($order->restaurant->address)
                 <p class="mb-0 mt-2"><small>{{ $order->restaurant->address }}</small></p>

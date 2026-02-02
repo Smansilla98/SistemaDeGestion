@@ -8,7 +8,7 @@
         <a href="{{ route('tables.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver a Mesas
         </a>
-        <h1><i class="bi bi-receipt"></i> Pedidos de Mesa: {{ $table->number }}</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt"></i> Pedidos de Mesa: {{ $table->number }}</h1>
         <p class="text-muted">
             Sector: {{ $table->sector->name }} | 
             Estado: <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">{{ $table->status }}</span> |

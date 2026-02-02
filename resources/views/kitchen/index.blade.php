@@ -328,7 +328,7 @@
 
 <div class="kds-container">
     <div class="kds-header">
-        <h1><i class="bi bi-fire"></i> Kitchen Display System (KDS)</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-fire"></i> Kitchen Display System (KDS)</h1>
         <p class="mb-0" style="opacity: 0.9;">Gestión de pedidos en tiempo real</p>
     </div>
 

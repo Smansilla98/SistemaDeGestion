@@ -6,8 +6,7 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="bi bi-box-seam"></i> Productos</h1>
-            <p class="text-muted">Gestión de productos y menú</p>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-box-seam"></i> Productos</h1>
         </div>
         @can('create', App\Models\Product::class)
         <a href="{{ route('products.create') }}" class="btn btn-primary">

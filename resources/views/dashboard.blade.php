@@ -1,11 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Página Principal')
 
 @push('styles')
 <style>
     .mosaic-dashboard {
-        background: linear-gradient(135deg, #1e8081 0%, #22565e 50%, #262c3b 100%);
         min-height: 100vh;
         padding: 2rem 0;
     }
@@ -280,7 +279,6 @@
                         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </h1>
-                        <p class="text-white-50 mb-0">Resumen general del restaurante</p>
                     </div>
                 </div>
             </div>

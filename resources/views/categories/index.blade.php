@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="bi bi-tags"></i> Categorías</h1>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-tags"></i> Categorías</h1>
             <p class="text-muted">Gestiona las categorías de productos</p>
         </div>
         @can('create', App\Models\Category::class)

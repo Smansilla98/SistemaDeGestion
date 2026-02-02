@@ -53,5 +53,35 @@ class CashRegisterPolicy
     {
         return in_array($user->role, ['ADMIN', 'CAJERO']);
     }
+
+    /**
+     * Determine if the user can create cash registers.
+     */
+    public function create(User $user): bool
+    {
+        return $user->role === 'ADMIN';
+    }
+
+    /**
+     * Determine if the user can update the cash register.
+     */
+    public function update(User $user, CashRegister $cashRegister): bool
+    {
+        return $user->role === 'ADMIN' 
+            && $user->restaurant_id === $cashRegister->restaurant_id;
+    }
+
+    /**
+     * Determine if the user can delete the cash register.
+     */
+    public function delete(User $user, CashRegister $cashRegister): bool
+    {
+        if ($user->role !== 'ADMIN' || $user->restaurant_id !== $cashRegister->restaurant_id) {
+            return false;
+        }
+
+        // No se puede eliminar si tiene sesiones abiertas o históricas
+        return $cashRegister->sessions()->count() === 0;
+    }
 }
 

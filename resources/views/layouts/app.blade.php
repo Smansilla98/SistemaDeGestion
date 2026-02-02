@@ -705,8 +705,8 @@
 
         <nav class="nova-sidebar-nav">
             <a href="{{ route('dashboard') }}" class="nova-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2"></i>
-                <span>Dashboard</span>
+                <i class="bi bi-house"></i>
+                <span>Página Principal</span>
             </a>
 
             @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
@@ -732,6 +732,14 @@
             <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
                 <span>Usuarios</span>
+            </a>
+            <a href="{{ route('sectors.index') }}" class="nova-nav-item {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
+                <i class="bi bi-grid"></i>
+                <span>Sectores</span>
+            </a>
+            <a href="{{ route('categories.index') }}" class="nova-nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i>
+                <span>Categorías</span>
             </a>
             <a href="{{ route('products.index') }}" class="nova-nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
                 <i class="bi bi-box-seam"></i>

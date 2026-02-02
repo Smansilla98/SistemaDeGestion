@@ -139,7 +139,7 @@
 @section('content')
 <div class="receipt-container">
     <div class="receipt-header">
-        <h1><i class="bi bi-receipt-cutoff"></i> Recibo Consolidado</h1>
+        <h1 style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt-cutoff"></i> Recibo Consolidado</h1>
         <p class="text-muted mb-0">{{ $table->restaurant->name ?? 'Restaurante' }}</p>
         <p class="text-muted"><small>{{ now()->format('d/m/Y H:i:s') }}</small></p>
     </div>

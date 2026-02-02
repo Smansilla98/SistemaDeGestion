@@ -6,8 +6,7 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="bi bi-receipt"></i> Pedidos</h1>
-            <p class="text-muted">Gestión de pedidos del restaurante</p>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt"></i> Pedidos</h1>
         </div>
         @can('create', App\Models\Order::class)
         <a href="{{ route('orders.create') }}" class="btn btn-primary">
