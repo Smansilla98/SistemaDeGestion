@@ -56,7 +56,7 @@
                         <td>
                             <strong>{{ $product->name }}</strong>
                             @if($product->description)
-                            <br><small class="text-muted">{{ Str::limit($product->description, 50) }}</small>
+                            <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($product->description, 50) }}</small>
                             @endif
                         </td>
                         <td>{{ $product->category->name }}</td>

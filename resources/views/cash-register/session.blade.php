@@ -143,7 +143,7 @@
                                 <td>{{ $payment->created_at->format('d/m H:i') }}</td>
                                 <td>
                                     @if($payment->notes && !str_contains($payment->notes, 'Mesa:') && !str_contains($payment->notes, 'Mozo:'))
-                                        <small class="text-muted">{{ Str::limit($payment->notes, 30) }}</small>
+                                        <small class="text-muted">{{ \Illuminate\Support\Str::limit($payment->notes, 30) }}</small>
                                     @elseif($payment->operation_number)
                                         <small class="text-muted">Op: {{ $payment->operation_number }}</small>
                                     @else
