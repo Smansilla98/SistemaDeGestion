@@ -27,45 +27,88 @@ class OrderService
             // Generar número de pedido único
             $orderNumber = $this->generateOrderNumber($data['restaurant_id']);
 
-            $table = Table::findOrFail($data['table_id']);
+            $table = null;
+            $subsectorItem = null;
+            $tableSessionId = null;
 
-            // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
-            if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
-                // Verificar que la tabla existe antes de crear sesión
-                if (!Schema::hasTable('table_sessions')) {
-                    throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+            // Manejar pedidos desde mesas o desde subsector items
+            if (isset($data['table_id']) && $data['table_id']) {
+                $table = Table::findOrFail($data['table_id']);
+
+                // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
+                if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
+                    // Verificar que la tabla existe antes de crear sesión
+                    if (!Schema::hasTable('table_sessions')) {
+                        throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+                    }
+                    
+                    try {
+                        $session = TableSession::create([
+                            'restaurant_id' => $table->restaurant_id,
+                            'table_id' => $table->id,
+                            'started_at' => now(),
+                        ]);
+                        $table->update(['current_session_id' => $session->id]);
+                    } catch (\Exception $e) {
+                        \Log::error('Error al crear sesión de mesa en OrderService: ' . $e->getMessage());
+                        throw new \Exception('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
+                    }
                 }
+
+                $tableSessionId = $table->current_session_id;
+            } elseif (isset($data['subsector_item_id']) && $data['subsector_item_id']) {
+                $subsectorItem = \App\Models\SubsectorItem::findOrFail($data['subsector_item_id']);
                 
-                try {
-                    $session = TableSession::create([
-                        'restaurant_id' => $table->restaurant_id,
-                        'table_id' => $table->id,
-                        'started_at' => now(),
-                    ]);
-                    $table->update(['current_session_id' => $session->id]);
-                } catch (\Exception $e) {
-                    \Log::error('Error al crear sesión de mesa en OrderService: ' . $e->getMessage());
-                    throw new \Exception('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
+                // Crear sesión para el subsector item si no tiene una
+                if (!$subsectorItem->current_session_id) {
+                    if (!Schema::hasTable('table_sessions')) {
+                        throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones.');
+                    }
+                    
+                    try {
+                        $session = \App\Models\TableSession::create([
+                            'restaurant_id' => $subsectorItem->subsector->restaurant_id,
+                            'table_id' => null, // No hay mesa asociada
+                            'started_at' => now(),
+                            'status' => \App\Models\TableSession::STATUS_ABIERTA,
+                        ]);
+                        $subsectorItem->update(['current_session_id' => $session->id]);
+                        $tableSessionId = $session->id;
+                    } catch (\Exception $e) {
+                        \Log::error('Error al crear sesión para subsector item: ' . $e->getMessage());
+                        throw new \Exception('Error al crear sesión para el elemento del subsector.');
+                    }
+                } else {
+                    $tableSessionId = $subsectorItem->current_session_id;
                 }
+            } else {
+                throw new \Exception('Se debe proporcionar table_id o subsector_item_id para crear un pedido.');
             }
 
-            // Crear el pedido (asociado a la sesión actual si existe)
             // Crear el pedido
             $order = Order::create([
                 'restaurant_id' => $data['restaurant_id'],
-                'table_id' => $data['table_id'],
-                'table_session_id' => $table->current_session_id,
+                'table_id' => $data['table_id'] ?? null,
+                'subsector_item_id' => $data['subsector_item_id'] ?? null,
+                'table_session_id' => $tableSessionId,
                 'user_id' => $data['user_id'],
                 'number' => $orderNumber,
                 'status' => OrderStatus::ABIERTO->value,
                 'observations' => $data['observations'] ?? null,
             ]);
 
-            // Actualizar estado de la mesa
-            $table->update([
-                'status' => 'OCUPADA',
-                'current_order_id' => $order->id,
-            ]);
+            // Actualizar estado según el tipo
+            if ($table) {
+                $table->update([
+                    'status' => 'OCUPADA',
+                    'current_order_id' => $order->id,
+                ]);
+            } elseif ($subsectorItem) {
+                $subsectorItem->update([
+                    'status' => \App\Models\SubsectorItem::STATUS_OCUPADA,
+                    'current_order_id' => $order->id,
+                ]);
+            }
 
             return $order;
         });
