@@ -26,6 +26,22 @@
                 'secondary' => 'Roboto',
             ];
             
+            // Función para convertir hex a rgba con transparencia
+            function hexToRgba($hex, $alpha = 0.1) {
+                $hex = str_replace('#', '', $hex);
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+                return "rgba($r, $g, $b, $alpha)";
+            }
+            
+            // Calcular versiones con transparencia
+            $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
+            $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
+            $secondaryRgba10 = hexToRgba($colors['secondary'], 0.1);
+            $secondaryRgba30 = hexToRgba($colors['secondary'], 0.3);
+            $accentRgba10 = hexToRgba($colors['accent'], 0.1);
+            
             // Cargar fuentes de Google Fonts
             $primaryFont = str_replace(' ', '+', $fonts['primary']);
             $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
@@ -45,6 +61,7 @@
             /* Paleta personalizable - Colores del restaurante */
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
+            --conurbania-accent: {{ $colors['accent'] }};
             --conurbania-dark: #262c3b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
@@ -62,6 +79,13 @@
             --mosaic-text-primary: #262c3b;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
+            
+            /* Colores con transparencia para usar en gradientes */
+            --conurbania-primary-10: {{ $primaryRgba10 }};
+            --conurbania-primary-30: {{ $primaryRgba30 }};
+            --conurbania-secondary-10: {{ $secondaryRgba10 }};
+            --conurbania-secondary-30: {{ $secondaryRgba30 }};
+            --conurbania-accent-10: {{ $accentRgba10 }};
             
             /* Fuentes personalizables */
             --font-primary: '{{ $fonts['primary'] }}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -182,16 +206,16 @@
         .nova-nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border-left-color: #1e8081;
+            border-left-color: var(--conurbania-primary);
             transform: translateX(5px);
         }
 
         .nova-nav-item.active {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.3), rgba(34, 86, 94, 0.3));
+            background: linear-gradient(135deg, var(--conurbania-primary-30), var(--conurbania-secondary-30));
             color: white;
-            border-left-color: #1e8081;
+            border-left-color: var(--conurbania-primary);
             font-weight: 600;
-            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.3);
+            box-shadow: 0 4px 15px var(--conurbania-primary-30);
         }
 
         .nova-nav-item i {
@@ -236,13 +260,13 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.4);
+            box-shadow: 0 4px 15px var(--conurbania-primary-30);
         }
 
         .nova-user-info {
@@ -295,7 +319,7 @@
 
         .nova-sidebar-toggle {
             display: none;
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             border: none;
             font-size: 1.25rem;
             color: white;
@@ -303,12 +327,12 @@
             padding: 0.75rem;
             border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.3);
+            box-shadow: 0 4px 15px var(--conurbania-primary-30);
         }
 
         .nova-sidebar-toggle:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(30, 128, 129, 0.4);
+            box-shadow: 0 6px 20px var(--conurbania-primary-30);
         }
 
         @media (max-width: 768px) {
@@ -320,7 +344,7 @@
         .nova-header-title {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -352,7 +376,7 @@
         .nova-header-dropdown-toggle:hover {
             border-color: var(--conurbania-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(30, 128, 129, 0.2);
+            box-shadow: 0 4px 15px var(--conurbania-primary-10);
         }
 
         .nova-header-dropdown-menu {
@@ -396,7 +420,7 @@
         }
 
         .nova-dropdown-item:hover {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             color: var(--conurbania-primary);
             transform: translateX(5px);
         }
@@ -432,7 +456,7 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             border-bottom: 2px solid var(--mosaic-border);
             padding: 1.5rem;
             font-weight: 700;
@@ -459,32 +483,32 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             color: white;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #22565e, #1e8081);
+            background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary));
             color: white;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             color: white;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #7b7d84, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-medium), var(--conurbania-secondary));
             color: white;
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             color: white;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #c94a2d, #e67e51);
+            background: linear-gradient(135deg, var(--conurbania-danger), var(--conurbania-danger-end));
             color: white;
         }
 
@@ -495,7 +519,7 @@
         }
 
         .btn-outline-primary:hover {
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             color: white;
             border-color: transparent;
         }
@@ -509,27 +533,27 @@
         }
 
         .alert-success {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
-            color: #22565e;
-            border-left: 4px solid #1e8081;
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+            color: var(--conurbania-secondary);
+            border-left: 4px solid var(--conurbania-primary);
         }
 
         .alert-danger {
-            background: linear-gradient(135deg, rgba(201, 74, 45, 0.1), rgba(230, 126, 81, 0.1));
-            color: #742a2a;
-            border-left: 4px solid #c94a2d;
+            background: linear-gradient(135deg, var(--conurbania-accent-10), rgba(230, 126, 81, 0.1));
+            color: var(--conurbania-danger);
+            border-left: 4px solid var(--conurbania-danger);
         }
 
         .alert-warning {
-            background: linear-gradient(135deg, rgba(123, 125, 132, 0.1), rgba(34, 86, 94, 0.1));
-            color: #262c3b;
-            border-left: 4px solid #7b7d84;
+            background: linear-gradient(135deg, rgba(123, 125, 132, 0.1), var(--conurbania-secondary-10));
+            color: var(--conurbania-dark);
+            border-left: 4px solid var(--conurbania-medium);
         }
 
         .alert-info {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
-            color: #22565e;
-            border-left: 4px solid #1e8081;
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+            color: var(--conurbania-secondary);
+            border-left: 4px solid var(--conurbania-primary);
         }
 
         /* Tables Mosaic Style */
@@ -539,7 +563,7 @@
         }
 
         .table thead th {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             color: var(--mosaic-text-primary);
             font-weight: 700;
             text-transform: uppercase;
@@ -556,7 +580,7 @@
         }
 
         .table tbody tr:hover {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.05), rgba(34, 86, 94, 0.05));
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             transform: scale(1.01);
             transition: all 0.2s ease;
         }
@@ -581,7 +605,7 @@
         .form-control:focus,
         .form-select:focus {
             border-color: var(--conurbania-primary);
-            box-shadow: 0 0 0 3px rgba(30, 128, 129, 0.1);
+            box-shadow: 0 0 0 3px var(--conurbania-primary-10);
         }
 
         /* Overlay para móvil */
@@ -617,12 +641,12 @@
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #1e8081, #22565e);
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
             border-radius: 4px;
         }
 
         .nova-sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #22565e, #1e8081);
+            background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary));
         }
 
         /* Modal Mosaic Style */
@@ -633,7 +657,7 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             border-bottom: 2px solid var(--mosaic-border);
             border-radius: 20px 20px 0 0;
             padding: 1.5rem;
