@@ -204,9 +204,108 @@ class TableController extends Controller
 
             $tables = Table::where('sector_id', $sectorId)
                 ->get();
+            
+            // Cargar subsectores con sus items
+            $selectedSector->load(['subsectors.items' => function($query) {
+                $query->orderBy('position');
+            }]);
         }
 
-        return view('tables.layout', compact('sectors', 'selectedSector', 'tables'));
+        // Obtener mozos para el modal de cambio de estado
+        $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
+            ->where('role', 'MOZO')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        // Obtener productos para el modal de pedidos
+        $products = \App\Models\Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->with(['category'])
+            ->orderBy('name')
+            ->get()
+            ->groupBy('category.name');
+
+        return view('tables.layout', compact('sectors', 'selectedSector', 'tables', 'waiters', 'products'));
+    }
+
+    /**
+     * Crear pedido desde un item de subsector
+     */
+    public function storeOrderFromSubsectorItem(Request $request, \App\Models\SubsectorItem $item)
+    {
+        // Solo ADMIN / MOZO
+        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+            abort(403, 'No tienes permisos para crear pedidos');
+        }
+
+        // Asegurar restaurante
+        if ($item->subsector->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a este elemento');
+        }
+
+        if ($item->status !== \App\Models\SubsectorItem::STATUS_OCUPADA && $item->status !== \App\Models\SubsectorItem::STATUS_LIBRE) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se pueden tomar pedidos en elementos libres u ocupados.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'observations' => 'nullable|string',
+            'send_to_kitchen' => 'nullable|boolean',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.observations' => 'nullable|string',
+        ]);
+
+        // Normalizar boolean
+        $validated['send_to_kitchen'] = $request->boolean('send_to_kitchen');
+
+        $data = [
+            'restaurant_id' => auth()->user()->restaurant_id,
+            'subsector_item_id' => $item->id,
+            'user_id' => auth()->id(),
+            'observations' => $validated['observations'] ?? null,
+            'items' => $validated['items'],
+        ];
+
+        try {
+            $order = $this->orderService->createOrder($data);
+
+            foreach ($data['items'] as $itemData) {
+                $this->orderService->addItem($order, $itemData);
+            }
+
+            // Recargar el pedido con sus relaciones para la impresión
+            $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
+
+            // Imprimir automáticamente la comanda de cocina
+            try {
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'kitchen');
+                $this->printService->printKitchenTicket($order, $printer);
+                $printMessage = 'La comanda de cocina se ha impreso automáticamente.';
+            } catch (\Exception $printError) {
+                Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
+                    'order_id' => $order->id,
+                    'order_number' => $order->number
+                ]);
+                $printMessage = 'Pedido creado. La comanda está disponible para imprimir manualmente.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido creado exitosamente. ' . $printMessage,
+                'order_id' => $order->id,
+                'order_number' => $order->number,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

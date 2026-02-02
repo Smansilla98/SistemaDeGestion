@@ -47,6 +47,22 @@
                         @enderror
                     </div>
 
+                    @if($sector->isSubsector())
+                    <div class="mb-3">
+                        <label for="capacity" class="form-label">Capacidad (Elementos)</label>
+                        <input type="number" 
+                               class="form-control @error('capacity') is-invalid @enderror" 
+                               id="capacity" 
+                               name="capacity" 
+                               value="{{ old('capacity', $sector->capacity) }}" 
+                               min="1">
+                        @error('capacity')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Número de elementos/lugares del subsector. Al aumentar, se crearán nuevos elementos automáticamente.</small>
+                    </div>
+                    @endif
+
                     <div class="mb-3">
                         <div class="form-check">
                             <input class="form-check-input" 
@@ -56,7 +72,7 @@
                                    value="1" 
                                    {{ old('is_active', $sector->is_active) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">
-                                Sector activo
+                                {{ $sector->isSubsector() ? 'Subsector activo' : 'Sector activo' }}
                             </label>
                         </div>
                     </div>

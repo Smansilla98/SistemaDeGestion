@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{table}/reserve', [\App\Http\Controllers\TableReservationController::class, 'create'])->name('reserve');
         Route::get('/{table}/orders', [TableController::class, 'tableOrders'])->name('orders');
         Route::post('/{table}/orders', [TableController::class, 'storeOrder'])->name('orders.store');
+        Route::post('/subsector-items/{item}/orders', [TableController::class, 'storeOrderFromSubsectorItem'])->name('subsector-items.orders.store');
         Route::get('/{table}/close-summary', [TableController::class, 'closeSummary'])->name('close-summary');
         Route::get('/{table}/consolidated-receipt', [TableController::class, 'consolidatedReceipt'])->name('consolidated-receipt');
         Route::get('/{table}/print-consolidated-receipt', [TableController::class, 'printConsolidatedReceipt'])->name('print-consolidated-receipt');
@@ -156,6 +157,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/{sector}/edit', [\App\Http\Controllers\Sector\SectorController::class, 'edit'])->name('edit');
         Route::put('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'update'])->name('update');
         Route::delete('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'destroy'])->name('destroy');
+        
+        // Rutas para items de subsectores
+        Route::post('/{sector}/items', [\App\Http\Controllers\Sector\SectorController::class, 'storeItem'])->name('items.store');
+        Route::delete('/{sector}/items/{item}', [\App\Http\Controllers\Sector\SectorController::class, 'destroyItem'])->name('items.destroy');
     });
 
     Route::prefix('products')->name('products.')->group(function () {

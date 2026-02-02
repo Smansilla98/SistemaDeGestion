@@ -26,6 +26,7 @@
                         <th>Nombre</th>
                         <th>Descripción</th>
                         <th>Mesas</th>
+                        <th>Subsectores</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -43,6 +44,9 @@
                             <span class="badge bg-info">{{ $sector->tables_count }}</span>
                         </td>
                         <td>
+                            <span class="badge bg-primary">{{ $sector->subsectors_count }}</span>
+                        </td>
+                        <td>
                             @if($sector->is_active)
                             <span class="badge bg-success">Activo</span>
                             @else
@@ -57,6 +61,11 @@
                                 @can('update', $sector)
                                 <a href="{{ route('sectors.edit', $sector) }}" class="btn btn-sm btn-outline-secondary" title="Editar">
                                     <i class="bi bi-pencil"></i>
+                                </a>
+                                @endcan
+                                @can('create', App\Models\Sector::class)
+                                <a href="{{ route('sectors.create', ['parent_id' => $sector->id]) }}" class="btn btn-sm btn-outline-success" title="Nuevo Subsector">
+                                    <i class="bi bi-plus-circle"></i>
                                 </a>
                                 @endcan
                                 @can('delete', $sector)

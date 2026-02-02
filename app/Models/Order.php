@@ -23,6 +23,7 @@ class Order extends Model
     protected $fillable = [
         'restaurant_id',
         'table_id',
+        'subsector_item_id',
         'table_session_id',
         'user_id',
         'number',
@@ -57,6 +58,14 @@ class Order extends Model
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
+    }
+
+    /**
+     * Relación: Un pedido puede pertenecer a un item de subsector
+     */
+    public function subsectorItem(): BelongsTo
+    {
+        return $this->belongsTo(SubsectorItem::class, 'subsector_item_id');
     }
 
     public function tableSession(): BelongsTo
