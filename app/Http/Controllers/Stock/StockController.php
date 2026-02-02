@@ -86,20 +86,49 @@ class StockController extends Controller
      */
     public function storeMovement(Request $request)
     {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'type' => 'required|in:ENTRADA,SALIDA,AJUSTE',
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string|max:255',
-            'reference' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'type' => 'required|in:ENTRADA,SALIDA,AJUSTE',
+                'quantity' => 'required|integer|min:1',
+                'reason' => 'nullable|string|max:255',
+                'reference' => 'nullable|string|max:255',
+            ]);
 
-        $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        $validated['user_id'] = auth()->id();
+            $validated['restaurant_id'] = auth()->user()->restaurant_id;
+            $validated['user_id'] = auth()->id();
 
-        $this->stockService->recordMovement($validated);
+            $this->stockService->recordMovement($validated);
 
-        return back()->with('success', 'Movimiento de stock registrado exitosamente');
+            // Si es una petición AJAX, devolver JSON
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Movimiento de stock registrado exitosamente'
+                ]);
+            }
+
+            return back()->with('success', 'Movimiento de stock registrado exitosamente');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Si es una petición AJAX, devolver errores de validación en JSON
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            // Si es una petición AJAX, devolver error en JSON
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al registrar el movimiento: ' . $e->getMessage()
+                ], 500);
+            }
+            throw $e;
+        }
     }
 }
 
