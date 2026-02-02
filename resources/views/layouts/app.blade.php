@@ -10,53 +10,53 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @php
+        // Obtener configuraciones visuales del restaurante
+        $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
+        $settings = $restaurant?->settings ?? [];
+        $colors = $settings['colors'] ?? [
+            'primary' => '#1e8081',
+            'secondary' => '#22565e',
+            'accent' => '#c94a2d',
+        ];
+        $fonts = $settings['fonts'] ?? [
+            'primary' => 'Inter',
+            'secondary' => 'Roboto',
+        ];
+        
+        // Función para convertir hex a rgba con transparencia
+        function hexToRgba($hex, $alpha = 0.1) {
+            $hex = str_replace('#', '', $hex);
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            return "rgba($r, $g, $b, $alpha)";
+        }
+        
+        // Calcular versiones con transparencia
+        $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
+        $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
+        $secondaryRgba10 = hexToRgba($colors['secondary'], 0.1);
+        $secondaryRgba30 = hexToRgba($colors['secondary'], 0.3);
+        $accentRgba10 = hexToRgba($colors['accent'], 0.1);
+        
+        // Cargar fuentes de Google Fonts
+        $primaryFont = str_replace(' ', '+', $fonts['primary']);
+        $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
+    @endphp
+    
+    @if($primaryFont !== $secondaryFont)
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&family={{ $secondaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    @else
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    @endif
+    
     @stack('styles')
     <style>
-        @php
-            // Obtener configuraciones visuales del restaurante
-            $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
-            $settings = $restaurant?->settings ?? [];
-            $colors = $settings['colors'] ?? [
-                'primary' => '#1e8081',
-                'secondary' => '#22565e',
-                'accent' => '#c94a2d',
-            ];
-            $fonts = $settings['fonts'] ?? [
-                'primary' => 'Inter',
-                'secondary' => 'Roboto',
-            ];
-            
-            // Función para convertir hex a rgba con transparencia
-            function hexToRgba($hex, $alpha = 0.1) {
-                $hex = str_replace('#', '', $hex);
-                $r = hexdec(substr($hex, 0, 2));
-                $g = hexdec(substr($hex, 2, 2));
-                $b = hexdec(substr($hex, 4, 2));
-                return "rgba($r, $g, $b, $alpha)";
-            }
-            
-            // Calcular versiones con transparencia
-            $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
-            $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
-            $secondaryRgba10 = hexToRgba($colors['secondary'], 0.1);
-            $secondaryRgba30 = hexToRgba($colors['secondary'], 0.3);
-            $accentRgba10 = hexToRgba($colors['accent'], 0.1);
-            
-            // Cargar fuentes de Google Fonts
-            $primaryFont = str_replace(' ', '+', $fonts['primary']);
-            $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
-        @endphp
-        
-        @if($primaryFont !== $secondaryFont)
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&family={{ $secondaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        @else
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        @endif
-
         :root {
             /* Paleta personalizable - Colores del restaurante */
             --conurbania-primary: {{ $colors['primary'] }};
@@ -99,9 +99,9 @@
         }
 
         body {
-            font-family: var(--font-primary);
-            background: var(--mosaic-bg);
-            color: var(--mosaic-text-primary);
+            font-family: var(--font-primary) !important;
+            background: var(--mosaic-bg) !important;
+            color: var(--mosaic-text-primary) !important;
             overflow-x: hidden;
         }
         
@@ -116,7 +116,7 @@
             left: 0;
             height: 100vh;
             width: 280px;
-            background: var(--mosaic-sidebar-bg);
+            background: var(--mosaic-sidebar-bg) !important;
             color: white;
             z-index: 1000;
             overflow-y: auto;
@@ -482,34 +482,50 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
-            color: white;
+        .btn-primary,
+        button.btn-primary,
+        a.btn-primary {
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+            color: white !important;
+            border-color: var(--conurbania-primary) !important;
         }
 
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary));
-            color: white;
+        .btn-primary:hover,
+        button.btn-primary:hover,
+        a.btn-primary:hover {
+            background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary)) !important;
+            color: white !important;
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
-            color: white;
+        .btn-success,
+        button.btn-success,
+        a.btn-success {
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+            color: white !important;
+            border-color: var(--conurbania-primary) !important;
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, var(--conurbania-medium), var(--conurbania-secondary));
-            color: white;
+        .btn-warning,
+        button.btn-warning,
+        a.btn-warning {
+            background: linear-gradient(135deg, var(--conurbania-medium), var(--conurbania-secondary)) !important;
+            color: white !important;
         }
 
-        .btn-info {
-            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
-            color: white;
+        .btn-info,
+        button.btn-info,
+        a.btn-info {
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+            color: white !important;
+            border-color: var(--conurbania-primary) !important;
         }
 
-        .btn-danger {
-            background: linear-gradient(135deg, var(--conurbania-danger), var(--conurbania-danger-end));
-            color: white;
+        .btn-danger,
+        button.btn-danger,
+        a.btn-danger {
+            background: linear-gradient(135deg, var(--conurbania-danger), var(--conurbania-danger-end)) !important;
+            color: white !important;
+            border-color: var(--conurbania-danger) !important;
         }
 
         .btn-outline-primary {
@@ -676,14 +692,12 @@
         <div class="nova-sidebar-header">
             <a href="{{ route('dashboard') }}" class="logo">
                 @php
-                    $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
-                    $settings = $restaurant?->settings ?? [];
                     $logo = $settings['logo'] ?? null;
                 @endphp
                 @if($logo && Storage::disk('public')->exists($logo))
-                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 50px; max-width: 200px;">
+                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 50px; max-width: 200px; filter: brightness(0) invert(1);">
                 @else
-                    <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="filter: brightness(0) invert(1);">
                     <span style="display: none;">Conurbania</span>
                 @endif
             </a>
