@@ -11,155 +11,162 @@
         }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 11px;
-            width: 80mm;
-            padding: 5mm;
-            line-height: 1.3;
+            font-size: 9px;
+            width: 58mm;
+            padding: 2mm;
+            line-height: 1.2;
+            margin: 0 auto;
         }
         .border-asterisk {
             text-align: center;
-            font-size: 10px;
-            letter-spacing: 1px;
-            margin: 5px 0;
+            font-size: 8px;
+            letter-spacing: 0.5px;
+            margin: 2px 0;
         }
         .header {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
         }
         .logo-container {
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
         .logo-container img {
-            max-width: 60mm;
-            max-height: 30mm;
+            max-width: 40mm;
+            max-height: 15mm;
             object-fit: contain;
         }
         .header h1 {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 2px 0;
             text-transform: uppercase;
         }
         .header-info {
             display: flex;
             justify-content: space-between;
-            font-size: 9px;
-            margin: 5px 0;
+            font-size: 7px;
+            margin: 2px 0;
         }
         .dashed-line {
             border-top: 1px dashed #000;
-            margin: 5px 0;
-        }
-        .order-info {
-            margin-bottom: 8px;
-            font-size: 10px;
-        }
-        .order-info p {
             margin: 2px 0;
         }
+        .order-info {
+            margin-bottom: 3px;
+            font-size: 8px;
+        }
+        .order-info p {
+            margin: 1px 0;
+            line-height: 1.1;
+        }
         .items {
-            margin: 8px 0;
+            margin: 3px 0;
         }
         .item {
-            margin-bottom: 5px;
-            padding-bottom: 3px;
+            margin-bottom: 2px;
+            padding-bottom: 1px;
         }
         .item-line {
             display: flex;
             justify-content: space-between;
-            font-size: 10px;
+            font-size: 8px;
+            line-height: 1.1;
         }
         .item-quantity {
-            margin-right: 5px;
+            margin-right: 3px;
             font-weight: bold;
+            min-width: 15px;
         }
         .item-name {
             flex: 1;
+            word-break: break-word;
         }
         .item-price {
             text-align: right;
-            min-width: 50px;
+            min-width: 35px;
             font-weight: bold;
         }
         .totals {
-            margin-top: 8px;
-            padding-top: 5px;
+            margin-top: 3px;
+            padding-top: 2px;
         }
         .total-line {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
-            font-size: 10px;
+            margin: 1px 0;
+            font-size: 8px;
         }
         .total-line.final {
             font-weight: bold;
-            font-size: 13px;
+            font-size: 10px;
             border-top: 1px dashed #000;
-            padding-top: 5px;
-            margin-top: 5px;
+            padding-top: 2px;
+            margin-top: 2px;
         }
         .payments {
-            margin-top: 8px;
-            padding-top: 5px;
+            margin-top: 3px;
+            padding-top: 2px;
             border-top: 1px dashed #000;
-            font-size: 10px;
+            font-size: 8px;
         }
         .payment-line {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
+            margin: 1px 0;
+            font-size: 8px;
         }
         .payment-total {
             border-top: 1px dashed #000;
-            padding-top: 5px;
-            margin-top: 5px;
+            padding-top: 2px;
+            margin-top: 2px;
             font-weight: bold;
         }
         .change-line {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
-            font-size: 10px;
+            margin: 1px 0;
+            font-size: 8px;
         }
         .footer {
-            margin-top: 10px;
+            margin-top: 4px;
             text-align: center;
             border-top: 1px dashed #000;
-            padding-top: 5px;
-            font-size: 9px;
+            padding-top: 2px;
+            font-size: 7px;
         }
         .thank-you {
             text-align: center;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 2px 0;
+            font-size: 9px;
         }
         .barcode-placeholder {
             text-align: center;
-            margin-top: 10px;
-            font-size: 8px;
+            margin-top: 3px;
+            font-size: 7px;
             color: #666;
         }
         .orders-info {
-            margin-top: 8px;
-            padding-top: 5px;
+            margin-top: 3px;
+            padding-top: 2px;
             border-top: 1px dashed #000;
-            font-size: 9px;
+            font-size: 7px;
             color: #666;
         }
     </style>
 </head>
 <body>
-    <div class="border-asterisk">********************************</div>
+    <div class="border-asterisk">************************</div>
     
     <div class="header">
         <div class="logo-container">
             <img src="{{ public_path('logo.png') }}" alt="Logo" onerror="this.style.display='none';">
         </div>
-        <h1>RECEIPT</h1>
+        <h1>RECIBO</h1>
     </div>
     
-    <div class="border-asterisk">********************************</div>
+    <div class="border-asterisk">************************</div>
     
     <div class="header-info">
         <span>Terminal#1</span>
@@ -218,7 +225,7 @@
         </div>
         @endif
         <div class="total-line final">
-            <span>TOTAL AMOUNT:</span>
+            <span>TOTAL:</span>
             <span>${{ number_format($calculatedTotal, 2) }}</span>
         </div>
     </div>
@@ -236,7 +243,7 @@
             <span>${{ number_format($payment->amount, 2) }}</span>
         </div>
         @if($payment->operation_number)
-        <div class="payment-line" style="font-size: 9px; color: #666;">
+        <div class="payment-line" style="font-size: 7px; color: #666;">
             <span>Approval#:</span>
             <span>{{ $payment->operation_number }}</span>
         </div>
@@ -270,11 +277,11 @@
     <div class="dashed-line"></div>
 
     <div class="footer">
-        <div class="border-asterisk">********************************</div>
-        <div class="thank-you">THANK YOU!</div>
-        <div class="border-asterisk">********************************</div>
+        <div class="border-asterisk">************************</div>
+        <div class="thank-you">¡MUCHAS GRACIAS!</div>
+        <div class="border-asterisk">************************</div>
         <div class="barcode-placeholder">
-            <div style="height: 40px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
+            <div style="height: 25px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 6px;">
                 [BARCODE]
             </div>
         </div>
