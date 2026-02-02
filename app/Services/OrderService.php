@@ -14,6 +14,10 @@ use Illuminate\Support\Str;
 
 class OrderService
 {
+    public function __construct(
+        private StockService $stockService
+    ) {
+    }
     /**
      * Crear un nuevo pedido
      */
@@ -107,6 +111,16 @@ class OrderService
                     }
                 }
                 $orderItem->calculateSubtotal();
+            }
+
+            // Reducir stock inmediatamente cuando se agrega el item al pedido
+            if ($product->has_stock) {
+                $this->stockService->deductStockForSale(
+                    $order->restaurant_id,
+                    $product->id,
+                    $itemData['quantity'],
+                    $order->id
+                );
             }
 
             // Recalcular total del pedido
