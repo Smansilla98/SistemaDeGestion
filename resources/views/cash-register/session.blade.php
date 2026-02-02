@@ -8,7 +8,7 @@
         <a href="{{ route('cash-register.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1><i class="bi bi-cash-coin"></i> Sesión de Caja: {{ $session->cashRegister->name }}</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Sesión de Caja: {{ $session->cashRegister->name }}</h1>
         <p class="text-muted">
             Abierta por {{ $session->user->name }} - 
             {{ $session->opened_at->format('d/m/Y H:i') }}

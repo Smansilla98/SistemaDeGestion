@@ -5,7 +5,7 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12">
-        <h1><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h1>
         <p class="text-muted">Completa el formulario para crear un nuevo usuario</p>
     </div>
 </div>

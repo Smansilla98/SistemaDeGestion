@@ -5,8 +5,7 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12">
-        <h1><i class="bi bi-gear"></i> Configuración del Sistema</h1>
-        <p class="text-muted">Personaliza la apariencia y gestiona el sistema</p>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-gear"></i> Configuración del Sistema</h1>
     </div>
 </div>
 

@@ -102,7 +102,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <h1><i class="bi bi-cash-coin"></i> Cerrar Mesa - Procesar Pago</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Cerrar Mesa - Procesar Pago</h1>
         <p class="text-muted">Mesa {{ $table->number }} - {{ $table->sector->name ?? 'Sin sector' }}</p>
         @if($table->currentSession && $table->currentSession->waiter)
             <p class="text-muted">

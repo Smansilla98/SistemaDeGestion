@@ -8,7 +8,7 @@
         <a href="{{ route('tables.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1><i class="bi bi-calendar-check"></i> Reservar Mesa: {{ $table->number }}</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-calendar-check"></i> Reservar Mesa: {{ $table->number }}</h1>
     </div>
 </div>
 

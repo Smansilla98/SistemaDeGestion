@@ -25,8 +25,15 @@ class CashRegisterController extends Controller
     {
         $restaurantId = auth()->user()->restaurant_id;
 
-        $cashRegisters = CashRegister::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
+        // Si es ADMIN, mostrar todas las cajas (activas e inactivas)
+        $cashRegistersQuery = CashRegister::where('restaurant_id', $restaurantId);
+        
+        if (auth()->user()->role !== 'ADMIN') {
+            $cashRegistersQuery->where('is_active', true);
+        }
+        
+        $cashRegisters = $cashRegistersQuery->withCount('sessions')
+            ->orderBy('name')
             ->get();
 
         $activeSessions = CashRegisterSession::where('restaurant_id', $restaurantId)
@@ -35,6 +42,112 @@ class CashRegisterController extends Controller
             ->get();
 
         return view('cash-register.index', compact('cashRegisters', 'activeSessions'));
+    }
+
+    /**
+     * Mostrar formulario de creación de caja
+     */
+    public function create()
+    {
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden crear cajas');
+        }
+
+        return view('cash-register.create');
+    }
+
+    /**
+     * Crear nueva caja
+     */
+    public function store(Request $request)
+    {
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden crear cajas');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated['restaurant_id'] = auth()->user()->restaurant_id;
+        $validated['is_active'] = $request->has('is_active');
+
+        CashRegister::create($validated);
+
+        return redirect()->route('cash-register.index')
+            ->with('success', 'Caja creada exitosamente');
+    }
+
+    /**
+     * Mostrar formulario de edición de caja
+     */
+    public function edit(CashRegister $cashRegister)
+    {
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden editar cajas');
+        }
+
+        if ($cashRegister->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta caja');
+        }
+
+        return view('cash-register.edit', compact('cashRegister'));
+    }
+
+    /**
+     * Actualizar caja
+     */
+    public function update(Request $request, CashRegister $cashRegister)
+    {
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden editar cajas');
+        }
+
+        if ($cashRegister->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta caja');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+
+        $cashRegister->update($validated);
+
+        return redirect()->route('cash-register.index')
+            ->with('success', 'Caja actualizada exitosamente');
+    }
+
+    /**
+     * Eliminar caja
+     */
+    public function destroy(CashRegister $cashRegister)
+    {
+        if (auth()->user()->role !== 'ADMIN') {
+            abort(403, 'Solo los administradores pueden eliminar cajas');
+        }
+
+        if ($cashRegister->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta caja');
+        }
+
+        // Verificar que no tenga sesiones activas
+        if ($cashRegister->sessions()->where('status', 'ABIERTA')->count() > 0) {
+            return back()->with('error', 'No se puede eliminar una caja con sesiones abiertas');
+        }
+
+        // Verificar que no tenga sesiones históricas (opcional, puedes permitir eliminación)
+        if ($cashRegister->sessions()->count() > 0) {
+            return back()->with('error', 'No se puede eliminar una caja que tiene sesiones históricas. Desactívala en su lugar.');
+        }
+
+        $cashRegister->delete();
+
+        return redirect()->route('cash-register.index')
+            ->with('success', 'Caja eliminada exitosamente');
     }
 
     /**

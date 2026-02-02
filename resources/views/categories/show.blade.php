@@ -8,7 +8,7 @@
         <a href="{{ route('categories.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1><i class="bi bi-tag"></i> {{ $category->name }}</h1>
+        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-tag"></i> {{ $category->name }}</h1>
         <p class="text-muted">
             @if($category->description)
             {{ $category->description }}

@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="bi bi-person-circle"></i> {{ $user->name }}</h1>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-person-circle"></i> {{ $user->name }}</h1>
             <p class="text-muted">{{ $user->email }}</p>
         </div>
         <div class="btn-group">

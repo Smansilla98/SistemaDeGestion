@@ -117,6 +117,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/sessions/{session}/close', [CashRegisterController::class, 'closeSession'])->name('close-session');
         Route::post('/orders/{order}/payment', [CashRegisterController::class, 'processPayment'])->name('process-payment');
         Route::delete('/movements/{movement}', [CashRegisterController::class, 'destroyMovement'])->name('destroy-movement');
+        
+        // CRUD de cajas (solo ADMIN)
+        Route::middleware('role:ADMIN')->group(function () {
+            Route::get('/create', [CashRegisterController::class, 'create'])->name('create');
+            Route::post('/', [CashRegisterController::class, 'store'])->name('store');
+            Route::get('/{cashRegister}/edit', [CashRegisterController::class, 'edit'])->name('edit');
+            Route::put('/{cashRegister}', [CashRegisterController::class, 'update'])->name('update');
+            Route::delete('/{cashRegister}', [CashRegisterController::class, 'destroy'])->name('destroy');
+        });
     });
 
     /*
@@ -132,6 +141,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/{category}/edit', [\App\Http\Controllers\Category\CategoryController::class, 'edit'])->name('edit');
         Route::put('/{category}', [\App\Http\Controllers\Category\CategoryController::class, 'update'])->name('update');
         Route::delete('/{category}', [\App\Http\Controllers\Category\CategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gestión de Sectores (Solo ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('sectors')->name('sectors.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Sector\SectorController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Sector\SectorController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Sector\SectorController::class, 'store'])->name('store');
+        Route::get('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'show'])->name('show');
+        Route::get('/{sector}/edit', [\App\Http\Controllers\Sector\SectorController::class, 'edit'])->name('edit');
+        Route::put('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'update'])->name('update');
+        Route::delete('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('products')->name('products.')->group(function () {
