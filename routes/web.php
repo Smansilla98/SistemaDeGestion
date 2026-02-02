@@ -192,4 +192,15 @@ Route::middleware('auth')->group(function () {
         Route::put('/{user}', [\App\Http\Controllers\User\UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [\App\Http\Controllers\User\UserController::class, 'destroy'])->name('destroy');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configuración (Solo ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('configuration')->name('configuration.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
+        Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
+        Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
+    });
 });
