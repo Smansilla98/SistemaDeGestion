@@ -196,6 +196,11 @@
                 <span class="item-name">{{ $item['product_name'] ?? 'Producto' }}</span>
                 <span class="item-price">${{ number_format($item['subtotal'] ?? 0, 2) }}</span>
             </div>
+            @if(isset($item['unit_price']) && ($item['quantity'] ?? 0) > 1)
+            <div class="item-line" style="font-size: 7px; color: #666; margin-left: 15px;">
+                <span>@ ${{ number_format($item['unit_price'], 2) }} c/u</span>
+            </div>
+            @endif
         </div>
         @empty
         <div class="item">
@@ -210,18 +215,19 @@
 
     <div class="totals">
         @php
-            // Calcular subtotal desde items si no está disponible
-            $calculatedSubtotal = $totalSubtotal > 0 ? $totalSubtotal : $consolidatedItems->sum('subtotal');
-            $calculatedTotal = $totalAmount > 0 ? $totalAmount : ($calculatedSubtotal - $totalDiscount);
+            // SIEMPRE calcular desde items consolidados para asegurar precisión
+            $calculatedSubtotal = $consolidatedItems->sum('subtotal');
+            $calculatedDiscount = $totalDiscount ?? 0;
+            $calculatedTotal = $calculatedSubtotal - $calculatedDiscount;
         @endphp
         <div class="total-line">
             <span>Subtotal:</span>
             <span>${{ number_format($calculatedSubtotal, 2) }}</span>
         </div>
-        @if($totalDiscount > 0)
+        @if($calculatedDiscount > 0)
         <div class="total-line">
             <span>Descuento:</span>
-            <span>-${{ number_format($totalDiscount, 2) }}</span>
+            <span>-${{ number_format($calculatedDiscount, 2) }}</span>
         </div>
         @endif
         <div class="total-line final">
@@ -233,7 +239,10 @@
     @if($payments && $payments->count() > 0)
     <div class="payments">
         @php
-            $calculatedTotal = $totalAmount > 0 ? $totalAmount : ($consolidatedItems->sum('subtotal') - $totalDiscount);
+            // Usar el total calculado desde items consolidados
+            $calculatedSubtotal = $consolidatedItems->sum('subtotal');
+            $calculatedDiscount = $totalDiscount ?? 0;
+            $calculatedTotal = $calculatedSubtotal - $calculatedDiscount;
             $totalPaid = $payments->sum('amount');
             $change = $totalPaid - $calculatedTotal;
         @endphp
