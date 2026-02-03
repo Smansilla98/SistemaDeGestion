@@ -275,7 +275,7 @@
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-4">
+            <div class="col-md-5 col-lg-6">
                 <div class="card auth-card">
                     <div class="card-body">
                         <div class="text-center mb-4">

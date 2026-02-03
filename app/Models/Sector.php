@@ -72,6 +72,14 @@ class Sector extends Model
     }
 
     /**
+     * Relación: Un sector tiene muchas categorías
+     */
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class, 'sector_id');
+    }
+
+    /**
      * Verificar si es un subsector
      */
     public function isSubsector(): bool

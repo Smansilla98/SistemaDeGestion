@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -51,6 +53,30 @@ class StockService
                 'reason' => $data['reason'] ?? null,
                 'reference' => $data['reference'] ?? null,
             ]);
+
+            // Si es una ENTRADA y tiene información de compra, registrar la compra
+            if ($data['type'] === 'ENTRADA' && isset($data['purchase_data'])) {
+                $purchaseData = $data['purchase_data'];
+                
+                // Validar que tenga los datos requeridos
+                if (!isset($purchaseData['supplier_id']) || !isset($purchaseData['unit_cost']) || !isset($purchaseData['purchase_date'])) {
+                    throw new \Exception('Para una entrada, debe proporcionar proveedor, costo unitario y fecha de compra');
+                }
+
+                // Calcular costo total
+                $totalCost = $data['quantity'] * $purchaseData['unit_cost'];
+
+                // Crear registro de compra
+                Purchase::create([
+                    'stock_movement_id' => $movement->id,
+                    'supplier_id' => $purchaseData['supplier_id'],
+                    'purchase_date' => $purchaseData['purchase_date'],
+                    'unit_cost' => $purchaseData['unit_cost'],
+                    'total_cost' => $totalCost,
+                    'invoice_number' => $purchaseData['invoice_number'] ?? null,
+                    'notes' => $purchaseData['notes'] ?? null,
+                ]);
+            }
 
             return $movement;
         });

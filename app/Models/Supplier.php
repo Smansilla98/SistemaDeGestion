@@ -7,26 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Supplier extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'restaurant_id',
-        'sector_id',
         'name',
-        'description',
-        'display_order',
+        'contact_name',
+        'phone',
+        'email',
+        'address',
+        'notes',
         'is_active',
     ];
 
     protected $casts = [
-        'display_order' => 'integer',
         'is_active' => 'boolean',
     ];
 
     /**
-     * Relación: Una categoría pertenece a un restaurante
+     * Relación: Un proveedor pertenece a un restaurante
      */
     public function restaurant(): BelongsTo
     {
@@ -34,20 +35,19 @@ class Category extends Model
     }
 
     /**
-     * Relación: Una categoría pertenece a un sector
+     * Relación: Un proveedor tiene muchas compras
      */
-    public function sector(): BelongsTo
+    public function purchases(): HasMany
     {
-        return $this->belongsTo(Sector::class);
+        return $this->hasMany(Purchase::class);
     }
 
     /**
-     * Relación: Una categoría tiene muchos productos
+     * Scope: Solo proveedores activos
      */
-    public function products(): HasMany
+    public function scopeActive($query)
     {
-        return $this->hasMany(Product::class);
+        return $query->where('is_active', true);
     }
 }
-
 
