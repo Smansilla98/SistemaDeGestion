@@ -249,10 +249,23 @@
                 @endforeach
             </tbody>
             <tfoot>
+                @php
+                    $totalPaid = $payments->sum('amount');
+                    $calculatedSubtotal = $consolidatedItems->sum('subtotal');
+                    $calculatedDiscount = $totalDiscount ?? 0;
+                    $calculatedTotal = $calculatedSubtotal - $calculatedDiscount;
+                    $change = $totalPaid - $calculatedTotal;
+                @endphp
                 <tr>
                     <th>Total Pagado:</th>
-                    <th colspan="3" class="text-end">${{ number_format($payments->sum('amount'), 2) }}</th>
+                    <th colspan="3" class="text-end">${{ number_format($totalPaid, 2) }}</th>
                 </tr>
+                @if($change > 0.01)
+                <tr class="table-success">
+                    <th><i class="bi bi-cash-coin"></i> Cambio:</th>
+                    <th colspan="3" class="text-end">${{ number_format($change, 2) }}</th>
+                </tr>
+                @endif
             </tfoot>
         </table>
         <p class="text-muted mt-2 mb-0">

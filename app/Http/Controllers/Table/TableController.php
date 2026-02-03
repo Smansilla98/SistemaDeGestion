@@ -153,11 +153,17 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones para la impresión
             $order->load(['table', 'items.product', 'items.modifiers']);
 
-            // Imprimir automáticamente la comanda de cocina
+            // Imprimir automáticamente la comanda
             try {
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'kitchen');
-                $this->printService->printKitchenTicket($order, $printer);
-                $printMessage = 'La comanda de cocina se ha impreso automáticamente.';
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'comanda');
+                if (!$printer) {
+                    // Si no hay impresora de comanda, intentar con cualquier impresora activa
+                    $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
+                        ->where('is_active', true)
+                        ->first();
+                }
+                $this->printService->printComanda($order, $printer);
+                $printMessage = 'La comanda se ha impreso automáticamente.';
             } catch (\Exception $printError) {
                 // Si falla la impresión, no fallar el pedido, solo registrar el error
                 Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
@@ -281,11 +287,17 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones para la impresión
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
-            // Imprimir automáticamente la comanda de cocina
+            // Imprimir automáticamente la comanda
             try {
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'kitchen');
-                $this->printService->printKitchenTicket($order, $printer);
-                $printMessage = 'La comanda de cocina se ha impreso automáticamente.';
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'comanda');
+                if (!$printer) {
+                    // Si no hay impresora de comanda, intentar con cualquier impresora activa
+                    $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
+                        ->where('is_active', true)
+                        ->first();
+                }
+                $this->printService->printComanda($order, $printer);
+                $printMessage = 'La comanda se ha impreso automáticamente.';
             } catch (\Exception $printError) {
                 Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
                     'order_id' => $order->id,
@@ -688,10 +700,13 @@ class TableController extends Controller
             $totalAmount = $activeOrders->sum('total');
             $totalPaid = collect($validated['payments'])->sum('amount');
 
-            // Validar que el total pagado sea igual al total
-            if (abs($totalPaid - $totalAmount) > 0.01) {
-                return $respond(false, "El total pagado ($${totalPaid}) no coincide con el total a pagar ($${totalAmount})");
+            // Validar que el total pagado sea mayor o igual al total (permite cambio)
+            if ($totalPaid < $totalAmount - 0.01) {
+                return $respond(false, "El total pagado ($${totalPaid}) es menor al total a pagar ($${totalAmount}). Faltan $" . number_format($totalAmount - $totalPaid, 2));
             }
+            
+            // Calcular cambio si hay excedente
+            $change = $totalPaid - $totalAmount;
 
             // Cerrar todos los pedidos
             $ordersClosed = [];
@@ -831,23 +846,31 @@ class TableController extends Controller
             $finalTotalSubtotal = $allItems->sum('subtotal');
             $finalTotalDiscount = $totalDiscount;
             $finalTotalAmount = $finalTotalSubtotal - $finalTotalDiscount;
+            
+            // Mensaje de éxito con información de cambio si aplica
+            $successMessage = 'Mesa cerrada y pago procesado exitosamente.';
+            if ($change > 0.01) {
+                $successMessage .= " Cambio: $" . number_format($change, 2);
+            }
 
             // Si es petición AJAX, devolver JSON
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Mesa cerrada y pago procesado exitosamente.',
+                    'message' => $successMessage,
                     'redirect' => route('tables.consolidated-receipt', $table),
-                    'session_id' => $savedSessionId
+                    'session_id' => $savedSessionId,
+                    'change' => $change > 0.01 ? $change : 0
                 ]);
             }
 
             return redirect()->route('tables.consolidated-receipt', $table)
-                ->with('success', 'Mesa cerrada y pago procesado exitosamente.')
+                ->with('success', $successMessage)
                 ->with('table_session_id', $savedSessionId) // Usar el ID guardado antes de limpiarlo
                 ->with('total_amount', $finalTotalAmount) // Usar totales recalculados
                 ->with('total_subtotal', $finalTotalSubtotal)
                 ->with('total_discount', $finalTotalDiscount)
+                ->with('change', $change > 0.01 ? $change : 0) // Agregar cambio a la sesión
                 ->with('orders_closed', $ordersClosed)
                 ->with('consolidated_items', $allItems)
                 ->with('payments', collect($paymentsCreated));
