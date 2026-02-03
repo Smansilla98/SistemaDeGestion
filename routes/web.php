@@ -181,6 +181,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('stock')->name('stock.')->middleware('role:ADMIN,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Stock\StockController::class, 'index'])->name('index');
         Route::get('/movements', [\App\Http\Controllers\Stock\StockController::class, 'movements'])->name('movements');
+        Route::get('/movements/create', [\App\Http\Controllers\Stock\StockController::class, 'createMovement'])->name('create-movement');
         Route::post('/movements', [\App\Http\Controllers\Stock\StockController::class, 'storeMovement'])->name('store-movement');
     });
 

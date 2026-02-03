@@ -230,6 +230,55 @@
             transform: scale(1.2);
         }
 
+        /* Nav Group Styles */
+        .nova-nav-group {
+            margin: 0.5rem 0.75rem;
+        }
+
+        .nova-nav-group-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nova-nav-group-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nova-nav-group-header i:last-child {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .nova-nav-group-header.active i:last-child {
+            transform: rotate(180deg);
+        }
+
+        .nova-nav-group-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding-left: 1rem;
+        }
+
+        .nova-nav-group-items.show {
+            max-height: 500px;
+        }
+
+        .nova-nav-subitem {
+            margin-left: 1.5rem;
+            padding-left: 2rem;
+            font-size: 0.95rem;
+        }
+
         .nova-sidebar-footer {
             position: absolute;
             bottom: 0;
@@ -354,6 +403,23 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+        }
+
+        .nova-header-role-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
+            color: white;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nova-header-role-badge i {
+            font-size: 1rem;
         }
 
         .nova-header-dropdown {
@@ -729,21 +795,32 @@
             @endif
 
             @if(auth()->user()->role === 'ADMIN')
+            <!-- Grupo: Vistas Generales -->
+            <div class="nova-nav-group">
+                <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') ? 'active' : '' }}" onclick="toggleNavGroup('vistas-generales')">
+                    <i class="bi bi-folder2-open"></i>
+                    <span>Vistas Generales</span>
+                    <i class="bi bi-chevron-down ms-auto" id="vistas-generales-icon"></i>
+                </div>
+                <div class="nova-nav-group-items {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') ? 'show' : '' }}" id="vistas-generales-items">
+                    <a href="{{ route('sectors.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
+                        <i class="bi bi-building"></i>
+                        <span>Sectores</span>
+                    </a>
+                    <a href="{{ route('categories.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-folder"></i>
+                        <span>Categorías</span>
+                    </a>
+                    <a href="{{ route('products.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                        <i class="bi bi-cup-straw"></i>
+                        <span>Productos</span>
+                    </a>
+                </div>
+            </div>
+
             <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
                 <span>Usuarios</span>
-            </a>
-            <a href="{{ route('sectors.index') }}" class="nova-nav-item {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
-                <i class="bi bi-grid"></i>
-                <span>Sectores</span>
-            </a>
-            <a href="{{ route('categories.index') }}" class="nova-nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                <i class="bi bi-tags"></i>
-                <span>Categorías</span>
-            </a>
-            <a href="{{ route('products.index') }}" class="nova-nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i>
-                <span>Productos</span>
             </a>
             <a href="{{ route('stock.index') }}" class="nova-nav-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
                 <i class="bi bi-inboxes"></i>
@@ -794,6 +871,10 @@
             <h5 class="nova-header-title mb-0">@yield('title', 'Sistema de Gestión')</h5>
         </div>
         <div class="nova-header-right">
+            <div class="nova-header-role-badge">
+                <i class="bi bi-person-badge"></i>
+                <span>{{ strtoupper(auth()->user()->role) }}</span>
+            </div>
             <div class="nova-header-dropdown">
                 <button class="nova-header-dropdown-toggle" onclick="toggleHeaderMenu()">
                     <i class="bi bi-person-circle"></i>
@@ -1010,6 +1091,19 @@
         function toggleHeaderMenu() {
             const menu = document.getElementById('headerDropdownMenu');
             menu.classList.toggle('show');
+        }
+
+        function toggleNavGroup(groupId) {
+            const items = document.getElementById(groupId + '-items');
+            const icon = document.getElementById(groupId + '-icon');
+            const header = icon.closest('.nova-nav-group-header');
+            
+            if (items && icon && header) {
+                items.classList.toggle('show');
+                header.classList.toggle('active');
+                icon.classList.toggle('bi-chevron-down');
+                icon.classList.toggle('bi-chevron-up');
+            }
         }
 
         // Cerrar menús al hacer clic fuera

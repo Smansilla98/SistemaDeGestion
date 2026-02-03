@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class StockMovement extends Model
 {
@@ -55,6 +56,30 @@ class StockMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relación: Un movimiento puede tener una compra asociada (solo para ENTRADAS)
+     */
+    public function purchase(): HasOne
+    {
+        return $this->hasOne(Purchase::class);
+    }
+
+    /**
+     * Verificar si el movimiento es una entrada
+     */
+    public function isEntry(): bool
+    {
+        return $this->type === self::TYPE_ENTRADA;
+    }
+
+    /**
+     * Verificar si el movimiento es una salida
+     */
+    public function isExit(): bool
+    {
+        return $this->type === self::TYPE_SALIDA;
     }
 
     /**

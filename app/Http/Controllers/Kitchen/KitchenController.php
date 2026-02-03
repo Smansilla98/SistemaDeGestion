@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\OrderService;
+use App\Services\NotificationService;
 use App\Events\KitchenOrderReady;
 use Illuminate\Http\Request;
 
 class KitchenController extends Controller
 {
     public function __construct(
-        private OrderService $orderService
+        private OrderService $orderService,
+        private NotificationService $notificationService
     ) {
         $this->middleware('role:COCINA,ADMIN');
     }
@@ -88,8 +90,8 @@ class KitchenController extends Controller
         // Cambiar estado a ENTREGADO (en el nuevo flujo, LISTO no existe)
         $order->update(['status' => 'ENTREGADO']);
 
-        // MÓDULO 3: La notificación se manejará en la vista mediante JavaScript
-        // o mediante eventos de Laravel si se implementa WebSockets
+        // Notificar al mozo que el pedido está listo
+        $this->notificationService->notifyOrderReady($order);
 
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([
@@ -115,7 +117,8 @@ class KitchenController extends Controller
         $order->update(['status' => $validated['status']]);
 
         if ($validated['status'] === 'ENTREGADO') {
-            // Notificar al mozo
+            // Notificar al mozo que el pedido está listo
+            $this->notificationService->notifyOrderReady($order);
             $order->load(['table', 'user']);
         }
 

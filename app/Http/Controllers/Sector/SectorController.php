@@ -8,9 +8,12 @@ use App\Models\SubsectorItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Auditable;
 
 class SectorController extends Controller
 {
+    use Auditable;
+
     public function __construct()
     {
         $this->middleware('role:ADMIN');
@@ -18,18 +21,44 @@ class SectorController extends Controller
 
     /**
      * Mostrar lista de sectores
+     * Mejora: Métricas, búsqueda, ordenamiento, paginación
      */
-    public function index()
+    public function index(Request $request)
     {
+        Gate::authorize('viewAny', Sector::class);
+
         $restaurantId = auth()->user()->restaurant_id;
 
-        $sectors = Sector::where('restaurant_id', $restaurantId)
+        $query = Sector::where('restaurant_id', $restaurantId)
             ->whereNull('parent_id')
             ->where('type', Sector::TYPE_SECTOR)
-            ->withCount(['tables', 'subsectors'])
-            ->with('subsectors')
-            ->orderBy('name')
-            ->paginate(20);
+            ->withCount(['tables', 'subsectors', 'categories' => function($q) {
+                $q->where('is_active', true);
+            }])
+            ->with(['subsectors']);
+
+        // Búsqueda
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordenamiento
+        $sortBy = $request->get('sort_by', 'name');
+        $sortOrder = $request->get('sort_order', 'asc');
+        $allowedSorts = ['name', 'created_at'];
+        
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('name');
+        }
+
+        // Paginación backend
+        $sectors = $query->paginate(20)->withQueryString();
 
         return view('sectors.index', compact('sectors'));
     }
@@ -86,6 +115,9 @@ class SectorController extends Controller
         }
 
         $sector = Sector::create($validated);
+        
+        // Auditoría
+        $this->auditCreate($sector, $validated);
         
         // Si es subsector y tiene capacidad, crear los items automáticamente
         if ($sector->isSubsector() && $sector->capacity) {
@@ -204,10 +236,14 @@ class SectorController extends Controller
             return back()->with('error', 'No se puede eliminar un sector que tiene subsectores');
         }
 
+        // Auditoría antes de eliminar
+        $this->auditDelete($sector);
+        
+        $parentId = $sector->parent_id;
         $sector->delete();
 
-        if ($sector->isSubsector() && $sector->parent_id) {
-            return redirect()->route('sectors.show', $sector->parent_id)
+        if ($sector->isSubsector() && $parentId) {
+            return redirect()->route('sectors.show', $parentId)
                 ->with('success', 'Subsector eliminado exitosamente');
         }
 

@@ -8,8 +8,15 @@
         <a href="{{ route('stock.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-list-ul"></i> Movimientos de Stock</h1>
-        <p class="text-muted">Historial de movimientos de inventario</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-list-ul"></i> Movimientos de Stock</h1>
+                <p class="text-muted">Historial de movimientos de inventario</p>
+            </div>
+            <a href="{{ route('stock.create-movement') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Registrar Movimiento
+            </a>
+        </div>
     </div>
 </div>
 
@@ -48,6 +55,7 @@
                         <th>Cantidad</th>
                         <th>Stock Anterior</th>
                         <th>Stock Nuevo</th>
+                        <th>Proveedor/Costo</th>
                         <th>Motivo</th>
                         <th>Usuario</th>
                     </tr>
@@ -65,12 +73,26 @@
                         <td>{{ $movement->quantity }}</td>
                         <td>{{ $movement->previous_stock }}</td>
                         <td><strong>{{ $movement->new_stock }}</strong></td>
+                        <td>
+                            @if($movement->purchase)
+                                <div>
+                                    <strong>{{ $movement->purchase->supplier->name }}</strong><br>
+                                    <small class="text-muted">
+                                        Costo: ${{ number_format($movement->purchase->unit_cost, 2) }} c/u<br>
+                                        Total: ${{ number_format($movement->purchase->total_cost, 2) }}<br>
+                                        Fecha compra: {{ $movement->purchase->purchase_date->format('d/m/Y') }}
+                                    </small>
+                                </div>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                         <td>{{ $movement->reason ?? '-' }}</td>
                         <td>{{ $movement->user->name }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No hay movimientos registrados</td>
+                        <td colspan="9" class="text-center text-muted">No hay movimientos registrados</td>
                     </tr>
                     @endforelse
                 </tbody>
