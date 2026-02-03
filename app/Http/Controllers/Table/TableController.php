@@ -809,10 +809,13 @@ class TableController extends Controller
                 $paymentsCreated[] = $payment;
             }
 
+            // Guardar el table_session_id ANTES de limpiarlo
+            $savedSessionId = $table->current_session_id;
+            
             // Liberar la mesa
             // Usar DB::statement para asegurar que el enum se actualice correctamente
             DB::table('table_sessions')
-                ->where('id', $table->current_session_id)
+                ->where('id', $savedSessionId)
                 ->update([
                     'ended_at' => now(),
                     'status' => 'CERRADA', // Usar string directo para evitar problemas con el enum
@@ -824,24 +827,27 @@ class TableController extends Controller
                 'current_session_id' => null,
             ]);
 
-            // Guardar el table_session_id antes de limpiarlo
-            $savedSessionId = $table->current_session_id;
-            
+            // Recalcular totales desde items consolidados para asegurar precisión
+            $finalTotalSubtotal = $allItems->sum('subtotal');
+            $finalTotalDiscount = $totalDiscount;
+            $finalTotalAmount = $finalTotalSubtotal - $finalTotalDiscount;
+
             // Si es petición AJAX, devolver JSON
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Mesa cerrada y pago procesado exitosamente.',
-                    'redirect' => route('tables.consolidated-receipt', $table)
+                    'redirect' => route('tables.consolidated-receipt', $table),
+                    'session_id' => $savedSessionId
                 ]);
             }
 
             return redirect()->route('tables.consolidated-receipt', $table)
                 ->with('success', 'Mesa cerrada y pago procesado exitosamente.')
                 ->with('table_session_id', $savedSessionId) // Usar el ID guardado antes de limpiarlo
-                ->with('total_amount', $totalAmount)
-                ->with('total_subtotal', $totalSubtotal)
-                ->with('total_discount', $totalDiscount)
+                ->with('total_amount', $finalTotalAmount) // Usar totales recalculados
+                ->with('total_subtotal', $finalTotalSubtotal)
+                ->with('total_discount', $finalTotalDiscount)
                 ->with('orders_closed', $ordersClosed)
                 ->with('consolidated_items', $allItems)
                 ->with('payments', collect($paymentsCreated));
@@ -924,49 +930,54 @@ class TableController extends Controller
             }
         }
 
-        // Si no hay datos en sesión, intentar obtenerlos de la base de datos
-        if ($closedOrders->isEmpty()) {
-            // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
-            if (!$sessionId) {
-                $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
-                    ->whereHas('order', function($query) use ($table) {
-                        $query->where('table_id', $table->id);
-                    })
-                    ->whereNotNull('table_session_id')
-                    ->orderBy('created_at', 'desc')
+        // SIEMPRE recalcular desde la base de datos para asegurar precisión
+        // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
+        if (!$sessionId) {
+            $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
+                ->whereHas('order', function($query) use ($table) {
+                    $query->where('table_id', $table->id);
+                })
+                ->whereNotNull('table_session_id')
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($recentPayment) {
+                $sessionId = $recentPayment->table_session_id;
+            } else {
+                // Si no hay pagos, obtener la última sesión cerrada de la mesa
+                $lastSession = \App\Models\TableSession::where('table_id', $table->id)
+                    ->where('status', \App\Models\TableSession::STATUS_CERRADA)
+                    ->orderBy('ended_at', 'desc')
                     ->first();
                 
-                if ($recentPayment) {
-                    $sessionId = $recentPayment->table_session_id;
-                } else {
-                    // Si no hay pagos, obtener la última sesión cerrada de la mesa
-                    $lastSession = \App\Models\TableSession::where('table_id', $table->id)
-                        ->where('status', \App\Models\TableSession::STATUS_CERRADA)
-                        ->orderBy('ended_at', 'desc')
-                        ->first();
-                    
-                    if ($lastSession) {
-                        $sessionId = $lastSession->id;
-                    }
+                if ($lastSession) {
+                    $sessionId = $lastSession->id;
                 }
             }
-            
-            // Obtener pedidos cerrados filtrando por table_session_id si está disponible
-            $query = Order::where('table_id', $table->id)
+        }
+        
+        // CRÍTICO: Si no hay sessionId, NO obtener pedidos (evitar mezclar sesiones)
+        if (!$sessionId) {
+            Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
+                'table_id' => $table->id,
+                'restaurant_id' => $table->restaurant_id
+            ]);
+            $closedOrders = collect();
+            $consolidatedItems = collect();
+            $totalAmount = 0;
+            $totalSubtotal = 0;
+            $totalDiscount = 0;
+        } else {
+            // SIEMPRE obtener pedidos desde la base de datos para asegurar datos correctos
+            $closedOrders = Order::where('table_id', $table->id)
+                ->where('table_session_id', $sessionId) // CRÍTICO: Filtrar por sesión
                 ->where('status', Order::STATUS_CERRADO)
-                ->whereNotNull('closed_at');
-            
-            // CRÍTICO: Filtrar por table_session_id si está disponible
-            if ($sessionId) {
-                $query->where('table_session_id', $sessionId);
-            }
-            
-            $closedOrders = $query->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+                ->whereNotNull('closed_at')
+                ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
                 ->orderBy('closed_at', 'desc')
                 ->get();
 
-            // Consolidar items
-            // Se agrupan solo por product_id, sumando cantidades y subtotales
+            // Consolidar items desde la base de datos
             $consolidatedItems = collect();
             foreach ($closedOrders as $order) {
                 foreach ($order->items as $item) {
@@ -996,9 +1007,25 @@ class TableController extends Controller
                 }
             }
             
-            $totalAmount = $closedOrders->sum('total');
-            $totalSubtotal = $closedOrders->sum('subtotal');
+            // Calcular totales desde los items consolidados para mayor precisión
+            $totalSubtotal = $consolidatedItems->sum('subtotal');
             $totalDiscount = $closedOrders->sum('discount');
+            $totalAmount = $totalSubtotal - $totalDiscount;
+            
+            // Validar que los totales sean consistentes
+            $ordersTotal = $closedOrders->sum('total');
+            if (abs($totalAmount - $ordersTotal) > 0.01) {
+                // Hay discrepancia, usar los calculados desde items (más preciso)
+                Log::warning('Discrepancia en totales del recibo consolidado', [
+                    'table_id' => $table->id,
+                    'session_id' => $sessionId,
+                    'total_from_items' => $totalAmount,
+                    'total_from_orders' => $ordersTotal,
+                    'difference' => abs($totalAmount - $ordersTotal),
+                    'orders_count' => $closedOrders->count(),
+                    'orders_numbers' => $closedOrders->pluck('number')->toArray()
+                ]);
+            }
         }
 
         return view('tables.consolidated-receipt', compact(
@@ -1029,89 +1056,92 @@ class TableController extends Controller
         $payments = collect(session('payments', []));
 
         // Si no hay datos en sesión o están vacíos, obtenerlos de la base de datos
-        if (($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) && $sessionId) {
-            $closedOrders = Order::where('table_id', $table->id)
-                ->where('table_session_id', $sessionId)
-                ->where('status', Order::STATUS_CERRADO)
-                ->with(['items.product', 'user'])
-                ->get();
-
-            if ($closedOrders->isNotEmpty()) {
-                $consolidatedItems = collect();
-                foreach ($closedOrders as $order) {
-                    foreach ($order->items as $item) {
-                        $existingItem = $consolidatedItems->first(function ($i) use ($item) {
-                            return $i['product_id'] === $item->product_id;
-                        });
-                        
-                        if ($existingItem) {
-                            $existingItem['quantity'] += $item->quantity;
-                            $existingItem['subtotal'] += $item->subtotal;
-                            $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
-                        } else {
-                            $consolidatedItems->push([
-                                'product_id' => $item->product_id,
-                                'product_name' => $item->product->name,
-                                'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'subtotal' => $item->subtotal,
-                            ]);
-                        }
+        if (($closedOrders->isEmpty() || $consolidatedItems->isEmpty())) {
+            // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
+            if (!$sessionId) {
+                $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
+                    ->whereHas('order', function($query) use ($table) {
+                        $query->where('table_id', $table->id);
+                    })
+                    ->whereNotNull('table_session_id')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($recentPayment) {
+                    $sessionId = $recentPayment->table_session_id;
+                } else {
+                    // Si no hay pagos, obtener la última sesión cerrada de la mesa
+                    $lastSession = \App\Models\TableSession::where('table_id', $table->id)
+                        ->where('status', \App\Models\TableSession::STATUS_CERRADA)
+                        ->orderBy('ended_at', 'desc')
+                        ->first();
+                    
+                    if ($lastSession) {
+                        $sessionId = $lastSession->id;
                     }
                 }
-                
-                $totalAmount = $closedOrders->sum('total');
-                $totalSubtotal = $closedOrders->sum('subtotal');
-                $totalDiscount = $closedOrders->sum('discount');
             }
-        }
-        
-        // Si aún no hay sessionId, intentar obtener los pedidos más recientes cerrados de esta mesa
-        if (($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) && !$sessionId) {
-            $closedOrders = Order::where('table_id', $table->id)
-                ->where('status', Order::STATUS_CERRADO)
-                ->whereNotNull('closed_at')
-                ->with(['items.product', 'user'])
-                ->orderBy('closed_at', 'desc')
-                ->limit(10)
-                ->get();
-
-            if ($closedOrders->isNotEmpty()) {
+            
+            // CRÍTICO: Si no hay sessionId, NO obtener pedidos (evitar mezclar sesiones)
+            if (!$sessionId) {
+                Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
+                    'table_id' => $table->id,
+                    'restaurant_id' => $table->restaurant_id
+                ]);
+                // Devolver recibo vacío o error
+                $closedOrders = collect();
                 $consolidatedItems = collect();
-                foreach ($closedOrders as $order) {
-                    foreach ($order->items as $item) {
-                        $existingItem = $consolidatedItems->first(function ($i) use ($item) {
-                            return $i['product_id'] === $item->product_id;
-                        });
-                        
-                        if ($existingItem) {
-                            $existingItem['quantity'] += $item->quantity;
-                            $existingItem['subtotal'] += $item->subtotal;
-                            $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
-                        } else {
-                            $consolidatedItems->push([
-                                'product_id' => $item->product_id,
-                                'product_name' => $item->product->name,
-                                'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'subtotal' => $item->subtotal,
-                            ]);
+                $totalAmount = 0;
+                $totalSubtotal = 0;
+                $totalDiscount = 0;
+            } else {
+                // Obtener pedidos cerrados SOLO de la sesión específica
+                $closedOrders = Order::where('table_id', $table->id)
+                    ->where('table_session_id', $sessionId) // CRÍTICO: Filtrar por sesión
+                    ->where('status', Order::STATUS_CERRADO)
+                    ->whereNotNull('closed_at')
+                    ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
+                    ->orderBy('closed_at', 'desc')
+                    ->get();
+
+                if ($closedOrders->isNotEmpty()) {
+                    $consolidatedItems = collect();
+                    foreach ($closedOrders as $order) {
+                        foreach ($order->items as $item) {
+                            $existingItem = $consolidatedItems->first(function ($i) use ($item) {
+                                return $i['product_id'] === $item->product_id;
+                            });
+                            
+                            if ($existingItem) {
+                                $existingItem['quantity'] += $item->quantity;
+                                $existingItem['subtotal'] += $item->subtotal;
+                                $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
+                            } else {
+                                $consolidatedItems->push([
+                                    'product_id' => $item->product_id,
+                                    'product_name' => $item->product->name,
+                                    'quantity' => $item->quantity,
+                                    'unit_price' => $item->unit_price,
+                                    'subtotal' => $item->subtotal,
+                                ]);
+                            }
                         }
                     }
+                    
+                    // Calcular totales desde los items consolidados para mayor precisión
+                    $totalSubtotal = $consolidatedItems->sum('subtotal');
+                    $totalDiscount = $closedOrders->sum('discount');
+                    $totalAmount = $totalSubtotal - $totalDiscount;
                 }
-                
-                $totalAmount = $closedOrders->sum('total');
-                $totalSubtotal = $closedOrders->sum('subtotal');
-                $totalDiscount = $closedOrders->sum('discount');
             }
         }
 
-        // Si los totales están en 0, calcularlos desde los items consolidados
-        if ($totalSubtotal == 0 && $consolidatedItems->isNotEmpty()) {
+        // SIEMPRE recalcular totales desde items consolidados para asegurar precisión
+        if ($consolidatedItems->isNotEmpty()) {
             $totalSubtotal = $consolidatedItems->sum('subtotal');
-        }
-        
-        if ($totalAmount == 0 && $totalSubtotal > 0) {
+            if ($totalDiscount == 0 && $closedOrders->isNotEmpty()) {
+                $totalDiscount = $closedOrders->sum('discount');
+            }
             $totalAmount = $totalSubtotal - $totalDiscount;
         }
 
