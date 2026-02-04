@@ -163,7 +163,11 @@
 
     <div class="order-info">
         <p><strong>Ticket:</strong> {{ $order->number }}</p>
-        <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @if($order->table)
+            <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @elseif($order->customer_name)
+            <p><strong>Consumidor:</strong> {{ $order->customer_name }}</p>
+        @endif
         @if($order->user)
         <p><strong>Mozo:</strong> {{ $order->user->name }}</p>
         @endif

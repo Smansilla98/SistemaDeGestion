@@ -10,7 +10,11 @@
         </a>
         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt"></i> Pedido: {{ $order->number }}</h1>
         <p class="text-muted">
-            Mesa: {{ $order->table->number }} | 
+            @if($order->table)
+                Mesa: {{ $order->table->number }} | 
+            @elseif($order->customer_name)
+                Consumidor: <span class="badge bg-info">{{ $order->customer_name }}</span> | 
+            @endif
             Mozo: {{ $order->user->name }} | 
             Estado: <span class="badge bg-{{ $order->status === 'CERRADO' ? 'success' : 'warning' }}">{{ $order->status }}</span>
         </p>
@@ -22,7 +26,7 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Items del Pedido</h5>
-                @if($order->status === 'ABIERTO')
+                @if($order->status === 'ABIERTO' && $order->table_id)
                 <a href="{{ route('orders.create', ['tableId' => $order->table_id]) }}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus"></i> Agregar Item
                 </a>
