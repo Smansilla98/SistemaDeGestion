@@ -48,7 +48,13 @@
                     @forelse($products as $product)
                     <tr class="{{ $product->is_low_stock ? 'table-warning' : '' }}">
                         <td><strong>{{ $product->name }}</strong></td>
-                        <td>{{ $product->category->name }}</td>
+                        <td>
+                            @if($product->category)
+                                {{ $product->category->name }}
+                            @else
+                                <span class="text-muted">Sin categoría</span>
+                            @endif
+                        </td>
                         <td>
                             <span class="badge bg-{{ $product->current_stock <= $product->stock_minimum ? 'danger' : 'success' }}">
                                 {{ $product->current_stock }}
