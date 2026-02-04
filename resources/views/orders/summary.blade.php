@@ -29,7 +29,11 @@
                         <div class="border rounded p-3 mb-3">
                             <h5 class="text-primary mb-3"><i class="bi bi-info-circle"></i> Información del Pedido</h5>
                             <p class="mb-2"><strong>Número de Pedido:</strong> <span class="badge bg-secondary">{{ $order->number }}</span></p>
-                            <p class="mb-2"><strong>Mesa:</strong> {{ $order->table->number }}</p>
+                            @if($order->table)
+                                <p class="mb-2"><strong>Mesa:</strong> {{ $order->table->number }}</p>
+                            @elseif($order->customer_name)
+                                <p class="mb-2"><strong>Consumidor:</strong> <span class="badge bg-info">{{ $order->customer_name }}</span></p>
+                            @endif
                             <p class="mb-2"><strong>Mozo:</strong> {{ $order->user->name }}</p>
                             <p class="mb-0"><strong>Fecha:</strong> {{ $order->created_at->format('d/m/Y') }}</p>
                             <p class="mb-0"><strong>Hora:</strong> {{ $order->created_at->format('H:i') }}</p>

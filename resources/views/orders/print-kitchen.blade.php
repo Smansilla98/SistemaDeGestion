@@ -73,7 +73,11 @@
     </div>
 
     <div class="order-info">
-        <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @if($order->table)
+            <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @elseif($order->customer_name)
+            <p><strong>Consumidor:</strong> {{ $order->customer_name }}</p>
+        @endif
         <p><strong>Mozo:</strong> {{ $order->user->name }}</p>
         <p class="timestamp"><strong>Hora:</strong> {{ $order->created_at->format('H:i') }}</p>
         @if($order->observations)
