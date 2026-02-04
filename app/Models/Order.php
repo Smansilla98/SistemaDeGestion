@@ -32,6 +32,7 @@ class Order extends Model
         'discount',
         'total',
         'observations',
+        'customer_name',
         'sent_at',
         'closed_at',
     ];

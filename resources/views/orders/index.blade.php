@@ -8,11 +8,25 @@
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt"></i> Pedidos</h1>
         </div>
-        @can('create', App\Models\Order::class)
-        <a href="{{ route('orders.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Pedido
-        </a>
-        @endcan
+        <div class="btn-group">
+            @can('create', App\Models\Order::class)
+            <a href="{{ route('orders.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Pedido
+            </a>
+            @endcan
+            @if(auth()->user()->role === 'CAJERO' || auth()->user()->role === 'ADMIN')
+            @php
+                $activeSession = \App\Models\CashRegisterSession::where('restaurant_id', auth()->user()->restaurant_id)
+                    ->where('status', 'ABIERTA')
+                    ->first();
+            @endphp
+            @if($activeSession)
+            <a href="{{ route('orders.quick-order') }}" class="btn btn-success">
+                <i class="bi bi-lightning-charge"></i> Pedido Rápido
+            </a>
+            @endif
+            @endif
+        </div>
     </div>
 </div>
 
@@ -44,7 +58,7 @@
                 <thead>
                     <tr>
                         <th>Número</th>
-                        <th>Mesa</th>
+                        <th>Mesa / Consumidor</th>
                         <th>Mozo</th>
                         <th>Estado</th>
                         <th>Items</th>
@@ -57,7 +71,15 @@
                     @forelse($orders as $order)
                     <tr>
                         <td><strong>{{ $order->number }}</strong></td>
-                        <td>{{ $order->table->number }}</td>
+                        <td>
+                            @if($order->table)
+                                {{ $order->table->number }}
+                            @elseif($order->customer_name)
+                                <span class="badge bg-info">{{ $order->customer_name }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                         <td>{{ $order->user->name }}</td>
                         <td>
                             <span class="badge bg-{{ 
