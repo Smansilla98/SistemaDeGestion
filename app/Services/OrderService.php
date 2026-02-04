@@ -97,6 +97,7 @@ class OrderService
                 'number' => $orderNumber,
                 'status' => OrderStatus::ABIERTO->value,
                 'observations' => $data['observations'] ?? null,
+                'customer_name' => $data['customer_name'] ?? null,
             ]);
 
             // Actualizar estado según el tipo

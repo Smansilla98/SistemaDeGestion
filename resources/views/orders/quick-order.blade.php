@@ -11,8 +11,8 @@
             </h1>
             <p class="text-muted">Consumo inmediato sin mesa</p>
         </div>
-        <a href="{{ route('cash-register.index') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver a Caja
+        <a href="{{ route('orders.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Pedidos
         </a>
     </div>
 </div>
@@ -77,10 +77,22 @@
                 <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Pago</h5>
             </div>
             <div class="card-body">
-                <form id="quickOrderForm" action="{{ route('cash-register.process-quick-order') }}" method="POST">
+                <form id="quickOrderForm" action="{{ route('orders.process-quick-order') }}" method="POST">
                     @csrf
                     <input type="hidden" name="cash_register_session_id" value="{{ $activeSession->id }}">
-                    <!-- Los items y payments se enviarán como JSON en el body -->
+                    
+                    <!-- Campo de nombre del consumidor -->
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label">Nombre del Consumidor *</label>
+                        <input type="text" class="form-control @error('customer_name') is-invalid @enderror" 
+                               id="customer_name" name="customer_name" 
+                               value="{{ old('customer_name') }}" 
+                               placeholder="Ej: Juan Pérez" required>
+                        @error('customer_name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Nombre de quien consume (reemplaza la mesa)</small>
+                    </div>
                     
                     <div id="paymentMethodsContainer">
                         <!-- Los métodos de pago se agregarán dinámicamente -->
@@ -371,6 +383,18 @@ function updatePaymentSummary() {
 document.getElementById('quickOrderForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    const customerName = document.getElementById('customer_name').value.trim();
+    
+    if (!customerName) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nombre requerido',
+            text: 'Debes ingresar el nombre del consumidor',
+            confirmButtonColor: '#ffc107'
+        });
+        return;
+    }
+    
     if (cart.length === 0) {
         Swal.fire({
             icon: 'warning',
@@ -451,6 +475,9 @@ document.getElementById('quickOrderForm').addEventListener('submit', function(e)
             const form = document.getElementById('quickOrderForm');
             const formData = new FormData(form);
             
+            // Asegurar que customer_name esté incluido
+            formData.set('customer_name', customerName);
+            
             // Agregar items
             items.forEach((item, index) => {
                 formData.append(`items[${index}][product_id]`, item.product_id);
@@ -497,9 +524,10 @@ document.getElementById('quickOrderForm').addEventListener('submit', function(e)
                         paymentMethods = [];
                         updateCart();
                         renderPaymentMethods();
+                        document.getElementById('customer_name').value = '';
                         
-                        // Opcional: redirigir a sesión de caja
-                        window.location.href = '{{ route("cash-register.session", $activeSession) }}';
+                        // Opcional: redirigir a lista de pedidos
+                        window.location.href = '{{ route("orders.index") }}';
                     });
                 } else {
                     Swal.fire({
