@@ -68,6 +68,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/create/{tableId?}', [OrderController::class, 'create'])->name('create');
         Route::post('/', [OrderController::class, 'store'])->name('store');
+        
+        // Pedido rápido (consumo inmediato sin mesa) - DEBE IR ANTES de /{order}
+        Route::get('/quick-order', [OrderController::class, 'quickOrder'])->name('quick-order');
+        Route::post('/quick-order', [OrderController::class, 'processQuickOrder'])->name('process-quick-order');
+        
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
         Route::post('/{order}/items', [OrderController::class, 'addItem'])->name('add-item');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('update-status');
@@ -75,10 +80,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
         Route::get('/{order}/summary', [OrderController::class, 'summary'])->name('summary');
         Route::delete('/{order}', [OrderController::class, 'destroy'])->name('destroy');
-        
-        // Pedido rápido (consumo inmediato sin mesa)
-        Route::get('/quick-order', [OrderController::class, 'quickOrder'])->name('quick-order');
-        Route::post('/quick-order', [OrderController::class, 'processQuickOrder'])->name('process-quick-order');
         
         // Rutas de impresión
         Route::prefix('{order}/print')->name('print.')->group(function () {
