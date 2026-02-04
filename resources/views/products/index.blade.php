@@ -6,12 +6,20 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-box-seam"></i> Productos</h1>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
+                <i class="bi bi-box-seam"></i> 
+                {{ $selectedType === 'INSUMO' ? 'Insumos' : 'Productos' }}
+            </h1>
         </div>
         @can('create', App\Models\Product::class)
-        <a href="{{ route('products.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Producto
-        </a>
+        <div class="btn-group">
+            <a href="{{ route('products.create', ['type' => 'PRODUCT']) }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Producto
+            </a>
+            <a href="{{ route('products.create', ['type' => 'INSUMO']) }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nuevo Insumo
+            </a>
+        </div>
         @endcan
     </div>
 </div>
@@ -19,7 +27,14 @@
 <div class="card mb-4">
     <div class="card-header">
         <form method="GET" action="{{ route('products.index') }}" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <select name="type" class="form-select" onchange="this.form.submit()">
+                    <option value="PRODUCT" {{ $selectedType === 'PRODUCT' ? 'selected' : '' }}>Productos Vendibles</option>
+                    <option value="INSUMO" {{ $selectedType === 'INSUMO' ? 'selected' : '' }}>Insumos</option>
+                </select>
+            </div>
+            @if($selectedType === 'PRODUCT')
+            <div class="col-md-3">
                 <select name="category_id" class="form-select" onchange="this.form.submit()">
                     <option value="">Todas las categorías</option>
                     @foreach($categories as $category)
@@ -29,8 +44,9 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
-                <input type="text" name="search" class="form-control" placeholder="Buscar producto..." value="{{ request('search') }}">
+            @endif
+            <div class="col-md-{{ $selectedType === 'PRODUCT' ? '4' : '7' }}">
+                <input type="text" name="search" class="form-control" placeholder="Buscar {{ $selectedType === 'INSUMO' ? 'insumo' : 'producto' }}..." value="{{ request('search') }}">
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">Buscar</button>
@@ -43,8 +59,14 @@
                 <thead>
                     <tr>
                         <th>Nombre</th>
+                        @if($selectedType === 'PRODUCT')
                         <th>Categoría</th>
                         <th>Precio</th>
+                        @else
+                        <th>Unidad</th>
+                        <th>Costo Unitario</th>
+                        <th>Proveedor</th>
+                        @endif
                         <th>Stock</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -59,8 +81,14 @@
                             <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($product->description, 50) }}</small>
                             @endif
                         </td>
-                        <td>{{ $product->category->name }}</td>
+                        @if($product->type === 'PRODUCT')
+                        <td>{{ $product->category->name ?? '-' }}</td>
                         <td><strong>${{ number_format($product->price, 2) }}</strong></td>
+                        @else
+                        <td>{{ $product->unit ?? '-' }}</td>
+                        <td><strong>${{ number_format($product->unit_cost ?? 0, 2) }}</strong></td>
+                        <td>{{ $product->supplier->name ?? '-' }}</td>
+                        @endif
                         <td>
                             @if($product->has_stock)
                                 @php
@@ -121,7 +149,9 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay productos</td>
+                        <td colspan="{{ $selectedType === 'PRODUCT' ? '6' : '7' }}" class="text-center text-muted">
+                            No hay {{ $selectedType === 'INSUMO' ? 'insumos' : 'productos' }}
+                        </td>
                     </tr>
                     @endforelse
                 </tbody>

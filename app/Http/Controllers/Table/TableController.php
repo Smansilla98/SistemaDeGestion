@@ -155,15 +155,20 @@ class TableController extends Controller
 
             // Imprimir automáticamente la comanda
             try {
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'comanda');
+                // Intentar primero con impresora de tipo 'bar' (más adecuada para comandas)
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'bar');
                 if (!$printer) {
-                    // Si no hay impresora de comanda, intentar con cualquier impresora activa
+                    // Si no hay impresora de bar, intentar con cualquier impresora activa
                     $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
                         ->where('is_active', true)
                         ->first();
                 }
-                $this->printService->printComanda($order, $printer);
-                $printMessage = 'La comanda se ha impreso automáticamente.';
+                if ($printer) {
+                    $this->printService->printComanda($order, $printer);
+                    $printMessage = 'La comanda se ha impreso automáticamente.';
+                } else {
+                    $printMessage = 'Pedido creado. No hay impresora configurada para imprimir automáticamente.';
+                }
             } catch (\Exception $printError) {
                 // Si falla la impresión, no fallar el pedido, solo registrar el error
                 Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
@@ -289,15 +294,20 @@ class TableController extends Controller
 
             // Imprimir automáticamente la comanda
             try {
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'comanda');
+                // Intentar primero con impresora de tipo 'bar' (más adecuada para comandas)
+                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'bar');
                 if (!$printer) {
-                    // Si no hay impresora de comanda, intentar con cualquier impresora activa
+                    // Si no hay impresora de bar, intentar con cualquier impresora activa
                     $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
                         ->where('is_active', true)
                         ->first();
                 }
-                $this->printService->printComanda($order, $printer);
-                $printMessage = 'La comanda se ha impreso automáticamente.';
+                if ($printer) {
+                    $this->printService->printComanda($order, $printer);
+                    $printMessage = 'La comanda se ha impreso automáticamente.';
+                } else {
+                    $printMessage = 'Pedido creado. No hay impresora configurada para imprimir automáticamente.';
+                }
             } catch (\Exception $printError) {
                 Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
                     'order_id' => $order->id,

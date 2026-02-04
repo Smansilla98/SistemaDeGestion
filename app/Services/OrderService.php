@@ -82,7 +82,9 @@ class OrderService
                     $tableSessionId = $subsectorItem->current_session_id;
                 }
             } else {
-                throw new \Exception('Se debe proporcionar table_id o subsector_item_id para crear un pedido.');
+                // Pedido rápido sin mesa ni subsector (consumo inmediato desde caja)
+                // No requiere table_session_id
+                $tableSessionId = null;
             }
 
             // Crear el pedido
@@ -109,6 +111,7 @@ class OrderService
                     'current_order_id' => $order->id,
                 ]);
             }
+            // Si no hay mesa ni subsector, es un pedido rápido (no actualizar nada)
 
             return $order;
         });
