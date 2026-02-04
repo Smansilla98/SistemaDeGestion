@@ -21,10 +21,15 @@ class Product extends Model
         'has_stock',
         'stock_minimum',
         'is_active',
+        'type', // PRODUCT o INSUMO
+        'unit', // unidad de medida para insumos
+        'unit_cost', // costo unitario para insumos
+        'supplier_id', // proveedor del insumo
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'unit_cost' => 'decimal:2',
         'has_stock' => 'boolean',
         'stock_minimum' => 'integer',
         'is_active' => 'boolean',
@@ -79,6 +84,14 @@ class Product extends Model
     }
 
     /**
+     * Relación: Un insumo puede tener un proveedor
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
      * Obtener el stock actual del producto en un restaurante
      */
     public function getCurrentStock(int $restaurantId): int
@@ -88,6 +101,38 @@ class Product extends Model
             ->first();
 
         return $stock ? $stock->quantity : 0;
+    }
+
+    /**
+     * Verificar si es un producto vendible
+     */
+    public function isProduct(): bool
+    {
+        return $this->type === 'PRODUCT';
+    }
+
+    /**
+     * Verificar si es un insumo
+     */
+    public function isInsumo(): bool
+    {
+        return $this->type === 'INSUMO';
+    }
+
+    /**
+     * Scope para filtrar solo productos vendibles
+     */
+    public function scopeProducts($query)
+    {
+        return $query->where('type', 'PRODUCT');
+    }
+
+    /**
+     * Scope para filtrar solo insumos
+     */
+    public function scopeInsumos($query)
+    {
+        return $query->where('type', 'INSUMO');
     }
 }
 

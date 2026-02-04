@@ -132,6 +132,25 @@
             </div>
         </div>
     </div>
+    
+    @if($activeSessions->count() > 0)
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Pedido Rápido</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Realiza pedidos de consumo inmediato sin necesidad de abrir una mesa.</p>
+                <a href="{{ route('cash-register.quick-order') }}" class="btn btn-success w-100">
+                    <i class="bi bi-cart-plus"></i> Nuevo Pedido Rápido
+                </a>
+                <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle"></i> Ideal para consumo en barra o mostrador
+                </small>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 @push('scripts')

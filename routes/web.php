@@ -119,6 +119,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/{order}/payment', [CashRegisterController::class, 'processPayment'])->name('process-payment');
         Route::delete('/movements/{movement}', [CashRegisterController::class, 'destroyMovement'])->name('destroy-movement');
         
+        // Pedido rápido (consumo inmediato sin mesa)
+        Route::get('/quick-order', [CashRegisterController::class, 'quickOrder'])->name('quick-order');
+        Route::post('/quick-order', [CashRegisterController::class, 'processQuickOrder'])->name('process-quick-order');
+        
         // CRUD de cajas (solo ADMIN)
         Route::middleware('role:ADMIN')->group(function () {
             Route::get('/create', [CashRegisterController::class, 'create'])->name('create');

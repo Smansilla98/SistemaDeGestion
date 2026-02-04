@@ -25,9 +25,17 @@ class ProductController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
 
         $query = Product::where('restaurant_id', $restaurantId)
-            ->with(['category.sector']); // Eager loading optimizado
+            ->with(['category.sector', 'supplier']); // Eager loading optimizado
 
-        // Filtro por sector (a través de categoría)
+        // Filtro por tipo (PRODUCT o INSUMO)
+        if ($request->filled('type') && in_array($request->type, ['PRODUCT', 'INSUMO'])) {
+            $query->where('type', $request->type);
+        } else {
+            // Por defecto mostrar solo productos vendibles si no se especifica
+            $query->where('type', 'PRODUCT');
+        }
+
+        // Filtro por sector (a través de categoría) - solo para productos
         if ($request->filled('sector_id')) {
             $query->whereHas('category', function($q) use ($request) {
                 $q->where('sector_id', $request->sector_id);
@@ -86,29 +94,39 @@ class ProductController extends Controller
             ? Category::find($request->category_id) 
             : null;
 
+        $selectedType = $request->get('type', 'PRODUCT');
+
         return view('products.index', compact(
             'products', 
             'categories', 
             'sectors',
             'selectedSector',
-            'selectedCategory'
+            'selectedCategory',
+            'selectedType'
         ));
     }
 
     /**
      * Mostrar formulario de creación
      */
-    public function create()
+    public function create(Request $request)
     {
         Gate::authorize('create', Product::class);
 
         $restaurantId = auth()->user()->restaurant_id;
+        $type = $request->get('type', 'PRODUCT'); // PRODUCT o INSUMO
+        
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
+            
+        $suppliers = \App\Models\Supplier::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('products.create', compact('categories'));
+        return view('products.create', compact('categories', 'suppliers', 'type'));
     }
 
     /**
@@ -125,24 +143,38 @@ class ProductController extends Controller
         ]);
 
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            'type' => 'required|in:PRODUCT,INSUMO',
+            'category_id' => 'required_if:type,PRODUCT|nullable|exists:categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0', // Precio solo para productos vendibles
             'has_stock' => 'required|boolean',
             'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            // Campos específicos para insumos
+            'unit' => 'required_if:type,INSUMO|nullable|string|max:50',
+            'unit_cost' => 'required_if:type,INSUMO|nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
+        
+        // Si es insumo, el precio puede ser 0 o null
+        if ($validated['type'] === 'INSUMO') {
+            $validated['price'] = $validated['price'] ?? 0;
+        }
 
         $product = Product::create($validated);
         
         // Auditoría
         $this->auditCreate($product, $validated);
 
-        return redirect()->route('products.index')
-            ->with('success', 'Producto creado exitosamente');
+        $message = $validated['type'] === 'INSUMO' 
+            ? 'Insumo creado exitosamente' 
+            : 'Producto creado exitosamente';
+
+        return redirect()->route('products.index', ['type' => $validated['type']])
+            ->with('success', $message);
     }
 
     /**
@@ -169,8 +201,13 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
+            
+        $suppliers = \App\Models\Supplier::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        return view('products.edit', compact('product', 'categories'));
+        return view('products.edit', compact('product', 'categories', 'suppliers'));
     }
 
     /**
@@ -187,16 +224,26 @@ class ProductController extends Controller
         ]);
 
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            'type' => 'required|in:PRODUCT,INSUMO',
+            'category_id' => 'required_if:type,PRODUCT|nullable|exists:categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0',
             'has_stock' => 'required|boolean',
             'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            // Campos específicos para insumos
+            'unit' => 'required_if:type,INSUMO|nullable|string|max:50',
+            'unit_cost' => 'required_if:type,INSUMO|nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
+        
+        // Si es insumo, el precio puede ser 0 o null
+        if ($validated['type'] === 'INSUMO') {
+            $validated['price'] = $validated['price'] ?? 0;
+        }
 
         $oldAttributes = $product->getAttributes();
         $product->update($validated);
@@ -204,8 +251,12 @@ class ProductController extends Controller
         // Auditoría
         $this->auditUpdate($product, $oldAttributes, $validated);
 
-        return redirect()->route('products.index')
-            ->with('success', 'Producto actualizado exitosamente');
+        $message = $validated['type'] === 'INSUMO' 
+            ? 'Insumo actualizado exitosamente' 
+            : 'Producto actualizado exitosamente';
+
+        return redirect()->route('products.index', ['type' => $validated['type']])
+            ->with('success', $message);
     }
 
     /**
