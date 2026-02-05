@@ -113,6 +113,21 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Gestión de Eventos
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('events')->name('events.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Event\EventController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Event\EventController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Event\EventController::class, 'store'])->name('store');
+        Route::get('/{event}', [\App\Http\Controllers\Event\EventController::class, 'show'])->name('show');
+        Route::get('/{event}/edit', [\App\Http\Controllers\Event\EventController::class, 'edit'])->name('edit');
+        Route::put('/{event}', [\App\Http\Controllers\Event\EventController::class, 'update'])->name('update');
+        Route::delete('/{event}', [\App\Http\Controllers\Event\EventController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Módulo de Caja
     |--------------------------------------------------------------------------
     */

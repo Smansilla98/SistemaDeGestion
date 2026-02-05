@@ -826,6 +826,10 @@
                 <i class="bi bi-inboxes"></i>
                 <span>Stock</span>
             </a>
+            <a href="{{ route('events.index') }}" class="nova-nav-item {{ request()->routeIs('events.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event"></i>
+                <span>Eventos</span>
+            </a>
             <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="bi bi-graph-up"></i>
                 <span>Reportes</span>
