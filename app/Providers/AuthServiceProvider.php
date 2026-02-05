@@ -12,6 +12,7 @@ use App\Models\CashRegister;
 use App\Models\Category;
 use App\Models\Printer;
 use App\Models\Sector;
+use App\Models\Event;
 use App\Policies\OrderPolicy;
 use App\Policies\TablePolicy;
 use App\Policies\ProductPolicy;
@@ -20,6 +21,7 @@ use App\Policies\CashRegisterPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\PrinterPolicy;
 use App\Policies\SectorPolicy;
+use App\Policies\EventPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,7 @@ class AuthServiceProvider extends ServiceProvider
         Category::class => CategoryPolicy::class,
         Printer::class => PrinterPolicy::class,
         Sector::class => SectorPolicy::class,
+        Event::class => EventPolicy::class,
     ];
 
     /**
