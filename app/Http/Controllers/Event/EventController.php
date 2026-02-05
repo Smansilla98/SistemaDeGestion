@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Product;
 use App\Models\Stock;
+use App\Models\RecurringActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
@@ -36,6 +37,19 @@ class EventController extends Controller
             ->orderBy('time')
             ->get();
         
+        // Obtener actividades recurrentes y generar instancias para el mes
+        $recurringActivities = RecurringActivity::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->get();
+        
+        $recurringInstances = [];
+        foreach ($recurringActivities as $activity) {
+            $instances = $activity->getInstancesForDateRange($startDate, $endDate);
+            foreach ($instances as $instance) {
+                $recurringInstances[] = $instance;
+            }
+        }
+        
         // Agrupar eventos por día
         $eventsByDay = [];
         foreach ($events as $event) {
@@ -43,7 +57,22 @@ class EventController extends Controller
             if (!isset($eventsByDay[$day])) {
                 $eventsByDay[$day] = [];
             }
-            $eventsByDay[$day][] = $event;
+            $eventsByDay[$day][] = [
+                'type' => 'event',
+                'data' => $event,
+            ];
+        }
+        
+        // Agregar actividades recurrentes al calendario
+        foreach ($recurringInstances as $instance) {
+            $day = $instance['date'];
+            if (!isset($eventsByDay[$day])) {
+                $eventsByDay[$day] = [];
+            }
+            $eventsByDay[$day][] = [
+                'type' => 'recurring',
+                'data' => $instance,
+            ];
         }
         
         // Calcular días del mes para el calendario
