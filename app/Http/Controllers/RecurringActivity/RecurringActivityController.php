@@ -62,6 +62,11 @@ class RecurringActivityController extends Controller
     {
         Gate::authorize('create', RecurringActivity::class);
 
+        // Convertir checkbox a booleano ANTES de validar
+        $request->merge([
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -72,11 +77,10 @@ class RecurringActivityController extends Controller
             'expected_revenue' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
-            'is_active' => 'boolean',
+            'is_active' => 'required|boolean',
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        $validated['is_active'] = $request->boolean('is_active', true);
 
         RecurringActivity::create($validated);
 
@@ -116,6 +120,11 @@ class RecurringActivityController extends Controller
     {
         Gate::authorize('update', $recurringActivity);
 
+        // Convertir checkbox a booleano ANTES de validar
+        $request->merge([
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -126,10 +135,8 @@ class RecurringActivityController extends Controller
             'expected_revenue' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
-            'is_active' => 'boolean',
+            'is_active' => 'required|boolean',
         ]);
-
-        $validated['is_active'] = $request->boolean('is_active', true);
 
         $recurringActivity->update($validated);
 

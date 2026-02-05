@@ -85,6 +85,11 @@ class FixedExpenseController extends Controller
     {
         Gate::authorize('create', FixedExpense::class);
 
+        // Convertir checkbox a booleano ANTES de validar
+        $request->merge([
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -94,11 +99,10 @@ class FixedExpenseController extends Controller
             'frequency' => 'required|in:MENSUAL,QUINCENAL,SEMANAL,DIARIO,ANUAL',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'is_active' => 'boolean',
+            'is_active' => 'required|boolean',
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        $validated['is_active'] = $request->boolean('is_active', true);
 
         FixedExpense::create($validated);
 
@@ -148,6 +152,11 @@ class FixedExpenseController extends Controller
     {
         Gate::authorize('update', $fixedExpense);
 
+        // Convertir checkbox a booleano ANTES de validar
+        $request->merge([
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -157,10 +166,8 @@ class FixedExpenseController extends Controller
             'frequency' => 'required|in:MENSUAL,QUINCENAL,SEMANAL,DIARIO,ANUAL',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'is_active' => 'boolean',
+            'is_active' => 'required|boolean',
         ]);
-
-        $validated['is_active'] = $request->boolean('is_active', true);
 
         $fixedExpense->update($validated);
 
