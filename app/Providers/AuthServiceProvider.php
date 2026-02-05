@@ -13,6 +13,8 @@ use App\Models\Category;
 use App\Models\Printer;
 use App\Models\Sector;
 use App\Models\Event;
+use App\Models\FixedExpense;
+use App\Models\RecurringActivity;
 use App\Policies\OrderPolicy;
 use App\Policies\TablePolicy;
 use App\Policies\ProductPolicy;
@@ -22,6 +24,8 @@ use App\Policies\CategoryPolicy;
 use App\Policies\PrinterPolicy;
 use App\Policies\SectorPolicy;
 use App\Policies\EventPolicy;
+use App\Policies\FixedExpensePolicy;
+use App\Policies\RecurringActivityPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -40,6 +44,8 @@ class AuthServiceProvider extends ServiceProvider
         Printer::class => PrinterPolicy::class,
         Sector::class => SectorPolicy::class,
         Event::class => EventPolicy::class,
+        FixedExpense::class => FixedExpensePolicy::class,
+        RecurringActivity::class => RecurringActivityPolicy::class,
     ];
 
     /**

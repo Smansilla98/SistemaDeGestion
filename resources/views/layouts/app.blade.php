@@ -830,6 +830,18 @@
                 <i class="bi bi-calendar-event"></i>
                 <span>Eventos</span>
             </a>
+            @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+            <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
+                <i class="bi bi-cash-stack"></i>
+                <span>Gastos Fijos</span>
+            </a>
+            @endif
+            @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'CAJERO']))
+            <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-repeat"></i>
+                <span>Actividades Recurrentes</span>
+            </a>
+            @endif
             <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="bi bi-graph-up"></i>
                 <span>Reportes</span>

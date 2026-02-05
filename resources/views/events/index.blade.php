@@ -91,17 +91,33 @@
                             <td class="calendar-day {{ $isToday ? 'today' : '' }} {{ !$isCurrentMonth ? 'other-month' : '' }}">
                                 <div class="day-number">{{ $isCurrentMonth ? $cellDay : '' }}</div>
                                 <div class="day-events">
-                                    @foreach($dayEvents as $event)
-                                    <div class="event-item event-{{ strtolower($event->status) }}" 
-                                         onclick="window.location.href='{{ route('events.show', $event) }}'"
-                                         title="{{ $event->name }} - {{ $event->formatted_date_time }}">
-                                        <small>
-                                            @if($event->time)
-                                                {{ $event->time->format('H:i') }}hs
-                                            @endif
-                                            {{ \Illuminate\Support\Str::limit($event->name, 20) }}
-                                        </small>
-                                    </div>
+                                    @foreach($dayEvents as $item)
+                                        @if($item['type'] === 'event')
+                                            @php $event = $item['data']; @endphp
+                                            <div class="event-item event-{{ strtolower($event->status) }}" 
+                                                 onclick="window.location.href='{{ route('events.show', $event) }}'"
+                                                 title="{{ $event->name }} - {{ $event->formatted_date_time }}">
+                                                <small>
+                                                    @if($event->time)
+                                                        @php
+                                                            $time = is_string($event->time) ? substr($event->time, 0, 5) : \Carbon\Carbon::parse($event->time)->format('H:i');
+                                                        @endphp
+                                                        {{ $time }}hs
+                                                    @endif
+                                                    {{ \Illuminate\Support\Str::limit($event->name, 20) }}
+                                                </small>
+                                            </div>
+                                        @elseif($item['type'] === 'recurring')
+                                            @php $activity = $item['data']; @endphp
+                                            <div class="event-item event-recurring" 
+                                                 title="{{ $activity['name'] }} - {{ $activity['day_name'] }} {{ substr($activity['time'], 0, 5) }}hs">
+                                                <small>
+                                                    <i class="bi bi-repeat"></i>
+                                                    {{ substr($activity['time'], 0, 5) }}hs
+                                                    {{ \Illuminate\Support\Str::limit($activity['name'], 18) }}
+                                                </small>
+                                            </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </td>
@@ -237,6 +253,12 @@
 .event-cancelado {
     background-color: #6c757d;
     color: white;
+}
+
+.event-recurring {
+    background-color: #6f42c1;
+    color: white;
+    border-left: 3px solid #5a32a3;
 }
 </style>
 @endpush

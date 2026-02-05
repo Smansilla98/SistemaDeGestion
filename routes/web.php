@@ -245,6 +245,36 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Gastos Fijos
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('fixed-expenses')->name('fixed-expenses.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'store'])->name('store');
+        Route::get('/{fixedExpense}', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'show'])->name('show');
+        Route::get('/{fixedExpense}/edit', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'edit'])->name('edit');
+        Route::put('/{fixedExpense}', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'update'])->name('update');
+        Route::delete('/{fixedExpense}', [\App\Http\Controllers\FixedExpense\FixedExpenseController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actividades Recurrentes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('recurring-activities')->name('recurring-activities.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'store'])->name('store');
+        Route::get('/{recurringActivity}', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'show'])->name('show');
+        Route::get('/{recurringActivity}/edit', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'edit'])->name('edit');
+        Route::put('/{recurringActivity}', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'update'])->name('update');
+        Route::delete('/{recurringActivity}', [\App\Http\Controllers\RecurringActivity\RecurringActivityController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Configuración (Solo ADMIN)
     |--------------------------------------------------------------------------
     */
