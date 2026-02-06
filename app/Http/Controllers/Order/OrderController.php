@@ -492,6 +492,7 @@ class OrderController extends Controller
                         'total' => $order->total,
                         'total_paid' => $totalPaid,
                         'change' => $change > 0.01 ? $change : 0,
+                        'print_url' => route('orders.print.kitchen', $order),
                     ]);
                 }
 

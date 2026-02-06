@@ -131,16 +131,8 @@
                 <div class="mt-3">
                     <h6>Imprimir:</h6>
                     <div class="d-grid gap-2">
-                        <div class="btn-group" role="group">
-                            <a href="{{ route('orders.print.kitchen', $order) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i> Ver PDF
-                            </a>
-                            <a href="{{ route('orders.print.kitchen', ['order' => $order, 'print' => 'true']) }}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-printer"></i> Imprimir
-                            </a>
-                        </div>
-                        <a href="{{ route('orders.print.comanda', $order) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-printer"></i> Comanda
+                        <a href="{{ route('orders.print.kitchen', $order) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver PDF
                         </a>
                         @if($order->status === 'CERRADO')
                         <a href="{{ route('orders.print.invoice', $order) }}" target="_blank" class="btn btn-sm btn-outline-success">
