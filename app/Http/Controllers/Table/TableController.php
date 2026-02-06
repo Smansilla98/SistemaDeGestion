@@ -1043,19 +1043,38 @@ class TableController extends Controller
 
             // Consolidar items desde la base de datos
             $consolidatedItems = collect();
+            $totalItemsProcessed = 0;
+            
             foreach ($closedOrders as $order) {
+                // Asegurar que los items estén cargados
+                if (!$order->relationLoaded('items')) {
+                    $order->load('items.product.category', 'items.modifiers');
+                }
+                
                 foreach ($order->items as $item) {
+                    $totalItemsProcessed++;
+                    
                     // Buscar si ya existe un item con el mismo product_id
-                    $existingItem = $consolidatedItems->first(function ($i) use ($item) {
+                    $existingItemIndex = $consolidatedItems->search(function ($i) use ($item) {
                         return $i['product_id'] === $item->product_id;
                     });
                     
-                    if ($existingItem) {
+                    if ($existingItemIndex !== false) {
                         // Si existe, sumar cantidad y subtotal
-                        $existingItem['quantity'] += $item->quantity;
-                        $existingItem['subtotal'] += $item->subtotal;
-                        // Recalcular precio unitario promedio
-                        $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
+                        $existingItem = $consolidatedItems[$existingItemIndex];
+                        $newQuantity = $existingItem['quantity'] + $item->quantity;
+                        $newSubtotal = $existingItem['subtotal'] + $item->subtotal;
+                        
+                        // Actualizar el item en la colección
+                        $consolidatedItems[$existingItemIndex] = [
+                            'product_id' => $existingItem['product_id'],
+                            'product_name' => $existingItem['product_name'],
+                            'quantity' => $newQuantity,
+                            'unit_price' => $newSubtotal / $newQuantity, // Recalcular precio unitario promedio
+                            'subtotal' => $newSubtotal,
+                            'modifiers' => $existingItem['modifiers'] ?? $item->modifiers,
+                            'observations' => $existingItem['observations'] ?? $item->observations,
+                        ];
                     } else {
                         // Si no existe, agregar nuevo item
                         $consolidatedItems->push([
@@ -1071,23 +1090,42 @@ class TableController extends Controller
                 }
             }
             
-            // Calcular totales desde los items consolidados para mayor precisión
-            $totalSubtotal = $consolidatedItems->sum('subtotal');
+            // Calcular totales: SIEMPRE usar la suma de los pedidos para el total final
+            // Esto asegura que cuando hay múltiples pedidos, el total sea correcto
+            $totalSubtotal = $closedOrders->sum('subtotal');
             $totalDiscount = $closedOrders->sum('discount');
-            $totalAmount = $totalSubtotal - $totalDiscount;
+            $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
             
-            // Validar que los totales sean consistentes
-            $ordersTotal = $closedOrders->sum('total');
-            if (abs($totalAmount - $ordersTotal) > 0.01) {
-                // Hay discrepancia, usar los calculados desde items (más preciso)
-                Log::warning('Discrepancia en totales del recibo consolidado', [
+            // Calcular también desde items consolidados para validación
+            $calculatedSubtotalFromItems = $consolidatedItems->sum('subtotal');
+            $calculatedTotalFromItems = $calculatedSubtotalFromItems - $totalDiscount;
+            
+            // Validación adicional: verificar que todos los items se procesaron
+            $totalItemsInOrders = $closedOrders->sum(function($order) {
+                return $order->items->count();
+            });
+            
+            if ($totalItemsProcessed !== $totalItemsInOrders) {
+                Log::warning('Discrepancia en cantidad de items procesados', [
                     'table_id' => $table->id,
                     'session_id' => $sessionId,
-                    'total_from_items' => $totalAmount,
-                    'total_from_orders' => $ordersTotal,
-                    'difference' => abs($totalAmount - $ordersTotal),
+                    'items_processed' => $totalItemsProcessed,
+                    'items_in_orders' => $totalItemsInOrders,
+                    'orders_count' => $closedOrders->count()
+                ]);
+            }
+            
+            // Validar que los totales sean consistentes (solo para logging)
+            if (abs($totalAmount - $calculatedTotalFromItems) > 0.01) {
+                Log::info('Diferencia entre total de pedidos y total calculado desde items', [
+                    'table_id' => $table->id,
+                    'session_id' => $sessionId,
+                    'total_from_orders' => $totalAmount,
+                    'total_from_items' => $calculatedTotalFromItems,
+                    'difference' => abs($totalAmount - $calculatedTotalFromItems),
                     'orders_count' => $closedOrders->count(),
-                    'orders_numbers' => $closedOrders->pluck('number')->toArray()
+                    'orders_numbers' => $closedOrders->pluck('number')->toArray(),
+                    'orders_totals' => $closedOrders->pluck('total')->toArray()
                 ]);
             }
         }
@@ -1170,42 +1208,68 @@ class TableController extends Controller
 
                 if ($closedOrders->isNotEmpty()) {
                     $consolidatedItems = collect();
+                    
                     foreach ($closedOrders as $order) {
+                        // Asegurar que los items estén cargados
+                        if (!$order->relationLoaded('items')) {
+                            $order->load('items.product.category', 'items.modifiers');
+                        }
+                        
                         foreach ($order->items as $item) {
-                            $existingItem = $consolidatedItems->first(function ($i) use ($item) {
+                            // Buscar si ya existe un item con el mismo product_id
+                            $existingItemIndex = $consolidatedItems->search(function ($i) use ($item) {
                                 return $i['product_id'] === $item->product_id;
                             });
                             
-                            if ($existingItem) {
-                                $existingItem['quantity'] += $item->quantity;
-                                $existingItem['subtotal'] += $item->subtotal;
-                                $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
+                            if ($existingItemIndex !== false) {
+                                // Si existe, sumar cantidad y subtotal
+                                $existingItem = $consolidatedItems[$existingItemIndex];
+                                $newQuantity = $existingItem['quantity'] + $item->quantity;
+                                $newSubtotal = $existingItem['subtotal'] + $item->subtotal;
+                                
+                                // Actualizar el item en la colección
+                                $consolidatedItems[$existingItemIndex] = [
+                                    'product_id' => $existingItem['product_id'],
+                                    'product_name' => $existingItem['product_name'],
+                                    'quantity' => $newQuantity,
+                                    'unit_price' => $newSubtotal / $newQuantity, // Recalcular precio unitario promedio
+                                    'subtotal' => $newSubtotal,
+                                    'modifiers' => $existingItem['modifiers'] ?? $item->modifiers,
+                                    'observations' => $existingItem['observations'] ?? $item->observations,
+                                ];
                             } else {
+                                // Si no existe, agregar nuevo item
                                 $consolidatedItems->push([
                                     'product_id' => $item->product_id,
                                     'product_name' => $item->product->name,
                                     'quantity' => $item->quantity,
                                     'unit_price' => $item->unit_price,
                                     'subtotal' => $item->subtotal,
+                                    'modifiers' => $item->modifiers,
+                                    'observations' => $item->observations,
                                 ]);
                             }
                         }
                     }
                     
-                    // Calcular totales desde los items consolidados para mayor precisión
-                    $totalSubtotal = $consolidatedItems->sum('subtotal');
+                    // Calcular totales: SIEMPRE usar la suma de los pedidos para el total final
+                    // Esto asegura que cuando hay múltiples pedidos, el total sea correcto
+                    $totalSubtotal = $closedOrders->sum('subtotal');
                     $totalDiscount = $closedOrders->sum('discount');
-                    $totalAmount = $totalSubtotal - $totalDiscount;
+                    $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
                 }
             }
         }
 
-        // SIEMPRE recalcular totales desde items consolidados para asegurar precisión
-        if ($consolidatedItems->isNotEmpty()) {
+        // SIEMPRE recalcular totales: usar suma de pedidos para mayor precisión con múltiples pedidos
+        if ($closedOrders->isNotEmpty()) {
+            $totalSubtotal = $closedOrders->sum('subtotal');
+            $totalDiscount = $closedOrders->sum('discount');
+            $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
+        } elseif ($consolidatedItems->isNotEmpty()) {
+            // Fallback: si no hay pedidos pero hay items consolidados (de sesión)
             $totalSubtotal = $consolidatedItems->sum('subtotal');
-            if ($totalDiscount == 0 && $closedOrders->isNotEmpty()) {
-                $totalDiscount = $closedOrders->sum('discount');
-            }
+            $totalDiscount = $totalDiscount ?? 0;
             $totalAmount = $totalSubtotal - $totalDiscount;
         }
 
