@@ -58,6 +58,8 @@
                      data-subsector-id="{{ $subsector->id }}"
                      data-initial-x="{{ $subsectorX }}"
                      data-initial-y="{{ $subsectorY }}"
+                     data-x="0"
+                     data-y="0"
                      style="position: absolute;
                             left: {{ $subsectorX }}px;
                             top: {{ $subsectorY }}px;
@@ -70,7 +72,8 @@
                             z-index: 5;
                             display: flex;
                             flex-direction: column;
-                            padding: 10px;">
+                            padding: 10px;
+                            cursor: move;">
                     <div class="subsector-title" style="font-weight: 800; color: #262c3b; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 8px; margin-bottom: 10px;">
                         <i class="bi bi-grid-3x3-gap"></i> {{ $subsector->name }}
                         @if($subsector->capacity)
@@ -282,7 +285,7 @@ function toggleEditMode() {
     const text = document.getElementById('editModeText');
     text.textContent = editMode ? 'Modo Visualización' : 'Modo Edición';
     
-    const items = document.querySelectorAll('.table-item, .fixture-item');
+    const items = document.querySelectorAll('.table-item, .fixture-item, .subsector-area');
     items.forEach(table => {
         if (editMode) {
             table.style.cursor = 'move';
@@ -355,11 +358,41 @@ function initDragAndDrop() {
         ],
         inertia: false
     });
+
+    // Drag para subsectores
+    interact('.subsector-area').draggable({
+        listeners: {
+            start(event) {
+                event.target.classList.add('dragging');
+                draggedElement = event.target;
+            },
+            move(event) {
+                const target = event.target;
+                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                target.style.transform = `translate(${x}px, ${y}px)`;
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
+            },
+            end(event) {
+                event.target.classList.remove('dragging');
+            }
+        },
+        modifiers: [
+            interact.modifiers.restrictRect({
+                restriction: 'parent',
+                endOnly: true
+            })
+        ],
+        inertia: false
+    });
 }
 
 function destroyDragAndDrop() {
     interact('.table-item').unset();
     interact('.fixture-item').unset();
+    interact('.subsector-area').unset();
 }
 
 function loadSector(sectorId) {
@@ -384,6 +417,7 @@ function saveLayout() {
     
     const tables = [];
     const fixtures = [];
+    const subsectors = [];
     const canvas = document.getElementById('layoutCanvas');
     
     document.querySelectorAll('.table-item').forEach(item => {
@@ -424,6 +458,23 @@ function saveLayout() {
             position_y: positionY
         });
     });
+
+    // Guardar subsectores
+    document.querySelectorAll('.subsector-area').forEach(item => {
+        const subsectorId = item.getAttribute('data-subsector-id');
+        const initialLeft = parseFloat(item.style.left) || parseFloat(item.getAttribute('data-initial-x')) || 0;
+        const initialTop = parseFloat(item.style.top) || parseFloat(item.getAttribute('data-initial-y')) || 0;
+        const offsetX = parseFloat(item.getAttribute('data-x')) || 0;
+        const offsetY = parseFloat(item.getAttribute('data-y')) || 0;
+        const positionX = Math.max(0, Math.round(initialLeft + offsetX));
+        const positionY = Math.max(0, Math.round(initialTop + offsetY));
+
+        subsectors.push({
+            id: subsectorId,
+            position_x: positionX,
+            position_y: positionY
+        });
+    });
     
     fetch('{{ route('tables.update-layout') }}', {
         method: 'POST',
@@ -435,7 +486,8 @@ function saveLayout() {
         body: JSON.stringify({
             sector_id: {{ $selectedSector->id ?? 'null' }},
             tables: tables,
-            fixtures: fixtures
+            fixtures: fixtures,
+            subsectors: subsectors
         })
     })
     .then(response => response.json())

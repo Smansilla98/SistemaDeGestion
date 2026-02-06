@@ -201,23 +201,35 @@ class TableController extends Controller
     {
         $restaurantId = auth()->user()->restaurant_id;
 
+        // Solo mostrar sectores principales (no subsectores) en el selector
         $sectors = Sector::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
+            ->where('type', Sector::TYPE_SECTOR)
+            ->whereNull('parent_id')
+            ->orderBy('name')
             ->get();
 
         $selectedSector = null;
         $tables = collect();
 
         if ($sectorId) {
+            // Cargar el sector principal con sus mesas y subsectores
             $selectedSector = Sector::where('restaurant_id', $restaurantId)
                 ->where('id', $sectorId)
+                ->where('type', Sector::TYPE_SECTOR)
+                ->whereNull('parent_id')
                 ->firstOrFail();
 
+            // Cargar mesas del sector principal
             $tables = Table::where('sector_id', $sectorId)
+                ->orderBy('number')
                 ->get();
             
-            // Cargar subsectores con sus items
-            $selectedSector->load(['subsectors.items' => function($query) {
+            // Cargar subsectores con sus items ordenados
+            $selectedSector->load(['subsectors' => function($query) {
+                $query->where('is_active', true)
+                      ->orderBy('name');
+            }, 'subsectors.items' => function($query) {
                 $query->orderBy('position');
             }]);
         }
@@ -444,6 +456,10 @@ class TableController extends Controller
             'fixtures.*.id' => 'required_with:fixtures|string|max:50',
             'fixtures.*.position_x' => 'required_with:fixtures|integer|min:0',
             'fixtures.*.position_y' => 'required_with:fixtures|integer|min:0',
+            'subsectors' => 'nullable|array',
+            'subsectors.*.id' => 'required_with:subsectors|exists:sectors,id',
+            'subsectors.*.position_x' => 'required_with:subsectors|integer|min:0',
+            'subsectors.*.position_y' => 'required_with:subsectors|integer|min:0',
         ]);
 
         foreach ($validated['tables'] as $tableData) {
@@ -458,10 +474,11 @@ class TableController extends Controller
         }
 
         // Guardar elementos fijos del sector (ej: escenario) en layout_config
-        if (!empty($validated['fixtures'])) {
-            $sector = Sector::find($validated['sector_id']);
-            if ($sector) {
-                $layoutConfig = is_array($sector->layout_config) ? $sector->layout_config : [];
+        $sector = Sector::find($validated['sector_id']);
+        if ($sector) {
+            $layoutConfig = is_array($sector->layout_config) ? $sector->layout_config : [];
+            
+            if (!empty($validated['fixtures'])) {
                 $layoutConfig['fixtures'] = $layoutConfig['fixtures'] ?? [];
 
                 foreach ($validated['fixtures'] as $fixture) {
@@ -470,8 +487,22 @@ class TableController extends Controller
                         'y' => (int) $fixture['position_y'],
                     ];
                 }
+            }
 
-                $sector->update(['layout_config' => $layoutConfig]);
+            $sector->update(['layout_config' => $layoutConfig]);
+        }
+
+        // Guardar posiciones de subsectores
+        if (!empty($validated['subsectors'])) {
+            foreach ($validated['subsectors'] as $subsectorData) {
+                $subsector = Sector::find($subsectorData['id']);
+                if ($subsector && $subsector->parent_id == $validated['sector_id']) {
+                    $subsectorLayoutConfig = is_array($subsector->layout_config) ? $subsector->layout_config : [];
+                    $subsectorLayoutConfig['x'] = (int) $subsectorData['position_x'];
+                    $subsectorLayoutConfig['y'] = (int) $subsectorData['position_y'];
+                    
+                    $subsector->update(['layout_config' => $subsectorLayoutConfig]);
+                }
             }
         }
 
