@@ -513,6 +513,11 @@ document.getElementById('quickOrderForm').addEventListener('submit', function(e)
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Abrir PDF automáticamente
+                    if (data.print_url) {
+                        window.open(data.print_url, '_blank');
+                    }
+                    
                     Swal.fire({
                         icon: 'success',
                         title: '¡Pedido procesado!',
