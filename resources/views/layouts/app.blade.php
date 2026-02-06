@@ -799,39 +799,52 @@
         </div>
 
         <nav class="nova-sidebar-nav">
-            <a href="{{ route('dashboard') }}" class="nova-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-house"></i>
-                <span>Página Principal</span>
-            </a>
-
-            @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
-            <a href="{{ route('tables.index') }}" class="nova-nav-item {{ request()->routeIs('tables.*') ? 'active' : '' }}">
-                <i class="bi bi-table"></i>
-                <span>Mesas</span>
-            </a>
-            <a href="{{ route('orders.index') }}" class="nova-nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i>
-                <span>Pedidos</span>
-            </a>
-            @endif
-
-
-            @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
-            <a href="{{ route('cash-register.index') }}" class="nova-nav-item {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
-                <i class="bi bi-cash-coin"></i>
-                <span>Caja</span>
-            </a>
-            @endif
+            <!-- Grupo 1: Operaciones Diarias -->
+            <div class="nova-nav-group">
+                <div class="nova-nav-group-header {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') ? 'active' : '' }}" onclick="toggleNavGroup('operaciones-diarias')">
+                    <i class="bi bi-calendar-day"></i>
+                    <span>Operaciones Diarias</span>
+                    <i class="bi bi-chevron-down ms-auto" id="operaciones-diarias-icon"></i>
+                </div>
+                <div class="nova-nav-group-items {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') ? 'show' : '' }}" id="operaciones-diarias-items">
+                    <a href="{{ route('dashboard') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <i class="bi bi-house"></i>
+                        <span>Página Principal</span>
+                    </a>
+                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                    <a href="{{ route('tables.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('tables.*') ? 'active' : '' }}">
+                        <i class="bi bi-table"></i>
+                        <span>Mesas</span>
+                    </a>
+                    <a href="{{ route('orders.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                        <i class="bi bi-receipt"></i>
+                        <span>Pedidos</span>
+                    </a>
+                    @endif
+                    @if(in_array(auth()->user()->role, ['ADMIN', 'COCINA']))
+                    <a href="{{ route('kitchen.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
+                        <i class="bi bi-egg-fried"></i>
+                        <span>Cocina</span>
+                    </a>
+                    @endif
+                    @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+                    <a href="{{ route('cash-register.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>Caja</span>
+                    </a>
+                    @endif
+                </div>
+            </div>
 
             @if(auth()->user()->role === 'ADMIN')
-            <!-- Grupo: Vistas Generales -->
+            <!-- Grupo 2: Gestión del Restaurante -->
             <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') ? 'active' : '' }}" onclick="toggleNavGroup('vistas-generales')">
-                    <i class="bi bi-folder2-open"></i>
-                    <span>Vistas Generales</span>
-                    <i class="bi bi-chevron-down ms-auto" id="vistas-generales-icon"></i>
+                <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'active' : '' }}" onclick="toggleNavGroup('gestion-restaurante')">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>Gestión del Restaurante</span>
+                    <i class="bi bi-chevron-down ms-auto" id="gestion-restaurante-icon"></i>
                 </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') ? 'show' : '' }}" id="vistas-generales-items">
+                <div class="nova-nav-group-items {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'show' : '' }}" id="gestion-restaurante-items">
                     <a href="{{ route('sectors.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
                         <i class="bi bi-building"></i>
                         <span>Sectores</span>
@@ -844,37 +857,64 @@
                         <i class="bi bi-cup-straw"></i>
                         <span>Productos</span>
                     </a>
+                    <a href="{{ route('stock.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                        <i class="bi bi-inboxes"></i>
+                        <span>Stock</span>
+                    </a>
+                    <a href="{{ route('users.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="bi bi-people"></i>
+                        <span>Usuarios</span>
+                    </a>
+                    <a href="{{ route('printers.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('printers.*') ? 'active' : '' }}">
+                        <i class="bi bi-printer"></i>
+                        <span>Impresoras</span>
+                    </a>
                 </div>
             </div>
 
-            <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i>
-                <span>Usuarios</span>
-            </a>
-            <a href="{{ route('stock.index') }}" class="nova-nav-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-                <i class="bi bi-inboxes"></i>
-                <span>Stock</span>
-            </a>
-            <a href="{{ route('events.index') }}" class="nova-nav-item {{ request()->routeIs('events.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-event"></i>
-                <span>Eventos</span>
-            </a>
-            @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
-            <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
-                <i class="bi bi-cash-stack"></i>
-                <span>Gastos Fijos</span>
-            </a>
-            @endif
-            @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'CAJERO']))
-            <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-repeat"></i>
-                <span>Actividades Recurrentes</span>
-            </a>
-            @endif
-            <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up"></i>
-                <span>Reportes</span>
-            </a>
+            <!-- Grupo 3: Planificación y Eventos -->
+            <div class="nova-nav-group">
+                <div class="nova-nav-group-header {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'active' : '' }}" onclick="toggleNavGroup('planificacion')">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Planificación y Eventos</span>
+                    <i class="bi bi-chevron-down ms-auto" id="planificacion-icon"></i>
+                </div>
+                <div class="nova-nav-group-items {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'show' : '' }}" id="planificacion-items">
+                    <a href="{{ route('events.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('events.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-event"></i>
+                        <span>Eventos</span>
+                    </a>
+                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'CAJERO']))
+                    <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-repeat"></i>
+                        <span>Actividades Recurrentes</span>
+                    </a>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Grupo 4: Finanzas y Reportes -->
+            <div class="nova-nav-group">
+                <div class="nova-nav-group-header {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'active' : '' }}" onclick="toggleNavGroup('finanzas')">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Finanzas y Reportes</span>
+                    <i class="bi bi-chevron-down ms-auto" id="finanzas-icon"></i>
+                </div>
+                <div class="nova-nav-group-items {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'show' : '' }}" id="finanzas-items">
+                    @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+                    <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Gastos Fijos</span>
+                    </a>
+                    @endif
+                    <a href="{{ route('reports.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Reportes</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Configuración (sin grupo, siempre visible) -->
             <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
                 <span>Configuración</span>

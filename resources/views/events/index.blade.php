@@ -12,7 +12,7 @@
                 </h1>
             </div>
             @can('create', App\Models\Event::class)
-            <a href="{{ route('events.create') }}" class="btn btn-primary w-100 w-md-auto">
+            <a href="{{ route('events.create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Nuevo </span>Evento
             </a>
             @endcan
