@@ -436,12 +436,18 @@ document.getElementById('quickOrderForm').addEventListener('submit', function(e)
         observations: item.observations || ''
     }));
     
-    const payments = paymentMethods.map(payment => ({
-        payment_method: payment.method,
-        amount: parseFloat(payment.amount),
-        operation_number: payment.operation_number || null,
-        notes: payment.notes || null
-    }));
+    const payments = paymentMethods.map(payment => {
+        const amount = parseFloat(payment.amount) || 0;
+        if (isNaN(amount) || amount <= 0) {
+            throw new Error(`El monto del método de pago "${payment.method}" no es válido`);
+        }
+        return {
+            payment_method: payment.method,
+            amount: amount,
+            operation_number: payment.operation_number || null,
+            notes: payment.notes || null
+        };
+    });
     
     // Confirmar
     Swal.fire({
