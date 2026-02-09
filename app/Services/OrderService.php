@@ -126,6 +126,21 @@ class OrderService
         return DB::transaction(function () use ($order, $itemData) {
             $product = Product::findOrFail($itemData['product_id']);
 
+            // Validar que el producto pertenezca al restaurante
+            if ($product->restaurant_id !== $order->restaurant_id) {
+                throw new \Exception("El producto '{$product->name}' no pertenece a este restaurante");
+            }
+
+            // Validar que el producto esté activo
+            if (!$product->is_active) {
+                throw new \Exception("El producto '{$product->name}' no está activo");
+            }
+
+            // Validar cantidad
+            if (!isset($itemData['quantity']) || $itemData['quantity'] < 1) {
+                throw new \Exception("La cantidad debe ser mayor a 0");
+            }
+
             // Verificar stock si el producto lo requiere
             if ($product->has_stock) {
                 $currentStock = $product->getCurrentStock($order->restaurant_id);

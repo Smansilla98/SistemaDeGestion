@@ -368,13 +368,27 @@ class OrderController extends Controller
     {
         Gate::authorize('create', Order::class);
 
+        $restaurantId = auth()->user()->restaurant_id;
+        
         $validated = $request->validate([
             'cash_register_session_id' => 'required|exists:cash_register_sessions,id',
-            'customer_name' => 'required|string|max:255',
+            'customer_name' => 'required|string|min:2|max:255',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.observations' => 'nullable|string',
+            'items.*.product_id' => [
+                'required',
+                'exists:products,id',
+                function ($attribute, $value, $fail) use ($restaurantId) {
+                    $product = \App\Models\Product::find($value);
+                    if ($product && $product->restaurant_id !== $restaurantId) {
+                        $fail('El producto seleccionado no pertenece a este restaurante.');
+                    }
+                    if ($product && !$product->is_active) {
+                        $fail('El producto seleccionado no está activo.');
+                    }
+                },
+            ],
+            'items.*.quantity' => 'required|integer|min:1|max:999',
+            'items.*.observations' => 'nullable|string|max:500',
             'payments' => 'required|array|min:1',
             'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA,QR,MIXTO',
             'payments.*.amount' => 'required|numeric|min:0.01',
@@ -384,6 +398,13 @@ class OrderController extends Controller
         ]);
 
         try {
+            Log::info('Iniciando procesamiento de pedido rápido', [
+                'user_id' => auth()->id(),
+                'restaurant_id' => auth()->user()->restaurant_id,
+                'items_count' => count($validated['items']),
+                'payments_count' => count($validated['payments']),
+            ]);
+
             return DB::transaction(function () use ($validated, $request) {
                 $restaurantId = auth()->user()->restaurant_id;
                 $cashRegisterSession = CashRegisterSession::findOrFail($validated['cash_register_session_id']);
@@ -401,6 +422,24 @@ class OrderController extends Controller
                     abort(403, 'No tienes acceso a esta sesión de caja');
                 }
 
+                // Validar productos antes de crear el pedido
+                foreach ($validated['items'] as $itemData) {
+                    $product = \App\Models\Product::findOrFail($itemData['product_id']);
+                    if ($product->restaurant_id !== $restaurantId) {
+                        throw new \Exception("El producto '{$product->name}' no pertenece a este restaurante");
+                    }
+                    if (!$product->is_active) {
+                        throw new \Exception("El producto '{$product->name}' no está activo");
+                    }
+                    // Validar stock antes de crear el pedido
+                    if ($product->has_stock) {
+                        $currentStock = $product->getCurrentStock($restaurantId);
+                        if ($currentStock < $itemData['quantity']) {
+                            throw new \Exception("Stock insuficiente para '{$product->name}'. Disponible: {$currentStock}, Solicitado: {$itemData['quantity']}");
+                        }
+                    }
+                }
+
                 // Crear pedido rápido (sin mesa)
                 $orderData = [
                     'restaurant_id' => $restaurantId,
@@ -410,46 +449,117 @@ class OrderController extends Controller
                     'table_session_id' => null, // Sin sesión de mesa
                     'customer_name' => $validated['customer_name'],
                     'observations' => 'Pedido rápido - Consumo inmediato',
-                    'items' => $validated['items'],
                 ];
 
                 $order = $this->orderService->createOrder($orderData);
+                Log::info('Pedido creado', ['order_id' => $order->id, 'order_number' => $order->number]);
 
-                // Agregar items al pedido
-                foreach ($validated['items'] as $itemData) {
-                    $this->orderService->addItem($order, $itemData);
+                // Agregar items al pedido (ya validados arriba)
+                foreach ($validated['items'] as $index => $itemData) {
+                    try {
+                        Log::debug('Agregando item al pedido', [
+                            'order_id' => $order->id,
+                            'item_index' => $index,
+                            'product_id' => $itemData['product_id'],
+                            'quantity' => $itemData['quantity'],
+                        ]);
+                        $this->orderService->addItem($order, $itemData);
+                    } catch (\Exception $e) {
+                        Log::error('Error al agregar item al pedido', [
+                            'order_id' => $order->id,
+                            'item_index' => $index,
+                            'product_id' => $itemData['product_id'] ?? null,
+                            'error' => $e->getMessage(),
+                        ]);
+                        // Si falla al agregar un item, cancelar el pedido y lanzar error
+                        $order->update(['status' => Order::STATUS_CANCELADO]);
+                        throw new \Exception("Error al agregar item al pedido: " . $e->getMessage());
+                    }
                 }
 
-                // Recalcular total
+                // Recalcular total (addItem ya lo hace, pero asegurarnos que esté actualizado)
+                $order->refresh();
                 $order->calculateTotal();
                 $order->refresh();
 
+                // Validar que el pedido tenga items
+                $itemsCount = $order->items()->count();
+                if ($itemsCount === 0) {
+                    Log::error('Pedido sin items', ['order_id' => $order->id]);
+                    $order->update(['status' => Order::STATUS_CANCELADO]);
+                    throw new \Exception('El pedido no tiene items. No se puede procesar.');
+                }
+
+                // Validar que el total del pedido sea mayor a 0
+                if ($order->total <= 0) {
+                    Log::error('Pedido con total inválido', [
+                        'order_id' => $order->id,
+                        'total' => $order->total,
+                        'items_count' => $itemsCount,
+                    ]);
+                    $order->update(['status' => Order::STATUS_CANCELADO]);
+                    throw new \Exception('El total del pedido debe ser mayor a 0.');
+                }
+
+                Log::info('Pedido validado correctamente', [
+                    'order_id' => $order->id,
+                    'items_count' => $itemsCount,
+                    'total' => $order->total,
+                ]);
+
                 // Calcular total pagado
-                $totalPaid = collect($validated['payments'])->sum('amount');
+                $totalPaid = collect($validated['payments'])->sum(function ($payment) {
+                    return (float) $payment['amount'];
+                });
+                
+                // Validar que el total pagado sea válido
+                if ($totalPaid <= 0) {
+                    $order->update(['status' => Order::STATUS_CANCELADO]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El total pagado debe ser mayor a 0.'
+                    ], 422);
+                }
+
                 $change = $totalPaid - $order->total;
 
                 // Validar que el pago sea suficiente
                 if ($totalPaid < $order->total - 0.01) {
                     // Revertir pedido si el pago es insuficiente
-                    $order->update(['status' => 'CANCELADO']);
+                    $order->update(['status' => Order::STATUS_CANCELADO]);
                     return response()->json([
                         'success' => false,
-                        'message' => "El total pagado ($${totalPaid}) es menor al total a pagar ($${order->total}). Faltan $" . number_format($order->total - $totalPaid, 2)
+                        'message' => "El total pagado ($" . number_format($totalPaid, 2) . ") es menor al total a pagar ($" . number_format($order->total, 2) . "). Faltan $" . number_format($order->total - $totalPaid, 2)
                     ], 422);
                 }
 
                 // Registrar pagos
-                foreach ($validated['payments'] as $paymentData) {
-                    Payment::create([
-                        'restaurant_id' => $restaurantId,
-                        'order_id' => $order->id,
-                        'cash_register_session_id' => $cashRegisterSession->id,
-                        'user_id' => auth()->id(),
-                        'payment_method' => $paymentData['payment_method'],
-                        'amount' => $paymentData['amount'],
-                        'operation_number' => $paymentData['operation_number'] ?? null,
-                        'notes' => $paymentData['notes'] ?? 'Pedido rápido - Consumo inmediato',
-                    ]);
+                foreach ($validated['payments'] as $index => $paymentData) {
+                    try {
+                        Payment::create([
+                            'restaurant_id' => $restaurantId,
+                            'order_id' => $order->id,
+                            'cash_register_session_id' => $cashRegisterSession->id,
+                            'user_id' => auth()->id(),
+                            'payment_method' => $paymentData['payment_method'],
+                            'amount' => $paymentData['amount'],
+                            'operation_number' => $paymentData['operation_number'] ?? null,
+                            'notes' => $paymentData['notes'] ?? 'Pedido rápido - Consumo inmediato',
+                        ]);
+                        Log::debug('Pago registrado', [
+                            'order_id' => $order->id,
+                            'payment_index' => $index,
+                            'method' => $paymentData['payment_method'],
+                            'amount' => $paymentData['amount'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Error al registrar pago', [
+                            'order_id' => $order->id,
+                            'payment_index' => $index,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw new \Exception("Error al registrar pago: " . $e->getMessage());
+                    }
                 }
 
                 // Cerrar el pedido inmediatamente
@@ -500,7 +610,12 @@ class OrderController extends Controller
                     ->with('success', $successMessage);
             });
         } catch (\Exception $e) {
-            Log::error('Error al procesar pedido rápido: ' . $e->getMessage());
+            Log::error('Error al procesar pedido rápido', [
+                'user_id' => auth()->id(),
+                'restaurant_id' => auth()->user()->restaurant_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
