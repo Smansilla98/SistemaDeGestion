@@ -59,18 +59,19 @@
                 <h5 class="mb-0">Cerrar Sesión</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('cash-register.close-session', $session) }}" method="POST">
+                <form action="{{ route('cash-register.close-session', $session) }}" method="POST" id="closeSessionForm">
                     @csrf
                     <div class="mb-3">
                         <label for="final_amount" class="form-label">Monto Final en Caja</label>
-                        <input type="number" step="0.01" class="form-control" id="final_amount" name="final_amount" required min="0">
-                        <small class="text-muted">Monto esperado: ${{ number_format($expectedAmount, 2) }}</small>
+                        <input type="number" step="0.01" class="form-control" id="final_amount" name="final_amount" required min="0" value="{{ number_format($expectedAmount, 2, '.', '') }}">
+                        <small class="text-muted">Monto esperado: <strong>${{ number_format($expectedAmount, 2) }}</strong></small>
+                        <div id="differenceAlert" class="mt-2" style="display: none;"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="notes" class="form-label">Notas</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        <label for="notes" class="form-label">Notas (opcional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Observaciones sobre el cierre..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-danger">
+                    <button type="button" class="btn btn-danger w-100" onclick="confirmCloseSession()">
                         <i class="bi bi-lock"></i> Cerrar Sesión
                     </button>
                 </form>
@@ -232,6 +233,64 @@
 
 @push('scripts')
 <script>
+// Calcular diferencia al cambiar monto final
+document.getElementById('final_amount').addEventListener('input', function() {
+    const finalAmount = parseFloat(this.value) || 0;
+    const expectedAmount = {{ $expectedAmount }};
+    const difference = finalAmount - expectedAmount;
+    const alertDiv = document.getElementById('differenceAlert');
+    
+    if (Math.abs(difference) > 0.01) {
+        alertDiv.style.display = 'block';
+        if (difference > 0) {
+            alertDiv.className = 'alert alert-warning mt-2';
+            alertDiv.innerHTML = `<i class="bi bi-arrow-up-circle"></i> Sobrante: $${Math.abs(difference).toFixed(2)}`;
+        } else {
+            alertDiv.className = 'alert alert-danger mt-2';
+            alertDiv.innerHTML = `<i class="bi bi-arrow-down-circle"></i> Faltante: $${Math.abs(difference).toFixed(2)}`;
+        }
+    } else {
+        alertDiv.style.display = 'none';
+    }
+});
+
+function confirmCloseSession() {
+    const finalAmount = parseFloat(document.getElementById('final_amount').value) || 0;
+    const expectedAmount = {{ $expectedAmount }};
+    const difference = finalAmount - expectedAmount;
+    const notes = document.getElementById('notes').value;
+    
+    let message = `<p>¿Estás seguro de cerrar esta sesión?</p>`;
+    message += `<p><strong>Monto esperado:</strong> $${expectedAmount.toFixed(2)}</p>`;
+    message += `<p><strong>Monto final:</strong> $${finalAmount.toFixed(2)}</p>`;
+    
+    if (Math.abs(difference) > 0.01) {
+        if (difference > 0) {
+            message += `<p class="text-warning"><strong>Sobrante:</strong> $${difference.toFixed(2)}</p>`;
+        } else {
+            message += `<p class="text-danger"><strong>Faltante:</strong> $${Math.abs(difference).toFixed(2)}</p>`;
+        }
+    } else {
+        message += `<p class="text-success"><strong>✓ Cuadra perfecto</strong></p>`;
+    }
+    
+    Swal.fire({
+        icon: 'question',
+        title: 'Cerrar Sesión',
+        html: message,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-lock"></i> Sí, cerrar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('closeSessionForm').submit();
+        }
+    });
+}
+
 function confirmDeleteMovement(movementId, description) {
     Swal.fire({
         icon: 'warning',

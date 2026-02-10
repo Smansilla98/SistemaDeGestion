@@ -100,40 +100,68 @@
 </div>
 @endif
 
+@if($cashRegisters->where('is_active', true)->count() > 0)
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Abrir Nueva Sesión</h5>
+    @foreach($cashRegisters->where('is_active', true) as $cashRegister)
+    @php
+        $hasActiveSession = $activeSessions->contains('cash_register_id', $cashRegister->id);
+        $activeSession = $activeSessions->firstWhere('cash_register_id', $cashRegister->id);
+    @endphp
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 {{ $hasActiveSession ? 'border-success' : 'border-primary' }}">
+            <div class="card-header {{ $hasActiveSession ? 'bg-success text-white' : 'bg-primary text-white' }}">
+                <h5 class="mb-0">
+                    <i class="bi bi-cash-register"></i> {{ $cashRegister->name }}
+                    @if($hasActiveSession)
+                        <span class="badge bg-light text-success ms-2">Abierta</span>
+                    @endif
+                </h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('cash-register.open-session') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="cash_register_id" class="form-label">Caja</label>
-                        <select class="form-select" id="cash_register_id" name="cash_register_id" required>
-                            <option value="">Seleccionar caja</option>
-                            @foreach($cashRegisters->where('is_active', true) as $cashRegister)
-                            <option value="{{ $cashRegister->id }}">{{ $cashRegister->name }}</option>
-                            @endforeach
-                        </select>
-                        @if($cashRegisters->where('is_active', true)->count() === 0)
-                        <small class="text-danger">No hay cajas activas disponibles. <a href="{{ route('cash-register.create') }}">Crear una caja</a></small>
-                        @endif
+                @if($hasActiveSession)
+                    <div class="alert alert-success mb-3">
+                        <p class="mb-1"><strong>Sesión activa</strong></p>
+                        <p class="mb-1 small">Abierta por: {{ $activeSession->user->name }}</p>
+                        <p class="mb-0 small">Desde: {{ $activeSession->opened_at->format('d/m/Y H:i') }}</p>
+                        <p class="mb-0 small">Monto inicial: ${{ number_format($activeSession->initial_amount, 2) }}</p>
                     </div>
-                    <div class="mb-3">
-                        <label for="initial_amount" class="form-label">Monto Inicial</label>
-                        <input type="number" step="0.01" class="form-control" id="initial_amount" name="initial_amount" required min="0">
-                    </div>
-                    <button type="submit" class="btn btn-primary" {{ $cashRegisters->where('is_active', true)->count() === 0 ? 'disabled' : '' }}>
-                        <i class="bi bi-cash-stack"></i> Abrir Sesión
-                    </button>
-                </form>
+                    <a href="{{ route('cash-register.session', $activeSession) }}" class="btn btn-success w-100">
+                        <i class="bi bi-eye"></i> Ver Sesión
+                    </a>
+                @else
+                    <form action="{{ route('cash-register.open-session') }}" method="POST" class="open-session-form">
+                        @csrf
+                        <input type="hidden" name="cash_register_id" value="{{ $cashRegister->id }}">
+                        <div class="mb-3">
+                            <label for="initial_amount_{{ $cashRegister->id }}" class="form-label">Monto Inicial</label>
+                            <input type="number" step="0.01" class="form-control" 
+                                   id="initial_amount_{{ $cashRegister->id }}" 
+                                   name="initial_amount" 
+                                   required 
+                                   min="0"
+                                   value="0"
+                                   placeholder="0.00">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-cash-stack"></i> Abrir Sesión
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>
-    
+    @endforeach
 </div>
+@else
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle"></i> No hay cajas activas</h5>
+            <p>No hay cajas activas disponibles. <a href="{{ route('cash-register.create') }}">Crear una caja</a></p>
+        </div>
+    </div>
+</div>
+@endif
 
 @push('scripts')
 <script>
@@ -172,4 +200,5 @@ function confirmDeleteCashRegister(cashRegisterId, cashRegisterName) {
 </script>
 @endpush
 @endsection
+
 

@@ -388,6 +388,17 @@
     </div>
 </div>
 
+<!-- Búsqueda de mesas -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <input type="text" id="tableSearch" class="form-control" placeholder="🔍 Buscar mesa por número o nombre...">
+            </div>
+        </div>
+    </div>
+</div>
+
 @foreach($sectors as $sector)
 <div class="card mb-4">
     <div class="card-header sector-header">
@@ -401,7 +412,9 @@
     <div class="card-body">
         <div class="row">
             @forelse($sector->tables as $table)
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3 table-item" 
+                 data-table-number="{{ strtolower($table->number) }}"
+                 data-sector-name="{{ strtolower($sector->name) }}">
                 <div class="card h-100 table-card border-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
                     <div class="card-body table-card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -626,17 +639,16 @@
                                 <input type="text" class="form-control" id="productSearch" placeholder="Buscar producto..." style="max-width: 100%;">
                             </div>
 
-                            <div class="accordion" id="productsAccordion">
+                            <div id="productsAccordion">
                                 @foreach($products as $categoryName => $categoryProducts)
-                                    <div class="accordion-item">
-                                        <h2 class="accordion-header" id="heading-{{ \Illuminate\Support\Str::slug($categoryName) }}">
-                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ \Illuminate\Support\Str::slug($categoryName) }}">
-                                                {{ $categoryName }}
-                                                <span class="badge bg-secondary ms-2">{{ $categoryProducts->count() }}</span>
-                                            </button>
-                                        </h2>
-                                        <div id="collapse-{{ \Illuminate\Support\Str::slug($categoryName) }}" class="accordion-collapse collapse" data-bs-parent="#productsAccordion">
-                                            <div class="accordion-body">
+                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
+                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
+                                            <h6 class="mb-0 text-white" style="font-weight: 700;">
+                                                <i class="bi bi-tag-fill"></i> {{ $categoryName }}
+                                            </h6>
+                                            <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
+                                        </div>
+                                        <div class="row g-2">
                                                 <div class="row">
                                                     @foreach($categoryProducts as $product)
                                                         @php
@@ -644,8 +656,8 @@
                                                             $isOutOfStock = $currentStock !== null && $currentStock <= 0;
                                                             $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
                                                         @endphp
-                                                        <div class="col-12 col-md-6 mb-3 product-item" data-name="{{ strtolower($product->name) }}">
-                                                            <div class="d-flex justify-content-between align-items-start border rounded p-3 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
+                                                        <div class="col-12 col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}" data-category-name="{{ strtolower($categoryName) }}">
+                                                            <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
                                                                 <div class="me-2 flex-grow-1">
                                                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                                                                         <strong class="fs-6">{{ $product->name }}</strong>
@@ -686,8 +698,6 @@
                                                             </div>
                                                         </div>
                                                     @endforeach
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
@@ -1069,13 +1079,56 @@ function renderModalItems() {
 
 function filterProducts(term) {
     const t = (term || '').toLowerCase().trim();
-    document.querySelectorAll('.product-item').forEach(el => {
-        const name = el.getAttribute('data-name') || '';
-        el.style.display = (!t || name.includes(t)) ? '' : 'none';
+    
+    document.querySelectorAll('.category-section-modal').forEach(section => {
+        let hasVisibleProducts = false;
+        
+        section.querySelectorAll('.product-item').forEach(el => {
+            const name = el.getAttribute('data-name') || '';
+            const categoryName = el.getAttribute('data-category-name') || '';
+            
+            if (!t || name.includes(t) || categoryName.includes(t)) {
+                el.style.display = '';
+                hasVisibleProducts = true;
+            } else {
+                el.style.display = 'none';
+            }
+        });
+        
+        // Mostrar/ocultar sección según si tiene productos visibles
+        section.style.display = hasVisibleProducts ? 'block' : 'none';
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda de mesas
+    const tableSearch = document.getElementById('tableSearch');
+    if (tableSearch) {
+        tableSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            document.querySelectorAll('.table-item').forEach(item => {
+                const tableNumber = item.dataset.tableNumber || '';
+                const sectorName = item.dataset.sectorName || '';
+                
+                if (!searchTerm || tableNumber.includes(searchTerm) || sectorName.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Ocultar secciones de sector si no tienen mesas visibles
+            document.querySelectorAll('.card.mb-4').forEach(card => {
+                const visibleTables = card.querySelectorAll('.table-item[style="display: block;"], .table-item:not([style*="display: none"])').length;
+                if (searchTerm && visibleTables === 0) {
+                    card.style.display = 'none';
+                } else {
+                    card.style.display = 'block';
+                }
+            });
+        });
+    }
+    
     const search = document.getElementById('productSearch');
     if (search) {
         search.addEventListener('input', (e) => filterProducts(e.target.value));
