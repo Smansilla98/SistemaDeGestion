@@ -321,7 +321,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Mostrar formulario de pedido rápido (consumo inmediato)
+     * Mostrar lista de pedidos rápidos
      */
     public function quickOrder()
     {
@@ -334,31 +334,301 @@ class OrderController extends Controller
             ->where('status', 'ABIERTA')
             ->first();
 
-        if (!$activeSession) {
-            return redirect()->route('cash-register.index')
-                ->with('error', 'Debes tener una sesión de caja abierta para realizar pedidos rápidos');
-        }
+        // Obtener pedidos rápidos activos (sin mesa, no cerrados)
+        $activeQuickOrders = Order::where('restaurant_id', $restaurantId)
+            ->whereNull('table_id')
+            ->whereNull('subsector_item_id')
+            ->where('status', '!=', Order::STATUS_CERRADO)
+            ->where('status', '!=', Order::STATUS_CANCELADO)
+            ->with(['user', 'items'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        // Obtener productos vendibles (no insumos)
+        // Obtener productos vendibles (no insumos) agrupados por categoría
         $products = Product::where('restaurant_id', $restaurantId)
             ->where('type', 'PRODUCT')
             ->where('is_active', true)
             ->with('category')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->groupBy(function($product) {
+                return $product->category ? $product->category->name : 'Sin Categoría';
+            });
 
-        // Agrupar por categoría
-        $categories = Category::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
-            ->with(['products' => function($query) use ($restaurantId) {
-                $query->where('restaurant_id', $restaurantId)
-                    ->where('type', 'PRODUCT')
-                    ->where('is_active', true);
-            }])
-            ->orderBy('display_order')
-            ->get();
+        return view('orders.quick-order', compact('activeSession', 'activeQuickOrders', 'products'));
+    }
 
-        return view('orders.quick-order', compact('activeSession', 'products', 'categories'));
+    /**
+     * Crear nuevo pedido rápido
+     */
+    public function storeQuickOrder(Request $request)
+    {
+        Gate::authorize('create', Order::class);
+
+        $restaurantId = auth()->user()->restaurant_id;
+        
+        // Verificar sesión de caja activa
+        $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('status', 'ABIERTA')
+            ->first();
+
+        if (!$activeSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes tener una sesión de caja abierta para realizar pedidos rápidos'
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'customer_name' => 'required|string|min:2|max:255',
+            'observations' => 'nullable|string|max:500',
+            'send_to_kitchen' => 'nullable|boolean',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.observations' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $orderData = [
+                'restaurant_id' => $restaurantId,
+                'user_id' => auth()->id(),
+                'table_id' => null,
+                'subsector_item_id' => null,
+                'table_session_id' => null,
+                'customer_name' => $validated['customer_name'],
+                'observations' => $validated['observations'] ?? null,
+                'items' => $validated['items'],
+            ];
+
+            $order = $this->orderService->createOrder($orderData);
+
+            // Agregar items al pedido
+            foreach ($validated['items'] as $itemData) {
+                $this->orderService->addItem($order, $itemData);
+            }
+
+            // Recargar el pedido con sus relaciones
+            $order->load(['items.product', 'items.modifiers']);
+
+            // Enviar a cocina si se solicita
+            $printMessage = '';
+            if ($request->boolean('send_to_kitchen')) {
+                try {
+                    $this->orderService->sendToKitchen($order);
+                    
+                    // Imprimir comanda automáticamente
+                    $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
+                    if (!$printer) {
+                        $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
+                            ->where('is_active', true)
+                            ->first();
+                    }
+                    if ($printer) {
+                        $this->printService->printComanda($order, $printer);
+                        $printMessage = ' Pedido enviado a cocina y comanda impresa.';
+                    } else {
+                        $printMessage = ' Pedido enviado a cocina.';
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al enviar pedido rápido a cocina: ' . $e->getMessage());
+                    $printMessage = ' Pedido creado. Error al enviar a cocina.';
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
+                'order_id' => $order->id,
+                'order_number' => $order->number,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al crear pedido rápido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el pedido: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Mostrar pedido rápido
+     */
+    public function showQuickOrder(Order $order)
+    {
+        Gate::authorize('view', $order);
+
+        // Verificar que sea un pedido rápido (sin mesa)
+        if ($order->table_id !== null || $order->subsector_item_id !== null) {
+            abort(404, 'Este no es un pedido rápido');
+        }
+
+        $order->load(['user', 'items.product.category', 'items.modifiers', 'payments']);
+
+        return view('orders.quick-show', compact('order'));
+    }
+
+    /**
+     * Mostrar formulario para cerrar cuenta de pedido rápido
+     */
+    public function closeQuickOrder(Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        // Verificar que sea un pedido rápido
+        if ($order->table_id !== null || $order->subsector_item_id !== null) {
+            abort(404, 'Este no es un pedido rápido');
+        }
+
+        if ($order->status === Order::STATUS_CERRADO) {
+            return redirect()->route('orders.quick.show', $order)
+                ->with('error', 'Este pedido ya está cerrado');
+        }
+
+        // Verificar sesión de caja activa
+        $restaurantId = auth()->user()->restaurant_id;
+        $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('status', 'ABIERTA')
+            ->first();
+
+        if (!$activeSession) {
+            return redirect()->route('orders.quick')
+                ->with('error', 'Debes tener una sesión de caja abierta para cerrar pedidos');
+        }
+
+        $order->load(['items.product.category', 'items.modifiers', 'user']);
+
+        return view('orders.quick-close', compact('order', 'activeSession'));
+    }
+
+    /**
+     * Procesar pago y cerrar pedido rápido
+     */
+    public function processQuickPayment(Request $request, Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        // Verificar que sea un pedido rápido
+        if ($order->table_id !== null || $order->subsector_item_id !== null) {
+            abort(404, 'Este no es un pedido rápido');
+        }
+
+        if ($order->status === Order::STATUS_CERRADO) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este pedido ya está cerrado'
+            ], 422);
+        }
+
+        // Verificar sesión de caja activa
+        $restaurantId = auth()->user()->restaurant_id;
+        $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('status', 'ABIERTA')
+            ->first();
+
+        if (!$activeSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes tener una sesión de caja abierta para procesar pagos'
+            ], 422);
+        }
+
+        try {
+            $validated = $request->validate([
+                'payments' => 'required|array|min:1',
+                'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA,QR,MIXTO',
+                'payments.*.amount' => 'required|numeric|min:0.01',
+                'payments.*.operation_number' => 'nullable|string|max:255',
+                'payments.*.notes' => 'nullable|string|max:500',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($order, $validated, $activeSession, $restaurantId, $request) {
+                // Calcular total
+                $totalAmount = $order->total;
+                $totalPaid = collect($validated['payments'])->sum('amount');
+
+                // Validar que el total pagado sea mayor o igual al total
+                if ($totalPaid < $totalAmount - 0.01) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "El total pagado ($" . number_format($totalPaid, 2) . ") es menor al total a pagar ($" . number_format($totalAmount, 2) . "). Faltan $" . number_format($totalAmount - $totalPaid, 2)
+                    ], 422);
+                }
+
+                // Calcular cambio si hay excedente
+                $change = $totalPaid - $totalAmount;
+
+                // Registrar pagos
+                foreach ($validated['payments'] as $paymentData) {
+                    Payment::create([
+                        'restaurant_id' => $restaurantId,
+                        'order_id' => $order->id,
+                        'cash_register_session_id' => $activeSession->id,
+                        'user_id' => auth()->id(),
+                        'payment_method' => $paymentData['payment_method'],
+                        'amount' => $paymentData['amount'],
+                        'operation_number' => $paymentData['operation_number'] ?? null,
+                        'notes' => $paymentData['notes'] ?? 'Pedido rápido - ' . $order->customer_name,
+                    ]);
+                }
+
+                // Cerrar el pedido
+                $this->orderService->closeOrder($order, false);
+
+                // Mensaje de éxito
+                $successMessage = 'Pago procesado exitosamente. Pedido cerrado.';
+                if ($change > 0.01) {
+                    $successMessage .= " Cambio: $" . number_format($change, 2) . ".";
+                }
+
+                // Imprimir ticket si hay impresora
+                $printUrl = null;
+                try {
+                    $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
+                    if (!$printer) {
+                        $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
+                            ->where('is_active', true)
+                            ->first();
+                    }
+                    if ($printer) {
+                        $this->printService->printTicket($order, $printer);
+                        $printUrl = route('orders.print.ticket', $order);
+                    }
+                } catch (\Exception $printError) {
+                    Log::warning('Error al imprimir ticket de pedido rápido: ' . $printError->getMessage());
+                }
+
+                if ($request->expectsJson() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => $successMessage,
+                        'order_id' => $order->id,
+                        'order_number' => $order->number,
+                        'total' => $totalAmount,
+                        'total_paid' => $totalPaid,
+                        'change' => $change > 0.01 ? $change : 0,
+                        'print_url' => $printUrl,
+                    ]);
+                }
+
+                return redirect()->route('orders.quick.show', $order)
+                    ->with('success', $successMessage);
+            });
+        } catch (\Exception $e) {
+            Log::error('Error al procesar pago de pedido rápido: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el pago: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -70,6 +70,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [OrderController::class, 'store'])->name('store');
         
         // Pedido rápido (consumo inmediato sin mesa) - DEBE IR ANTES de /{order}
+        // Pedidos rápidos
+        Route::prefix('quick')->name('quick.')->group(function () {
+            Route::get('/', [OrderController::class, 'quickOrder'])->name('index');
+            Route::post('/', [OrderController::class, 'storeQuickOrder'])->name('store');
+            Route::get('/{order}', [OrderController::class, 'showQuickOrder'])->name('show');
+            Route::get('/{order}/close', [OrderController::class, 'closeQuickOrder'])->name('close');
+            Route::post('/{order}/process-payment', [OrderController::class, 'processQuickPayment'])->name('process-payment');
+        });
+        
+        // Mantener ruta antigua para compatibilidad
         Route::get('/quick-order', [OrderController::class, 'quickOrder'])->name('quick-order');
         Route::post('/quick-order', [OrderController::class, 'processQuickOrder'])->name('process-quick-order');
         
