@@ -25,30 +25,86 @@
                 <h5 class="mb-0"><i class="bi bi-box-seam"></i> Productos</h5>
             </div>
             <div class="card-body">
-                <!-- Filtro por categoría -->
-                <div class="mb-3">
-                    <select id="categoryFilter" class="form-select">
-                        <option value="">Todas las categorías</option>
-                        @foreach($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
+                <!-- Búsqueda y filtros -->
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-2">
+                        <input type="text" id="productSearch" class="form-control" placeholder="🔍 Buscar producto por nombre...">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <select id="categoryFilter" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Grid de productos -->
-                <div class="row g-3" id="productsGrid">
-                    @foreach($products as $product)
-                    <div class="col-md-4 col-sm-6 product-item" data-category-id="{{ $product->category_id }}">
-                        <div class="card h-100 product-card" onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }})">
-                            <div class="card-body text-center">
-                                <h6 class="card-title">{{ $product->name }}</h6>
-                                <p class="text-muted small mb-2">{{ $product->category->name ?? '-' }}</p>
-                                <p class="mb-0"><strong class="text-primary">${{ number_format($product->price, 2) }}</strong></p>
+                <!-- Información de sesión -->
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>Sesión activa:</strong> {{ $activeSession->cashRegister->name }} - 
+                    Abierta por {{ $activeSession->user->name }} a las {{ $activeSession->opened_at->format('H:i') }}
+                </div>
+
+                <!-- Categorías agrupadas visualmente -->
+                @foreach($categories as $category)
+                <div class="category-section mb-4" data-category-id="{{ $category->id }}">
+                    <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
+                        <h5 class="mb-0 text-white" style="font-weight: 700;">
+                            <i class="bi bi-tag-fill"></i> {{ $category->name }}
+                        </h5>
+                        <span class="badge bg-light text-dark ms-auto">{{ $category->products->count() }} productos</span>
+                    </div>
+                    <div class="row g-3 products-in-category">
+                        @foreach($category->products as $product)
+                        <div class="col-md-4 col-sm-6 product-item" 
+                             data-category-id="{{ $product->category_id }}"
+                             data-product-name="{{ strtolower($product->name) }}">
+                            <div class="card h-100 product-card" onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }})">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">{{ $product->name }}</h6>
+                                    <p class="text-muted small mb-2">{{ $product->category->name ?? '-' }}</p>
+                                    <p class="mb-0"><strong class="text-primary">${{ number_format($product->price, 2) }}</strong></p>
+                                </div>
                             </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
+                @endforeach
+
+                <!-- Productos sin categoría -->
+                @php
+                    $uncategorizedProducts = $products->filter(function($product) {
+                        return !$product->category_id;
+                    });
+                @endphp
+                @if($uncategorizedProducts->count() > 0)
+                <div class="category-section mb-4" data-category-id="">
+                    <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #6c757d, #5a6268); padding: 0.75rem 1rem; border-radius: 8px;">
+                        <h5 class="mb-0 text-white" style="font-weight: 700;">
+                            <i class="bi bi-question-circle-fill"></i> Sin Categoría
+                        </h5>
+                        <span class="badge bg-light text-dark ms-auto">{{ $uncategorizedProducts->count() }} productos</span>
+                    </div>
+                    <div class="row g-3 products-in-category">
+                        @foreach($uncategorizedProducts as $product)
+                        <div class="col-md-4 col-sm-6 product-item" 
+                             data-category-id=""
+                             data-product-name="{{ strtolower($product->name) }}">
+                            <div class="card h-100 product-card" onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }})">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">{{ $product->name }}</h6>
+                                    <p class="text-muted small mb-2">Sin categoría</p>
+                                    <p class="mb-0"><strong class="text-primary">${{ number_format($product->price, 2) }}</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -87,7 +143,8 @@
                         <input type="text" class="form-control @error('customer_name') is-invalid @enderror" 
                                id="customer_name" name="customer_name" 
                                value="{{ old('customer_name') }}" 
-                               placeholder="Ej: Juan Pérez" required>
+                               placeholder="Ej: Juan Pérez" required
+                               oninput="validateAndEnableProcessButton()">
                         @error('customer_name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -99,7 +156,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="addPaymentMethod()">
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="addPaymentMethod()" id="addPaymentBtn">
                             <i class="bi bi-plus-circle"></i> Agregar Método de Pago
                         </button>
                     </div>
@@ -189,17 +246,45 @@ const paymentMethodOptions = {
     'MIXTO': { icon: 'bi-wallet2', label: 'Mixto', color: '#6c757d' },
 };
 
+// Búsqueda por nombre
+document.getElementById('productSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase().trim();
+    filterProducts();
+});
+
 // Filtro por categoría
 document.getElementById('categoryFilter').addEventListener('change', function() {
-    const categoryId = this.value;
-    document.querySelectorAll('.product-item').forEach(item => {
-        if (!categoryId || item.dataset.categoryId === categoryId) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+    filterProducts();
 });
+
+// Función para filtrar productos
+function filterProducts() {
+    const categoryId = document.getElementById('categoryFilter').value;
+    const searchTerm = document.getElementById('productSearch').value.toLowerCase().trim();
+    
+    document.querySelectorAll('.category-section').forEach(section => {
+        const sectionCategoryId = section.dataset.categoryId;
+        let hasVisibleProducts = false;
+        
+        section.querySelectorAll('.product-item').forEach(item => {
+            const itemCategoryId = item.dataset.categoryId || '';
+            const productName = item.dataset.productName || '';
+            
+            const matchesCategory = !categoryId || categoryId === itemCategoryId;
+            const matchesSearch = !searchTerm || productName.includes(searchTerm);
+            
+            if (matchesCategory && matchesSearch) {
+                item.style.display = 'block';
+                hasVisibleProducts = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Mostrar/ocultar sección de categoría según si tiene productos visibles
+        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    });
+}
 
 // Agregar producto al carrito
 function addToCart(productId, productName, price) {
@@ -236,12 +321,26 @@ function updateQuantity(productId, change) {
 function updateCart() {
     const cartItems = document.getElementById('cartItems');
     const cartTotal = document.getElementById('cartTotal');
+    const addPaymentBtn = document.getElementById('addPaymentBtn');
     
     if (cart.length === 0) {
         cartItems.innerHTML = '<p class="text-muted text-center">El carrito está vacío</p>';
         cartTotal.textContent = '$0.00';
         document.getElementById('processBtn').disabled = true;
+        // Si no hay productos, limpiar métodos de pago
+        if (paymentMethods.length > 0) {
+            paymentMethods = [];
+            renderPaymentMethods();
+        }
+        if (addPaymentBtn) {
+            addPaymentBtn.disabled = true;
+        }
         return;
+    }
+    
+    // Habilitar botón de agregar pago si hay productos
+    if (addPaymentBtn) {
+        addPaymentBtn.disabled = false;
     }
     
     let total = 0;
@@ -277,11 +376,59 @@ function updateCart() {
     cartTotal.textContent = `$${total.toFixed(2)}`;
     
     updatePaymentSummary();
-    document.getElementById('processBtn').disabled = false;
+    validateAndEnableProcessButton();
+}
+
+// Validar y habilitar botón de procesar
+function validateAndEnableProcessButton() {
+    const processBtn = document.getElementById('processBtn');
+    const customerName = document.getElementById('customer_name').value.trim();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalPaid = paymentMethods.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    
+    // El botón se habilita solo si:
+    // 1. Hay productos en el carrito
+    // 2. Hay al menos un método de pago
+    // 3. El total pagado es suficiente (mayor o igual al total)
+    // 4. Hay un nombre de cliente
+    const canProcess = cart.length > 0 && 
+                       paymentMethods.length > 0 && 
+                       totalPaid >= total - 0.01 && 
+                       customerName.length >= 2;
+    
+    processBtn.disabled = !canProcess;
+    
+    // Agregar tooltip o mensaje visual si está deshabilitado
+    if (!canProcess && cart.length > 0) {
+        let reason = '';
+        if (paymentMethods.length === 0) {
+            reason = 'Agrega un método de pago';
+        } else if (totalPaid < total - 0.01) {
+            reason = `Faltan $${(total - totalPaid).toFixed(2)}`;
+        } else if (customerName.length < 2) {
+            reason = 'Ingresa el nombre del consumidor';
+        }
+        
+        if (reason) {
+            processBtn.title = reason;
+        }
+    } else {
+        processBtn.title = '';
+    }
 }
 
 // Agregar método de pago
 function addPaymentMethod() {
+    if (cart.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Carrito vacío',
+            text: 'Agrega productos al carrito antes de agregar métodos de pago',
+            confirmButtonColor: '#ffc107'
+        });
+        return;
+    }
+    
     paymentCounter++;
     const paymentId = `payment_${paymentCounter}`;
     
@@ -344,6 +491,7 @@ function renderPaymentMethods() {
                     </select>
                     <input type="number" step="0.01" class="form-control form-control-sm mb-2" 
                            placeholder="Monto" value="${payment.amount.toFixed(2)}"
+                           oninput="updatePaymentMethod('${payment.id}', 'amount', this.value)"
                            onchange="updatePaymentMethod('${payment.id}', 'amount', this.value)">
                     <input type="text" class="form-control form-control-sm" 
                            placeholder="N° Operación (opcional)" value="${payment.operation_number}"
@@ -377,6 +525,9 @@ function updatePaymentSummary() {
     } else {
         summary.style.display = 'none';
     }
+    
+    // Validar botón después de actualizar pagos
+    validateAndEnableProcessButton();
 }
 
 // Procesar pedido
