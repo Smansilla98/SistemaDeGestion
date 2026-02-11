@@ -197,6 +197,9 @@
         @if($order->status !== 'CERRADO')
         <div class="card mt-4">
             <div class="card-body">
+                <button type="button" class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addItemsModal">
+                    <i class="bi bi-plus-circle"></i> Agregar Items
+                </button>
                 <a href="{{ route('orders.quick.close', $order) }}" class="btn btn-success w-100">
                     <i class="bi bi-cash-coin"></i> Cerrar Cuenta
                 </a>
@@ -205,5 +208,328 @@
         @endif
     </div>
 </div>
+
+<!-- Modal para agregar items -->
+@if($order->status !== 'CERRADO')
+<div class="modal fade" id="addItemsModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen-md-down modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Agregar Items al Pedido {{ $order->number }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
+                            <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
+                            <input type="text" class="form-control" id="addItemsProductSearch" placeholder="🔍 Buscar producto..." style="max-width: 100%;">
+                        </div>
+
+                        <div id="addItemsProductsAccordion">
+                            @foreach($products as $categoryName => $categoryProducts)
+                                <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
+                                    <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
+                                        <h6 class="mb-0 text-white" style="font-weight: 700;">
+                                            <i class="bi bi-tag-fill"></i> {{ $categoryName }}
+                                        </h6>
+                                        <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        @foreach($categoryProducts as $product)
+                                            @php
+                                                $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
+                                                $isOutOfStock = $currentStock !== null && $currentStock <= 0;
+                                                $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
+                                            @endphp
+                                            <div class="col-12 col-md-6 mb-2 product-item" 
+                                                 data-name="{{ strtolower($product->name) }}" 
+                                                 data-category-name="{{ strtolower($categoryName) }}"
+                                                 data-product-id="{{ $product->id }}">
+                                                <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
+                                                    <div class="me-2 flex-grow-1">
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                            <strong class="fs-6">{{ $product->name }}</strong>
+                                                            @if($isOutOfStock)
+                                                                <span class="badge bg-danger" title="Sin stock disponible">
+                                                                    <i class="bi bi-x-circle-fill"></i> Sin Stock
+                                                                </span>
+                                                            @elseif($isLowStock)
+                                                                <span class="badge bg-warning" title="Stock bajo">
+                                                                    <i class="bi bi-exclamation-triangle-fill"></i> Stock: {{ $currentStock }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-muted small mb-1">{{ $categoryName }}</div>
+                                                        <div class="fw-bold text-primary">${{ number_format($product->price, 2) }}</div>
+                                                    </div>
+                                                    <div class="d-flex flex-column align-items-end gap-1">
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-primary add-product-to-order-btn" 
+                                                                data-product-id="{{ $product->id }}"
+                                                                data-product-name="{{ $product->name }}"
+                                                                data-product-price="{{ $product->price }}"
+                                                                {{ $isOutOfStock ? 'disabled' : '' }}>
+                                                            <i class="bi bi-plus-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="sticky-top" style="top: 70px;">
+                            <h6 class="mb-3"><i class="bi bi-receipt"></i> Items a Agregar</h6>
+
+                            <div id="addItemsEmpty" class="text-muted text-center py-3">No hay items seleccionados.</div>
+                            <div id="addItemsList" class="mb-3"></div>
+
+                            <div class="border-top pt-3 pb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <strong class="fs-5">Total a Agregar:</strong> <span id="addItemsTotal" class="fs-4 fw-bold text-primary">$0.00</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-success w-100" id="addItemsConfirmBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
+                                    <i class="bi bi-check-circle"></i> Agregar Items al Pedido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+@push('scripts')
+<script>
+let addItemsList = [];
+let addItemsCounter = 0;
+
+// Búsqueda de productos en modal de agregar items
+document.getElementById('addItemsProductSearch')?.addEventListener('input', function() {
+    filterAddItemsProducts(this.value.toLowerCase().trim());
+});
+
+function filterAddItemsProducts(term) {
+    document.querySelectorAll('#addItemsProductsAccordion .category-section-modal').forEach(section => {
+        let hasVisibleProducts = false;
+        
+        section.querySelectorAll('.product-item').forEach(item => {
+            const name = item.dataset.name || '';
+            const categoryName = item.dataset.categoryName || '';
+            
+            if (!term || name.includes(term) || categoryName.includes(term)) {
+                item.style.display = 'block';
+                hasVisibleProducts = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    });
+}
+
+// Agregar producto a la lista de items a agregar
+document.querySelectorAll('.add-product-to-order-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const productId = parseInt(this.dataset.productId);
+        const productName = this.dataset.productName;
+        const productPrice = parseFloat(this.dataset.productPrice);
+        
+        const existingItem = addItemsList.find(item => item.product_id === productId);
+        
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            addItemsList.push({
+                product_id: productId,
+                name: productName,
+                price: productPrice,
+                quantity: 1,
+                observations: ''
+            });
+        }
+        
+        renderAddItemsList();
+    });
+});
+
+// Renderizar lista de items a agregar
+function renderAddItemsList() {
+    const container = document.getElementById('addItemsList');
+    const emptyMsg = document.getElementById('addItemsEmpty');
+    const totalEl = document.getElementById('addItemsTotal');
+    const confirmBtn = document.getElementById('addItemsConfirmBtn');
+    
+    if (addItemsList.length === 0) {
+        container.innerHTML = '';
+        emptyMsg.style.display = 'block';
+        totalEl.textContent = '$0.00';
+        confirmBtn.disabled = true;
+        return;
+    }
+    
+    emptyMsg.style.display = 'none';
+    
+    let total = 0;
+    let html = '';
+    
+    addItemsList.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        
+        html += `
+            <div class="card mb-2">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <strong>${item.name}</strong>
+                            <div class="text-muted small">$${item.price.toFixed(2)} c/u</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAddItemsQuantity(${index}, -1)">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                            <span class="fw-bold">${item.quantity}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAddItemsQuantity(${index}, 1)">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAddItemsItem(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <strong>Subtotal: $${subtotal.toFixed(2)}</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    totalEl.textContent = `$${total.toFixed(2)}`;
+    confirmBtn.disabled = false;
+}
+
+// Actualizar cantidad
+function updateAddItemsQuantity(index, change) {
+    if (addItemsList[index]) {
+        addItemsList[index].quantity += change;
+        if (addItemsList[index].quantity <= 0) {
+            addItemsList.splice(index, 1);
+        }
+        renderAddItemsList();
+    }
+}
+
+// Eliminar item
+function removeAddItemsItem(index) {
+    addItemsList.splice(index, 1);
+    renderAddItemsList();
+}
+
+// Confirmar agregar items
+document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async function() {
+    if (addItemsList.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin items',
+            text: 'Debes agregar al menos un producto',
+            confirmButtonColor: '#ffc107'
+        });
+        return;
+    }
+    
+    // Mostrar loading
+    Swal.fire({
+        title: 'Agregando items...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Agregar items uno por uno
+    let successCount = 0;
+    let errorMessages = [];
+    
+    for (const item of addItemsList) {
+        try {
+            const response = await fetch('/orders/{{ $order->id }}/items', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    observations: item.observations || ''
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success || response.ok) {
+                successCount++;
+            } else {
+                errorMessages.push(`${item.name}: ${data.message || 'Error'}`);
+            }
+        } catch (error) {
+            errorMessages.push(`${item.name}: Error de conexión`);
+        }
+    }
+    
+    if (successCount > 0) {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Items agregados!',
+            html: `
+                <p>Se agregaron ${successCount} item(s) al pedido.</p>
+                ${errorMessages.length > 0 ? `<p class="text-danger small">Errores: ${errorMessages.join(', ')}</p>` : ''}
+            `,
+            confirmButtonColor: '#1e8081'
+        }).then(() => {
+            // Cerrar modal y recargar página
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addItemsModal'));
+            if (modal) {
+                modal.hide();
+            }
+            window.location.reload();
+        });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            html: `<p>No se pudieron agregar los items:</p><p class="text-danger small">${errorMessages.join(', ')}</p>`,
+            confirmButtonColor: '#dc3545'
+        });
+    }
+});
+
+// Limpiar modal al cerrar
+document.getElementById('addItemsModal')?.addEventListener('hidden.bs.modal', function() {
+    addItemsList = [];
+    addItemsCounter = 0;
+    document.getElementById('addItemsProductSearch').value = '';
+    renderAddItemsList();
+    filterAddItemsProducts('');
+});
+</script>
+@endpush
 @endsection
 

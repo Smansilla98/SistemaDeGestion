@@ -166,6 +166,17 @@ class OrderController extends Controller
     {
         Gate::authorize('update', $order);
 
+        // Verificar que el pedido no esté cerrado
+        if ($order->status === Order::STATUS_CERRADO || $order->status === Order::STATUS_CANCELADO) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden agregar items a un pedido cerrado o cancelado'
+                ], 422);
+            }
+            return back()->with('error', 'No se pueden agregar items a un pedido cerrado o cancelado');
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
@@ -177,14 +188,35 @@ class OrderController extends Controller
         try {
             $this->orderService->addItem($order, $validated);
 
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Item agregado al pedido exitosamente'
+                ]);
+            }
+
             return back()->with('success', 'Item agregado al pedido');
         } catch (\Exception $e) {
             // Si es un error de stock, retornar con el mensaje
             if (str_contains($e->getMessage(), 'Stock insuficiente')) {
+                if ($request->expectsJson() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ], 422);
+                }
                 return back()
                     ->with('error', $e->getMessage())
                     ->withInput();
             }
+            
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+            
             // Re-lanzar otras excepciones
             throw $e;
         }
@@ -359,6 +391,43 @@ class OrderController extends Controller
     }
 
     /**
+     * API: Obtener pedidos rápidos activos (JSON)
+     */
+    public function quickOrdersApi()
+    {
+        Gate::authorize('create', Order::class);
+        
+        $restaurantId = auth()->user()->restaurant_id;
+        
+        // Obtener pedidos rápidos activos (sin mesa, no cerrados)
+        $activeQuickOrders = Order::where('restaurant_id', $restaurantId)
+            ->whereNull('table_id')
+            ->whereNull('subsector_item_id')
+            ->where('status', '!=', Order::STATUS_CERRADO)
+            ->where('status', '!=', Order::STATUS_CANCELADO)
+            ->with(['user', 'items'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($order) {
+                return [
+                    'id' => $order->id,
+                    'number' => $order->number,
+                    'customer_name' => $order->customer_name,
+                    'user_name' => $order->user->name,
+                    'items_count' => $order->items->count(),
+                    'total' => $order->total,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->format('d/m/Y H:i'),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'orders' => $activeQuickOrders
+        ]);
+    }
+
+    /**
      * Crear nuevo pedido rápido
      */
     public function storeQuickOrder(Request $request)
@@ -465,7 +534,19 @@ class OrderController extends Controller
 
         $order->load(['user', 'items.product.category', 'items.modifiers', 'payments']);
 
-        return view('orders.quick-show', compact('order'));
+        // Obtener productos para el modal de agregar items
+        $restaurantId = auth()->user()->restaurant_id;
+        $products = Product::where('restaurant_id', $restaurantId)
+            ->where('type', 'PRODUCT')
+            ->where('is_active', true)
+            ->with('category')
+            ->orderBy('name')
+            ->get()
+            ->groupBy(function($product) {
+                return $product->category ? $product->category->name : 'Sin Categoría';
+            });
+
+        return view('orders.quick-show', compact('order', 'products'));
     }
 
     /**
