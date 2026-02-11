@@ -47,8 +47,11 @@ class OrderPolicy
 
         // ADMIN y MOZO pueden cambiar el estado de pedidos en flujo activo
         // Flujo simplificado: ABIERTO -> EN_PREPARACION -> ENTREGADO
+        // También pueden agregar items a pedidos que no estén cerrados
         if (in_array($user->role, ['ADMIN', 'MOZO'])) {
-            return in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'ENTREGADO']);
+            // Permitir actualizar pedidos que no estén cerrados o cancelados
+            // Esto incluye agregar items y cerrar pedidos
+            return !in_array($order->status, ['CERRADO', 'CANCELADO']);
         }
 
         // Cocina ya no tiene acceso (módulo eliminado)

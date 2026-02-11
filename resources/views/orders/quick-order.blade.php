@@ -49,69 +49,25 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-list-ul"></i> Pedidos Rápidos Activos</h5>
-            </div>
-            <div class="card-body">
-                @if($activeQuickOrders->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Número</th>
-                                <th>Cliente</th>
-                                <th>Usuario</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($activeQuickOrders as $order)
-                            <tr>
-                                <td><strong>{{ $order->number }}</strong></td>
-                                <td>{{ $order->customer_name ?? 'Sin nombre' }}</td>
-                                <td>{{ $order->user->name }}</td>
-                                <td>{{ $order->items->count() }}</td>
-                                <td><strong>${{ number_format($order->total, 2) }}</strong></td>
-                                <td>
-                                    <span class="badge bg-{{ 
-                                        $order->status === 'CERRADO' ? 'success' : 
-                                        ($order->status === 'LISTO' ? 'info' : 
-                                        ($order->status === 'ABIERTO' ? 'secondary' : 'warning')) 
-                                    }}">
-                                        {{ $order->status }}
-                                    </span>
-                                </td>
-                                <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('orders.quick.show', $order) }}" class="btn btn-primary">
-                                            <i class="bi bi-eye"></i> Ver
-                                        </a>
-                                        @if($order->status !== 'CERRADO')
-                                        <a href="{{ route('orders.quick.close', $order) }}" class="btn btn-success">
-                                            <i class="bi bi-cash-coin"></i> Cerrar Cuenta
-                                        </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                @else
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--conurbania-medium);"></i>
-                    <p class="text-muted mt-3">No hay pedidos rápidos activos</p>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newQuickOrderModal">
-                        <i class="bi bi-plus-circle"></i> Crear Primer Pedido Rápido
+                <div>
+                    <span class="badge bg-info" id="ordersCount">0</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="loadQuickOrders()" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
                     </button>
                 </div>
-                @endif
+            </div>
+            <div class="card-body">
+                <div id="ordersLoading" class="text-center py-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted mt-2">Actualizando pedidos...</p>
+                </div>
+                <div id="ordersContainer">
+                    <!-- Los pedidos se cargarán dinámicamente aquí -->
+                </div>
             </div>
         </div>
     </div>
@@ -466,10 +422,29 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
                 icon: 'success',
                 title: '¡Pedido creado!',
                 text: data.message,
-                confirmButtonColor: '#1e8081'
-            }).then(() => {
-                window.location.reload();
+                confirmButtonColor: '#1e8081',
+                timer: 2000,
+                showConfirmButton: false
             });
+            
+            // Cerrar modal y limpiar
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newQuickOrderModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Limpiar formulario
+            quickOrderItems = [];
+            document.getElementById('quickOrderCustomerName').value = '';
+            document.getElementById('quickOrderObservations').value = '';
+            document.getElementById('quickOrderProductSearch').value = '';
+            renderQuickOrderItems();
+            filterQuickOrderProducts('');
+            
+            // Actualizar lista de pedidos después de un breve delay
+            setTimeout(() => {
+                loadQuickOrders(false);
+            }, 500);
         } else {
             Swal.fire({
                 icon: 'error',
@@ -498,6 +473,220 @@ document.getElementById('newQuickOrderModal')?.addEventListener('hidden.bs.modal
     renderQuickOrderItems();
     filterQuickOrderProducts('');
 });
+
+// ========== SISTEMA DE ACTUALIZACIÓN DINÁMICA DE PEDIDOS ==========
+
+let ordersUpdateInterval = null;
+let isUpdating = false;
+
+// Función para cargar pedidos rápidos
+async function loadQuickOrders(showLoading = false) {
+    if (isUpdating) return;
+    isUpdating = true;
+    
+    const container = document.getElementById('ordersContainer');
+    const loading = document.getElementById('ordersLoading');
+    const refreshBtn = document.getElementById('refreshBtn');
+    
+    if (showLoading) {
+        loading.style.display = 'block';
+        container.style.opacity = '0.5';
+    }
+    
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+    }
+    
+    try {
+        const response = await fetch('{{ route("orders.quick.api") }}', {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar pedidos');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            renderOrders(data.orders);
+            document.getElementById('ordersCount').textContent = data.orders.length;
+        } else {
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> ${data.message || 'Error al cargar pedidos'}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Error al cargar pedidos. Por favor recarga la página.
+            </div>
+        `;
+    } finally {
+        loading.style.display = 'none';
+        container.style.opacity = '1';
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar';
+        }
+        isUpdating = false;
+    }
+}
+
+// Función para renderizar pedidos con animación suave
+function renderOrders(orders) {
+    const container = document.getElementById('ordersContainer');
+    
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--conurbania-medium);"></i>
+                <p class="text-muted mt-3">No hay pedidos rápidos activos</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newQuickOrderModal">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Pedido Rápido
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Guardar el estado actual de las filas visibles
+    const currentRows = container.querySelectorAll('tr[data-order-id]');
+    const currentOrderIds = Array.from(currentRows).map(row => parseInt(row.dataset.orderId));
+    const newOrderIds = orders.map(o => o.id);
+    
+    // Identificar nuevos pedidos
+    const newOrders = orders.filter(o => !currentOrderIds.includes(o.id));
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Cliente</th>
+                        <th>Usuario</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    orders.forEach(order => {
+        const statusBadge = getStatusBadge(order.status);
+        const canClose = order.status !== 'CERRADO' && order.status !== 'CANCELADO';
+        const isNew = newOrders.some(o => o.id === order.id);
+        
+        html += `
+            <tr data-order-id="${order.id}" class="${isNew ? 'table-success' : ''}" style="transition: all 0.3s ease;">
+                <td><strong>${order.number}</strong></td>
+                <td>${order.customer_name || 'Sin nombre'}</td>
+                <td>${order.user_name}</td>
+                <td>${order.items_count}</td>
+                <td><strong>$${parseFloat(order.total).toFixed(2)}</strong></td>
+                <td>${statusBadge}</td>
+                <td>${order.created_at}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="/orders/quick/${order.id}" class="btn btn-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        ${canClose ? `
+                        <a href="/orders/quick/${order.id}/close" class="btn btn-success">
+                            <i class="bi bi-cash-coin"></i> Cerrar Cuenta
+                        </a>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Actualizar con animación
+    container.style.opacity = '0.7';
+    setTimeout(() => {
+        container.innerHTML = html;
+        container.style.opacity = '1';
+        
+        // Remover clase de nuevo después de 2 segundos
+        setTimeout(() => {
+            container.querySelectorAll('.table-success').forEach(row => {
+                row.classList.remove('table-success');
+            });
+        }, 2000);
+    }, 200);
+}
+
+// Función para obtener el badge de estado
+function getStatusBadge(status) {
+    const badges = {
+        'CERRADO': 'success',
+        'LISTO': 'info',
+        'ABIERTO': 'secondary',
+        'ENVIADO': 'warning',
+        'EN_PREPARACION': 'warning',
+        'ENTREGADO': 'success',
+        'CANCELADO': 'danger'
+    };
+    
+    const color = badges[status] || 'secondary';
+    return `<span class="badge bg-${color}">${status}</span>`;
+}
+
+// Inicializar carga de pedidos
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar pedidos al inicio
+    loadQuickOrders(true);
+    
+    // Configurar actualización automática cada 5 segundos
+    ordersUpdateInterval = setInterval(() => {
+        loadQuickOrders(false);
+    }, 5000);
+    
+    // Limpiar intervalo al salir de la página
+    window.addEventListener('beforeunload', function() {
+        if (ordersUpdateInterval) {
+            clearInterval(ordersUpdateInterval);
+        }
+    });
+});
+
+// Actualizar después de crear un pedido
+window.addEventListener('quickOrderCreated', function() {
+    setTimeout(() => {
+        loadQuickOrders(false);
+    }, 1000);
+});
+
+// Agregar estilo para spinner
+const style = document.createElement('style');
+style.textContent = `
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
 </script>
 @endpush
 @endsection
