@@ -120,21 +120,21 @@
 
             <div class="mb-3">
                 <h5>Items del Pedido</h5>
-                @foreach($order->items as $item)
+                @foreach($groupedItems as $item)
                 <div class="payment-item-row">
                     <div>
-                        <strong>{{ $item->product->name }}</strong>
+                        <strong>{{ $item['product']->name }}</strong>
                         <div class="text-muted small">
-                            {{ $item->quantity }} x ${{ number_format($item->unit_price, 2) }}
+                            {{ $item['quantity'] }} x ${{ number_format($item['unit_price'], 2) }}
                         </div>
-                        @if($item->observations)
+                        @if(!empty($item['observations']))
                             <div class="text-muted small">
-                                <i class="bi bi-info-circle"></i> {{ $item->observations }}
+                                <i class="bi bi-info-circle"></i> {{ $item['observations'] }}
                             </div>
                         @endif
-                        @if($item->modifiers->count() > 0)
+                        @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
                             <div class="text-info small">
-                                @foreach($item->modifiers as $modifier)
+                                @foreach($item['modifiers'] as $modifier)
                                     + {{ $modifier->name }}
                                 @endforeach
                             </div>

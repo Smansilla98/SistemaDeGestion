@@ -18,11 +18,55 @@ class OrderPrintController extends Controller
     }
 
     /**
+     * Agrupar items de un pedido por producto (sumando cantidades y subtotales)
+     */
+    protected function groupOrderItems($items)
+    {
+        $groupedItems = collect();
+        
+        foreach ($items as $item) {
+            // Buscar si ya existe un item con el mismo product_id
+            $existingItemIndex = $groupedItems->search(function ($i) use ($item) {
+                return $i['product_id'] === $item->product_id;
+            });
+            
+            if ($existingItemIndex !== false) {
+                // Si existe, sumar cantidad y subtotal
+                $existingItem = $groupedItems[$existingItemIndex];
+                $existingItem['quantity'] += $item->quantity;
+                $existingItem['subtotal'] += $item->subtotal;
+                // Mantener el precio unitario del primer item (no promediar)
+                // Si hay observaciones diferentes, combinarlas
+                if ($item->observations && $existingItem['observations'] !== $item->observations) {
+                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'] . '; ' : '') . $item->observations;
+                }
+                $groupedItems[$existingItemIndex] = $existingItem;
+            } else {
+                // Si no existe, agregarlo
+                $groupedItems->push([
+                    'product_id' => $item->product_id,
+                    'product' => $item->product,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $item->subtotal,
+                    'modifiers' => $item->modifiers,
+                    'observations' => $item->observations,
+                ]);
+            }
+        }
+        
+        return $groupedItems;
+    }
+
+    /**
      * Generar PDF de ticket de cocina
      */
     public function kitchenTicket(Order $order, Request $request)
     {
         $order->load(['table', 'items.product', 'items.modifiers']);
+
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
 
         // Si se solicita impresión directa
         if ($request->has('print') && $request->print === 'true') {
@@ -36,7 +80,7 @@ class OrderPrintController extends Controller
         }
 
         // Por defecto, mostrar PDF
-        $pdf = Pdf::loadView('orders.print-kitchen', compact('order'))
+        $pdf = Pdf::loadView('orders.print-kitchen', compact('order', 'groupedItems'))
             ->setPaper([0, 0, 226.77, 841.89], 'portrait')
             ->setOption('enable-local-file-access', true);
 
@@ -50,7 +94,10 @@ class OrderPrintController extends Controller
     {
         $order->load(['table', 'items.product', 'items.modifiers', 'user']);
 
-        $pdf = Pdf::loadView('orders.print-comanda', compact('order'))
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        $pdf = Pdf::loadView('orders.print-comanda', compact('order', 'groupedItems'))
             ->setPaper('a5', 'portrait')
             ->setOption('enable-local-file-access', true);
 
@@ -64,7 +111,10 @@ class OrderPrintController extends Controller
     {
         $order->load(['table', 'items.product', 'items.modifiers', 'user', 'payments', 'restaurant']);
 
-        $pdf = Pdf::loadView('orders.print-invoice', compact('order'))
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        $pdf = Pdf::loadView('orders.print-invoice', compact('order', 'groupedItems'))
             ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
             ->setOption('enable-local-file-access', true);
 
@@ -76,9 +126,12 @@ class OrderPrintController extends Controller
      */
     public function ticket(Order $order)
     {
-        $order->load(['table', 'items.product', 'payments']);
+        $order->load(['table', 'items.product', 'items.modifiers', 'payments']);
 
-        $pdf = Pdf::loadView('orders.print-ticket', compact('order'))
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        $pdf = Pdf::loadView('orders.print-ticket', compact('order', 'groupedItems'))
             ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
             ->setOption('enable-local-file-access', true);
 

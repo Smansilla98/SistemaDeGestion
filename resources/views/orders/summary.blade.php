@@ -67,14 +67,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($order->items as $item)
+                                @foreach($groupedItems as $item)
                                 <tr>
-                                    <td class="text-center"><strong>{{ $item->quantity }}</strong></td>
+                                    <td class="text-center"><strong>{{ $item['quantity'] }}</strong></td>
                                     <td>
-                                        <strong>{{ $item->product->name }}</strong>
-                                        @if($item->modifiers->count() > 0)
+                                        <strong>{{ $item['product']->name }}</strong>
+                                        @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
                                         <div class="mt-1">
-                                            @foreach($item->modifiers as $modifier)
+                                            @foreach($item['modifiers'] as $modifier)
                                             <small class="badge bg-info me-1">
                                                 {{ $modifier->name }}
                                                 @if($modifier->price_modifier != 0)
@@ -84,14 +84,14 @@
                                             @endforeach
                                         </div>
                                         @endif
-                                        @if($item->observations)
+                                        @if(!empty($item['observations']))
                                         <div class="mt-1">
-                                            <small class="text-muted"><em>{{ $item->observations }}</em></small>
+                                            <small class="text-muted"><em>{{ $item['observations'] }}</em></small>
                                         </div>
                                         @endif
                                     </td>
-                                    <td class="text-end">${{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="text-end"><strong>${{ number_format($item->subtotal, 2) }}</strong></td>
+                                    <td class="text-end">${{ number_format($item['unit_price'], 2) }}</td>
+                                    <td class="text-end"><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
                                 </tr>
                                 @endforeach
                             </tbody>
