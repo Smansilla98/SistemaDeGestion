@@ -173,23 +173,48 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-printer"></i> Imprimir</h5>
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ route('orders.print.kitchen', $order) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i> Ver PDF (Cocina)
-                    </a>
-                    @if($order->status === 'CERRADO')
-                    <a href="{{ route('orders.print.invoice', $order) }}" target="_blank" class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-printer"></i> Factura
-                    </a>
-                    <a href="{{ route('orders.print.ticket', $order) }}" target="_blank" class="btn btn-sm btn-outline-info">
-                        <i class="bi bi-printer"></i> Ticket Simple
-                    </a>
+                @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                    @if($order->status === 'ABIERTO')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="EN_PREPARACION">
+                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
+                                <i class="bi bi-gear"></i> Marcar en Preparación
+                            </button>
+                        </form>
+                    @elseif($order->status === 'EN_PREPARACION')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="ENTREGADO">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
+                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            </button>
+                        </form>
                     @endif
+                @endif
+
+                <div class="mt-3">
+                    <h6>Imprimir:</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('orders.print.kitchen', $order) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver PDF (Cocina)
+                        </a>
+                        @if($order->status === 'CERRADO')
+                        <a href="{{ route('orders.print.invoice', $order) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-printer"></i> Factura
+                        </a>
+                        <a href="{{ route('orders.print.ticket', $order) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-printer"></i> Ticket Simple
+                        </a>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -312,6 +337,46 @@
 
 @push('scripts')
 <script>
+// Mostrar alerta de éxito
+@if(session('success'))
+    @if(session('order_delivered'))
+        // Alerta flotante especial para pedidos entregados
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Pedido Entregado',
+            html: `Pedido #{{ session('order_delivered.order_number') }} entregado{{ session('order_delivered.table_number') ? ' en Mesa ' . session('order_delivered.table_number') : (session('order_delivered.customer_name') ? ' a ' . session('order_delivered.customer_name') : '') }}`,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+    @else
+        Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: '{{ session('success') }}',
+            confirmButtonColor: '#1e8081',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
+@endif
+
+// Mostrar alerta de error
+@if(session('error'))
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: '{{ session('error') }}',
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Entendido'
+    });
+@endif
+
 let addItemsList = [];
 let addItemsCounter = 0;
 
