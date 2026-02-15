@@ -32,9 +32,20 @@
 
 <div class="card">
     <div class="card-header">
-        <form method="GET" action="{{ route('orders.index') }}" class="row g-3">
-            <div class="col-md-3">
-                <select name="status" class="form-select" onchange="this.form.submit()">
+        <form method="GET" action="{{ route('orders.index') }}" class="row g-3" id="filterForm">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Buscar por número, cliente, mesa..." 
+                           value="{{ request('search') }}"
+                           id="searchInput">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
                     <option value="">Todos los estados</option>
                     <option value="ABIERTO" {{ request('status') === 'ABIERTO' ? 'selected' : '' }}>Abierto</option>
                     <option value="ENVIADO" {{ request('status') === 'ENVIADO' ? 'selected' : '' }}>Enviado</option>
@@ -43,12 +54,16 @@
                     <option value="CERRADO" {{ request('status') === 'CERRADO' ? 'selected' : '' }}>Cerrado</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <input type="number" name="table_id" class="form-control" placeholder="ID Mesa" value="{{ request('table_id') }}">
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="{{ route('orders.index') }}" class="btn btn-secondary">Limpiar</a>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <a href="{{ route('orders.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </a>
             </div>
         </form>
     </div>
@@ -130,6 +145,29 @@
 
 @push('scripts')
 <script>
+// Búsqueda con debounce para mejorar rendimiento
+let searchTimeout;
+document.getElementById('searchInput')?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const searchValue = this.value.trim();
+    
+    // Si el campo está vacío o tiene al menos 2 caracteres, buscar
+    if (searchValue === '' || searchValue.length >= 2) {
+        searchTimeout = setTimeout(() => {
+            document.getElementById('filterForm').submit();
+        }, 500); // Esperar 500ms después de que el usuario deje de escribir
+    }
+});
+
+// Permitir búsqueda con Enter
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(searchTimeout);
+        document.getElementById('filterForm').submit();
+    }
+});
+
 function confirmDeleteOrder(orderId, orderNumber) {
     Swal.fire({
         icon: 'warning',

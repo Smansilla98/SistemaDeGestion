@@ -76,12 +76,27 @@ class OrderController extends Controller
             ->with(['table', 'user', 'items.product.category']);
 
         // Filtros
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('table_id')) {
+        if ($request->has('table_id') && $request->table_id !== '') {
             $query->where('table_id', $request->table_id);
+        }
+
+        // Búsqueda por texto (número de pedido, nombre de cliente, número de mesa)
+        if ($request->has('search') && $request->search !== '') {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('number', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('customer_name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhereHas('table', function($tableQuery) use ($searchTerm) {
+                      $tableQuery->where('number', 'LIKE', "%{$searchTerm}%");
+                  })
+                  ->orWhereHas('user', function($userQuery) use ($searchTerm) {
+                      $userQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                  });
+            });
         }
 
         $orders = $query->orderBy('created_at', 'desc')

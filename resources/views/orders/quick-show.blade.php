@@ -111,7 +111,8 @@
                                 <td>
                                     @php
                                         $userRole = auth()->user()->role ?? null;
-                                        $itemStatus = strtoupper(trim($item->status ?? 'PENDIENTE'));
+                                        $itemStatusRaw = $item->status ?? 'PENDIENTE';
+                                        $itemStatus = strtoupper(trim($itemStatusRaw));
                                         $canUpdate = in_array($userRole, ['ADMIN', 'MOZO', 'COCINA']);
                                     @endphp
                                     
@@ -140,16 +141,16 @@
                                         @elseif($itemStatus === 'ENTREGADO')
                                             <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Completado</span>
                                         @else
-                                            {{-- Estado desconocido, mostrar botón por defecto --}}
+                                            {{-- Estado desconocido: {{ $itemStatus }} (raw: {{ $itemStatusRaw }}) --}}
                                             <button class="btn btn-sm btn-warning update-item-status" 
                                                     data-item-id="{{ $item->id }}" 
                                                     data-status="EN_PREPARACION"
-                                                    title="Marcar en preparación">
+                                                    title="Marcar en preparación (Estado: {{ $itemStatus }})">
                                                 <i class="bi bi-gear"></i> En Preparación
                                             </button>
                                         @endif
                                     @else
-                                        <span class="text-muted" title="Rol: {{ $userRole }}">-</span>
+                                        <span class="text-muted" title="Rol: {{ $userRole }} - No tiene permisos para actualizar">-</span>
                                     @endif
                                 </td>
                             </tr>
