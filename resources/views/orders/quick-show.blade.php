@@ -188,7 +188,41 @@
                                 <i class="bi bi-gear"></i> Marcar en Preparación
                             </button>
                         </form>
+                    @elseif($order->status === 'ENVIADO')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="EN_PREPARACION">
+                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
+                                <i class="bi bi-gear"></i> Marcar en Preparación
+                            </button>
+                        </form>
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="ENTREGADO">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
+                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            </button>
+                        </form>
                     @elseif($order->status === 'EN_PREPARACION')
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="LISTO">
+                            <button type="submit" class="btn btn-info w-100" onclick="return confirm('¿Marcar pedido como LISTO?')">
+                                <i class="bi bi-check2-circle"></i> Marcar como Listo
+                            </button>
+                        </form>
+                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="ENTREGADO">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
+                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            </button>
+                        </form>
+                    @elseif($order->status === 'LISTO')
                         <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
                             @csrf
                             @method('PUT')
