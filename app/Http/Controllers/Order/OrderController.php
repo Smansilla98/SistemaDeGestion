@@ -475,6 +475,82 @@ class OrderController extends Controller
     }
 
     /**
+     * API: Obtener lista de nombres de clientes de pedidos rápidos abiertos
+     */
+    public function quickOrdersCustomersApi()
+    {
+        Gate::authorize('create', Order::class);
+
+        $restaurantId = auth()->user()->restaurant_id;
+
+        $customers = Order::where('restaurant_id', $restaurantId)
+            ->whereNull('table_id')
+            ->whereNull('subsector_item_id')
+            ->where('status', '!=', Order::STATUS_CERRADO)
+            ->where('status', '!=', Order::STATUS_CANCELADO)
+            ->whereNotNull('customer_name')
+            ->select('customer_name', 'id', 'number', 'total', 'status')
+            ->distinct()
+            ->orderBy('customer_name')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'number' => $order->number,
+                    'customer_name' => $order->customer_name,
+                    'total' => $order->total,
+                    'status' => $order->status,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'customers' => $customers
+        ]);
+    }
+
+    /**
+     * API: Obtener un pedido rápido por ID con sus items
+     */
+    public function quickOrderDetailsApi(Order $order)
+    {
+        Gate::authorize('view', $order);
+
+        // Verificar que sea un pedido rápido
+        if ($order->table_id !== null || $order->subsector_item_id !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este no es un pedido rápido'
+            ], 404);
+        }
+
+        $order->load(['items.product.category', 'items.modifiers', 'user']);
+
+        return response()->json([
+            'success' => true,
+            'order' => [
+                'id' => $order->id,
+                'number' => $order->number,
+                'customer_name' => $order->customer_name,
+                'observations' => $order->observations,
+                'total' => $order->total,
+                'status' => $order->status,
+                'items' => $order->items->map(function ($item) {
+                    return [
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'subtotal' => $item->subtotal,
+                        'observations' => $item->observations,
+                        'modifiers' => $item->modifiers->pluck('id')->toArray(),
+                    ];
+                }),
+            ]
+        ]);
+    }
+
+    /**
      * Crear nuevo pedido rápido
      */
     public function storeQuickOrder(Request $request)
