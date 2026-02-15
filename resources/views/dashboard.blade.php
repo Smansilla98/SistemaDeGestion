@@ -382,7 +382,7 @@
                             <thead>
                                 <tr>
                                     <th>Número</th>
-                                    <th>Mesa</th>
+                                    <th>Mesa/Cliente</th>
                                     <th>Mozo</th>
                                     <th>Estado</th>
                                     <th>Total</th>
@@ -393,11 +393,27 @@
                                 @foreach($recentOrders as $order)
                                 <tr>
                                     <td>
+                                        @if($order->table_id === null)
+                                            <a href="{{ route('orders.quick.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
+                                                {{ $order->number }}
+                                            </a>
+                                        @else
                                             <a href="{{ route('orders.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
                                                 {{ $order->number }}
                                             </a>
+                                        @endif
                                     </td>
-                                    <td>{{ $order->table->number }}</td>
+                                    <td>
+                                        @if($order->table)
+                                            Mesa {{ $order->table->number }}
+                                        @elseif($order->customer_name)
+                                            <span class="text-muted">
+                                                <i class="bi bi-person"></i> {{ $order->customer_name }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $order->user->name }}</td>
                                     <td>
                                             <span class="mosaic-badge" style="background: {{ $order->status === 'CERRADO' ? '#c6f6d5' : ($order->status === 'LISTO' ? '#bee3f8' : '#fed7d7') }}; color: {{ $order->status === 'CERRADO' ? '#22543d' : ($order->status === 'LISTO' ? '#2c5282' : '#742a2a') }};">
