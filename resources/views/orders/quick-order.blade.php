@@ -76,7 +76,7 @@
 <!-- Modal para nuevo pedido rápido -->
 @if($activeSession)
 <div class="modal fade" id="newQuickOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-md-down modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
         <div class="modal-content">
             <form id="newQuickOrderForm">
                 <div class="modal-header">
@@ -87,44 +87,49 @@
                 </div>
                 <div class="modal-body">
                     <!-- Campo de nombre del cliente con selector -->
-                    <div class="mb-3">
-                        <label for="quickOrderCustomerName" class="form-label">Nombre del Cliente *</label>
-                        <div class="input-group">
-                            <button class="btn btn-outline-secondary" type="button" id="selectExistingOrderBtn" title="Seleccionar pedido existente">
-                                <i class="bi bi-search"></i>
-                            </button>
-                            <input type="text" class="form-control" id="quickOrderCustomerName" 
-                                   placeholder="Escribe un nombre nuevo o selecciona uno existente" 
-                                   list="quickOrderCustomersList" required>
-                            <datalist id="quickOrderCustomersList">
-                                <!-- Se llenará dinámicamente -->
-                            </datalist>
-                            <input type="hidden" id="selectedOrderId" value="">
-                            <button class="btn btn-outline-primary" type="button" id="newCustomerBtn" title="Nuevo cliente">
-                                <i class="bi bi-plus-circle"></i> Nuevo
-                            </button>
+                    <div class="mb-4">
+                        <label for="quickOrderCustomerSelect" class="form-label fw-bold">Nombre del Cliente *</label>
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <select class="form-select form-select-lg" id="quickOrderCustomerSelect" required>
+                                    <option value="">-- Selecciona un cliente existente o crea uno nuevo --</option>
+                                    <option value="__NEW__" data-is-new="true">➕ Crear nuevo cliente</option>
+                                    <!-- Se llenará dinámicamente con clientes existentes -->
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control form-select-lg" id="quickOrderCustomerName" 
+                                       placeholder="Nombre del cliente" 
+                                       style="display: none;" required>
+                            </div>
                         </div>
-                        <small class="text-muted">Escribe para buscar pedidos existentes o crea uno nuevo</small>
-                        <div id="selectedOrderInfo" class="mt-2" style="display: none;">
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle"></i> 
-                                <strong>Pedido seleccionado:</strong> <span id="selectedOrderNumber"></span> - 
-                                Total: $<span id="selectedOrderTotal"></span>
-                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="clearSelectionBtn">
-                                    <i class="bi bi-x"></i> Limpiar
+                        <input type="hidden" id="selectedOrderId" value="">
+                        <div id="selectedOrderInfo" class="mt-3" style="display: none;">
+                            <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-info-circle"></i> 
+                                    <strong>Pedido seleccionado:</strong> <span id="selectedOrderNumber"></span> - 
+                                    Total: $<span id="selectedOrderTotal"></span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearSelectionBtn">
+                                    <i class="bi bi-x"></i> Limpiar selección
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-lg-7">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
-                                <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
-                                <input type="text" class="form-control" id="quickOrderProductSearch" placeholder="🔍 Buscar producto..." style="max-width: 100%;">
-                            </div>
-
-                            <div id="quickOrderProductsAccordion">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                                        <h5 class="mb-0"><i class="bi bi-card-list"></i> Productos</h5>
+                                        <input type="text" class="form-control form-control-lg" id="quickOrderProductSearch" 
+                                               placeholder="🔍 Buscar producto..." style="max-width: 100%; min-width: 250px;">
+                                    </div>
+                                </div>
+                                <div class="card-body" style="max-height: 60vh; overflow-y: auto;">
+                                    <div id="quickOrderProductsAccordion">
                                 @foreach($products as $categoryName => $categoryProducts)
                                     <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
                                         <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
@@ -177,35 +182,44 @@
                                         </div>
                                     </div>
                                 @endforeach
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-lg-5">
-                            <div class="sticky-top" style="top: 70px;">
-                                <h6 class="mb-3"><i class="bi bi-receipt"></i> Pedido</h6>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Observaciones (opcional)</label>
-                                    <textarea class="form-control" id="quickOrderObservations" rows="3" placeholder="Ej: sin sal, alergias, etc."></textarea>
+                        <div class="col-lg-4">
+                            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="bi bi-receipt"></i> Resumen del Pedido</h5>
                                 </div>
-
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="quickOrderSendToKitchen" checked style="min-width: 48px; min-height: 24px;">
-                                    <label class="form-check-label ms-2" for="quickOrderSendToKitchen" style="font-size: 0.875rem;">Enviar a cocina al confirmar</label>
-                                </div>
-
-                                <div id="quickOrderItemsEmpty" class="text-muted text-center py-3">No hay items en el pedido.</div>
-                                <div id="quickOrderItemsList" class="mb-3"></div>
-
-                                <div class="border-top pt-3 pb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <strong class="fs-5">Total:</strong> <span id="quickOrderTotal" class="fs-4 fw-bold text-primary">$0.00</span>
-                                        </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Observaciones (opcional)</label>
+                                        <textarea class="form-control" id="quickOrderObservations" rows="3" placeholder="Ej: sin sal, alergias, etc."></textarea>
                                     </div>
-                                    <button type="submit" class="btn btn-success w-100" id="quickOrderConfirmBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
-                                        <i class="bi bi-check-circle"></i> Confirmar Pedido
-                                    </button>
+
+                                    <div class="form-check form-switch mb-3 p-3 bg-light rounded">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="quickOrderSendToKitchen" checked style="min-width: 48px; min-height: 24px;">
+                                        <label class="form-check-label ms-2 fw-bold" for="quickOrderSendToKitchen">Enviar a cocina al confirmar</label>
+                                    </div>
+
+                                    <div id="quickOrderItemsEmpty" class="text-muted text-center py-4">
+                                        <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <p class="mt-2">No hay items en el pedido</p>
+                                    </div>
+                                    <div id="quickOrderItemsList" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
+
+                                    <div class="border-top pt-3 pb-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <strong class="fs-5">Total:</strong> 
+                                                <span id="quickOrderTotal" class="fs-3 fw-bold text-primary">$0.00</span>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-success btn-lg w-100" id="quickOrderConfirmBtn" disabled style="min-height: 60px; font-size: 1.25rem; font-weight: 700;">
+                                            <i class="bi bi-check-circle"></i> Confirmar Pedido
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -350,8 +364,7 @@ function renderQuickOrderItems() {
     container.innerHTML = html;
     totalEl.textContent = `$${total.toFixed(2)}`;
     
-    const customerName = document.getElementById('quickOrderCustomerName').value.trim();
-    confirmBtn.disabled = quickOrderItems.length === 0 || customerName.length < 2;
+    validateQuickOrderForm();
 }
 
 // Actualizar cantidad
@@ -395,16 +408,22 @@ async function loadCustomersList() {
         
         if (data.success) {
             availableCustomers = data.customers;
-            const datalist = document.getElementById('quickOrderCustomersList');
-            datalist.innerHTML = '';
+            const select = document.getElementById('quickOrderCustomerSelect');
             
+            // Limpiar opciones existentes (excepto la primera y la de "Nuevo")
+            while (select.options.length > 2) {
+                select.remove(1);
+            }
+            
+            // Agregar clientes existentes
             data.customers.forEach(customer => {
                 const option = document.createElement('option');
                 option.value = customer.customer_name;
+                option.textContent = `${customer.customer_name} (Pedido: ${customer.number} - Total: $${parseFloat(customer.total).toFixed(2)})`;
                 option.dataset.orderId = customer.id;
                 option.dataset.orderNumber = customer.number;
                 option.dataset.orderTotal = customer.total;
-                datalist.appendChild(option);
+                select.insertBefore(option, select.lastElementChild);
             });
         }
     } catch (error) {
@@ -412,58 +431,70 @@ async function loadCustomersList() {
     }
 }
 
-// Manejar selección de cliente del datalist
-document.getElementById('quickOrderCustomerName')?.addEventListener('input', function() {
-    const value = this.value.trim();
-    const option = Array.from(document.getElementById('quickOrderCustomersList').options)
-        .find(opt => opt.value === value);
+// Manejar selección de cliente del select
+document.getElementById('quickOrderCustomerSelect')?.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
     
-    if (option && option.dataset.orderId) {
+    if (selectedOption.value === '__NEW__') {
+        // Crear nuevo cliente
+        selectedOrderId = null;
+        document.getElementById('selectedOrderId').value = '';
+        document.getElementById('quickOrderCustomerName').style.display = 'block';
+        document.getElementById('quickOrderCustomerName').value = '';
+        document.getElementById('quickOrderCustomerName').focus();
+        document.getElementById('selectedOrderInfo').style.display = 'none';
+        quickOrderItems = [];
+        renderQuickOrderItems();
+    } else if (selectedOption.dataset.orderId) {
         // Cliente existente seleccionado
-        selectedOrderId = option.dataset.orderId;
+        selectedOrderId = selectedOption.dataset.orderId;
         document.getElementById('selectedOrderId').value = selectedOrderId;
-        document.getElementById('selectedOrderNumber').textContent = option.dataset.orderNumber;
-        document.getElementById('selectedOrderTotal').textContent = parseFloat(option.dataset.orderTotal).toFixed(2);
+        document.getElementById('quickOrderCustomerName').style.display = 'none';
+        document.getElementById('quickOrderCustomerName').value = selectedOption.value;
+        document.getElementById('selectedOrderNumber').textContent = selectedOption.dataset.orderNumber;
+        document.getElementById('selectedOrderTotal').textContent = parseFloat(selectedOption.dataset.orderTotal).toFixed(2);
         document.getElementById('selectedOrderInfo').style.display = 'block';
         
         // Cargar items del pedido existente
         loadExistingOrderItems(selectedOrderId);
     } else {
-        // Nuevo cliente
+        // Opción por defecto
         selectedOrderId = null;
         document.getElementById('selectedOrderId').value = '';
+        document.getElementById('quickOrderCustomerName').style.display = 'none';
         document.getElementById('selectedOrderInfo').style.display = 'none';
     }
     
-    const confirmBtn = document.getElementById('quickOrderConfirmBtn');
-    const customerName = this.value.trim();
-    confirmBtn.disabled = quickOrderItems.length === 0 || customerName.length < 2;
+    validateQuickOrderForm();
+});
+
+// Validar cuando se escribe en el campo de nombre nuevo
+document.getElementById('quickOrderCustomerName')?.addEventListener('input', function() {
+    validateQuickOrderForm();
 });
 
 // Botón para limpiar selección
 document.getElementById('clearSelectionBtn')?.addEventListener('click', function() {
     selectedOrderId = null;
     document.getElementById('selectedOrderId').value = '';
+    document.getElementById('quickOrderCustomerSelect').value = '';
+    document.getElementById('quickOrderCustomerName').style.display = 'none';
     document.getElementById('quickOrderCustomerName').value = '';
     document.getElementById('selectedOrderInfo').style.display = 'none';
     quickOrderItems = [];
     renderQuickOrderItems();
-    const confirmBtn = document.getElementById('quickOrderConfirmBtn');
-    confirmBtn.disabled = true;
+    validateQuickOrderForm();
 });
 
-// Botón para nuevo cliente
-document.getElementById('newCustomerBtn')?.addEventListener('click', function() {
-    selectedOrderId = null;
-    document.getElementById('selectedOrderId').value = '';
-    document.getElementById('quickOrderCustomerName').value = '';
-    document.getElementById('selectedOrderInfo').style.display = 'none';
-    quickOrderItems = [];
-    renderQuickOrderItems();
-    document.getElementById('quickOrderCustomerName').focus();
+// Función para validar el formulario
+function validateQuickOrderForm() {
     const confirmBtn = document.getElementById('quickOrderConfirmBtn');
-    confirmBtn.disabled = true;
-});
+    const customerName = document.getElementById('quickOrderCustomerName').value.trim();
+    const customerSelect = document.getElementById('quickOrderCustomerSelect');
+    const hasCustomer = customerSelect.value === '__NEW__' ? customerName.length >= 2 : customerSelect.value !== '';
+    
+    confirmBtn.disabled = quickOrderItems.length === 0 || !hasCustomer;
+}
 
 // Cargar items de un pedido existente
 async function loadExistingOrderItems(orderId) {
@@ -513,13 +544,28 @@ async function loadExistingOrderItems(orderId) {
 document.getElementById('newQuickOrderForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const customerName = document.getElementById('quickOrderCustomerName').value.trim();
+    // Obtener nombre del cliente (del select o del input)
+    const customerSelect = document.getElementById('quickOrderCustomerSelect');
+    let customerName = '';
     
-    if (!customerName || customerName.length < 2) {
+    if (customerSelect.value === '__NEW__') {
+        customerName = document.getElementById('quickOrderCustomerName').value.trim();
+        if (!customerName || customerName.length < 2) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nombre requerido',
+                text: 'Debes ingresar el nombre del cliente',
+                confirmButtonColor: '#ffc107'
+            });
+            return;
+        }
+    } else if (customerSelect.value) {
+        customerName = customerSelect.value;
+    } else {
         Swal.fire({
             icon: 'warning',
-            title: 'Nombre requerido',
-            text: 'Debes ingresar el nombre del cliente',
+            title: 'Cliente requerido',
+            text: 'Debes seleccionar un cliente existente o crear uno nuevo',
             confirmButtonColor: '#ffc107'
         });
         return;
@@ -625,6 +671,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             // Limpiar formulario
             quickOrderItems = [];
             selectedOrderId = null;
+            document.getElementById('quickOrderCustomerSelect').value = '';
+            document.getElementById('quickOrderCustomerName').style.display = 'none';
             document.getElementById('quickOrderCustomerName').value = '';
             document.getElementById('selectedOrderId').value = '';
             document.getElementById('quickOrderObservations').value = '';
@@ -757,6 +805,8 @@ document.getElementById('newQuickOrderModal')?.addEventListener('hidden.bs.modal
     quickOrderItems = [];
     quickOrderItemCounter = 0;
     selectedOrderId = null;
+    document.getElementById('quickOrderCustomerSelect').value = '';
+    document.getElementById('quickOrderCustomerName').style.display = 'none';
     document.getElementById('quickOrderCustomerName').value = '';
     document.getElementById('selectedOrderId').value = '';
     document.getElementById('quickOrderObservations').value = '';
