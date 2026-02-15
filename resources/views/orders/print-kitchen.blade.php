@@ -86,21 +86,21 @@
     </div>
 
     <div class="items">
-        @foreach($order->items as $item)
+        @foreach($groupedItems as $item)
         <div class="item">
             <div class="item-header">
-                {{ $item->quantity }}x {{ $item->product->name }}
+                {{ $item['quantity'] }}x {{ $item['product']->name }}
             </div>
-            @if($item->modifiers->count() > 0)
+            @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
             <div class="item-details">
-                @foreach($item->modifiers as $modifier)
+                @foreach($item['modifiers'] as $modifier)
                 - {{ $modifier->name }}<br>
                 @endforeach
             </div>
             @endif
-            @if($item->observations)
+            @if(!empty($item['observations']))
             <div class="item-observations">
-                Nota: {{ $item->observations }}
+                Nota: {{ $item['observations'] }}
             </div>
             @endif
         </div>

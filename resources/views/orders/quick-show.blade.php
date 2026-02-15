@@ -43,27 +43,27 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($order->items as $item)
+                            @foreach($groupedItems as $item)
                             <tr>
                                 <td>
-                                    <strong>{{ $item->product->name }}</strong>
-                                    @if($item->product->category)
-                                        <br><small class="text-muted">{{ $item->product->category->name }}</small>
+                                    <strong>{{ $item['product']->name }}</strong>
+                                    @if($item['product']->category)
+                                        <br><small class="text-muted">{{ $item['product']->category->name }}</small>
                                     @endif
-                                    @if($item->modifiers->count() > 0)
+                                    @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
                                         <br><small class="text-info">
-                                            @foreach($item->modifiers as $modifier)
+                                            @foreach($item['modifiers'] as $modifier)
                                                 + {{ $modifier->name }} 
                                             @endforeach
                                         </small>
                                     @endif
                                 </td>
-                                <td>{{ $item->quantity }}</td>
-                                <td>${{ number_format($item->unit_price, 2) }}</td>
-                                <td><strong>${{ number_format($item->subtotal, 2) }}</strong></td>
+                                <td>{{ $item['quantity'] }}</td>
+                                <td>${{ number_format($item['unit_price'], 2) }}</td>
+                                <td><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
                                 <td>
-                                    @if($item->observations)
-                                        <small class="text-muted">{{ $item->observations }}</small>
+                                    @if(!empty($item['observations']))
+                                        <small class="text-muted">{{ $item['observations'] }}</small>
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif

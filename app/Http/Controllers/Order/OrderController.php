@@ -24,6 +24,47 @@ class OrderController extends Controller
     ) {}
 
     /**
+     * Agrupar items de un pedido por producto (sumando cantidades y subtotales)
+     */
+    protected function groupOrderItems($items)
+    {
+        $groupedItems = collect();
+        
+        foreach ($items as $item) {
+            // Buscar si ya existe un item con el mismo product_id
+            $existingItemIndex = $groupedItems->search(function ($i) use ($item) {
+                return $i['product_id'] === $item->product_id;
+            });
+            
+            if ($existingItemIndex !== false) {
+                // Si existe, sumar cantidad y subtotal
+                $existingItem = $groupedItems[$existingItemIndex];
+                $existingItem['quantity'] += $item->quantity;
+                $existingItem['subtotal'] += $item->subtotal;
+                // Mantener el precio unitario del primer item (no promediar)
+                // Si hay observaciones diferentes, combinarlas
+                if ($item->observations && $existingItem['observations'] !== $item->observations) {
+                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'] . '; ' : '') . $item->observations;
+                }
+                $groupedItems[$existingItemIndex] = $existingItem;
+            } else {
+                // Si no existe, agregarlo
+                $groupedItems->push([
+                    'product_id' => $item->product_id,
+                    'product' => $item->product,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $item->subtotal,
+                    'modifiers' => $item->modifiers,
+                    'observations' => $item->observations,
+                ]);
+            }
+        }
+        
+        return $groupedItems;
+    }
+
+    /**
      * Mostrar lista de pedidos
      */
     public function index(Request $request)
@@ -156,7 +197,10 @@ class OrderController extends Controller
 
         $order->load(['table', 'user', 'items.product.category', 'items.modifiers', 'payments']);
 
-        return view('orders.show', compact('order'));
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        return view('orders.show', compact('order', 'groupedItems'));
     }
 
     /**
@@ -265,7 +309,10 @@ class OrderController extends Controller
             'payments'
         ]);
 
-        return view('orders.summary', compact('order'));
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        return view('orders.summary', compact('order', 'groupedItems'));
     }
 
     /**
@@ -534,6 +581,9 @@ class OrderController extends Controller
 
         $order->load(['user', 'items.product.category', 'items.modifiers', 'payments']);
 
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
         // Obtener productos para el modal de agregar items
         $restaurantId = auth()->user()->restaurant_id;
         $products = Product::where('restaurant_id', $restaurantId)
@@ -546,7 +596,7 @@ class OrderController extends Controller
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });
 
-        return view('orders.quick-show', compact('order', 'products'));
+        return view('orders.quick-show', compact('order', 'products', 'groupedItems'));
     }
 
     /**
@@ -579,7 +629,10 @@ class OrderController extends Controller
 
         $order->load(['items.product.category', 'items.modifiers', 'user']);
 
-        return view('orders.quick-close', compact('order', 'activeSession'));
+        // Agrupar items por producto
+        $groupedItems = $this->groupOrderItems($order->items);
+
+        return view('orders.quick-close', compact('order', 'activeSession', 'groupedItems'));
     }
 
     /**

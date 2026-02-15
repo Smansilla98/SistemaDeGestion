@@ -113,24 +113,24 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($order->items as $item)
+            @foreach($groupedItems as $item)
             <tr>
-                <td>{{ $item->quantity }}</td>
+                <td>{{ $item['quantity'] }}</td>
                 <td>
-                    <strong>{{ $item->product->name }}</strong>
-                    @if($item->modifiers->count() > 0)
+                    <strong>{{ $item['product']->name }}</strong>
+                    @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
                     <div class="modifiers">
-                        @foreach($item->modifiers as $modifier)
+                        @foreach($item['modifiers'] as $modifier)
                         • {{ $modifier->name }}<br>
                         @endforeach
                     </div>
                     @endif
-                    @if($item->observations)
-                    <div class="observations">Nota: {{ $item->observations }}</div>
+                    @if(!empty($item['observations']))
+                    <div class="observations">Nota: {{ $item['observations'] }}</div>
                     @endif
                 </td>
-                <td>${{ number_format($item->unit_price, 2) }}</td>
-                <td>${{ number_format($item->subtotal, 2) }}</td>
+                <td>${{ number_format($item['unit_price'], 2) }}</td>
+                <td>${{ number_format($item['subtotal'], 2) }}</td>
             </tr>
             @endforeach
         </tbody>

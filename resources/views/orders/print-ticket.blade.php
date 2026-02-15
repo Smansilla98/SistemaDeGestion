@@ -176,12 +176,12 @@
     <div class="dashed-line"></div>
 
     <div class="items">
-        @foreach($order->items as $item)
+        @foreach($groupedItems as $item)
         <div class="item">
             <div class="item-line">
-                <span class="item-quantity">{{ $item->quantity }} x</span>
-                <span class="item-name">{{ $item->product->name }}</span>
-                <span class="item-price">${{ number_format($item->subtotal, 2) }}</span>
+                <span class="item-quantity">{{ $item['quantity'] }} x</span>
+                <span class="item-name">{{ $item['product']->name }}</span>
+                <span class="item-price">${{ number_format($item['subtotal'], 2) }}</span>
             </div>
         </div>
         @endforeach
