@@ -12,9 +12,15 @@
             <p class="text-muted">Consumo inmediato sin mesa</p>
         </div>
         <div>
+            @if($activeSession)
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newQuickOrderModal">
                 <i class="bi bi-plus-circle"></i> Nuevo Pedido Rápido
             </button>
+            @else
+            <button type="button" class="btn btn-primary" disabled title="Se requiere una sesión de caja activa">
+                <i class="bi bi-plus-circle"></i> Nuevo Pedido Rápido
+            </button>
+            @endif
             <a href="{{ route('orders.index') }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver a Pedidos
             </a>

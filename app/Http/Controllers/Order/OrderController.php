@@ -324,7 +324,7 @@ class OrderController extends Controller
         Gate::authorize('update', $order);
 
         $validated = $request->validate([
-            'status' => 'required|in:EN_PREPARACION,ENTREGADO'
+            'status' => 'required|in:EN_PREPARACION,ENTREGADO,LISTO'
         ]);
 
         $newStatus = $validated['status'];
@@ -333,7 +333,9 @@ class OrderController extends Controller
         // Validar transiciones permitidas
         $allowedTransitions = [
             'ABIERTO' => ['EN_PREPARACION'],
-            'EN_PREPARACION' => ['ENTREGADO'],
+            'ENVIADO' => ['EN_PREPARACION', 'ENTREGADO'],
+            'EN_PREPARACION' => ['ENTREGADO', 'LISTO'],
+            'LISTO' => ['ENTREGADO'],
         ];
 
         if (!isset($allowedTransitions[$currentStatus]) || !in_array($newStatus, $allowedTransitions[$currentStatus])) {
