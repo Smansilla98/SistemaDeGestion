@@ -28,7 +28,9 @@
     <div class="col-lg-8">
         @php
             $totalItems = $individualItems->count();
-            $completedItems = $individualItems->where('status', 'ENTREGADO')->count();
+            $completedItems = $individualItems->filter(function($item) {
+                return strtoupper(trim($item->status ?? '')) === 'ENTREGADO';
+            })->count();
             $pendingItems = $totalItems - $completedItems;
         @endphp
         
@@ -106,29 +108,47 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'COCINA']))
-                                        @if($item->status === 'PENDIENTE')
+                                    @php
+                                        $userRole = auth()->user()->role ?? null;
+                                        $itemStatus = strtoupper(trim($item->status ?? 'PENDIENTE'));
+                                        $canUpdate = in_array($userRole, ['ADMIN', 'MOZO', 'COCINA']);
+                                    @endphp
+                                    
+                                    @if($canUpdate)
+                                        @if($itemStatus === 'PENDIENTE')
                                             <button class="btn btn-sm btn-warning update-item-status" 
                                                     data-item-id="{{ $item->id }}" 
                                                     data-status="EN_PREPARACION"
                                                     title="Marcar en preparación">
-                                                <i class="bi bi-gear"></i>
+                                                <i class="bi bi-gear"></i> En Preparación
                                             </button>
-                                        @elseif($item->status === 'EN_PREPARACION')
+                                        @elseif($itemStatus === 'EN_PREPARACION')
                                             <button class="btn btn-sm btn-info update-item-status" 
                                                     data-item-id="{{ $item->id }}" 
                                                     data-status="LISTO"
                                                     title="Marcar como listo">
-                                                <i class="bi bi-check2-circle"></i>
+                                                <i class="bi bi-check2-circle"></i> Listo
                                             </button>
-                                        @elseif($item->status === 'LISTO')
+                                        @elseif($itemStatus === 'LISTO')
                                             <button class="btn btn-sm btn-success update-item-status" 
                                                     data-item-id="{{ $item->id }}" 
                                                     data-status="ENTREGADO"
                                                     title="Marcar como entregado">
-                                                <i class="bi bi-check-circle"></i>
+                                                <i class="bi bi-check-circle"></i> Entregado
+                                            </button>
+                                        @elseif($itemStatus === 'ENTREGADO')
+                                            <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Completado</span>
+                                        @else
+                                            {{-- Estado desconocido, mostrar botón por defecto --}}
+                                            <button class="btn btn-sm btn-warning update-item-status" 
+                                                    data-item-id="{{ $item->id }}" 
+                                                    data-status="EN_PREPARACION"
+                                                    title="Marcar en preparación">
+                                                <i class="bi bi-gear"></i> En Preparación
                                             </button>
                                         @endif
+                                    @else
+                                        <span class="text-muted" title="Rol: {{ $userRole }}">-</span>
                                     @endif
                                 </td>
                             </tr>
@@ -473,7 +493,8 @@ async function updateItemStatusHandler(event) {
         });
         
         try {
-            const response = await fetch(`/orders/items/${itemId}/status`, {
+            const url = `{{ route('orders.update-item-status', ['item' => '__ITEM_ID__']) }}`.replace('__ITEM_ID__', itemId);
+            const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -590,20 +611,24 @@ async function updateItemStatusHandler(event) {
                 confirmButtonColor: '#dc3545'
             });
         }
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'Error al actualizar el estado del item',
-            confirmButtonColor: '#dc3545'
-        });
-    }
 }
 
-// Agregar event listeners a todos los botones de actualizar estado
-document.querySelectorAll('.update-item-status').forEach(btn => {
-    btn.addEventListener('click', updateItemStatusHandler);
+// Agregar event listeners a todos los botones de actualizar estado cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.update-item-status').forEach(btn => {
+        btn.addEventListener('click', updateItemStatusHandler);
+    });
+    
+    // También agregar listeners después de un pequeño delay por si hay contenido dinámico
+    setTimeout(function() {
+        document.querySelectorAll('.update-item-status').forEach(btn => {
+            // Verificar si ya tiene el listener para evitar duplicados
+            if (!btn.hasAttribute('data-listener-added')) {
+                btn.addEventListener('click', updateItemStatusHandler);
+                btn.setAttribute('data-listener-added', 'true');
+            }
+        });
+    }, 100);
 });
 
 // Mostrar alerta de éxito

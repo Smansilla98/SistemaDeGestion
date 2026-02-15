@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Order;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Table;
 use App\Models\Product;
 use App\Models\Category;
@@ -1125,7 +1126,7 @@ class OrderController extends Controller
     /**
      * Actualizar estado de un item del pedido
      */
-    public function updateItemStatus(Request $request, \App\Models\OrderItem $item)
+    public function updateItemStatus(Request $request, OrderItem $item)
     {
         Gate::authorize('update', $item->order);
 
