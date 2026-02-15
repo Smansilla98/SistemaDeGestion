@@ -26,6 +26,37 @@
 
 <div class="row">
     <div class="col-lg-8">
+        @php
+            $totalItems = $individualItems->count();
+            $completedItems = $individualItems->where('status', 'ENTREGADO')->count();
+            $pendingItems = $totalItems - $completedItems;
+        @endphp
+        
+        <!-- Contador de progreso -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1"><i class="bi bi-list-check"></i> Progreso del Pedido</h6>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar {{ $completedItems === $totalItems ? 'bg-success' : 'bg-primary' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ $totalItems > 0 ? ($completedItems / $totalItems * 100) : 0 }}%"
+                                 aria-valuenow="{{ $completedItems }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ $totalItems }}">
+                                <strong>{{ $completedItems }}/{{ $totalItems }} items completados</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end ms-3">
+                        <div class="badge bg-success fs-6">{{ $completedItems }}</div>
+                        <div class="text-muted small">de {{ $totalItems }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-list-ul"></i> Items del Pedido</h5>
@@ -39,33 +70,65 @@
                                 <th>Cantidad</th>
                                 <th>Precio Unit.</th>
                                 <th>Subtotal</th>
-                                <th>Observaciones</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($groupedItems as $item)
-                            <tr>
+                            @foreach($individualItems as $item)
+                            <tr data-item-id="{{ $item->id }}" class="{{ $item->status === 'ENTREGADO' ? 'table-success' : '' }}">
                                 <td>
-                                    <strong>{{ $item['product']->name }}</strong>
-                                    @if($item['product']->category)
-                                        <br><small class="text-muted">{{ $item['product']->category->name }}</small>
+                                    <strong>{{ $item->product->name }}</strong>
+                                    @if($item->product->category)
+                                        <br><small class="text-muted">{{ $item->product->category->name }}</small>
                                     @endif
-                                    @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
+                                    @if($item->modifiers->count() > 0)
                                         <br><small class="text-info">
-                                            @foreach($item['modifiers'] as $modifier)
+                                            @foreach($item->modifiers as $modifier)
                                                 + {{ $modifier->name }} 
                                             @endforeach
                                         </small>
                                     @endif
+                                    @if($item->observations)
+                                        <br><small class="text-muted"><em>{{ $item->observations }}</em></small>
+                                    @endif
                                 </td>
-                                <td>{{ $item['quantity'] }}</td>
-                                <td>${{ number_format($item['unit_price'], 2) }}</td>
-                                <td><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
+                                <td>{{ $item->quantity }}</td>
+                                <td>${{ number_format($item->unit_price, 2) }}</td>
+                                <td><strong>${{ number_format($item->subtotal, 2) }}</strong></td>
                                 <td>
-                                    @if(!empty($item['observations']))
-                                        <small class="text-muted">{{ $item['observations'] }}</small>
-                                    @else
-                                        <span class="text-muted">-</span>
+                                    <span class="badge bg-{{ 
+                                        $item->status === 'ENTREGADO' ? 'success' : 
+                                        ($item->status === 'LISTO' ? 'info' : 
+                                        ($item->status === 'EN_PREPARACION' ? 'warning' : 'secondary')) 
+                                    }}" id="item-status-{{ $item->id }}">
+                                        {{ $item->status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'COCINA']))
+                                        @if($item->status === 'PENDIENTE')
+                                            <button class="btn btn-sm btn-warning update-item-status" 
+                                                    data-item-id="{{ $item->id }}" 
+                                                    data-status="EN_PREPARACION"
+                                                    title="Marcar en preparación">
+                                                <i class="bi bi-gear"></i>
+                                            </button>
+                                        @elseif($item->status === 'EN_PREPARACION')
+                                            <button class="btn btn-sm btn-info update-item-status" 
+                                                    data-item-id="{{ $item->id }}" 
+                                                    data-status="LISTO"
+                                                    title="Marcar como listo">
+                                                <i class="bi bi-check2-circle"></i>
+                                            </button>
+                                        @elseif($item->status === 'LISTO')
+                                            <button class="btn btn-sm btn-success update-item-status" 
+                                                    data-item-id="{{ $item->id }}" 
+                                                    data-status="ENTREGADO"
+                                                    title="Marcar como entregado">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>
@@ -75,19 +138,19 @@
                             <tr>
                                 <th colspan="3" class="text-end">Subtotal:</th>
                                 <th>${{ number_format($order->subtotal, 2) }}</th>
-                                <th></th>
+                                <th colspan="2"></th>
                             </tr>
                             @if($order->discount > 0)
                             <tr>
                                 <th colspan="3" class="text-end">Descuento:</th>
                                 <th class="text-danger">-${{ number_format($order->discount, 2) }}</th>
-                                <th></th>
+                                <th colspan="2"></th>
                             </tr>
                             @endif
                             <tr class="table-primary">
                                 <th colspan="3" class="text-end">Total:</th>
                                 <th class="fs-5">${{ number_format($order->total, 2) }}</th>
-                                <th></th>
+                                <th colspan="2"></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -371,6 +434,178 @@
 
 @push('scripts')
 <script>
+// Función para actualizar estado de item
+async function updateItemStatusHandler(event) {
+    const btn = event.currentTarget;
+    const itemId = btn.dataset.itemId;
+    const newStatus = btn.dataset.status;
+    
+    const statusLabels = {
+            'PENDIENTE': 'PENDIENTE',
+            'EN_PREPARACION': 'EN PREPARACIÓN',
+            'LISTO': 'LISTO',
+            'ENTREGADO': 'ENTREGADO'
+        };
+        
+        const confirmResult = await Swal.fire({
+            icon: 'question',
+            title: '¿Cambiar estado?',
+            text: `¿Marcar este item como ${statusLabels[newStatus]}?`,
+            showCancelButton: true,
+            confirmButtonColor: '#1e8081',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, cambiar',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (!confirmResult.isConfirmed) {
+            return;
+        }
+        
+        // Mostrar loading
+        Swal.fire({
+            title: 'Actualizando...',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        try {
+            const response = await fetch(`/orders/items/${itemId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            });
+            
+            const contentType = response.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Respuesta no válida del servidor');
+                }
+            }
+            
+            if (data.success) {
+                // Actualizar badge de estado
+                const statusBadge = document.getElementById(`item-status-${itemId}`);
+                const statusColors = {
+                    'PENDIENTE': 'secondary',
+                    'EN_PREPARACION': 'warning',
+                    'LISTO': 'info',
+                    'ENTREGADO': 'success'
+                };
+                
+                statusBadge.textContent = newStatus;
+                statusBadge.className = `badge bg-${statusColors[newStatus]}`;
+                
+                // Actualizar fila
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                if (newStatus === 'ENTREGADO') {
+                    row.classList.add('table-success');
+                } else {
+                    row.classList.remove('table-success');
+                }
+                
+                // Actualizar botones de acción
+                const actionCell = row.querySelector('td:last-child');
+                const nextStatus = {
+                    'PENDIENTE': { status: 'EN_PREPARACION', icon: 'bi-gear', color: 'warning', title: 'Marcar en preparación' },
+                    'EN_PREPARACION': { status: 'LISTO', icon: 'bi-check2-circle', color: 'info', title: 'Marcar como listo' },
+                    'LISTO': { status: 'ENTREGADO', icon: 'bi-check-circle', color: 'success', title: 'Marcar como entregado' }
+                };
+                
+                if (nextStatus[newStatus]) {
+                    const newBtn = document.createElement('button');
+                    newBtn.className = `btn btn-sm btn-${nextStatus[newStatus].color} update-item-status`;
+                    newBtn.setAttribute('data-item-id', itemId);
+                    newBtn.setAttribute('data-status', nextStatus[newStatus].status);
+                    newBtn.setAttribute('title', nextStatus[newStatus].title);
+                    newBtn.innerHTML = `<i class="bi ${nextStatus[newStatus].icon}"></i>`;
+                    
+                    // Agregar event listener
+                    newBtn.addEventListener('click', updateItemStatusHandler);
+                    
+                    actionCell.innerHTML = '';
+                    actionCell.appendChild(newBtn);
+                } else {
+                    actionCell.innerHTML = '<span class="text-muted">-</span>';
+                }
+                
+                // Actualizar contador de progreso
+                if (data.stats) {
+                    const progressBar = document.querySelector('.progress-bar');
+                    const progressText = progressBar.querySelector('strong');
+                    const percentage = (data.stats.completed / data.stats.total) * 100;
+                    
+                    progressBar.style.width = `${percentage}%`;
+                    progressBar.setAttribute('aria-valuenow', data.stats.completed);
+                    progressText.textContent = `${data.stats.completed}/${data.stats.total} items completados`;
+                    
+                    if (data.stats.completed === data.stats.total) {
+                        progressBar.classList.remove('bg-primary');
+                        progressBar.classList.add('bg-success');
+                    } else {
+                        progressBar.classList.remove('bg-success');
+                        progressBar.classList.add('bg-primary');
+                    }
+                    
+                    // Actualizar badge
+                    const badge = document.querySelector('.badge.bg-success.fs-6');
+                    if (badge) {
+                        badge.textContent = data.stats.completed;
+                    }
+                }
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Estado actualizado!',
+                    text: `Item marcado como ${statusLabels[newStatus]}`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Error al actualizar el estado');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Error al actualizar el estado del item',
+                confirmButtonColor: '#dc3545'
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Error al actualizar el estado del item',
+            confirmButtonColor: '#dc3545'
+        });
+    }
+}
+
+// Agregar event listeners a todos los botones de actualizar estado
+document.querySelectorAll('.update-item-status').forEach(btn => {
+    btn.addEventListener('click', updateItemStatusHandler);
+});
+
 // Mostrar alerta de éxito
 @if(session('success'))
     @if(session('order_delivered'))

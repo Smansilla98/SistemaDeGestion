@@ -668,8 +668,11 @@ class OrderController extends Controller
 
         $order->load(['user', 'items.product.category', 'items.modifiers', 'payments']);
 
-        // Agrupar items por producto
+        // Agrupar items por producto para mostrar en tabla
         $groupedItems = $this->groupOrderItems($order->items);
+        
+        // Items individuales para gestión de estados (sin agrupar)
+        $individualItems = $order->items;
 
         // Obtener productos para el modal de agregar items
         $restaurantId = auth()->user()->restaurant_id;
@@ -683,7 +686,7 @@ class OrderController extends Controller
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });
 
-        return view('orders.quick-show', compact('order', 'products', 'groupedItems'));
+        return view('orders.quick-show', compact('order', 'products', 'groupedItems', 'individualItems'));
     }
 
     /**
@@ -1116,6 +1119,63 @@ class OrderController extends Controller
             }
 
             return back()->with('error', 'Error al procesar el pedido: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Actualizar estado de un item del pedido
+     */
+    public function updateItemStatus(Request $request, \App\Models\OrderItem $item)
+    {
+        Gate::authorize('update', $item->order);
+
+        $validated = $request->validate([
+            'status' => 'required|in:PENDIENTE,EN_PREPARACION,LISTO,ENTREGADO',
+        ]);
+
+        try {
+            $this->orderService->updateItemStatus($item, $validated['status']);
+
+            // Actualizar estado del pedido si es necesario
+            $order = $item->order;
+            $allItemsReady = $order->items()
+                ->where('status', '!=', 'ENTREGADO')
+                ->count() === 0;
+
+            if ($allItemsReady && in_array($order->status, ['EN_PREPARACION', 'ENVIADO'])) {
+                $order->update(['status' => 'LISTO']);
+            } elseif ($order->status === 'ENVIADO' && $validated['status'] === 'EN_PREPARACION') {
+                $order->update(['status' => 'EN_PREPARACION']);
+            }
+
+            if ($request->expectsJson() || $request->wantsJson()) {
+                // Calcular estadísticas
+                $totalItems = $order->items->count();
+                $completedItems = $order->items()->where('status', 'ENTREGADO')->count();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Estado del item actualizado correctamente',
+                    'item' => $item->fresh(['product']),
+                    'order' => $order->fresh(),
+                    'stats' => [
+                        'total' => $totalItems,
+                        'completed' => $completedItems,
+                        'pending' => $totalItems - $completedItems
+                    ]
+                ]);
+            }
+
+            return back()->with('success', 'Estado del item actualizado correctamente');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al actualizar el estado: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
         }
     }
 }

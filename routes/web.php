@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
         Route::post('/{order}/items', [OrderController::class, 'addItem'])->name('add-item');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('update-status');
+        Route::put('/items/{item}/status', [OrderController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
         Route::get('/{order}/summary', [OrderController::class, 'summary'])->name('summary');
