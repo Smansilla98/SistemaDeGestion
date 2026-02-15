@@ -15,9 +15,10 @@
             Cliente: <strong>{{ $order->customer_name }}</strong> | 
             Estado: <span class="badge bg-{{ 
                 $order->status === 'CERRADO' ? 'success' : 
+                ($order->status === 'ENTREGADO' ? 'success' :
                 ($order->status === 'LISTO' ? 'info' : 
-                ($order->status === 'ABIERTO' ? 'secondary' : 'warning')) 
-            }}">{{ $order->status }}</span> |
+                ($order->status === 'ABIERTO' ? 'secondary' : 'warning'))) 
+            }}" id="order-status-badge">{{ $order->status }}</span> |
             Creado por: {{ $order->user->name }} | 
             Fecha: {{ $order->created_at->format('d/m/Y H:i') }}
         </p>
@@ -197,9 +198,10 @@
                 <p><strong>Estado:</strong> 
                     <span class="badge bg-{{ 
                         $order->status === 'CERRADO' ? 'success' : 
+                        ($order->status === 'ENTREGADO' ? 'success' :
                         ($order->status === 'LISTO' ? 'info' : 
-                        ($order->status === 'ABIERTO' ? 'secondary' : 'warning')) 
-                    }}">{{ $order->status }}</span>
+                        ($order->status === 'ABIERTO' ? 'secondary' : 'warning'))) 
+                    }}" id="order-status-badge-info">{{ $order->status }}</span>
                 </p>
                 <p><strong>Creado por:</strong> {{ $order->user->name }}</p>
                 <p><strong>Fecha creación:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
@@ -585,10 +587,37 @@ async function updateItemStatusHandler(event) {
                         progressBar.classList.add('bg-primary');
                     }
                     
-                    // Actualizar badge
+                    // Actualizar badge del contador
                     const badge = document.querySelector('.badge.bg-success.fs-6');
                     if (badge) {
                         badge.textContent = data.stats.completed;
+                    }
+                }
+                
+                // Actualizar estado del pedido si viene en la respuesta
+                if (data.order && data.order.status) {
+                    const orderStatus = data.order.status;
+                    const statusColors = {
+                        'CERRADO': 'success',
+                        'ENTREGADO': 'success',
+                        'LISTO': 'info',
+                        'ABIERTO': 'secondary',
+                        'EN_PREPARACION': 'warning',
+                        'ENVIADO': 'warning'
+                    };
+                    
+                    // Actualizar badge en el header
+                    const orderStatusBadge = document.getElementById('order-status-badge');
+                    if (orderStatusBadge) {
+                        orderStatusBadge.textContent = orderStatus;
+                        orderStatusBadge.className = `badge bg-${statusColors[orderStatus] || 'warning'}`;
+                    }
+                    
+                    // Actualizar badge en la información
+                    const orderStatusBadgeInfo = document.getElementById('order-status-badge-info');
+                    if (orderStatusBadgeInfo) {
+                        orderStatusBadgeInfo.textContent = orderStatus;
+                        orderStatusBadgeInfo.className = `badge bg-${statusColors[orderStatus] || 'warning'}`;
                     }
                 }
                 

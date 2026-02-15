@@ -1138,15 +1138,31 @@ class OrderController extends Controller
             $this->orderService->updateItemStatus($item, $validated['status']);
 
             // Actualizar estado del pedido si es necesario
-            $order = $item->order;
-            $allItemsReady = $order->items()
+            $order = $item->order->fresh();
+            $allItemsDelivered = $order->items()
                 ->where('status', '!=', 'ENTREGADO')
                 ->count() === 0;
+            
+            $hasItemsInPreparation = $order->items()
+                ->whereIn('status', ['EN_PREPARACION', 'LISTO'])
+                ->count() > 0;
 
-            if ($allItemsReady && in_array($order->status, ['EN_PREPARACION', 'ENVIADO'])) {
-                $order->update(['status' => 'LISTO']);
-            } elseif ($order->status === 'ENVIADO' && $validated['status'] === 'EN_PREPARACION') {
+            // Si todos los items están entregados, marcar el pedido como ENTREGADO
+            if ($allItemsDelivered && $order->status !== 'CERRADO') {
+                $order->update(['status' => 'ENTREGADO']);
+            } 
+            // Si hay items en preparación y el pedido está ABIERTO o ENVIADO, cambiar a EN_PREPARACION
+            elseif ($hasItemsInPreparation && in_array($order->status, ['ABIERTO', 'ENVIADO'])) {
                 $order->update(['status' => 'EN_PREPARACION']);
+            }
+            // Si el pedido está EN_PREPARACION y todos los items están LISTO o ENTREGADO, cambiar a LISTO
+            elseif ($order->status === 'EN_PREPARACION') {
+                $allItemsReadyOrDelivered = $order->items()
+                    ->whereNotIn('status', ['LISTO', 'ENTREGADO'])
+                    ->count() === 0;
+                if ($allItemsReadyOrDelivered && !$allItemsDelivered) {
+                    $order->update(['status' => 'LISTO']);
+                }
             }
 
             if ($request->expectsJson() || $request->wantsJson()) {
