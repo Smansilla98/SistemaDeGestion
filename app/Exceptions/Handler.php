@@ -47,6 +47,11 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        // Manejar errores de validación PRIMERO (antes de otros errores)
+        if ($exception instanceof ValidationException) {
+            return $this->handleValidationException($request, $exception);
+        }
+
         // Manejar errores de base de datos
         if ($exception instanceof QueryException) {
             return $this->handleQueryException($request, $exception);
@@ -68,7 +73,7 @@ class Handler extends ExceptionHandler
         }
 
         // Para AJAX/API requests, devolver JSON
-        if ($request->expectsJson() || $request->wantsJson()) {
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => false,
                 'message' => $this->getUserFriendlyMessage($exception),
@@ -76,6 +81,24 @@ class Handler extends ExceptionHandler
             ], $this->getStatusCode($exception));
         }
 
+        return parent::render($request, $exception);
+    }
+
+    /**
+     * Manejar errores de validación
+     */
+    protected function handleValidationException($request, ValidationException $exception)
+    {
+        // Para peticiones AJAX/JSON, siempre devolver JSON
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación. Por favor, revisa los datos ingresados.',
+                'errors' => $exception->errors()
+            ], 422);
+        }
+
+        // Para peticiones normales, usar el comportamiento por defecto
         return parent::render($request, $exception);
     }
 

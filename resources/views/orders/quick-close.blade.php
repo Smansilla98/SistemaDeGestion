@@ -417,12 +417,29 @@ document.getElementById('paymentForm').addEventListener('submit', async function
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ payments: payments })
         });
         
-        const data = await response.json();
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            // Si no es JSON, intentar parsear el texto
+            const text = await response.text();
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // Si no se puede parsear, es probable que sea HTML de error
+                throw new Error('El servidor devolvió una respuesta no válida. Por favor, verifica los datos e intenta nuevamente.');
+            }
+        }
         
         if (data.success) {
             Swal.fire({
@@ -439,18 +456,26 @@ document.getElementById('paymentForm').addEventListener('submit', async function
                 window.location.href = '{{ route("orders.quick.show", $order) }}';
             });
         } else {
+            // Manejar errores de validación
+            let errorMessage = data.message || 'Error al procesar el pago';
+            if (data.errors) {
+                const errorMessages = Object.values(data.errors).flat();
+                errorMessage = errorMessages.join('<br>');
+            }
+            
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: data.message || 'Error al procesar el pago',
+                html: errorMessage,
                 confirmButtonColor: '#dc3545'
             });
         }
     } catch (error) {
+        console.error('Error al procesar pago:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error de conexión. Por favor intenta nuevamente.',
+            text: error.message || 'Error de conexión. Por favor intenta nuevamente.',
             confirmButtonColor: '#dc3545'
         });
     }

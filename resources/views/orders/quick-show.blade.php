@@ -473,7 +473,9 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
                     product_id: item.product_id,
@@ -482,15 +484,30 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
                 })
             });
             
-            const data = await response.json();
+            // Verificar si la respuesta es JSON
+            const contentType = response.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Respuesta no válida del servidor');
+                }
+            }
             
             if (data.success || response.ok) {
                 successCount++;
             } else {
-                errorMessages.push(`${item.name}: ${data.message || 'Error'}`);
+                const errorMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'Error');
+                errorMessages.push(`${item.name}: ${errorMsg}`);
             }
         } catch (error) {
-            errorMessages.push(`${item.name}: Error de conexión`);
+            console.error('Error al agregar item:', error);
+            errorMessages.push(`${item.name}: ${error.message || 'Error de conexión'}`);
         }
     }
     
