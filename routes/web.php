@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('quick')->name('quick.')->group(function () {
             Route::get('/', [OrderController::class, 'quickOrder'])->name('index');
             Route::get('/api', [OrderController::class, 'quickOrdersApi'])->name('api');
+            Route::get('/api/customers', [OrderController::class, 'quickOrdersCustomersApi'])->name('api.customers');
+            Route::get('/api/{order}', [OrderController::class, 'quickOrderDetailsApi'])->name('api.details');
             Route::post('/', [OrderController::class, 'storeQuickOrder'])->name('store');
             Route::get('/{order}', [OrderController::class, 'showQuickOrder'])->name('show');
             Route::get('/{order}/close', [OrderController::class, 'closeQuickOrder'])->name('close');
