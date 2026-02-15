@@ -14,15 +14,27 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Seleccionar Productos</h5>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0">Seleccionar Productos</h5>
+                    <div class="input-group" style="max-width: 400px;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="productSearch" 
+                               placeholder="🔍 Buscar producto..." 
+                               autocomplete="off">
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 @foreach($products as $categoryName => $categoryProducts)
-                <div class="mb-4">
+                <div class="mb-4 category-section" data-category-name="{{ strtolower($categoryName) }}">
                     <h5 class="border-bottom pb-2">{{ $categoryName }}</h5>
                     <div class="row">
                         @foreach($categoryProducts as $product)
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-4 mb-3 product-item" 
+                             data-product-name="{{ strtolower($product->name) }}"
+                             data-category-name="{{ strtolower($categoryName) }}">
                             <div class="card h-100">
                                 <div class="card-body">
                                     <h6 class="card-title">{{ $product->name }}</h6>
@@ -89,6 +101,37 @@
 </div>
 
 <script>
+// Búsqueda de productos
+document.getElementById('productSearch')?.addEventListener('input', function() {
+    filterProducts(this.value.toLowerCase().trim());
+});
+
+function filterProducts(searchTerm) {
+    const categorySections = document.querySelectorAll('.category-section');
+    
+    categorySections.forEach(section => {
+        let hasVisibleProducts = false;
+        const productItems = section.querySelectorAll('.product-item');
+        
+        productItems.forEach(item => {
+            const productName = item.dataset.productName || '';
+            const categoryName = item.dataset.categoryName || '';
+            
+            if (!searchTerm || 
+                productName.includes(searchTerm) || 
+                categoryName.includes(searchTerm)) {
+                item.style.display = 'block';
+                hasVisibleProducts = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Mostrar/ocultar la sección de categoría según si tiene productos visibles
+        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    });
+}
+
 let orderItems = [];
 let itemCounter = 0;
 
