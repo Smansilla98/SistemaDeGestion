@@ -141,7 +141,7 @@
                         @endif
                     </div>
                     <div class="text-end">
-                        <strong>${{ number_format($item->subtotal, 2) }}</strong>
+                        <strong>${{ number_format($item['subtotal'], 2) }}</strong>
                     </div>
                 </div>
                 @endforeach
