@@ -292,16 +292,46 @@
     @endif
 
     <div class="text-center mt-4">
-        <div class="btn-group" role="group">
-            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-primary">
-                <i class="bi bi-printer"></i> Imprimir Recibo (Ticket)
+        <div class="d-grid gap-2">
+            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i> Ver PDF (Cocina)
             </a>
-            <button onclick="window.print()" class="btn btn-outline-primary">
-                <i class="bi bi-printer"></i> Imprimir Vista
-            </button>
+            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-printer"></i> Factura
+            </a>
             <a href="{{ route('tables.index') }}" class="btn btn-success">
                 <i class="bi bi-check-circle"></i> Finalizar
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para imprimir ticket -->
+<div class="modal fade" id="printTicketModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-printer"></i> Imprimir Ticket
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Mesa <strong>{{ $table->number }}</strong> cerrada exitosamente.</p>
+                <p class="text-muted mb-4">Seleccione una opción para imprimir:</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver PDF (Cocina)
+                    </a>
+                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-success">
+                        <i class="bi bi-printer"></i> Factura
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -324,6 +354,16 @@
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Abrir modal automáticamente al cargar la página
+    const printModal = new bootstrap.Modal(document.getElementById('printTicketModal'));
+    printModal.show();
+});
+</script>
 @endpush
 @endsection
 
