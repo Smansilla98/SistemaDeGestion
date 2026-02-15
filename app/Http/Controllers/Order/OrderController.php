@@ -357,11 +357,20 @@ class OrderController extends Controller
 
         // MÓDULO 2: Mensaje especial para pedidos entregados
         if ($newStatus === 'ENTREGADO') {
-            return back()->with('success', "✅ Pedido #{$order->number} entregado en Mesa {$order->table->number}")
-                         ->with('order_delivered', [
-                             'order_number' => $order->number,
-                             'table_number' => $order->table->number
-                         ]);
+            if ($order->table) {
+                return back()->with('success', "✅ Pedido #{$order->number} entregado en Mesa {$order->table->number}")
+                             ->with('order_delivered', [
+                                 'order_number' => $order->number,
+                                 'table_number' => $order->table->number
+                             ]);
+            } else {
+                // Pedido rápido sin mesa
+                return back()->with('success', "✅ Pedido #{$order->number} entregado")
+                             ->with('order_delivered', [
+                                 'order_number' => $order->number,
+                                 'customer_name' => $order->customer_name ?? 'Cliente'
+                             ]);
+            }
         }
 
         return back()->with('success', "Estado del pedido actualizado a {$newStatus}");
