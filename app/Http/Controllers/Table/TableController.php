@@ -671,7 +671,13 @@ class TableController extends Controller
 
         $table->load('currentSession.waiter', 'sector');
 
-        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems'));
+        // Obtener tipos de descuentos activos
+        $discountTypes = \App\Models\DiscountType::where('restaurant_id', $table->restaurant_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems', 'discountTypes'));
     }
 
     /**
@@ -711,6 +717,7 @@ class TableController extends Controller
                 'payments.*.amount' => 'required|numeric|min:0.01',
                 'payments.*.operation_number' => 'nullable|string|max:255',
                 'payments.*.notes' => 'nullable|string|max:500',
+                'discount_type_id' => 'nullable|exists:discount_types,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson() || $request->wantsJson()) {
@@ -737,8 +744,23 @@ class TableController extends Controller
                 return $respond(false, 'No hay pedidos activos para cerrar');
             }
 
-            // Calcular total
-            $totalAmount = $activeOrders->sum('total');
+            // Calcular subtotal base
+            $baseSubtotal = $activeOrders->sum('subtotal');
+            $baseDiscount = $activeOrders->sum('discount');
+            
+            // Aplicar descuento adicional si se seleccionó un tipo de descuento
+            $additionalDiscount = 0;
+            $discountType = null;
+            if (!empty($validated['discount_type_id'])) {
+                $discountType = \App\Models\DiscountType::find($validated['discount_type_id']);
+                if ($discountType && $discountType->restaurant_id === $table->restaurant_id) {
+                    $additionalDiscount = $discountType->calculateDiscount($baseSubtotal);
+                }
+            }
+            
+            // Calcular total con descuento adicional
+            $totalDiscount = $baseDiscount + $additionalDiscount;
+            $totalAmount = $baseSubtotal - $totalDiscount;
             $totalPaid = collect($validated['payments'])->sum('amount');
 
             // Validar que el total pagado sea mayor o igual al total (permite cambio)
@@ -749,18 +771,32 @@ class TableController extends Controller
             // Calcular cambio si hay excedente
             $change = $totalPaid - $totalAmount;
 
+            // Aplicar descuento adicional proporcionalmente a cada pedido
+            if ($additionalDiscount > 0 && $baseSubtotal > 0) {
+                foreach ($activeOrders as $order) {
+                    // Calcular proporción del descuento para este pedido
+                    $orderProportion = $order->subtotal / $baseSubtotal;
+                    $orderAdditionalDiscount = round($additionalDiscount * $orderProportion, 2);
+                    
+                    // Aplicar descuento adicional al pedido
+                    $order->discount += $orderAdditionalDiscount;
+                    $order->total = $order->subtotal - $order->discount;
+                    $order->save();
+                }
+            }
+
             // Cerrar todos los pedidos
             $ordersClosed = [];
             $allItems = collect();
-            $totalSubtotal = 0;
-            $totalDiscount = 0;
+            $finalTotalSubtotal = 0;
+            $finalTotalDiscount = 0;
 
             foreach ($activeOrders as $order) {
                 $order->load(['items.product.category', 'items.modifiers']);
                 $this->orderService->closeOrder($order, false);
                 
-                $totalSubtotal += $order->subtotal;
-                $totalDiscount += $order->discount;
+                $finalTotalSubtotal += $order->subtotal;
+                $finalTotalDiscount += $order->discount;
                 
                 foreach ($order->items as $item) {
                     $existingItem = $allItems->first(function ($i) use ($item) {
@@ -885,7 +921,7 @@ class TableController extends Controller
 
             // Recalcular totales desde items consolidados para asegurar precisión
             $finalTotalSubtotal = $allItems->sum('subtotal');
-            $finalTotalDiscount = $totalDiscount;
+            $finalTotalDiscount = $finalTotalDiscount; // Ya calculado arriba
             $finalTotalAmount = $finalTotalSubtotal - $finalTotalDiscount;
             
             // Mensaje de éxito con información de cambio si aplica

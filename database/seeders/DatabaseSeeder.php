@@ -171,6 +171,9 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        // Crear tipos de descuentos
+        $this->call(DiscountTypeSeeder::class);
+
         $this->command->info('✅ Base de datos poblada exitosamente!');
         $this->command->info('');
         $this->command->info('👤 Usuarios creados:');
