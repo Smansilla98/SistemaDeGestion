@@ -142,19 +142,37 @@
             </div>
 
             <div class="payment-total">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label for="discount_type_id" class="form-label"><i class="bi bi-percent"></i> Tipo de Descuento</label>
+                        <select class="form-select" id="discount_type_id" name="discount_type_id">
+                            <option value="">Sin descuento</option>
+                            @foreach($discountTypes as $discountType)
+                            <option value="{{ $discountType->id }}" 
+                                    data-percentage="{{ $discountType->percentage }}"
+                                    data-name="{{ $discountType->name }}">
+                                {{ $discountType->name }} ({{ $discountType->percentage }}%)
+                            </option>
+                            @endforeach
+                        </select>
+                        @if($discountTypes->isEmpty())
+                        <small class="text-muted">No hay tipos de descuento configurados. <a href="#" onclick="alert('Contacta al administrador para configurar descuentos')">Configurar</a></small>
+                        @endif
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-6">
                         <div class="text-muted">Subtotal:</div>
-                        <div class="fs-5"><strong>${{ number_format($totalSubtotal, 2) }}</strong></div>
+                        <div class="fs-5"><strong id="displaySubtotal">${{ number_format($totalSubtotal, 2) }}</strong></div>
                     </div>
                     <div class="col-6">
                         <div class="text-muted">Descuento:</div>
-                        <div class="fs-5"><strong>${{ number_format($totalDiscount, 2) }}</strong></div>
+                        <div class="fs-5"><strong id="displayDiscount" class="text-danger">${{ number_format($totalDiscount, 2) }}</strong></div>
                     </div>
                 </div>
                 <hr>
                 <div class="payment-total-display">
-                    Total a Pagar: ${{ number_format($totalAmount, 2) }}
+                    Total a Pagar: $<span id="displayTotal">{{ number_format($totalAmount, 2) }}</span>
                 </div>
             </div>
         </div>
@@ -204,7 +222,10 @@
 @push('scripts')
 <script>
 let paymentMethods = [];
+let baseSubtotal = {{ $totalSubtotal }};
+let baseDiscount = {{ $totalDiscount }};
 let totalAmount = {{ $totalAmount }};
+let currentDiscount = {{ $totalDiscount }};
 let paymentCounter = 0;
 
 const paymentMethodOptions = {
@@ -313,6 +334,34 @@ function renderPayments() {
     }).join('');
 }
 
+// Calcular descuento cuando se selecciona un tipo de descuento
+document.getElementById('discount_type_id').addEventListener('change', function() {
+    const select = this;
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (selectedOption.value === '') {
+        // Sin descuento
+        currentDiscount = baseDiscount;
+    } else {
+        // Calcular descuento basado en el porcentaje
+        const percentage = parseFloat(selectedOption.dataset.percentage);
+        const discountAmount = Math.round((baseSubtotal * percentage / 100) * 100) / 100;
+        currentDiscount = discountAmount;
+    }
+    
+    // Recalcular total
+    totalAmount = baseSubtotal - currentDiscount;
+    
+    // Actualizar display
+    document.getElementById('displayDiscount').textContent = '$' + currentDiscount.toFixed(2);
+    document.getElementById('displayTotal').textContent = totalAmount.toFixed(2);
+    
+    // Actualizar el campo de restante si ya hay pagos
+    if (paymentMethods.length > 0) {
+        updatePaymentSummary();
+    }
+});
+
 function updatePaymentSummary() {
     const totalPaid = paymentMethods.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
     const remaining = totalAmount - totalPaid;
@@ -373,6 +422,12 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
     // Preparar datos del formulario
     const formData = new FormData(this);
     formData.delete('payments');
+    
+    // Agregar discount_type_id si está seleccionado
+    const discountTypeId = document.getElementById('discount_type_id').value;
+    if (discountTypeId) {
+        formData.append('discount_type_id', discountTypeId);
+    }
     
     paymentMethods.forEach((payment, index) => {
         formData.append(`payments[${index}][payment_method]`, payment.method);
