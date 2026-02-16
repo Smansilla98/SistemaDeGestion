@@ -142,6 +142,20 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Gestión de Tipos de Descuentos
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('discount-types')->name('discount-types.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'store'])->name('store');
+        Route::get('/{discountType}/edit', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'edit'])->name('edit');
+        Route::put('/{discountType}', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'update'])->name('update');
+        Route::delete('/{discountType}', [\App\Http\Controllers\DiscountType\DiscountTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Módulo de Caja
     |--------------------------------------------------------------------------
     */
