@@ -801,12 +801,12 @@
         <nav class="nova-sidebar-nav">
             <!-- Grupo 1: Operaciones Diarias -->
             <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') ? 'active' : '' }}" onclick="toggleNavGroup('operaciones-diarias')">
+                <div class="nova-nav-group-header {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'active' : '' }}" onclick="toggleNavGroup('operaciones-diarias')">
                     <i class="bi bi-calendar-day"></i>
                     <span>Operaciones Diarias</span>
                     <i class="bi bi-chevron-down ms-auto" id="operaciones-diarias-icon"></i>
                 </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') ? 'show' : '' }}" id="operaciones-diarias-items">
+                <div class="nova-nav-group-items {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'show' : '' }}" id="operaciones-diarias-items">
                     <a href="{{ route('dashboard') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <i class="bi bi-house"></i>
                         <span>Página Principal</span>
@@ -831,6 +831,12 @@
                     <a href="{{ route('cash-register.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-coin"></i>
                         <span>Caja</span>
+                    </a>
+                    @endif
+                    @if(auth()->user()->role === 'ADMIN')
+                    <a href="{{ route('discount-types.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
+                        <i class="bi bi-percent"></i>
+                        <span>Descuentos</span>
                     </a>
                     @endif
                 </div>
