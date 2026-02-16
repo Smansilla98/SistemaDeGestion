@@ -20,8 +20,22 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0">Todos los Pedidos</h5>
+                @if($table->status === 'OCUPADA' && $table->current_session_id)
+                <div class="btn-group">
+                    @can('create', App\Models\Order::class)
+                    <a href="{{ route('orders.create', ['tableId' => $table->id]) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Agregar Pedido
+                    </a>
+                    @endcan
+                    @can('update', $table)
+                    <a href="{{ route('tables.show-close', $table) }}" class="btn btn-success">
+                        <i class="bi bi-cash-coin"></i> Cerrar Mesa
+                    </a>
+                    @endcan
+                </div>
+                @endif
             </div>
             <div class="card-body">
                 @if($table->current_session_id === null)
