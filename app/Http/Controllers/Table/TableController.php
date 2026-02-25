@@ -153,10 +153,9 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['table', 'items.product', 'items.modifiers']);
 
-            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Imprimiendo ticket de cocina.',
+                'message' => 'Pedido creado exitosamente. Se abrirá la impresión con la impresora del navegador.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
@@ -280,10 +279,9 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
-            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Imprimiendo ticket de cocina.',
+                'message' => 'Pedido creado exitosamente. Se abrirá la impresión con la impresora del navegador.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),

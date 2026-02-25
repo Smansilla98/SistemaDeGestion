@@ -11,27 +11,76 @@ use Illuminate\Support\Facades\File;
 class PrintService
 {
     /**
+     * Agrupar items del pedido por producto (para la vista print-kitchen)
+     */
+    protected function groupOrderItems($items)
+    {
+        $groupedItems = collect();
+        foreach ($items as $item) {
+            $existingIndex = $groupedItems->search(fn ($i) => $i['product_id'] === $item->product_id);
+            if ($existingIndex !== false) {
+                $existing = $groupedItems[$existingIndex];
+                $existing['quantity'] += $item->quantity;
+                $existing['subtotal'] += $item->subtotal;
+                if ($item->observations && ($existing['observations'] ?? '') !== $item->observations) {
+                    $existing['observations'] = ($existing['observations'] ?? '') . ($existing['observations'] ? '; ' : '') . $item->observations;
+                }
+                $groupedItems[$existingIndex] = $existing;
+            } else {
+                $groupedItems->push([
+                    'product_id' => $item->product_id,
+                    'product' => $item->product,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $item->subtotal,
+                    'modifiers' => $item->modifiers ?? collect(),
+                    'observations' => $item->observations,
+                ]);
+            }
+        }
+        return $groupedItems;
+    }
+
+    /**
      * Imprimir ticket de cocina
      */
     public function printKitchenTicket(Order $order, ?Printer $printer = null)
     {
+        $order->load(['table', 'items.product', 'items.modifiers']);
+        $groupedItems = $this->groupOrderItems($order->items);
+
         try {
-            // Generar PDF
-            $pdf = Pdf::loadView('orders.print-kitchen', compact('order'))
+            $pdf = Pdf::loadView('orders.print-kitchen', compact('order', 'groupedItems'))
                 ->setPaper([0, 0, 226.77, 841.89], 'portrait')
                 ->setOption('enable-local-file-access', true);
 
-            // Si hay impresora configurada, intentar imprimir
             if ($printer && $printer->is_active) {
                 return $this->sendToPrinter($pdf, $printer, "ticket-cocina-{$order->number}.pdf");
             }
 
-            // Por defecto, guardar en archivo (simulación)
             return $this->saveToFile($pdf, "kitchen", "ticket-cocina-{$order->number}.pdf");
         } catch (\Exception $e) {
             Log::error('Error al imprimir ticket de cocina: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Obtener la impresora a usar para ticket de cocina (tipo kitchen, bar o cualquiera activa)
+     */
+    public function getPrinterForKitchenTicket(int $restaurantId): ?Printer
+    {
+        $printer = $this->getPrinterByType($restaurantId, 'kitchen');
+        if ($printer) {
+            return $printer;
+        }
+        $printer = $this->getPrinterByType($restaurantId, 'bar');
+        if ($printer) {
+            return $printer;
+        }
+        return Printer::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->first();
     }
 
     /**

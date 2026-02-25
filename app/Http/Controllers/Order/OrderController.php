@@ -645,7 +645,6 @@ class OrderController extends Controller
                 }
             }
 
-            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
@@ -1070,9 +1069,7 @@ class OrderController extends Controller
                     'closed_at' => now(),
                 ]);
 
-                // Impresión en la computadora: se devuelve kitchen_ticket_url para que el frontend abra el PDF
                 $printMessage = '';
-
                 $successMessage = 'Pedido rápido procesado exitosamente.';
                 if ($change > 0.01) {
                     $successMessage .= " Cambio: $" . number_format($change, 2) . ".";
