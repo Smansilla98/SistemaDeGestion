@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Recibo Consolidado - Mesa ' . $table->number)
+@section('title', 'Cierre de Mesa - Mesa ' . $table->number)
 
 @push('styles')
 <style>
@@ -154,7 +154,7 @@
             <span class="receipt-info-value">{{ $table->sector->name }}</span>
         </div>
         <div class="receipt-info-item">
-            <span class="receipt-info-label">Pedidos</span>
+            <span class="receipt-info-label">Cantidad de Pedidos</span>
             <span class="receipt-info-value">{{ $closedOrders->count() }}</span>
         </div>
         <div class="receipt-info-item">
@@ -163,7 +163,7 @@
         </div>
     </div>
 
-    <h4 class="mb-3"><i class="bi bi-list-ul"></i> Items Consolidados</h4>
+    <h4 class="mb-3"><i class="bi bi-list-ul"></i> Pedidos Realizados</h4>
     <table class="items-table">
         <thead>
             <tr>
@@ -274,28 +274,9 @@
     </div>
     @endif
 
-    @if($closedOrders->count() > 0)
-    <div class="orders-list">
-        <h5 class="mb-3"><i class="bi bi-receipt"></i> Pedidos Incluidos</h5>
-        <div>
-            @foreach($closedOrders as $order)
-            <span class="order-badge">
-                {{ $order->number }}
-                <small>(${{ number_format($order->total, 2) }})</small>
-            </span>
-            @endforeach
-        </div>
-        <p class="text-muted mt-3 mb-0">
-            <small>Mozo: {{ $closedOrders->first()->user->name ?? 'N/A' }}</small>
-        </p>
-    </div>
-    @endif
 
     <div class="text-center mt-4">
         <div class="d-grid gap-2">
-            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-eye"></i> Ver PDF (Cocina)
-            </a>
             <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-success">
                 <i class="bi bi-printer"></i> Factura
             </a>
@@ -319,9 +300,6 @@
                 <p class="mb-3">Mesa <strong>{{ $table->number }}</strong> cerrada exitosamente.</p>
                 <p class="text-muted mb-4">Seleccione una opción para imprimir:</p>
                 <div class="d-grid gap-2">
-                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-primary">
-                        <i class="bi bi-eye"></i> Ver PDF (Cocina)
-                    </a>
                     <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-success">
                         <i class="bi bi-printer"></i> Factura
                     </a>

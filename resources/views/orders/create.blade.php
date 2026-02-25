@@ -249,7 +249,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         return;
     }
 
-    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
     var submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creando...';
@@ -280,11 +279,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         var data = await res.json().catch(function() { return {}; });
         if (!data.success) {
             throw new Error(data.message || 'No se pudo crear el pedido');
-        }
-        if (data.kitchen_ticket_url && printWin && !printWin.closed) {
-            printWin.location.href = data.kitchen_ticket_url;
-        } else if (data.kitchen_ticket_url) {
-            window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
         }
         window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
     } catch (err) {

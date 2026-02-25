@@ -247,10 +247,6 @@
     @endif
 @endif
 
-// Abrir ventana de impresión automática cuando se acaba de crear el pedido (desde "Crear Pedido")
-@if(session('kitchen_ticket_url'))
-    window.open('{{ session('kitchen_ticket_url') }}', 'kitchen_print', 'noopener,noreferrer');
-@endif
 </script>
 @endpush
 @endsection
