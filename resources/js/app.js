@@ -1,4 +1,8 @@
 import './bootstrap';
+import * as ThermalPrinter from './thermalPrinter.js';
+
+// Impresora térmica USB (comandas): disponible como window.ThermalPrinter
+window.ThermalPrinter = ThermalPrinter;
 
 // Funciones JavaScript globales
 document.addEventListener('DOMContentLoaded', function() {
