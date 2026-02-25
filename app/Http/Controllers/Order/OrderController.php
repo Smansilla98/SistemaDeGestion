@@ -195,8 +195,11 @@ class OrderController extends Controller
                 }
             }
 
+            $order->load(['table', 'items.product', 'items.modifiers']);
+
             return redirect()->route('orders.show', $order)
-                ->with('success', 'Pedido creado exitosamente');
+                ->with('success', 'Pedido creado exitosamente')
+                ->with('kitchen_ticket_url', route('orders.print.kitchen', $order));
         } catch (\Exception $e) {
             return back()
                 ->with('error', $e->getMessage())
