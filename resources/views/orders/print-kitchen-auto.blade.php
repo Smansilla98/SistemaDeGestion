@@ -13,8 +13,15 @@
             border: none;
         }
         @media print {
-            body, html { overflow: visible; }
-            iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+            html, body { margin: 0; padding: 0; overflow: visible; width: auto; height: auto; }
+            iframe {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
         }
     </style>
 </head>
@@ -27,16 +34,25 @@
             function doPrint() {
                 if (printed) return;
                 printed = true;
-                window.focus();
-                window.print();
+                try {
+                    // Imprimir solo el contenido del iframe (el PDF del ticket), no la pantalla contenedora
+                    if (frame.contentWindow && typeof frame.contentWindow.print === 'function') {
+                        frame.contentWindow.focus();
+                        frame.contentWindow.print();
+                    } else {
+                        window.print();
+                    }
+                } catch (e) {
+                    window.print();
+                }
                 setTimeout(function() {
-                    try { window.close(); } catch (e) {}
-                }, 800);
+                    try { window.close(); } catch (err) {}
+                }, 1000);
             }
             frame.onload = function() {
-                setTimeout(doPrint, 700);
+                setTimeout(doPrint, 800);
             };
-            setTimeout(doPrint, 2000);
+            setTimeout(doPrint, 2500);
         })();
     </script>
 </body>
