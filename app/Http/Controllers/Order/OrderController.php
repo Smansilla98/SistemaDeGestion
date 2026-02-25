@@ -199,7 +199,7 @@ class OrderController extends Controller
 
             return redirect()->route('orders.show', $order)
                 ->with('success', 'Pedido creado exitosamente')
-                ->with('kitchen_ticket_url', route('orders.print.kitchen', $order));
+                ->with('kitchen_ticket_url', route('orders.print.kitchen.auto', $order));
         } catch (\Exception $e) {
             return back()
                 ->with('error', $e->getMessage())
@@ -645,13 +645,13 @@ class OrderController extends Controller
                 }
             }
 
-            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (mismo PDF que /orders/{id}/print/kitchen)
+            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
-                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
+                'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
             ]);
         } catch (\Exception $e) {
             Log::error('Error al crear pedido rápido: ' . $e->getMessage());
@@ -1088,8 +1088,8 @@ class OrderController extends Controller
                         'total' => $order->total,
                         'total_paid' => $totalPaid,
                         'change' => $change > 0.01 ? $change : 0,
-                        'kitchen_ticket_url' => route('orders.print.kitchen', $order),
-                        'print_url' => route('orders.print.kitchen', $order),
+                        'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
+                        'print_url' => route('orders.print.kitchen.auto', $order),
                     ]);
                 }
 
