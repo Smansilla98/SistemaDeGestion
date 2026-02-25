@@ -711,6 +711,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         send_to_kitchen: document.getElementById('quickOrderSendToKitchen').checked,
         items: items
     };
+
+    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
     
     // Mostrar loading
     Swal.fire({
@@ -753,9 +755,10 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         }
         
         if (data.success) {
-            // Abrir ventana de impresión automática (dispara print sin esperar confirmación)
-            if (data.kitchen_ticket_url) {
-                window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer');
+            if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                printWin.location.href = data.kitchen_ticket_url;
+            } else if (data.kitchen_ticket_url) {
+                window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
             }
 
             Swal.fire({

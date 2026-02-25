@@ -236,21 +236,67 @@ function updateItemsList() {
     });
 }
 
-// Interceptar envío del formulario
-document.getElementById('orderForm').addEventListener('submit', function(e) {
+// Interceptar envío del formulario: AJAX + ventana de impresión en el clic
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
     if (orderItems.length === 0) {
-        e.preventDefault();
         Swal.fire({
             icon: 'warning',
             title: 'Pedido vacío',
             text: 'Debes agregar al menos un item al pedido',
             confirmButtonColor: '#1e8081'
         });
-        return false;
+        return;
     }
-    
-    // Los inputs ocultos ya están agregados por updateItemsList
-    return true;
+
+    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creando...';
+
+    try {
+        var formData = {
+            table_id: document.getElementById('table_id').value,
+            observations: document.getElementById('observations').value,
+            items: orderItems.map(function(i) {
+                return { product_id: i.product_id, quantity: parseInt(i.quantity) || 1 };
+            }),
+            _token: document.querySelector('input[name="_token"]').value
+        };
+        var res = await fetch('{{ route("orders.store") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': formData._token,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                table_id: formData.table_id,
+                observations: formData.observations,
+                items: formData.items
+            })
+        });
+        var data = await res.json().catch(function() { return {}; });
+        if (!data.success) {
+            throw new Error(data.message || 'No se pudo crear el pedido');
+        }
+        if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+            printWin.location.href = data.kitchen_ticket_url;
+        } else if (data.kitchen_ticket_url) {
+            window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+        }
+        window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
+    } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Crear Pedido';
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'No se pudo crear el pedido',
+            confirmButtonColor: '#c94a2d'
+        });
+    }
 });
 
 // Mostrar alerta de error si hay un error de stock

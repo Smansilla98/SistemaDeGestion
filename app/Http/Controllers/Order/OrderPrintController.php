@@ -88,17 +88,17 @@ class OrderPrintController extends Controller
     }
 
     /**
-     * Página que muestra el ticket de cocina y dispara la impresión automática (sin esperar confirmación).
-     * Abre el diálogo de impresión o imprime directo si el equipo está configurado así.
+     * Página HTML del ticket que dispara la impresión automática (usa la impresora del navegador).
+     * El contenido es HTML (no iframe/PDF) para que window.print() se ejecute de forma fiable.
      */
     public function kitchenTicketAuto(Order $order)
     {
-        $order->load(['table', 'items.product', 'items.modifiers']);
-        $pdf_url = url()->route('orders.print.kitchen', $order);
+        $order->load(['table', 'items.product', 'items.modifiers', 'user']);
+        $groupedItems = $this->groupOrderItems($order->items);
 
         return response()->view('orders.print-kitchen-auto', [
             'order' => $order,
-            'pdf_url' => $pdf_url,
+            'groupedItems' => $groupedItems,
         ]);
     }
 

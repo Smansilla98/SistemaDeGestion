@@ -2,57 +2,98 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imprimir ticket - Pedido {{ $order->number }}</title>
+    <title>Ticket Cocina - {{ $order->number }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            width: 80mm;
+            padding: 5mm;
         }
-        @media print {
-            html, body { margin: 0; padding: 0; overflow: visible; width: auto; height: auto; }
-            iframe {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                border: none;
-            }
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
+        .header h1 { font-size: 16px; font-weight: bold; margin-bottom: 3px; }
+        .order-info { margin-bottom: 10px; }
+        .order-info p { margin: 2px 0; }
+        .items { margin: 10px 0; }
+        .item {
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .item-header { font-weight: bold; font-size: 13px; }
+        .item-details { margin-left: 10px; font-size: 11px; }
+        .item-observations { margin-left: 10px; font-style: italic; color: #666; }
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            border-top: 2px dashed #000;
+            padding-top: 5px;
+            font-size: 10px;
+        }
+        .timestamp { font-size: 10px; color: #666; }
     </style>
 </head>
 <body>
-    <iframe id="pdfFrame" src="{{ $pdf_url }}" title="Ticket cocina"></iframe>
+    <div class="header">
+        <h1>COCINA</h1>
+        <p>Pedido #{{ $order->number }}</p>
+    </div>
+    <div class="order-info">
+        @if($order->table)
+            <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+        @elseif($order->customer_name)
+            <p><strong>Consumidor:</strong> {{ $order->customer_name }}</p>
+        @endif
+        <p><strong>Mozo:</strong> {{ $order->user->name ?? '-' }}</p>
+        <p class="timestamp"><strong>Hora:</strong> {{ $order->created_at->format('H:i') }}</p>
+        @if($order->observations)
+            <p><strong>Observaciones:</strong> {{ $order->observations }}</p>
+        @endif
+    </div>
+    <div class="items">
+        @foreach($groupedItems as $item)
+        <div class="item">
+            <div class="item-header">{{ $item['quantity'] }}x {{ $item['product']->name }}</div>
+            @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
+            <div class="item-details">
+                @foreach($item['modifiers'] as $modifier)
+                    - {{ $modifier->name }}<br>
+                @endforeach
+            </div>
+            @endif
+            @if(!empty($item['observations']))
+            <div class="item-observations">Nota: {{ $item['observations'] }}</div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    <div class="footer">
+        <p>{{ now()->format('d/m/Y H:i:s') }}</p>
+    </div>
     <script>
         (function() {
-            var frame = document.getElementById('pdfFrame');
             var printed = false;
             function doPrint() {
                 if (printed) return;
                 printed = true;
-                try {
-                    // Imprimir solo el contenido del iframe (el PDF del ticket), no la pantalla contenedora
-                    if (frame.contentWindow && typeof frame.contentWindow.print === 'function') {
-                        frame.contentWindow.focus();
-                        frame.contentWindow.print();
-                    } else {
-                        window.print();
-                    }
-                } catch (e) {
-                    window.print();
-                }
+                window.focus();
+                window.print();
                 setTimeout(function() {
-                    try { window.close(); } catch (err) {}
-                }, 1000);
+                    try { window.close(); } catch (e) {}
+                }, 800);
             }
-            frame.onload = function() {
-                setTimeout(doPrint, 800);
-            };
-            setTimeout(doPrint, 2500);
+            if (document.readyState === 'complete') {
+                doPrint();
+            } else {
+                window.onload = function() { setTimeout(doPrint, 100); };
+            }
+            setTimeout(doPrint, 1200);
         })();
     </script>
 </body>
