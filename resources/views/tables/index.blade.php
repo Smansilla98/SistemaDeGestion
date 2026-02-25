@@ -730,6 +730,13 @@
                                     <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
                                         <i class="bi bi-check-circle"></i> Confirmar Pedido
                                     </button>
+                                    @if(auth()->check() && in_array(auth()->user()->role, ['MOZO', 'ADMIN']))
+                                    <p class="mt-2 mb-0 text-center small text-muted">
+                                        <button type="button" class="btn btn-link btn-sm p-0" id="connectUsbPrinterBtn" title="Conectar impresora térmica USB para imprimir comandas sin diálogo">
+                                            <i class="bi bi-usb-symbol"></i> Conectar impresora USB
+                                        </button>
+                                    </p>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -1134,6 +1141,15 @@ document.addEventListener('DOMContentLoaded', function() {
         search.addEventListener('input', (e) => filterProducts(e.target.value));
     }
 
+    document.getElementById('connectUsbPrinterBtn')?.addEventListener('click', function() {
+        if (!window.ThermalPrinter) return;
+        window.ThermalPrinter.connect().then(function() {
+            Swal.fire({ icon: 'success', title: 'Impresora conectada', text: 'Las comandas se imprimirán en la impresora USB.', confirmButtonColor: '#1e8081' });
+        }).catch(function(err) {
+            Swal.fire({ icon: 'info', title: 'Impresora USB', html: 'Seleccioná la impresora térmica en el cuadro del navegador, o comprobá que esté conectada por USB.<br><small>En Windows puede ser necesario usar impresora por puerto serie.</small>', confirmButtonColor: '#1e8081' });
+        });
+    });
+
     const form = document.getElementById('newOrderForm');
     if (form) {
         form.addEventListener('submit', async function(e) {
@@ -1160,6 +1176,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }))
             };
 
+            var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+
             try {
                 const res = await fetch(`/tables/${tableId}/orders`, {
                     method: 'POST',
@@ -1174,6 +1192,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok || !data.success) {
                     throw new Error(data.message || 'No se pudo crear el pedido');
+                }
+
+                if (window.ThermalPrinter && data.order_id) {
+                    window.ThermalPrinter.fetchAndPrintComanda(data.order_id).then(function() {
+                        if (printWin && !printWin.closed) printWin.close();
+                    }).catch(function() {
+                        if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                            printWin.location.href = data.kitchen_ticket_url;
+                        } else if (data.kitchen_ticket_url) {
+                            window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                        }
+                    });
+                } else if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                    printWin.location.href = data.kitchen_ticket_url;
+                } else if (data.kitchen_ticket_url) {
+                    window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
                 }
 
                 Swal.fire({

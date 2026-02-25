@@ -247,6 +247,9 @@
     @endif
 @endif
 
+@if(session('kitchen_ticket_url'))
+    window.open('{{ session('kitchen_ticket_url') }}', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+@endif
 </script>
 @endpush
 @endsection

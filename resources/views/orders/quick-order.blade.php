@@ -712,6 +712,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         items: items
     };
 
+    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+
     // Mostrar loading
     Swal.fire({
         title: 'Creando pedido...',
@@ -753,6 +755,19 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         }
         
         if (data.success) {
+            if (window.ThermalPrinter && data.order_id) {
+                window.ThermalPrinter.fetchAndPrintComanda(data.order_id).then(function() {
+                    if (printWin && !printWin.closed) printWin.close();
+                }).catch(function() {
+                    if (data.kitchen_ticket_url && printWin && !printWin.closed) printWin.location.href = data.kitchen_ticket_url;
+                    else if (data.kitchen_ticket_url) window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                });
+            } else if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                printWin.location.href = data.kitchen_ticket_url;
+            } else if (data.kitchen_ticket_url) {
+                window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+            }
+
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido creado!',

@@ -61,6 +61,59 @@ class OrderApiController extends Controller
     }
 
     /**
+     * Datos de la comanda para impresión ESC/POS (impresora térmica USB).
+     * Devuelve una estructura lista para que el frontend genere los comandos con ReceiptPrinterEncoder.
+     */
+    public function printComandaData(Order $order)
+    {
+        if ($order->restaurant_id !== auth()->user()->restaurant_id) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $order->load(['table', 'user', 'items.product', 'items.modifiers']);
+
+        $byProduct = [];
+        foreach ($order->items as $item) {
+            $key = $item->product_id;
+            if (!isset($byProduct[$key])) {
+                $byProduct[$key] = [
+                    'quantity' => 0,
+                    'name' => $item->product->name,
+                    'observations' => [],
+                    'modifiers' => $item->modifiers->pluck('name')->implode(', '),
+                ];
+            }
+            $byProduct[$key]['quantity'] += $item->quantity;
+            if ($item->observations) {
+                $byProduct[$key]['observations'][] = $item->observations;
+            }
+        }
+        $items = array_map(function ($row) {
+            return [
+                'quantity' => $row['quantity'],
+                'name' => $row['name'],
+                'observations' => implode('; ', $row['observations']),
+                'modifiers' => $row['modifiers'],
+            ];
+        }, array_values($byProduct));
+
+        $comanda = [
+            'order_number' => $order->number,
+            'table_number' => $order->table ? (string) $order->table->number : null,
+            'customer_name' => $order->customer_name ?? null,
+            'waiter_name' => $order->user ? $order->user->name : '-',
+            'created_at' => $order->created_at->format('d/m/Y H:i'),
+            'observations' => $order->observations ?? '',
+            'items' => $items,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $comanda,
+        ]);
+    }
+
+    /**
      * Crear un nuevo pedido
      */
     public function store(Request $request)

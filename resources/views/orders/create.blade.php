@@ -249,6 +249,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         return;
     }
 
+    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
     var submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creando...';
@@ -280,7 +281,19 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         if (!data.success) {
             throw new Error(data.message || 'No se pudo crear el pedido');
         }
-        window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
+        if (window.ThermalPrinter && data.order_id) {
+            window.ThermalPrinter.fetchAndPrintComanda(data.order_id).then(function() {
+                window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
+            }).catch(function() {
+                if (data.kitchen_ticket_url && printWin && !printWin.closed) printWin.location.href = data.kitchen_ticket_url;
+                else if (data.kitchen_ticket_url) window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
+            });
+        } else {
+            if (data.kitchen_ticket_url && printWin && !printWin.closed) printWin.location.href = data.kitchen_ticket_url;
+            else if (data.kitchen_ticket_url) window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+            window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
+        }
     } catch (err) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Crear Pedido';

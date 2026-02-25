@@ -4,77 +4,97 @@
     <meta charset="UTF-8">
     <title>Ticket Cocina - {{ $order->number }}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-size: 12px; font-family: 'Times New Roman', 'Courier New', monospace; }
+        body { padding: 2mm; }
+        .ticket {
             width: 80mm;
-            padding: 5mm;
+            max-width: 80mm;
+            margin: 0 auto;
         }
-        .header {
-            text-align: center;
-            border-bottom: 2px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+        td, th, tr, table {
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: 'Times New Roman', 'Courier New', monospace;
         }
-        .header h1 { font-size: 16px; font-weight: bold; margin-bottom: 3px; }
-        .order-info { margin-bottom: 10px; }
-        .order-info p { margin: 2px 0; }
-        .items { margin: 10px 0; }
-        .item {
-            margin-bottom: 8px;
-            padding-bottom: 5px;
-            border-bottom: 1px dashed #ccc;
+        .centrado { text-align: center; }
+        .header { border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 6px; text-align: center; }
+        .header h1 { font-size: 14px; font-weight: bold; }
+        .order-info { margin-bottom: 6px; font-size: 11px; }
+        .order-info p { margin: 1px 0; }
+        .items table { width: 100%; border-top: 1px solid #000; }
+        .items td, .items th { padding: 2px 4px; border-bottom: 1px dashed #ccc; }
+        .items th { text-align: left; font-size: 11px; }
+        td.cant { width: 28px; max-width: 28px; text-align: right; }
+        td.prod { word-break: break-word; }
+        .footer { margin-top: 8px; text-align: center; border-top: 1px dashed #000; padding-top: 4px; font-size: 10px; }
+
+        @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .ticket {
+                width: 80mm !important;
+                max-width: 80mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            body * { visibility: visible; }
         }
-        .item-header { font-weight: bold; font-size: 13px; }
-        .item-details { margin-left: 10px; font-size: 11px; }
-        .item-observations { margin-left: 10px; font-style: italic; color: #666; }
-        .footer {
-            margin-top: 15px;
-            text-align: center;
-            border-top: 2px dashed #000;
-            padding-top: 5px;
-            font-size: 10px;
-        }
-        .timestamp { font-size: 10px; color: #666; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>COCINA</h1>
-        <p>Pedido #{{ $order->number }}</p>
-    </div>
-    <div class="order-info">
-        @if($order->table)
-            <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
-        @elseif($order->customer_name)
-            <p><strong>Consumidor:</strong> {{ $order->customer_name }}</p>
-        @endif
-        <p><strong>Mozo:</strong> {{ $order->user->name ?? '-' }}</p>
-        <p class="timestamp"><strong>Hora:</strong> {{ $order->created_at->format('H:i') }}</p>
-        @if($order->observations)
-            <p><strong>Observaciones:</strong> {{ $order->observations }}</p>
-        @endif
-    </div>
-    <div class="items">
-        @foreach($groupedItems as $item)
-        <div class="item">
-            <div class="item-header">{{ $item['quantity'] }}x {{ $item['product']->name }}</div>
-            @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
-            <div class="item-details">
-                @foreach($item['modifiers'] as $modifier)
-                    - {{ $modifier->name }}<br>
-                @endforeach
-            </div>
+    <div class="ticket">
+        <div class="header">
+            <h1>COCINA</h1>
+            <p>Pedido #{{ $order->number }}</p>
+        </div>
+        <div class="order-info">
+            @if($order->table)
+                <p><strong>Mesa:</strong> {{ $order->table->number }}</p>
+            @elseif($order->customer_name)
+                <p><strong>Consumidor:</strong> {{ $order->customer_name }}</p>
             @endif
-            @if(!empty($item['observations']))
-            <div class="item-observations">Nota: {{ $item['observations'] }}</div>
+            <p><strong>Mozo:</strong> {{ $order->user->name ?? '-' }}</p>
+            <p><strong>Hora:</strong> {{ $order->created_at->format('H:i') }}</p>
+            @if($order->observations)
+                <p><strong>Obs:</strong> {{ $order->observations }}</p>
             @endif
         </div>
-        @endforeach
-    </div>
-    <div class="footer">
-        <p>{{ now()->format('d/m/Y H:i:s') }}</p>
+        <div class="items">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="cant">CANT</th>
+                        <th class="prod">PRODUCTO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($groupedItems as $item)
+                    <tr>
+                        <td class="cant">{{ $item['quantity'] }}x</td>
+                        <td class="prod">
+                            {{ $item['product']->name }}
+                            @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
+                                <br><small>@foreach($item['modifiers'] as $modifier) + {{ $modifier->name }} @endforeach</small>
+                            @endif
+                            @if(!empty($item['observations']))
+                                <br><small>Nota: {{ $item['observations'] }}</small>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="footer centrado">
+            <p>{{ now()->format('d/m/Y H:i:s') }}</p>
+        </div>
     </div>
     <script>
         (function() {
@@ -84,14 +104,12 @@
                 printed = true;
                 window.focus();
                 window.print();
-                setTimeout(function() {
-                    try { window.close(); } catch (e) {}
-                }, 800);
+                setTimeout(function() { try { window.close(); } catch (e) {} }, 800);
             }
             if (document.readyState === 'complete') {
                 doPrint();
             } else {
-                window.onload = function() { setTimeout(doPrint, 100); };
+                window.onload = function() { setTimeout(doPrint, 150); };
             }
             setTimeout(doPrint, 1200);
         })();

@@ -1224,6 +1224,18 @@
             });
         }
     </script>
+    @if(auth()->check() && in_array(auth()->user()->role ?? '', ['MOZO', 'ADMIN']))
+    <script src="https://unpkg.com/@point-of-sale/receipt-printer-encoder@3.0.3/dist/receipt-printer-encoder.umd.js"></script>
+    <script src="https://unpkg.com/@point-of-sale/webusb-receipt-printer@2.0.0/dist/webusb-receipt-printer.umd.js"></script>
+    <script src="{{ asset('js/thermal-printer.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.ThermalPrinter && window.ThermalPrinter.getStoredDevice()) {
+                window.ThermalPrinter.reconnect();
+            }
+        });
+    </script>
+    @endif
     @stack('scripts')
 </body>
 </html>
