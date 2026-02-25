@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/notifications/ready-orders', [KitchenController::class, 'getReadyOrdersNotifications'])->name('ready-orders');
+        Route::get('/orders/{order}/print-comanda-data', [\App\Http\Controllers\Api\OrderApiController::class, 'printComandaData'])->name('orders.print-comanda-data');
     });
 
     /*
