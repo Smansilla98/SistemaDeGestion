@@ -198,6 +198,16 @@ class OrderController extends Controller
 
             $order->load(['table', 'items.product', 'items.modifiers']);
 
+            // Impresión automática sin pedir permiso: enviar a la impresora configurada
+            try {
+                $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                if ($printer) {
+                    $this->printService->printKitchenTicket($order, $printer);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+            }
+
             if ($wantsJson) {
                 return response()->json([
                     'success' => true,
@@ -645,7 +655,6 @@ class OrderController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['items.product', 'items.modifiers']);
 
-            // Enviar a cocina si se solicita
             $printMessage = '';
             if ($request->boolean('send_to_kitchen')) {
                 try {
@@ -655,6 +664,17 @@ class OrderController extends Controller
                     Log::warning('Error al enviar pedido rápido a cocina: ' . $e->getMessage());
                     $printMessage = ' Pedido creado. Error al enviar a cocina.';
                 }
+            }
+
+            // Impresión automática sin pedir permiso: enviar a la impresora configurada
+            try {
+                $printer = $this->printService->getPrinterForKitchenTicket($restaurantId);
+                if ($printer) {
+                    $this->printService->printKitchenTicket($order, $printer);
+                    $printMessage .= ' Ticket enviado a la impresora.';
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
             }
 
             return response()->json([
@@ -1081,7 +1101,18 @@ class OrderController extends Controller
                     'closed_at' => now(),
                 ]);
 
+                // Impresión automática sin pedir permiso: enviar a la impresora configurada
                 $printMessage = '';
+                try {
+                    $printer = $this->printService->getPrinterForKitchenTicket($restaurantId);
+                    if ($printer) {
+                        $this->printService->printKitchenTicket($order, $printer);
+                        $printMessage = ' Ticket enviado a la impresora.';
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                }
+
                 $successMessage = 'Pedido rápido procesado exitosamente.';
                 if ($change > 0.01) {
                     $successMessage .= " Cambio: $" . number_format($change, 2) . ".";

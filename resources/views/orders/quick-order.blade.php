@@ -712,8 +712,6 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         items: items
     };
 
-    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-    
     // Mostrar loading
     Swal.fire({
         title: 'Creando pedido...',
@@ -755,12 +753,6 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         }
         
         if (data.success) {
-            if (data.kitchen_ticket_url && printWin && !printWin.closed) {
-                printWin.location.href = data.kitchen_ticket_url;
-            } else if (data.kitchen_ticket_url) {
-                window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-            }
-
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido creado!',

@@ -153,9 +153,19 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['table', 'items.product', 'items.modifiers']);
 
+            // Impresión automática sin pedir permiso: enviar a la impresora configurada en el sistema
+            try {
+                $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                if ($printer) {
+                    $this->printService->printKitchenTicket($order, $printer);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Se abrirá la impresión con la impresora del navegador.',
+                'message' => 'Pedido creado. Ticket enviado a la impresora.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
@@ -279,9 +289,19 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
+            // Impresión automática sin pedir permiso: enviar a la impresora configurada
+            try {
+                $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                if ($printer) {
+                    $this->printService->printKitchenTicket($order, $printer);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Se abrirá la impresión con la impresora del navegador.',
+                'message' => 'Pedido creado. Ticket enviado a la impresora.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
