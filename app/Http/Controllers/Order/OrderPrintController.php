@@ -88,6 +88,21 @@ class OrderPrintController extends Controller
     }
 
     /**
+     * Página que muestra el ticket de cocina y dispara la impresión automática (sin esperar confirmación).
+     * Abre el diálogo de impresión o imprime directo si el equipo está configurado así.
+     */
+    public function kitchenTicketAuto(Order $order)
+    {
+        $order->load(['table', 'items.product', 'items.modifiers']);
+        $pdf_url = url()->route('orders.print.kitchen', $order);
+
+        return response()->view('orders.print-kitchen-auto', [
+            'order' => $order,
+            'pdf_url' => $pdf_url,
+        ]);
+    }
+
+    /**
      * Generar PDF de comanda
      */
     public function comanda(Order $order)

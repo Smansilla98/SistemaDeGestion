@@ -153,13 +153,13 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['table', 'items.product', 'items.modifiers']);
 
-            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (PDF) para imprimir desde el navegador
+            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Abriendo ticket de cocina para imprimir.',
+                'message' => 'Pedido creado exitosamente. Imprimiendo ticket de cocina.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
-                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
+                'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
@@ -280,13 +280,13 @@ class TableController extends Controller
             // Recargar el pedido con sus relaciones
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
-            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (PDF) para imprimir desde el navegador
+            // Impresión automática: el frontend abre la URL que dispara window.print() sin esperar confirmación
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. Abriendo ticket de cocina para imprimir.',
+                'message' => 'Pedido creado exitosamente. Imprimiendo ticket de cocina.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
-                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
+                'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {

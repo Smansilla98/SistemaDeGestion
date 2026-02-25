@@ -753,9 +753,9 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         }
         
         if (data.success) {
-            // Abrir automáticamente el PDF del ticket de cocina (impresión en la computadora)
+            // Abrir ventana de impresión automática (dispara print sin esperar confirmación)
             if (data.kitchen_ticket_url) {
-                window.open(data.kitchen_ticket_url, '_blank');
+                window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer');
             }
 
             Swal.fire({

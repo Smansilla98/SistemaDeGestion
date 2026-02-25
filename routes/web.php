@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
         // Rutas de impresión
         Route::prefix('{order}/print')->name('print.')->group(function () {
             Route::get('/kitchen', [\App\Http\Controllers\Order\OrderPrintController::class, 'kitchenTicket'])->name('kitchen');
+            Route::get('/kitchen/auto', [\App\Http\Controllers\Order\OrderPrintController::class, 'kitchenTicketAuto'])->name('kitchen.auto');
             Route::get('/comanda', [\App\Http\Controllers\Order\OrderPrintController::class, 'comanda'])->name('comanda');
             Route::get('/invoice', [\App\Http\Controllers\Order\OrderPrintController::class, 'invoice'])->name('invoice');
             Route::get('/ticket', [\App\Http\Controllers\Order\OrderPrintController::class, 'ticket'])->name('ticket');
