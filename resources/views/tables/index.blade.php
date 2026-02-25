@@ -641,22 +641,22 @@
 
                             <div id="productsAccordion">
                                 @foreach($products as $categoryName => $categoryProducts)
-                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
+                                    @php $categoryLabel = $categoryName ?: 'Sin categoría'; @endphp
+                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryLabel) }}">
                                         <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
                                             <h6 class="mb-0 text-white" style="font-weight: 700;">
-                                                <i class="bi bi-tag-fill"></i> {{ $categoryName }}
+                                                <i class="bi bi-tag-fill"></i> {{ $categoryLabel }}
                                             </h6>
                                             <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
                                         </div>
                                         <div class="row g-2">
-                                                <div class="row">
                                                     @foreach($categoryProducts as $product)
                                                         @php
                                                             $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
                                                             $isOutOfStock = $currentStock !== null && $currentStock <= 0;
                                                             $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
                                                         @endphp
-                                                        <div class="col-12 col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}" data-category-name="{{ strtolower($categoryName) }}">
+                                                        <div class="col-12 col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}" data-category-name="{{ strtolower($categoryLabel) }}">
                                                             <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
                                                                 <div class="me-2 flex-grow-1">
                                                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -699,18 +699,26 @@
                                                         </div>
                                                     @endforeach
                                         </div>
-                                    </div>
+                                        </div>
                                 @endforeach
                             </div>
                         </div>
 
                         <div class="col-lg-5">
-                            <div class="sticky-top" style="top: 70px;">
-                                <h6 class="mb-3"><i class="bi bi-receipt"></i> Pedido</h6>
+                            <div class="sticky-top bg-light rounded-3 p-3 border" style="top: 70px;">
+                                <h6 class="mb-3"><i class="bi bi-receipt"></i> Resumen del pedido</h6>
+
+                                <div id="modalItemsEmpty" class="text-muted text-center py-4 border rounded bg-white">No hay items. Agregá productos desde la lista.</div>
+                                <div id="modalItemsList" class="mb-3"></div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3 py-2 border-top border-bottom">
+                                    <strong class="fs-5">Total:</strong>
+                                    <span id="modalTotal" class="fs-4 fw-bold text-primary">$0.00</span>
+                                </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Observaciones (opcional)</label>
-                                    <textarea class="form-control" id="newOrderObservations" rows="3" placeholder="Ej: sin sal, alergias, etc."></textarea>
+                                    <label class="form-label small fw-semibold">Observaciones generales (opcional)</label>
+                                    <textarea class="form-control form-control-sm" id="newOrderObservations" rows="2" placeholder="Ej: sin sal, alergias..."></textarea>
                                 </div>
 
                                 <div class="form-check form-switch mb-3">
@@ -718,26 +726,9 @@
                                     <label class="form-check-label ms-2" for="sendToKitchen" style="font-size: 0.875rem;">Enviar a cocina al confirmar</label>
                                 </div>
 
-                                <div id="modalItemsEmpty" class="text-muted text-center py-3">No hay items en el pedido.</div>
-                                <div id="modalItemsList" class="mb-3"></div>
-
-                                <div class="border-top pt-3 pb-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <strong class="fs-5">Total:</strong> <span id="modalTotal" class="fs-4 fw-bold text-primary">$0.00</span>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
-                                        <i class="bi bi-check-circle"></i> Confirmar Pedido
-                                    </button>
-                                    @if(auth()->check() && in_array(auth()->user()->role, ['MOZO', 'ADMIN']))
-                                    <p class="mt-2 mb-0 text-center small text-muted">
-                                        <button type="button" class="btn btn-link btn-sm p-0" id="connectUsbPrinterBtn" title="Conectar impresora térmica USB para imprimir comandas sin diálogo">
-                                            <i class="bi bi-usb-symbol"></i> Conectar impresora USB
-                                        </button>
-                                    </p>
-                                    @endif
-                                </div>
+                                <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
+                                    <i class="bi bi-check-circle"></i> Confirmar Pedido
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1141,15 +1132,6 @@ document.addEventListener('DOMContentLoaded', function() {
         search.addEventListener('input', (e) => filterProducts(e.target.value));
     }
 
-    document.getElementById('connectUsbPrinterBtn')?.addEventListener('click', function() {
-        if (!window.ThermalPrinter) return;
-        window.ThermalPrinter.connect().then(function() {
-            Swal.fire({ icon: 'success', title: 'Impresora conectada', text: 'Las comandas se imprimirán en la impresora USB.', confirmButtonColor: '#1e8081' });
-        }).catch(function(err) {
-            Swal.fire({ icon: 'info', title: 'Impresora USB', html: 'Seleccioná la impresora térmica en el cuadro del navegador, o comprobá que esté conectada por USB.<br><small>En Windows puede ser necesario usar impresora por puerto serie.</small>', confirmButtonColor: '#1e8081' });
-        });
-    });
-
     const form = document.getElementById('newOrderForm');
     if (form) {
         form.addEventListener('submit', async function(e) {
@@ -1194,17 +1176,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.message || 'No se pudo crear el pedido');
                 }
 
-                if (window.ThermalPrinter && data.order_id) {
-                    window.ThermalPrinter.fetchAndPrintComanda(data.order_id).then(function() {
-                        if (printWin && !printWin.closed) printWin.close();
-                    }).catch(function() {
-                        if (data.kitchen_ticket_url && printWin && !printWin.closed) {
-                            printWin.location.href = data.kitchen_ticket_url;
-                        } else if (data.kitchen_ticket_url) {
-                            window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-                        }
-                    });
-                } else if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
+                if (data.kitchen_ticket_url && printWin && !printWin.closed) {
                     printWin.location.href = data.kitchen_ticket_url;
                 } else if (data.kitchen_ticket_url) {
                     window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');

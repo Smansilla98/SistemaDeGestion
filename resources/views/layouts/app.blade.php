@@ -1224,15 +1224,6 @@
             });
         }
     </script>
-    @if(auth()->check() && in_array(auth()->user()->role ?? '', ['MOZO', 'ADMIN']))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.ThermalPrinter && window.ThermalPrinter.getStoredDevice && window.ThermalPrinter.getStoredDevice()) {
-                window.ThermalPrinter.reconnect();
-            }
-        });
-    </script>
-    @endif
     @stack('scripts')
 </body>
 </html>
