@@ -161,14 +161,15 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
-        // Verificar que la mesa esté OCUPADA para poder crear pedidos
         $table = Table::findOrFail($validated['table_id']);
         if ($table->status !== 'OCUPADA') {
-            return back()->with('error', 'Solo se pueden tomar pedidos en mesas ocupadas. Por favor, cambia el estado de la mesa a OCUPADA primero.')
-                ->withInput();
+            $msg = 'Solo se pueden tomar pedidos en mesas ocupadas. Por favor, cambia el estado de la mesa a OCUPADA primero.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg)->withInput();
         }
 
-        // Verificar que la mesa pertenezca al restaurante del usuario
         if ($table->restaurant_id !== auth()->user()->restaurant_id) {
             abort(403, 'No tienes acceso a esta mesa');
         }
@@ -176,34 +177,45 @@ class OrderController extends Controller
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
         $validated['user_id'] = auth()->id();
 
+        $wantsJson = $request->wantsJson() || $request->ajax();
+
         try {
             $order = $this->orderService->createOrder($validated);
 
-            // Agregar items al pedido
             foreach ($validated['items'] as $itemData) {
                 try {
                     $this->orderService->addItem($order, $itemData);
                 } catch (\Exception $e) {
-                    // Si es un error de stock, retornar con el mensaje
                     if (str_contains($e->getMessage(), 'Stock insuficiente')) {
-                        return back()
-                            ->with('error', $e->getMessage())
-                            ->withInput();
+                        if ($wantsJson) {
+                            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+                        }
+                        return back()->with('error', $e->getMessage())->withInput();
                     }
-                    // Re-lanzar otras excepciones
                     throw $e;
                 }
             }
 
             $order->load(['table', 'items.product', 'items.modifiers']);
 
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido creado exitosamente',
+                    'order_id' => $order->id,
+                    'redirect' => route('orders.show', $order),
+                    'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
+                ]);
+            }
+
             return redirect()->route('orders.show', $order)
                 ->with('success', 'Pedido creado exitosamente')
                 ->with('kitchen_ticket_url', route('orders.print.kitchen.auto', $order));
         } catch (\Exception $e) {
-            return back()
-                ->with('error', $e->getMessage())
-                ->withInput();
+            if ($wantsJson) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 
