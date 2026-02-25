@@ -1176,12 +1176,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.message || 'No se pudo crear el pedido');
                 }
 
+                // Abrir automáticamente el PDF del ticket de cocina (impresión en la computadora)
+                if (data.kitchen_ticket_url) {
+                    window.open(data.kitchen_ticket_url, '_blank');
+                }
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Pedido creado',
                     html: `
                         <p>Pedido <strong>${data.order_number}</strong> creado exitosamente.</p>
-                        <p class="text-muted small">${data.message || 'La comanda de cocina se ha impreso automáticamente.'}</p>
+                        <p class="text-muted small">${data.message || 'Se ha abierto el ticket de cocina para imprimir desde tu equipo.'}</p>
                         ${data.kitchen_ticket_url ? `
                             <div class="mt-3">
                                 <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm btn-outline-primary">
@@ -1191,14 +1196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                     `,
                     confirmButtonColor: '#1e8081',
-                    confirmButtonText: 'Entendido',
-                    showCancelButton: data.kitchen_ticket_url ? true : false,
-                    cancelButtonText: 'Ver Ticket',
-                    cancelButtonColor: '#007bff'
-                }).then((result) => {
-                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel && data.kitchen_ticket_url) {
-                        window.open(data.kitchen_ticket_url, '_blank');
-                    }
+                    confirmButtonText: 'Entendido'
                 });
 
                 newOrderModal.hide();

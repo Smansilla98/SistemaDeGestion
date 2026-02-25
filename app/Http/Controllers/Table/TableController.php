@@ -150,37 +150,13 @@ class TableController extends Controller
                 $this->orderService->addItem($order, $itemData);
             }
 
-            // Recargar el pedido con sus relaciones para la impresión
+            // Recargar el pedido con sus relaciones
             $order->load(['table', 'items.product', 'items.modifiers']);
 
-            // Imprimir automáticamente la comanda
-            try {
-                // Intentar primero con impresora de tipo 'bar' (más adecuada para comandas)
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'bar');
-                if (!$printer) {
-                    // Si no hay impresora de bar, intentar con cualquier impresora activa
-                    $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
-                        ->where('is_active', true)
-                        ->first();
-                }
-                if ($printer) {
-                    $this->printService->printComanda($order, $printer);
-                    $printMessage = 'La comanda se ha impreso automáticamente.';
-                } else {
-                    $printMessage = 'Pedido creado. No hay impresora configurada para imprimir automáticamente.';
-                }
-            } catch (\Exception $printError) {
-                // Si falla la impresión, no fallar el pedido, solo registrar el error
-                Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
-                    'order_id' => $order->id,
-                    'order_number' => $order->number
-                ]);
-                $printMessage = 'Pedido creado. La comanda está disponible para imprimir manualmente.';
-            }
-
+            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (PDF) para imprimir desde el navegador
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. ' . $printMessage,
+                'message' => 'Pedido creado exitosamente. Abriendo ticket de cocina para imprimir.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => route('orders.print.kitchen', $order),
@@ -301,38 +277,17 @@ class TableController extends Controller
                 $this->orderService->addItem($order, $itemData);
             }
 
-            // Recargar el pedido con sus relaciones para la impresión
+            // Recargar el pedido con sus relaciones
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
-            // Imprimir automáticamente la comanda
-            try {
-                // Intentar primero con impresora de tipo 'bar' (más adecuada para comandas)
-                $printer = $this->printService->getPrinterByType($order->restaurant_id, 'bar');
-                if (!$printer) {
-                    // Si no hay impresora de bar, intentar con cualquier impresora activa
-                    $printer = \App\Models\Printer::where('restaurant_id', $order->restaurant_id)
-                        ->where('is_active', true)
-                        ->first();
-                }
-                if ($printer) {
-                    $this->printService->printComanda($order, $printer);
-                    $printMessage = 'La comanda se ha impreso automáticamente.';
-                } else {
-                    $printMessage = 'Pedido creado. No hay impresora configurada para imprimir automáticamente.';
-                }
-            } catch (\Exception $printError) {
-                Log::warning('Error al imprimir comanda automáticamente: ' . $printError->getMessage(), [
-                    'order_id' => $order->id,
-                    'order_number' => $order->number
-                ]);
-                $printMessage = 'Pedido creado. La comanda está disponible para imprimir manualmente.';
-            }
-
+            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (PDF) para imprimir desde el navegador
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente. ' . $printMessage,
+                'message' => 'Pedido creado exitosamente. Abriendo ticket de cocina para imprimir.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
+                'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
             return response()->json([

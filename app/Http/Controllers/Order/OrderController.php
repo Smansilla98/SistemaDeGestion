@@ -635,31 +635,20 @@ class OrderController extends Controller
             if ($request->boolean('send_to_kitchen')) {
                 try {
                     $this->orderService->sendToKitchen($order);
-                    
-                    // Imprimir comanda automáticamente
-                    $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
-                    if (!$printer) {
-                        $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
-                            ->where('is_active', true)
-                            ->first();
-                    }
-                    if ($printer) {
-                        $this->printService->printComanda($order, $printer);
-                        $printMessage = ' Pedido enviado a cocina y comanda impresa.';
-                    } else {
-                        $printMessage = ' Pedido enviado a cocina.';
-                    }
+                    $printMessage = ' Pedido enviado a cocina.';
                 } catch (\Exception $e) {
                     Log::warning('Error al enviar pedido rápido a cocina: ' . $e->getMessage());
                     $printMessage = ' Pedido creado. Error al enviar a cocina.';
                 }
             }
 
+            // La impresión es en la computadora: el frontend abrirá kitchen_ticket_url (mismo PDF que /orders/{id}/print/kitchen)
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'kitchen_ticket_url' => route('orders.print.kitchen', $order),
             ]);
         } catch (\Exception $e) {
             Log::error('Error al crear pedido rápido: ' . $e->getMessage());
@@ -1078,24 +1067,8 @@ class OrderController extends Controller
                     'closed_at' => now(),
                 ]);
 
-                // Imprimir ticket si se solicita
+                // Impresión en la computadora: se devuelve kitchen_ticket_url para que el frontend abra el PDF
                 $printMessage = '';
-                if ($request->boolean('print_ticket')) {
-                    try {
-                        $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
-                        if (!$printer) {
-                            $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
-                                ->where('is_active', true)
-                                ->first();
-                        }
-                        if ($printer) {
-                            $this->printService->printTicket($order, $printer);
-                            $printMessage = ' Ticket impreso.';
-                        }
-                    } catch (\Exception $printError) {
-                        Log::warning('Error al imprimir ticket de pedido rápido: ' . $printError->getMessage());
-                    }
-                }
 
                 $successMessage = 'Pedido rápido procesado exitosamente.';
                 if ($change > 0.01) {
@@ -1112,6 +1085,7 @@ class OrderController extends Controller
                         'total' => $order->total,
                         'total_paid' => $totalPaid,
                         'change' => $change > 0.01 ? $change : 0,
+                        'kitchen_ticket_url' => route('orders.print.kitchen', $order),
                         'print_url' => route('orders.print.kitchen', $order),
                     ]);
                 }
