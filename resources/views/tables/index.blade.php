@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gestión de Mesas')
+@section('title', 'Mesas')
 
 @push('styles')
 <style>
