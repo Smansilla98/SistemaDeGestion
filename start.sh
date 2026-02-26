@@ -42,6 +42,7 @@ done
 # Limpieza segura
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
+php artisan route:clear || true
 
 # Verificar si la base de datos tiene tablas
 echo "=== Verificando estado de la base de datos ==="
