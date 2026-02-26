@@ -51,6 +51,14 @@
     </button>
 </form>
 
+@if(Route::has('register'))
+<div class="text-center mt-3">
+    <a href="{{ route('register') }}" class="text-decoration-none" style="color: var(--conurbania-primary);">
+        <i class="bi bi-person-plus"></i> Crear cuenta
+    </a>
+</div>
+@endif
+
 <div class="mt-4 pt-4 border-top d-none">
     <div class="text-center">
         <small class="text-muted d-block mb-2">

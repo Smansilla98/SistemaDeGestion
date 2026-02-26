@@ -779,6 +779,56 @@
             border-radius: 0 0 20px 20px;
             padding: 1.5rem;
         }
+
+        /* ========== Optimización móvil y responsive ========== */
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        @media (max-width: 768px) {
+            .nova-sidebar-toggle { min-width: 44px; min-height: 44px; padding: 0.6rem; }
+            .nova-header { left: 0; padding: 0 0.75rem; height: 56px; }
+            .nova-header-title { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50vw; }
+            .nova-header-role-badge { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+            .nova-header-role-badge span { display: none; }
+            .nova-header-dropdown-toggle span { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .nova-main { margin-left: 0; margin-top: 56px; padding: 0.75rem; min-height: calc(100vh - 56px); padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+            .card { border-radius: 16px; }
+            .card-header { padding: 1rem; font-size: 1rem; }
+            .card-body { padding: 1rem; }
+            .card:hover { transform: none; }
+            .btn { min-height: 44px; padding: 0.65rem 1rem; font-size: 0.9375rem; }
+            .btn-sm { min-height: 38px; padding: 0.5rem 0.75rem; }
+            .table thead th, .table tbody td { padding: 0.65rem 0.5rem; font-size: 0.875rem; }
+            .table tbody tr:hover { transform: none; }
+            .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -0.75rem; padding: 0 0.75rem; }
+            .form-control, .form-select { min-height: 44px; font-size: 16px; }
+            .modal-dialog { margin: 0.5rem; max-width: calc(100% - 1rem); }
+            .modal-content { border-radius: 16px; }
+            .modal-header, .modal-footer { padding: 1rem; }
+            .alert { padding: 1rem; }
+            .nova-main h1, .nova-main .h1 { font-size: 1.5rem !important; }
+            .nova-main h5, .nova-main .h5 { font-size: 1.125rem !important; }
+            .page-title-responsive { font-size: clamp(1.25rem, 4vw, 2.5rem) !important; }
+        }
+        @media (max-width: 576px) {
+            .nova-header-title { max-width: 40vw; }
+            .nova-main { padding: 0.5rem; }
+            .row.g-4 { --bs-gutter-x: 0.75rem; --bs-gutter-y: 0.75rem; }
+            .d-flex.gap-2 { gap: 0.5rem !important; }
+            .d-flex.gap-3 { gap: 0.5rem !important; }
+        }
+        @media (hover: none) and (pointer: coarse) {
+            .card:hover { transform: none; }
+            .btn:hover { transform: none; }
+            .nova-nav-item:hover { transform: none; }
+            .table tbody tr:hover { transform: none; }
+        }
     </style>
 </head>
 <body>
@@ -1071,7 +1121,7 @@
                 });
             @endif
 
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 Swal.fire({
                     icon: 'error',
                     title: 'Error de Validación',
@@ -1224,15 +1274,13 @@
         });
 
         // Cerrar sidebar en móvil al hacer clic en un enlace
-        if (window.innerWidth <= 768) {
-            document.querySelectorAll('.nova-nav-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    setTimeout(() => {
-                        toggleSidebar();
-                    }, 100);
-                });
+        document.querySelectorAll('.nova-sidebar .nova-nav-item, .nova-sidebar .nova-nav-subitem').forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.matchMedia('(max-width: 768px)').matches && document.getElementById('novaSidebar').classList.contains('show')) {
+                    setTimeout(toggleSidebar, 150);
+                }
             });
-        }
+        });
     </script>
     @stack('scripts')
 </body>
