@@ -51,7 +51,7 @@
     </button>
 </form>
 
-@if(Route::has('register'))
+@if(\Illuminate\Support\Facades\Route::has('register'))
 <div class="text-center mt-3">
     <a href="{{ route('register') }}" class="text-decoration-none" style="color: var(--conurbania-primary);">
         <i class="bi bi-person-plus"></i> Crear cuenta
