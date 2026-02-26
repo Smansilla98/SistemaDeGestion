@@ -234,6 +234,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'show'])->name('show');
         Route::get('/{product}/edit', [\App\Http\Controllers\Product\ProductController::class, 'edit'])->name('edit');
         Route::put('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'update'])->name('update');
+        Route::post('/{product}/ingredients', [\App\Http\Controllers\Product\ProductController::class, 'storeIngredient'])->name('ingredients.store');
+        Route::delete('/{product}/ingredients/{ingredient}', [\App\Http\Controllers\Product\ProductController::class, 'destroyIngredient'])->name('ingredients.destroy');
         Route::delete('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'destroy'])->name('destroy');
     });
 

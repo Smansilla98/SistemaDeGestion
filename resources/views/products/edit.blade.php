@@ -159,6 +159,66 @@
             </div>
         </div>
     </div>
+
+    @if($product->type === 'PRODUCT')
+    <div class="col-md-4 mt-4 mt-md-0">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Receta (insumos)</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Cada unidad vendida descontará estos insumos del stock. Las cantidades están en la unidad del insumo (ej. ml).</p>
+
+                @if(session('success') && (str_contains(session('success'), 'receta') || str_contains(session('success'), 'Insumo')))
+                    <div class="alert alert-success alert-dismissible py-2 small">{{ session('success') }} <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button></div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible py-2 small">{{ session('error') }} <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button></div>
+                @endif
+
+                <table class="table table-sm table-borderless mb-3">
+                    <tbody>
+                        @forelse($product->ingredients as $ing)
+                        <tr>
+                            <td>{{ $ing->name }}</td>
+                            <td class="text-end">{{ $ing->pivot->quantity }} {{ $ing->pivot->unit ?? $ing->unit ?? '' }}</td>
+                            <td class="text-end">
+                                <form action="{{ route('products.ingredients.destroy', [$product, $ing]) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Quitar este insumo de la receta?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td class="text-muted small">Sin insumos. Agregá los que usa este producto.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+
+                <form action="{{ route('products.ingredients.store', $product) }}" method="POST" class="border-top pt-3">
+                    @csrf
+                    <div class="mb-2">
+                        <label for="ingredient_id" class="form-label small">Insumo</label>
+                        <select name="ingredient_id" id="ingredient_id" class="form-select form-select-sm" required>
+                            <option value="">Seleccionar insumo</option>
+                            @foreach($insumos as $i)
+                                @if(!$product->ingredients->contains('id', $i->id))
+                                <option value="{{ $i->id }}">{{ $i->name }} ({{ $i->unit ?? 'u' }})</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="quantity" class="form-label small">Cantidad por unidad</label>
+                        <input type="number" name="quantity" id="quantity" class="form-control form-control-sm" step="1" min="1" value="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus"></i> Agregar a la receta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 @push('scripts')

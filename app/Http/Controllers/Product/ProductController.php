@@ -197,17 +197,74 @@ class ProductController extends Controller
         Gate::authorize('update', $product);
 
         $restaurantId = auth()->user()->restaurant_id;
+        $product->load('ingredients');
+
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
-            
+
         $suppliers = \App\Models\Supplier::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('products.edit', compact('product', 'categories', 'suppliers'));
+        $insumos = Product::where('restaurant_id', $restaurantId)
+            ->insumos()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('products.edit', compact('product', 'categories', 'suppliers', 'insumos'));
+    }
+
+    /**
+     * Agregar insumo a la receta del producto
+     */
+    public function storeIngredient(Request $request, Product $product)
+    {
+        Gate::authorize('update', $product);
+
+        if ($product->type !== 'PRODUCT') {
+            return back()->with('error', 'Solo los productos vendibles pueden tener receta.');
+        }
+
+        $validated = $request->validate([
+            'ingredient_id' => 'required|exists:products,id',
+            'quantity' => 'required|numeric|min:0.001',
+            'unit' => 'nullable|string|max:50',
+        ]);
+
+        $ingredient = Product::findOrFail($validated['ingredient_id']);
+        if ($ingredient->type !== 'INSUMO' || $ingredient->restaurant_id !== $product->restaurant_id) {
+            return back()->with('error', 'El insumo no es válido.');
+        }
+        if ($product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
+            return back()->with('error', 'Ese insumo ya está en la receta.');
+        }
+
+        $product->ingredients()->attach($ingredient->id, [
+            'quantity' => (int) round($validated['quantity']),
+            'unit' => $validated['unit'] ?? $ingredient->unit,
+        ]);
+
+        return back()->with('success', 'Insumo agregado a la receta.');
+    }
+
+    /**
+     * Quitar insumo de la receta del producto
+     */
+    public function destroyIngredient(Product $product, Product $ingredient)
+    {
+        Gate::authorize('update', $product);
+
+        if (!$product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
+            return back()->with('error', 'El insumo no está en la receta.');
+        }
+
+        $product->ingredients()->detach($ingredient->id);
+
+        return back()->with('success', 'Insumo quitado de la receta.');
     }
 
     /**

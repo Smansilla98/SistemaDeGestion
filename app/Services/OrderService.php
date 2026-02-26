@@ -141,13 +141,8 @@ class OrderService
                 throw new \Exception("La cantidad debe ser mayor a 0");
             }
 
-            // Verificar stock si el producto lo requiere
-            if ($product->has_stock) {
-                $currentStock = $product->getCurrentStock($order->restaurant_id);
-                if ($currentStock < $itemData['quantity']) {
-                    throw new \Exception("Stock insuficiente para '{$product->name}'. Disponible: {$currentStock}, Solicitado: {$itemData['quantity']}");
-                }
-            }
+            // Verificar stock (producto con has_stock o receta con insumos)
+            $this->stockService->ensureStockForSale($order->restaurant_id, $product->id, (int) $itemData['quantity']);
 
             // Crear el item
             $orderItem = OrderItem::create([
@@ -175,15 +170,13 @@ class OrderService
                 $orderItem->calculateSubtotal();
             }
 
-            // Reducir stock inmediatamente cuando se agrega el item al pedido
-            if ($product->has_stock) {
-                $this->stockService->deductStockForSale(
-                    $order->restaurant_id,
-                    $product->id,
-                    $itemData['quantity'],
-                    $order->id
-                );
-            }
+            // Reducir stock (insumos de la receta o producto con has_stock)
+            $this->stockService->deductStockForSale(
+                $order->restaurant_id,
+                $product->id,
+                (int) $itemData['quantity'],
+                $order->id
+            );
 
             // Recalcular total del pedido
             $order->calculateTotal();
