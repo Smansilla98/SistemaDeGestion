@@ -645,7 +645,7 @@
 
                     <div class="row g-3">
                         <div class="col-lg-7">
-                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
+                            <div class="d-flex flex-column align-items-start mb-2">
                                 <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
                                 <input type="text" class="form-control" id="productSearch" placeholder="Buscar producto..." style="max-width: 100%;">
                             </div>
