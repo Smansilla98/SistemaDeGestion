@@ -34,6 +34,13 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Tutoriales (PDFs)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/tutoriales', [\App\Http\Controllers\TutorialController::class, 'index'])->name('tutorials.index');
+
+    /*
+    |--------------------------------------------------------------------------
     | Gestión de Mesas
     |--------------------------------------------------------------------------
     */
@@ -313,14 +320,5 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Tutoriales (PDFs)
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('tutoriales')->name('tutorials.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
     });
 });
