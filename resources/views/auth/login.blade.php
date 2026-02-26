@@ -51,7 +51,7 @@
     </button>
 </form>
 
-<div class="mt-4 pt-4 border-top">
+<div class="mt-4 pt-4 border-top d-none">
     <div class="text-center">
         <small class="text-muted d-block mb-2">
             <strong>Usuarios de prueba:</strong>
