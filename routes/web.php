@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
     */
     Route::prefix('tutorials')->name('tutorials.')->group(function () {
         Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\TutorialController::class, 'store'])->name('store')->middleware('role:ADMIN');
+        Route::delete('/{filename}', [\App\Http\Controllers\TutorialController::class, 'destroy'])->name('destroy')->middleware('role:ADMIN')->where('filename', '[^/]+');
     });
 
     /*
