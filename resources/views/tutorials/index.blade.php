@@ -9,7 +9,7 @@
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
                 <i class="bi bi-journal-bookmark"></i> Tutoriales
             </h1>
-            <p class="text-muted mb-0">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
+            <p class="text-white mb-0">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
         </div>
         @if(auth()->check() && auth()->user()->role === 'ADMIN')
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
@@ -47,6 +47,14 @@
                     @error('file')
                     <div class="alert alert-danger py-2">{{ $message }}</div>
                     @enderror
+                    @error('title')
+                    <div class="alert alert-danger py-2">{{ $message }}</div>
+                    @enderror
+                    <div class="mb-3">
+                        <label for="tutorial_title" class="form-label">Nombre o sección del tutorial</label>
+                        <input type="text" class="form-control @error('title') is-invalid @enderror" id="tutorial_title" name="title" value="{{ old('title') }}" placeholder="Ej: Cierre de mesa, Pedidos rápidos, Caja...">
+                        <small class="text-muted">Opcional. Indica a qué parte del sistema corresponde este tutorial.</small>
+                    </div>
                     <div class="mb-3">
                         <label for="tutorial_file" class="form-label">Archivo PDF <span class="text-danger">*</span></label>
                         <input type="file" class="form-control @error('file') is-invalid @enderror" id="tutorial_file" name="file" accept=".pdf" required>
@@ -74,7 +82,7 @@
                         <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.75rem;"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <h5 class="card-title mb-1 text-break">{{ ucwords(str_replace(['-', '_'], ' ', $pdf['title'])) }}</h5>
+                        <h5 class="card-title mb-1 text-break">{{ $pdf['title'] }}</h5>
                         <small class="text-muted">
                             {{ number_format($pdf['size'] / 1024, 1) }} KB
                         </small>
@@ -87,7 +95,7 @@
                         </a>
                         <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1 btn-view-here" 
                                 data-url="{{ $pdf['url'] }}" 
-                                data-title="{{ ucwords(str_replace(['-', '_'], ' ', $pdf['title'])) }}">
+                                data-title="{{ $pdf['title'] }}">
                             <i class="bi bi-display"></i> Ver aquí
                         </button>
                     </div>
