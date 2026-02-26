@@ -3,39 +3,48 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TutorialController extends Controller
 {
     /**
-     * Directorio donde se almacenan los PDFs (relativo a public/)
+     * Subcarpeta en el disco público para los PDFs
      */
     private const TUTORIALS_DIR = 'tutoriales';
+
+    /**
+     * Tamaño máximo en KB (10 MB). Ajustar si el servidor tiene límites menores.
+     */
+    private const MAX_FILE_KB = 10240;
 
     /**
      * Listar y mostrar la sección de tutoriales (PDFs)
      */
     public function index()
     {
-        $dir = public_path(self::TUTORIALS_DIR);
+        $disk = Storage::disk('public');
+        $dir = self::TUTORIALS_DIR;
 
-        if (!File::isDirectory($dir)) {
-            File::makeDirectory($dir, 0755, true);
+        if (!$disk->exists($dir)) {
+            $disk->makeDirectory($dir);
         }
 
-        $files = File::files($dir);
         $pdfs = [];
+        $files = $disk->files($dir);
 
-        foreach ($files as $file) {
-            if (strtolower($file->getExtension()) === 'pdf') {
-                $pdfs[] = [
-                    'name' => $file->getFilename(),
-                    'title' => pathinfo($file->getFilename(), PATHINFO_FILENAME),
-                    'url' => asset(self::TUTORIALS_DIR . '/' . $file->getFilename()),
-                    'size' => $file->getSize(),
-                ];
+        foreach ($files as $path) {
+            $name = basename($path);
+            if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) !== 'pdf') {
+                continue;
             }
+            $pdfs[] = [
+                'name' => $name,
+                'title' => pathinfo($name, PATHINFO_FILENAME),
+                'url' => asset('storage/' . $path),
+                'size' => $disk->size($path),
+            ];
         }
 
         usort($pdfs, fn ($a, $b) => strcasecmp($a['title'], $b['title']));
@@ -48,33 +57,38 @@ class TutorialController extends Controller
      */
     public function store(Request $request)
     {
+        // Comprobar que el archivo llegó (evita "The file failed to upload" genérico)
+        if (!$request->hasFile('file')) {
+            $error = $request->get('file') ? 'El archivo no se pudo subir. Puede superar el límite del servidor (p. ej. upload_max_filesize en PHP).' : 'Debes seleccionar un archivo PDF.';
+            throw ValidationException::withMessages(['file' => $error]);
+        }
+
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:20480', // 20 MB
+            'file' => 'required|file|mimes:pdf|max:' . self::MAX_FILE_KB,
         ], [
             'file.required' => 'Debes seleccionar un archivo PDF.',
+            'file.file' => 'El archivo no se subió correctamente. Comprueba el tamaño (máx. ' . (self::MAX_FILE_KB / 1024) . ' MB).',
             'file.mimes' => 'El archivo debe ser un PDF.',
-            'file.max' => 'El archivo no debe superar 20 MB.',
+            'file.max' => 'El archivo no debe superar ' . (self::MAX_FILE_KB / 1024) . ' MB.',
         ]);
 
-        $dir = public_path(self::TUTORIALS_DIR);
-        if (!File::isDirectory($dir)) {
-            File::makeDirectory($dir, 0755, true);
-        }
-
         $file = $request->file('file');
-        $name = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.pdf';
-        $path = $dir . '/' . $name;
+        $baseName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+        $name = $baseName . '.pdf';
+        $dir = self::TUTORIALS_DIR;
 
-        // Si ya existe, añadir sufijo numérico
-        $base = pathinfo($name, PATHINFO_FILENAME);
-        $n = 0;
-        while (File::exists($path)) {
-            $n++;
-            $name = $base . '-' . $n . '.pdf';
-            $path = $dir . '/' . $name;
+        $disk = Storage::disk('public');
+        if (!$disk->exists($dir)) {
+            $disk->makeDirectory($dir);
         }
 
-        $file->move($dir, $name);
+        $n = 0;
+        while ($disk->exists($dir . '/' . $name)) {
+            $n++;
+            $name = $baseName . '-' . $n . '.pdf';
+        }
+
+        $file->storeAs($dir, $name, 'public');
 
         return redirect()->route('tutorials.index')->with('success', 'Tutorial agregado correctamente.');
     }
@@ -89,12 +103,14 @@ class TutorialController extends Controller
             return redirect()->route('tutorials.index')->with('error', 'Archivo no válido.');
         }
 
-        $path = public_path(self::TUTORIALS_DIR . '/' . $filename);
-        if (!File::exists($path)) {
+        $path = self::TUTORIALS_DIR . '/' . $filename;
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($path)) {
             return redirect()->route('tutorials.index')->with('error', 'El archivo no existe.');
         }
 
-        File::delete($path);
+        $disk->delete($path);
 
         return redirect()->route('tutorials.index')->with('success', 'Tutorial eliminado correctamente.');
     }

@@ -50,7 +50,7 @@
                     <div class="mb-3">
                         <label for="tutorial_file" class="form-label">Archivo PDF <span class="text-danger">*</span></label>
                         <input type="file" class="form-control @error('file') is-invalid @enderror" id="tutorial_file" name="file" accept=".pdf" required>
-                        <small class="text-muted">Máximo 20 MB. Solo archivos PDF.</small>
+                        <small class="text-muted">Máximo 10 MB. Solo archivos PDF.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
