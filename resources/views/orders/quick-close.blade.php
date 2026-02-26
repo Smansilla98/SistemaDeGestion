@@ -103,10 +103,8 @@
         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
             <i class="bi bi-cash-coin"></i> Cerrar Cuenta - Pedido Rápido
         </h1>
-        <p class="text-muted">
-            Pedido: <strong>{{ $order->number }}</strong> | 
+        <p class="text-white">
             Cliente: <strong>{{ $order->customer_name }}</strong> |
-            Sesión de Caja: <strong>{{ $activeSession->cashRegister->name }}</strong>
         </p>
     </div>
 </div>

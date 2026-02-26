@@ -103,9 +103,9 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Cerrar Mesa - Procesar Pago</h1>
-        <p class="text-muted">Mesa {{ $table->number }} - {{ $table->sector->name ?? 'Sin sector' }}</p>
+        <p class="text-white">Mesa {{ $table->number }} - {{ $table->sector->name ?? 'Sin sector' }}</p>
         @if($table->currentSession && $table->currentSession->waiter)
-            <p class="text-muted">
+            <p class="text-white">
                 <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
             </p>
         @endif
