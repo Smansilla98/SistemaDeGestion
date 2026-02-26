@@ -80,6 +80,11 @@
         color: white !important;
     }
     
+    .modal-dialog-scrollable .modal-content {
+        max-height: 100%;
+        overflow-y: scroll !important;
+    }
+    
     /* Mejoras para móvil */
     @media (max-width: 768px) {
         /* Header más compacto */
@@ -266,10 +271,9 @@
             border-radius: 12px;
         }
         
-        /* Scroll en modales con modal-dialog-scrollable */
         .modal-dialog-scrollable .modal-content {
             max-height: 100%;
-            overflow-y: scroll;
+            overflow-y: scroll !important;
         }
         
         /* Modal de nuevo pedido */
