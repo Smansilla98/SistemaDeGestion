@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Payment;
 use App\Models\CashRegisterSession;
+use App\Models\DiscountType;
 use App\Services\OrderService;
 use App\Services\PrintService;
 use Illuminate\Http\Request;
@@ -761,7 +762,12 @@ class OrderController extends Controller
         // Agrupar items por producto
         $groupedItems = $this->groupOrderItems($order->items);
 
-        return view('orders.quick-close', compact('order', 'activeSession', 'groupedItems'));
+        $discountTypes = DiscountType::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('orders.quick-close', compact('order', 'activeSession', 'groupedItems', 'discountTypes'));
     }
 
     /**
@@ -803,6 +809,7 @@ class OrderController extends Controller
                 'payments.*.amount' => 'required|numeric|min:0.01',
                 'payments.*.operation_number' => 'nullable|string|max:255',
                 'payments.*.notes' => 'nullable|string|max:500',
+                'discount_type_id' => 'nullable|exists:discount_types,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -814,6 +821,16 @@ class OrderController extends Controller
 
         try {
             return DB::transaction(function () use ($order, $validated, $activeSession, $restaurantId, $request) {
+                // Aplicar descuento si se seleccionó un tipo
+                if (!empty($validated['discount_type_id'])) {
+                    $discountType = DiscountType::find($validated['discount_type_id']);
+                    if ($discountType && $discountType->restaurant_id === $restaurantId) {
+                        $order->discount = $discountType->calculateDiscount($order->subtotal);
+                        $order->total = $order->subtotal - $order->discount;
+                        $order->save();
+                    }
+                }
+
                 // Calcular total
                 $totalAmount = $order->total;
                 $totalPaid = collect($validated['payments'])->sum('amount');

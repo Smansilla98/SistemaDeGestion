@@ -104,7 +104,7 @@
                 printed = true;
                 window.focus();
                 window.print();
-                setTimeout(function() { try { window.close(); } catch (e) {} }, 800);
+                setTimeout(function() { try { window.close(); } catch (e) {} }, 1500);
             }
             if (document.readyState === 'complete') {
                 doPrint();

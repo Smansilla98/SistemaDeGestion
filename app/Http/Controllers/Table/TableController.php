@@ -1151,13 +1151,10 @@ class TableController extends Controller
     }
 
     /**
-     * Imprimir recibo consolidado (formato ticket térmico 80mm)
+     * Datos para recibo consolidado (sesión o BD). Usado por PDF y por vista auto-print.
      */
-    public function printConsolidatedReceipt(Table $table)
+    protected function getConsolidatedReceiptData(Table $table): array
     {
-        Gate::authorize('view', $table);
-
-        // Obtener los datos de la sesión o de la base de datos
         $closedOrders = collect(session('orders_closed', []));
         $consolidatedItems = collect(session('consolidated_items', []));
         $totalAmount = session('total_amount', 0);
@@ -1166,49 +1163,39 @@ class TableController extends Controller
         $sessionId = session('table_session_id');
         $payments = collect(session('payments', []));
 
-        // Si no hay datos en sesión o están vacíos, obtenerlos de la base de datos
-        if (($closedOrders->isEmpty() || $consolidatedItems->isEmpty())) {
-            // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
+        if ($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) {
             if (!$sessionId) {
                 $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
-                    ->whereHas('order', function($query) use ($table) {
-                        $query->where('table_id', $table->id);
-                    })
+                    ->whereHas('order', fn($q) => $q->where('table_id', $table->id))
                     ->whereNotNull('table_session_id')
                     ->orderBy('created_at', 'desc')
                     ->first();
-                
                 if ($recentPayment) {
                     $sessionId = $recentPayment->table_session_id;
                 } else {
-                    // Si no hay pagos, obtener la última sesión cerrada de la mesa
                     $lastSession = \App\Models\TableSession::where('table_id', $table->id)
                         ->where('status', \App\Models\TableSession::STATUS_CERRADA)
                         ->orderBy('ended_at', 'desc')
                         ->first();
-                    
                     if ($lastSession) {
                         $sessionId = $lastSession->id;
                     }
                 }
             }
-            
-            // CRÍTICO: Si no hay sessionId, NO obtener pedidos (evitar mezclar sesiones)
+
             if (!$sessionId) {
                 Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
                     'table_id' => $table->id,
                     'restaurant_id' => $table->restaurant_id
                 ]);
-                // Devolver recibo vacío o error
                 $closedOrders = collect();
                 $consolidatedItems = collect();
                 $totalAmount = 0;
                 $totalSubtotal = 0;
                 $totalDiscount = 0;
             } else {
-                // Obtener pedidos cerrados SOLO de la sesión específica
                 $closedOrders = Order::where('table_id', $table->id)
-                    ->where('table_session_id', $sessionId) // CRÍTICO: Filtrar por sesión
+                    ->where('table_session_id', $sessionId)
                     ->where('status', Order::STATUS_CERRADO)
                     ->whereNotNull('closed_at')
                     ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
@@ -1217,37 +1204,26 @@ class TableController extends Controller
 
                 if ($closedOrders->isNotEmpty()) {
                     $consolidatedItems = collect();
-                    
                     foreach ($closedOrders as $order) {
-                        // Asegurar que los items estén cargados
                         if (!$order->relationLoaded('items')) {
                             $order->load('items.product.category', 'items.modifiers');
                         }
-                        
                         foreach ($order->items as $item) {
-                            // Buscar si ya existe un item con el mismo product_id
-                            $existingItemIndex = $consolidatedItems->search(function ($i) use ($item) {
-                                return $i['product_id'] === $item->product_id;
-                            });
-                            
+                            $existingItemIndex = $consolidatedItems->search(fn($i) => $i['product_id'] === $item->product_id);
                             if ($existingItemIndex !== false) {
-                                // Si existe, sumar cantidad y subtotal
                                 $existingItem = $consolidatedItems[$existingItemIndex];
                                 $newQuantity = $existingItem['quantity'] + $item->quantity;
                                 $newSubtotal = $existingItem['subtotal'] + $item->subtotal;
-                                
-                                // Actualizar el item en la colección
                                 $consolidatedItems[$existingItemIndex] = [
                                     'product_id' => $existingItem['product_id'],
                                     'product_name' => $existingItem['product_name'],
                                     'quantity' => $newQuantity,
-                                    'unit_price' => $newSubtotal / $newQuantity, // Recalcular precio unitario promedio
+                                    'unit_price' => $newSubtotal / $newQuantity,
                                     'subtotal' => $newSubtotal,
                                     'modifiers' => $existingItem['modifiers'] ?? $item->modifiers,
                                     'observations' => $existingItem['observations'] ?? $item->observations,
                                 ];
                             } else {
-                                // Si no existe, agregar nuevo item
                                 $consolidatedItems->push([
                                     'product_id' => $item->product_id,
                                     'product_name' => $item->product->name,
@@ -1260,51 +1236,58 @@ class TableController extends Controller
                             }
                         }
                     }
-                    
-                    // Calcular totales: SIEMPRE usar la suma de los pedidos para el total final
-                    // Esto asegura que cuando hay múltiples pedidos, el total sea correcto
                     $totalSubtotal = $closedOrders->sum('subtotal');
                     $totalDiscount = $closedOrders->sum('discount');
-                    $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
+                    $totalAmount = $closedOrders->sum('total');
                 }
             }
         }
 
-        // SIEMPRE recalcular totales: usar suma de pedidos para mayor precisión con múltiples pedidos
         if ($closedOrders->isNotEmpty()) {
             $totalSubtotal = $closedOrders->sum('subtotal');
             $totalDiscount = $closedOrders->sum('discount');
-            $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
+            $totalAmount = $closedOrders->sum('total');
         } elseif ($consolidatedItems->isNotEmpty()) {
-            // Fallback: si no hay pedidos pero hay items consolidados (de sesión)
             $totalSubtotal = $consolidatedItems->sum('subtotal');
             $totalDiscount = $totalDiscount ?? 0;
             $totalAmount = $totalSubtotal - $totalDiscount;
         }
 
-        // Obtener pagos de la base de datos si hay sessionId
         if ($sessionId && $payments->isEmpty()) {
-            $dbPayments = Payment::where('table_session_id', $sessionId)
-                ->with('user')
-                ->get();
+            $dbPayments = Payment::where('table_session_id', $sessionId)->with('user')->get();
             if ($dbPayments->isNotEmpty()) {
                 $payments = $dbPayments;
             }
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tables.print-consolidated-receipt', compact(
-            'table',
-            'closedOrders',
-            'consolidatedItems',
-            'totalAmount',
-            'totalSubtotal',
-            'totalDiscount',
-            'payments'
-        ))
-            ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
+        return compact('table', 'closedOrders', 'consolidatedItems', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'payments');
+    }
+
+    /**
+     * Imprimir recibo consolidado (formato ticket térmico 80mm) - PDF
+     */
+    public function printConsolidatedReceipt(Table $table)
+    {
+        Gate::authorize('view', $table);
+        $data = $this->getConsolidatedReceiptData($table);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tables.print-consolidated-receipt', $data)
+            ->setPaper([0, 0, 226.77, 841.89], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("recibo-consolidado-mesa-{$table->number}.pdf");
+    }
+
+    /**
+     * Vista HTML del recibo consolidado que abre el diálogo de impresión al cargar (solo aceptar).
+     */
+    public function printConsolidatedReceiptAuto(Table $table)
+    {
+        Gate::authorize('view', $table);
+        $table->load('sector');
+        $data = $this->getConsolidatedReceiptData($table);
+
+        return view('tables.print-consolidated-receipt-auto', $data);
     }
 
     /**

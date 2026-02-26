@@ -148,21 +148,37 @@
             </div>
 
             <div class="payment-total">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label for="discount_type_id" class="form-label"><i class="bi bi-percent"></i> Tipo de Descuento</label>
+                        <select class="form-select" id="discount_type_id" name="discount_type_id">
+                            <option value="">Sin descuento</option>
+                            @foreach($discountTypes as $dt)
+                            <option value="{{ $dt->id }}"
+                                    data-percentage="{{ $dt->percentage }}"
+                                    data-name="{{ $dt->name }}">
+                                {{ $dt->name }} ({{ $dt->percentage }}%)
+                            </option>
+                            @endforeach
+                        </select>
+                        @if($discountTypes->isEmpty())
+                        <small class="text-muted">No hay tipos de descuento configurados.</small>
+                        @endif
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-6">
                         <div class="text-muted">Subtotal:</div>
-                        <div class="fs-5"><strong>${{ number_format($order->subtotal, 2) }}</strong></div>
+                        <div class="fs-5"><strong id="displaySubtotal">${{ number_format($order->subtotal, 2) }}</strong></div>
                     </div>
-                    @if($order->discount > 0)
                     <div class="col-6">
                         <div class="text-muted">Descuento:</div>
-                        <div class="fs-5"><strong>${{ number_format($order->discount, 2) }}</strong></div>
+                        <div class="fs-5"><strong id="displayDiscount" class="text-danger">-$<span id="displayDiscountAmount">{{ number_format($order->discount, 2) }}</span></strong></div>
                     </div>
-                    @endif
                 </div>
                 <hr>
                 <div class="payment-total-display">
-                    Total a Pagar: ${{ number_format($order->total, 2) }}
+                    Total a Pagar: $<span id="displayTotal">{{ number_format($order->total, 2) }}</span>
                 </div>
             </div>
         </div>
@@ -212,8 +228,26 @@
 @push('scripts')
 <script>
 let paymentMethods = [];
+let baseSubtotal = {{ $order->subtotal }};
+let currentDiscount = {{ $order->discount }};
 let totalAmount = {{ $order->total }};
 let paymentCounter = 0;
+
+function applyDiscountFromSelect() {
+    const sel = document.getElementById('discount_type_id');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) {
+        currentDiscount = 0;
+    } else {
+        const pct = parseFloat(opt.getAttribute('data-percentage')) || 0;
+        currentDiscount = Math.round((baseSubtotal * pct / 100) * 100) / 100;
+    }
+    totalAmount = Math.round((baseSubtotal - currentDiscount) * 100) / 100;
+    document.getElementById('displayDiscountAmount').textContent = currentDiscount.toFixed(2);
+    document.getElementById('displayTotal').textContent = totalAmount.toFixed(2);
+    updatePaymentSummary();
+}
+document.getElementById('discount_type_id').addEventListener('change', applyDiscountFromSelect);
 
 const paymentMethodOptions = {
     'EFECTIVO': { icon: 'bi-cash', label: 'Efectivo', color: '#28a745' },
@@ -411,7 +445,10 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         }
         return paymentData;
     });
-    
+    const discountTypeId = document.getElementById('discount_type_id').value;
+    const payload = { payments: payments };
+    if (discountTypeId) payload.discount_type_id = discountTypeId;
+
     try {
         const response = await fetch('{{ route("orders.quick.process-payment", $order) }}', {
             method: 'POST',
@@ -421,7 +458,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ payments: payments })
+            body: JSON.stringify(payload)
         });
         
         // Verificar si la respuesta es JSON

@@ -1179,8 +1179,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
                 if (data.kitchen_ticket_url && printWin && !printWin.closed) {
                     printWin.location.href = data.kitchen_ticket_url;
+                    setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
                 } else if (data.kitchen_ticket_url) {
-                    window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                    var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                    if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
                 }
 
                 Swal.fire({
@@ -1208,6 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.reload();
                 }, 1000);
             } catch (err) {
+                try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {}
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
