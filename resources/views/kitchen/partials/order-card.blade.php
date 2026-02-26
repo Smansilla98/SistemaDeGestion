@@ -34,16 +34,11 @@
     <div class="kds-items-list">
         @foreach($order->items as $item)
             @php
-                $itemStatus = strtolower($item->status);
-                if ($itemStatus === 'entregado') {
-                    $itemStatus = 'entregado';
-                } elseif (in_array($item->status, ['PENDIENTE', 'ENVIADO'])) {
-                    $itemStatus = 'pending';
-                } elseif ($item->status === 'EN_PREPARACION') {
-                    $itemStatus = 'preparing';
-                } elseif ($item->status === 'LISTO') {
-                    $itemStatus = 'ready';
+                $statusNorm = strtoupper(trim($item->status ?? 'EN_PREPARACION'));
+                if (!in_array($statusNorm, ['EN_PREPARACION', 'LISTO', 'ENTREGADO'])) {
+                    $statusNorm = 'EN_PREPARACION';
                 }
+                $itemStatus = $statusNorm === 'ENTREGADO' ? 'entregado' : ($statusNorm === 'LISTO' ? 'ready' : 'preparing');
             @endphp
             <div class="kds-item {{ $itemStatus }}">
                 <div class="kds-item-header">
@@ -78,11 +73,10 @@
                         @csrf
                         <select name="status" 
                                 class="kds-status-select {{ $itemStatus }}"
-                                data-previous-value="{{ $item->status }}">
-                            <option value="PENDIENTE" {{ $item->status === 'PENDIENTE' ? 'selected' : '' }}>Pendiente</option>
-                            <option value="EN_PREPARACION" {{ $item->status === 'EN_PREPARACION' ? 'selected' : '' }}>En Preparación</option>
-                            <option value="LISTO" {{ $item->status === 'LISTO' ? 'selected' : '' }}>Listo</option>
-                            <option value="ENTREGADO" {{ $item->status === 'ENTREGADO' ? 'selected' : '' }}>Entregado</option>
+                                data-previous-value="{{ $statusNorm }}">
+                            <option value="EN_PREPARACION" {{ $statusNorm === 'EN_PREPARACION' ? 'selected' : '' }}>En preparación</option>
+                            <option value="LISTO" {{ $statusNorm === 'LISTO' ? 'selected' : '' }}>Listo</option>
+                            <option value="ENTREGADO" {{ $statusNorm === 'ENTREGADO' ? 'selected' : '' }}>Entregado</option>
                         </select>
                     </form>
                 </div>
