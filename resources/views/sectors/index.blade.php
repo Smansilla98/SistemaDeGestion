@@ -7,7 +7,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-grid"></i> Sectores</h1>
-            <p class="text-muted">Gestiona los sectores del restaurante</p>
+            <p class="text-white">Gestiona los sectores del restaurante</p>
         </div>
         @can('create', App\Models\Sector::class)
         <a href="{{ route('sectors.create') }}" class="btn btn-primary">

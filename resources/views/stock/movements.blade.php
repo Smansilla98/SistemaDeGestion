@@ -11,7 +11,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-list-ul"></i> Movimientos de Stock</h1>
-                <p class="text-muted">Historial de movimientos de inventario</p>
+                <p class="text-white">Historial de movimientos de inventario</p>
             </div>
             <a href="{{ route('stock.create-movement') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Registrar Movimiento

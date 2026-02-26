@@ -277,7 +277,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-house"></i> Página Principal
                         </h1>
                     </div>
                 </div>
@@ -287,59 +287,67 @@
         <!-- Stats Cards -->
         <div class="row g-4 mb-4">
             <div class="col-md-6 col-lg-3">
-                <div class="mosaic-card mosaic-card-primary">
-                    <div class="mosaic-icon">
-                        <i class="bi bi-table"></i>
+                <a href="{{ url('/tables') }}" class="text-decoration-none text-body d-block">
+                    <div class="mosaic-card mosaic-card-primary">
+                        <div class="mosaic-icon">
+                            <i class="bi bi-table"></i>
+                        </div>
+                        <div class="mosaic-label">Mesas Ocupadas</div>
+                        <div class="mosaic-value">{{ $stats['mesas_ocupadas'] }}</div>
+                        <div class="mosaic-trend mosaic-trend-up">
+                            <i class="bi bi-arrow-up"></i>
+                            <span>Activas</span>
+                        </div>
                     </div>
-                    <div class="mosaic-label">Mesas Ocupadas</div>
-                    <div class="mosaic-value">{{ $stats['mesas_ocupadas'] }}</div>
-                    <div class="mosaic-trend mosaic-trend-up">
-                        <i class="bi bi-arrow-up"></i>
-                        <span>Activas</span>
-            </div>
-        </div>
-    </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="mosaic-card mosaic-card-success">
-                    <div class="mosaic-icon">
-                        <i class="bi bi-check-circle"></i>
-                    </div>
-                    <div class="mosaic-label">Mesas Libres</div>
-                    <div class="mosaic-value">{{ $stats['mesas_libres'] }}</div>
-                    <div class="mosaic-trend mosaic-trend-up">
-                        <i class="bi bi-check"></i>
-                        <span>Disponibles</span>
-                    </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-md-6 col-lg-3">
-                <div class="mosaic-card mosaic-card-warning">
-                    <div class="mosaic-icon">
-                        <i class="bi bi-clock-history"></i>
+                <a href="{{ url('/tables') }}" class="text-decoration-none text-body d-block">
+                    <div class="mosaic-card mosaic-card-success">
+                        <div class="mosaic-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="mosaic-label">Mesas Libres</div>
+                        <div class="mosaic-value">{{ $stats['mesas_libres'] }}</div>
+                        <div class="mosaic-trend mosaic-trend-up">
+                            <i class="bi bi-check"></i>
+                            <span>Disponibles</span>
+                        </div>
                     </div>
-                    <div class="mosaic-label">Pedidos Pendientes</div>
-                    <div class="mosaic-value">{{ $stats['pedidos_pendientes'] }}</div>
-                    <div class="mosaic-trend mosaic-trend-up">
-                        <i class="bi bi-hourglass-split"></i>
-                        <span>En proceso</span>
+                </a>
             </div>
-        </div>
-    </div>
 
             <div class="col-md-6 col-lg-3">
-                <div class="mosaic-card mosaic-card-info">
-                    <div class="mosaic-icon">
-                        <i class="bi bi-currency-dollar"></i>
+                <a href="{{ url('/orders') }}" class="text-decoration-none text-body d-block">
+                    <div class="mosaic-card mosaic-card-warning">
+                        <div class="mosaic-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="mosaic-label">Pedidos Pendientes</div>
+                        <div class="mosaic-value">{{ $stats['pedidos_pendientes'] }}</div>
+                        <div class="mosaic-trend mosaic-trend-up">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span>En proceso</span>
+                        </div>
                     </div>
-                    <div class="mosaic-label">Ventas de Hoy</div>
-                    <div class="mosaic-value">${{ number_format($stats['ventas_hoy'], 0) }}</div>
-                    <div class="mosaic-trend mosaic-trend-up">
-                        <i class="bi bi-graph-up-arrow"></i>
-                        <span>Hoy</span>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ route('cash-register.index') }}" class="text-decoration-none text-body d-block">
+                    <div class="mosaic-card mosaic-card-info">
+                        <div class="mosaic-icon">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="mosaic-label">Ventas de Hoy</div>
+                        <div class="mosaic-value">${{ number_format($stats['ventas_hoy'], 0) }}</div>
+                        <div class="mosaic-trend mosaic-trend-up">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Hoy</span>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
