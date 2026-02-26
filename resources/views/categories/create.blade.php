@@ -23,26 +23,6 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label for="sector_id" class="form-label">Sector *</label>
-                        <select class="form-select @error('sector_id') is-invalid @enderror" 
-                                id="sector_id" 
-                                name="sector_id" 
-                                required>
-                            <option value="">Seleccionar sector</option>
-                            @foreach($sectors as $sector)
-                            <option value="{{ $sector->id }}" 
-                                    {{ old('sector_id', $selectedSectorId) == $sector->id ? 'selected' : '' }}>
-                                {{ $sector->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        @error('sector_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Selecciona el sector al que pertenece esta categoría</small>
-                    </div>
-
-                    <div class="mb-3">
                         <label for="name" class="form-label">Nombre *</label>
                         <input type="text" 
                                class="form-control @error('name') is-invalid @enderror" 

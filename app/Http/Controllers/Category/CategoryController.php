@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Category;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\Sector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Traits\Auditable;
@@ -24,13 +23,7 @@ class CategoryController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
 
         $query = Category::where('restaurant_id', $restaurantId)
-            ->with(['sector']) // Eager loading
             ->withCount('products');
-
-        // Filtro por sector (OBLIGATORIO según jerarquía)
-        if ($request->filled('sector_id')) {
-            $query->where('sector_id', $request->sector_id);
-        }
 
         // Búsqueda
         if ($request->filled('search')) {
@@ -58,38 +51,18 @@ class CategoryController extends Controller
 
         // Paginación backend
         $categories = $query->paginate(20)->withQueryString();
-        
-        // Cargar sectores para el filtro
-        $sectors = Sector::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
-            ->whereNull('parent_id') // Solo sectores principales
-            ->orderBy('name')
-            ->get();
-            
-        $selectedSector = $request->filled('sector_id') 
-            ? Sector::find($request->sector_id) 
-            : null;
 
-        return view('categories.index', compact('categories', 'sectors', 'selectedSector'));
+        return view('categories.index', compact('categories'));
     }
 
     /**
      * Mostrar formulario de creación
      */
-    public function create(Request $request)
+    public function create()
     {
         Gate::authorize('create', Category::class);
 
-        $restaurantId = auth()->user()->restaurant_id;
-        $sectors = Sector::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
-            
-        $selectedSectorId = $request->get('sector_id');
-
-        return view('categories.create', compact('sectors', 'selectedSectorId'));
+        return view('categories.create');
     }
 
     /**
@@ -100,7 +73,6 @@ class CategoryController extends Controller
         Gate::authorize('create', Category::class);
 
         $validated = $request->validate([
-            'sector_id' => 'required|exists:sectors,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'display_order' => 'nullable|integer|min:0',
@@ -115,7 +87,7 @@ class CategoryController extends Controller
         // Auditoría
         $this->auditCreate($category, $validated);
 
-        return redirect()->route('categories.index', ['sector_id' => $category->sector_id])
+        return redirect()->route('categories.index')
             ->with('success', 'Categoría creada exitosamente');
     }
 
@@ -140,14 +112,7 @@ class CategoryController extends Controller
     {
         Gate::authorize('update', $category);
 
-        $restaurantId = auth()->user()->restaurant_id;
-        $sectors = Sector::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
-
-        return view('categories.edit', compact('category', 'sectors'));
+        return view('categories.edit', compact('category'));
     }
 
     /**
@@ -158,7 +123,6 @@ class CategoryController extends Controller
         Gate::authorize('update', $category);
 
         $validated = $request->validate([
-            'sector_id' => 'required|exists:sectors,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'display_order' => 'nullable|integer|min:0',
@@ -173,7 +137,7 @@ class CategoryController extends Controller
         // Auditoría
         $this->auditUpdate($category, $oldAttributes, $validated);
 
-        return redirect()->route('categories.index', ['sector_id' => $category->sector_id])
+        return redirect()->route('categories.index')
             ->with('success', 'Categoría actualizada exitosamente');
     }
 
@@ -192,10 +156,9 @@ class CategoryController extends Controller
         // Auditoría antes de eliminar
         $this->auditDelete($category);
         
-        $sectorId = $category->sector_id;
         $category->delete();
 
-        return redirect()->route('categories.index', ['sector_id' => $sectorId])
+        return redirect()->route('categories.index')
             ->with('success', 'Categoría eliminada exitosamente');
     }
 }
