@@ -266,28 +266,20 @@
             border-radius: 12px;
         }
         
-        /* Modal de nuevo pedido: scroll del contenido */
-        #newOrderModal .modal-dialog {
-            max-height: calc(100vh - 2rem);
-            height: auto;
-            margin: 1rem auto;
-            display: flex;
-            flex-direction: column;
+        /* Scroll en modales con modal-dialog-scrollable */
+        .modal-dialog-scrollable .modal-content {
+            max-height: 100%;
+            overflow-y: scroll;
         }
         
-        #newOrderModal .modal-content {
+        /* Modal de nuevo pedido */
+        #newOrderModal .modal-dialog {
             max-height: calc(100vh - 2rem);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            margin: 1rem auto;
         }
         
         #newOrderModal .modal-body {
             padding: 1rem;
-            overflow-y: auto;
-            overflow-x: hidden;
-            flex: 1 1 auto;
-            min-height: 0;
         }
         
         #newOrderModal .row {
