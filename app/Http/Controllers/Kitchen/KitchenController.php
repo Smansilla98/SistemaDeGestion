@@ -52,7 +52,7 @@ class KitchenController extends Controller
     public function updateItemStatus(Request $request, OrderItem $item)
     {
         $validated = $request->validate([
-            'status' => 'required|in:PENDIENTE,EN_PREPARACION,LISTO,ENTREGADO',
+            'status' => 'required|in:EN_PREPARACION,LISTO,ENTREGADO',
         ]);
 
         $this->orderService->updateItemStatus($item, $validated['status']);

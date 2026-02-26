@@ -100,31 +100,33 @@
                                 <td>${{ number_format($item->unit_price, 2) }}</td>
                                 <td><strong>${{ number_format($item->subtotal, 2) }}</strong></td>
                                 <td>
+                                    @php
+                                        $itemStatusDisplay = strtoupper(trim($item->status ?? 'EN_PREPARACION'));
+                                        if (!in_array($itemStatusDisplay, ['EN_PREPARACION', 'LISTO', 'ENTREGADO'])) {
+                                            $itemStatusDisplay = 'EN_PREPARACION';
+                                        }
+                                        $badgeLabel = $itemStatusDisplay === 'EN_PREPARACION' ? 'En preparación' : ($itemStatusDisplay === 'LISTO' ? 'Listo' : 'Entregado');
+                                    @endphp
                                     <span class="badge bg-{{ 
-                                        $item->status === 'ENTREGADO' ? 'success' : 
-                                        ($item->status === 'LISTO' ? 'info' : 
-                                        ($item->status === 'EN_PREPARACION' ? 'warning' : 'secondary')) 
+                                        $itemStatusDisplay === 'ENTREGADO' ? 'success' : 
+                                        ($itemStatusDisplay === 'LISTO' ? 'info' : 'warning') 
                                     }}" id="item-status-{{ $item->id }}">
-                                        {{ $item->status }}
+                                        {{ $badgeLabel }}
                                     </span>
                                 </td>
                                 <td>
                                     @php
                                         $userRole = auth()->user()->role ?? null;
-                                        $itemStatusRaw = $item->status ?? 'PENDIENTE';
+                                        $itemStatusRaw = $item->status ?? 'EN_PREPARACION';
                                         $itemStatus = strtoupper(trim($itemStatusRaw));
+                                        if (!in_array($itemStatus, ['EN_PREPARACION', 'LISTO', 'ENTREGADO'])) {
+                                            $itemStatus = 'EN_PREPARACION';
+                                        }
                                         $canUpdate = in_array($userRole, ['ADMIN', 'MOZO', 'COCINA']);
                                     @endphp
                                     
                                     @if($canUpdate)
-                                        @if($itemStatus === 'PENDIENTE')
-                                            <button class="btn btn-sm btn-warning update-item-status" 
-                                                    data-item-id="{{ $item->id }}" 
-                                                    data-status="EN_PREPARACION"
-                                                    title="Marcar en preparación">
-                                                <i class="bi bi-gear"></i> En Preparación
-                                            </button>
-                                        @elseif($itemStatus === 'EN_PREPARACION')
+                                        @if($itemStatus === 'EN_PREPARACION')
                                             <button class="btn btn-sm btn-info update-item-status" 
                                                     data-item-id="{{ $item->id }}" 
                                                     data-status="LISTO"
@@ -138,16 +140,8 @@
                                                     title="Marcar como entregado">
                                                 <i class="bi bi-check-circle"></i> Entregado
                                             </button>
-                                        @elseif($itemStatus === 'ENTREGADO')
-                                            <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Completado</span>
                                         @else
-                                            {{-- Estado desconocido: {{ $itemStatus }} (raw: {{ $itemStatusRaw }}) --}}
-                                            <button class="btn btn-sm btn-warning update-item-status" 
-                                                    data-item-id="{{ $item->id }}" 
-                                                    data-status="EN_PREPARACION"
-                                                    title="Marcar en preparación (Estado: {{ $itemStatus }})">
-                                                <i class="bi bi-gear"></i> En Preparación
-                                            </button>
+                                            <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Entregado</span>
                                         @endif
                                     @else
                                         <span class="text-muted" title="Rol: {{ $userRole }} - No tiene permisos para actualizar">-</span>
@@ -463,11 +457,10 @@ async function updateItemStatusHandler(event) {
     const itemId = btn.dataset.itemId;
     const newStatus = btn.dataset.status;
     
-    const statusLabels = {
-            'PENDIENTE': 'PENDIENTE',
-            'EN_PREPARACION': 'EN PREPARACIÓN',
-            'LISTO': 'LISTO',
-            'ENTREGADO': 'ENTREGADO'
+        const statusLabels = {
+            'EN_PREPARACION': 'En preparación',
+            'LISTO': 'Listo',
+            'ENTREGADO': 'Entregado'
         };
         
         const confirmResult = await Swal.fire({
@@ -528,13 +521,13 @@ async function updateItemStatusHandler(event) {
                 // Actualizar badge de estado
                 const statusBadge = document.getElementById(`item-status-${itemId}`);
                 const statusColors = {
-                    'PENDIENTE': 'secondary',
                     'EN_PREPARACION': 'warning',
                     'LISTO': 'info',
                     'ENTREGADO': 'success'
                 };
+                const labelByStatus = { 'EN_PREPARACION': 'En preparación', 'LISTO': 'Listo', 'ENTREGADO': 'Entregado' };
                 
-                statusBadge.textContent = newStatus;
+                statusBadge.textContent = labelByStatus[newStatus] || newStatus;
                 statusBadge.className = `badge bg-${statusColors[newStatus]}`;
                 
                 // Actualizar fila
@@ -548,7 +541,6 @@ async function updateItemStatusHandler(event) {
                 // Actualizar botones de acción
                 const actionCell = row.querySelector('td:last-child');
                 const nextStatus = {
-                    'PENDIENTE': { status: 'EN_PREPARACION', icon: 'bi-gear', color: 'warning', title: 'Marcar en preparación' },
                     'EN_PREPARACION': { status: 'LISTO', icon: 'bi-check2-circle', color: 'info', title: 'Marcar como listo' },
                     'LISTO': { status: 'ENTREGADO', icon: 'bi-check-circle', color: 'success', title: 'Marcar como entregado' }
                 };

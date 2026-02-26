@@ -157,7 +157,7 @@ class OrderService
                 'unit_price' => $product->price,
                 'subtotal' => $product->price * $itemData['quantity'],
                 'observations' => $itemData['observations'] ?? null,
-                'status' => 'PENDIENTE',
+                'status' => 'EN_PREPARACION',
             ]);
 
             // Agregar modificadores si existen
@@ -207,8 +207,8 @@ class OrderService
                 'sent_at' => now(),
             ]);
 
-            // Actualizar estado de items a PENDIENTE
-            $order->items()->update(['status' => 'PENDIENTE']);
+            // Actualizar estado de items a EN_PREPARACION
+            $order->items()->update(['status' => 'EN_PREPARACION']);
 
             return $order->fresh();
         });
@@ -219,7 +219,7 @@ class OrderService
      */
     public function updateItemStatus(OrderItem $item, string $status): OrderItem
     {
-        $validStatuses = ['PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'];
+        $validStatuses = ['EN_PREPARACION', 'LISTO', 'ENTREGADO'];
         if (!in_array($status, $validStatuses)) {
             throw new \Exception('Estado inválido');
         }

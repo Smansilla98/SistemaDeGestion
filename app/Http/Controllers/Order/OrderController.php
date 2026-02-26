@@ -1180,7 +1180,7 @@ class OrderController extends Controller
         Gate::authorize('update', $item->order);
 
         $validated = $request->validate([
-            'status' => 'required|in:PENDIENTE,EN_PREPARACION,LISTO,ENTREGADO',
+            'status' => 'required|in:EN_PREPARACION,LISTO,ENTREGADO',
         ]);
 
         try {
