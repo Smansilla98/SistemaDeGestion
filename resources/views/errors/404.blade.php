@@ -16,8 +16,8 @@
                     <p class="text-muted mb-4">
                         La página que estás buscando no existe o ha sido movida.
                     </p>
-                    <a href="{{ route('dashboard') }}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-house"></i> Volver al inicio
+                    <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-house"></i> {{ auth()->check() ? 'Volver al inicio' : 'Ir al login' }}
                     </a>
                 </div>
             </div>
