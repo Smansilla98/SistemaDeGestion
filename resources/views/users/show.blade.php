@@ -7,7 +7,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-person-circle"></i> {{ $user->name }}</h1>
-            <p class="text-muted">{{ $user->email }}</p>
+            <p class="text-muted">{{ $user->username }}</p>
         </div>
         <div class="btn-group">
             <a href="{{ route('users.edit', $user) }}" class="btn btn-primary">
@@ -28,7 +28,7 @@
                     {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
                 <h4>{{ $user->name }}</h4>
-                <p class="text-muted mb-3">{{ $user->email }}</p>
+                <p class="text-muted mb-3">{{ $user->username }}</p>
                 
                 @php
                     $roleColors = [

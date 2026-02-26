@@ -30,28 +30,32 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Crear usuarios de ejemplo
+        // Crear usuarios de ejemplo (login por usuario y contraseña)
         $users = [
             [
                 'name' => 'Administrador',
+                'username' => 'admin',
                 'email' => 'admin@restaurante.com',
                 'password' => Hash::make('admin123'),
                 'role' => 'ADMIN',
             ],
             [
                 'name' => 'Juan Pérez',
+                'username' => 'mozo',
                 'email' => 'mozo@restaurante.com',
                 'password' => Hash::make('mozo123'),
                 'role' => 'MOZO',
             ],
             [
                 'name' => 'María García',
+                'username' => 'cocina',
                 'email' => 'cocina@restaurante.com',
                 'password' => Hash::make('cocina123'),
                 'role' => 'COCINA',
             ],
             [
                 'name' => 'Carlos López',
+                'username' => 'caja',
                 'email' => 'caja@restaurante.com',
                 'password' => Hash::make('caja123'),
                 'role' => 'CAJERO',
