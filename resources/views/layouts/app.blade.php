@@ -811,7 +811,7 @@
                         <i class="bi bi-house"></i>
                         <span>Página Principal</span>
                     </a>
-                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
                     <a href="{{ route('tables.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('tables.*') ? 'active' : '' }}">
                         <i class="bi bi-table"></i>
                         <span>Mesas</span>
@@ -821,19 +821,19 @@
                         <span>Pedidos</span>
                     </a>
                     @endif
-                    @if(in_array(auth()->user()->role, ['ADMIN', 'COCINA']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'COCINA']))
                     <a href="{{ route('kitchen.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
                         <i class="bi bi-egg-fried"></i>
                         <span>Cocina</span>
                     </a>
                     @endif
-                    @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
                     <a href="{{ route('cash-register.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-coin"></i>
                         <span>Caja</span>
                     </a>
                     @endif
-                    @if(auth()->user()->role === 'ADMIN')
+                    @if(auth()->check() && auth()->user()->role === 'ADMIN')
                     <a href="{{ route('discount-types.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
                         <i class="bi bi-percent"></i>
                         <span>Descuentos</span>
@@ -842,7 +842,7 @@
                 </div>
             </div>
 
-            @if(auth()->user()->role === 'ADMIN')
+            @if(auth()->check() && auth()->user()->role === 'ADMIN')
             <!-- Grupo 2: Gestión del Restaurante -->
             <div class="nova-nav-group">
                 <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'active' : '' }}" onclick="toggleNavGroup('gestion-restaurante')">
@@ -890,7 +890,7 @@
                         <i class="bi bi-calendar-event"></i>
                         <span>Eventos</span>
                     </a>
-                    @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'CAJERO']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'MOZO', 'CAJERO']))
                     <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
                         <i class="bi bi-calendar-repeat"></i>
                         <span>Actividades Recurrentes</span>
@@ -907,7 +907,7 @@
                     <i class="bi bi-chevron-down ms-auto" id="finanzas-icon"></i>
                 </div>
                 <div class="nova-nav-group-items {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'show' : '' }}" id="finanzas-items">
-                    @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
                     <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-stack"></i>
                         <span>Gastos Fijos</span>
@@ -934,10 +934,11 @@
             @endif
         </nav>
 
+        @auth
         <div class="nova-sidebar-footer">
             <div class="nova-user-menu" onclick="toggleUserMenu()">
                 <div class="nova-user-avatar">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    {{ strtoupper(substr(auth()->user()->name ?? '', 0, 1)) }}
                 </div>
                 <div class="nova-user-info">
                     <div class="nova-user-name">{{ auth()->user()->name }}</div>
@@ -954,6 +955,7 @@
                 </form>
             </div>
         </div>
+        @endauth
     </aside>
 
     <!-- Overlay para móvil -->
@@ -968,6 +970,7 @@
             <h5 class="nova-header-title mb-0">@yield('title', 'Sistema de Gestión')</h5>
         </div>
         <div class="nova-header-right">
+            @auth
             <div class="nova-header-role-badge">
                 <i class="bi bi-person-badge"></i>
                 <span>{{ strtoupper(auth()->user()->role) }}</span>
@@ -991,6 +994,7 @@
                     </form>
                 </div>
             </div>
+            @endauth
         </div>
     </header>
 

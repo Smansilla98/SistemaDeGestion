@@ -37,7 +37,9 @@ Route::middleware('auth')->group(function () {
     | Tutoriales (PDFs)
     |--------------------------------------------------------------------------
     */
-    Route::get('/tutoriales', [\App\Http\Controllers\TutorialController::class, 'index'])->name('tutorials.index');
+    Route::prefix('tutorials')->name('tutorials.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
+    });
 
     /*
     |--------------------------------------------------------------------------
