@@ -266,13 +266,28 @@
             border-radius: 12px;
         }
         
-        /* Modal de nuevo pedido optimizado para móvil */
+        /* Modal de nuevo pedido: scroll del contenido */
         #newOrderModal .modal-dialog {
-            height: 100vh;
+            max-height: calc(100vh - 2rem);
+            height: auto;
+            margin: 1rem auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #newOrderModal .modal-content {
+            max-height: calc(100vh - 2rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         #newOrderModal .modal-body {
             padding: 1rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1 1 auto;
+            min-height: 0;
         }
         
         #newOrderModal .row {

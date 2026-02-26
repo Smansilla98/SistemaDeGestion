@@ -104,7 +104,7 @@
             <i class="bi bi-cash-coin"></i> Cerrar Cuenta - Pedido Rápido
         </h1>
         <p class="text-white">
-            Cliente: <strong>{{ $order->customer_name }}</strong> |
+            Cliente: <strong>{{ $order->customer_name }}</strong>
         </p>
     </div>
 </div>
