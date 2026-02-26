@@ -15,9 +15,30 @@ class TutorialController extends Controller
     private const TUTORIALS_DIR = 'tutoriales';
 
     /**
+     * Archivo JSON con títulos personalizados (nombre_archivo => título)
+     */
+    private const META_FILE = 'tutoriales/_meta.json';
+
+    /**
      * Tamaño máximo en KB (10 MB). Ajustar si el servidor tiene límites menores.
      */
     private const MAX_FILE_KB = 10240;
+
+    private function getTitlesMeta(): array
+    {
+        $disk = Storage::disk('public');
+        if (!$disk->exists(self::META_FILE)) {
+            return [];
+        }
+        $json = $disk->get(self::META_FILE);
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : [];
+    }
+
+    private function saveTitlesMeta(array $meta): void
+    {
+        Storage::disk('public')->put(self::META_FILE, json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
 
     /**
      * Listar y mostrar la sección de tutoriales (PDFs)
@@ -31,6 +52,7 @@ class TutorialController extends Controller
             $disk->makeDirectory($dir);
         }
 
+        $titles = $this->getTitlesMeta();
         $pdfs = [];
         $files = $disk->files($dir);
 
@@ -39,9 +61,10 @@ class TutorialController extends Controller
             if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) !== 'pdf') {
                 continue;
             }
+            $defaultTitle = pathinfo($name, PATHINFO_FILENAME);
             $pdfs[] = [
                 'name' => $name,
-                'title' => pathinfo($name, PATHINFO_FILENAME),
+                'title' => $titles[$name] ?? $defaultTitle,
                 'url' => asset('storage/' . $path),
                 'size' => $disk->size($path),
             ];
@@ -65,11 +88,13 @@ class TutorialController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:pdf|max:' . self::MAX_FILE_KB,
+            'title' => 'nullable|string|max:255',
         ], [
             'file.required' => 'Debes seleccionar un archivo PDF.',
             'file.file' => 'El archivo no se subió correctamente. Comprueba el tamaño (máx. ' . (self::MAX_FILE_KB / 1024) . ' MB).',
             'file.mimes' => 'El archivo debe ser un PDF.',
             'file.max' => 'El archivo no debe superar ' . (self::MAX_FILE_KB / 1024) . ' MB.',
+            'title.max' => 'El nombre no debe superar 255 caracteres.',
         ]);
 
         $file = $request->file('file');
@@ -89,6 +114,13 @@ class TutorialController extends Controller
         }
 
         $file->storeAs($dir, $name, 'public');
+
+        $customTitle = $request->input('title');
+        if ($customTitle !== null && trim($customTitle) !== '') {
+            $meta = $this->getTitlesMeta();
+            $meta[$name] = trim($customTitle);
+            $this->saveTitlesMeta($meta);
+        }
 
         return redirect()->route('tutorials.index')->with('success', 'Tutorial agregado correctamente.');
     }
@@ -111,6 +143,12 @@ class TutorialController extends Controller
         }
 
         $disk->delete($path);
+
+        $meta = $this->getTitlesMeta();
+        if (isset($meta[$filename])) {
+            unset($meta[$filename]);
+            $this->saveTitlesMeta($meta);
+        }
 
         return redirect()->route('tutorials.index')->with('success', 'Tutorial eliminado correctamente.');
     }
