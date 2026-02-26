@@ -11,7 +11,7 @@
         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
             <i class="bi bi-receipt"></i> Pedido Rápido: {{ $order->number }}
         </h1>
-        <p class="text-muted">
+        <p class="text-white">
             Cliente: <strong>{{ $order->customer_name }}</strong> | 
             Estado: <span class="badge bg-{{ 
                 $order->status === 'CERRADO' ? 'success' : 

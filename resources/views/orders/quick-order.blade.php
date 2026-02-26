@@ -9,7 +9,7 @@
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
                 <i class="bi bi-lightning-charge"></i> Pedidos Rápidos
             </h1>
-            <p class="text-muted">Consumo inmediato sin mesa</p>
+            <p class="text-white">Consumo inmediato sin mesa</p>
         </div>
         <div>
             @if($activeSession)
