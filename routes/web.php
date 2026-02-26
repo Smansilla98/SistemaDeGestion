@@ -314,4 +314,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tutoriales (PDFs)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('tutoriales')->name('tutorials.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
+    });
 });

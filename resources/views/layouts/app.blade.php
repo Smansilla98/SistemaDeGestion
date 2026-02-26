@@ -280,7 +280,7 @@
         }
 
         .nova-sidebar-footer {
-            position: absolute;
+            position: relative;
             bottom: 0;
             left: 0;
             right: 0;
@@ -924,6 +924,12 @@
             <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
                 <span>Configuración</span>
+            </a>
+
+            <!-- Tutoriales -->
+            <a href="{{ route('tutorials.index') }}" class="nova-nav-item {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-bookmark"></i>
+                <span>Tutoriales</span>
             </a>
             @endif
         </nav>
