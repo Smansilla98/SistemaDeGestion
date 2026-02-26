@@ -74,7 +74,7 @@
                         <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.75rem;"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <h5 class="card-title mb-1 text-break">{{ Str::title(str_replace(['-', '_'], ' ', $pdf['title'])) }}</h5>
+                        <h5 class="card-title mb-1 text-break">{{ ucwords(str_replace(['-', '_'], ' ', $pdf['title'])) }}</h5>
                         <small class="text-muted">
                             {{ number_format($pdf['size'] / 1024, 1) }} KB
                         </small>
@@ -87,7 +87,7 @@
                         </a>
                         <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1 btn-view-here" 
                                 data-url="{{ $pdf['url'] }}" 
-                                data-title="{{ Str::title(str_replace(['-', '_'], ' ', $pdf['title'])) }}">
+                                data-title="{{ ucwords(str_replace(['-', '_'], ' ', $pdf['title'])) }}">
                             <i class="bi bi-display"></i> Ver aquí
                         </button>
                     </div>
