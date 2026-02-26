@@ -7,18 +7,19 @@
     @csrf
 
     <div class="mb-4">
-        <label for="email" class="form-label">
-            <i class="bi bi-envelope"></i> Email
+        <label for="username" class="form-label">
+            <i class="bi bi-person"></i> Usuario
         </label>
-        <input type="email" 
-               class="form-control @error('email') is-invalid @enderror" 
-               id="email" 
-               name="email" 
-               value="{{ old('email') }}" 
-               placeholder="tu@email.com"
+        <input type="text" 
+               class="form-control @error('username') is-invalid @enderror" 
+               id="username" 
+               name="username" 
+               value="{{ old('username') }}" 
+               placeholder="Usuario"
                required 
-               autofocus>
-        @error('email')
+               autofocus
+               autocomplete="username">
+        @error('username')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
@@ -57,16 +58,16 @@
         </small>
         <div class="small text-muted">
             <div class="mb-1">
-                <i class="bi bi-person-badge"></i> <strong>Admin:</strong> admin@restaurante.com / admin123
+                <i class="bi bi-person-badge"></i> <strong>Admin:</strong> admin / admin123
             </div>
             <div class="mb-1">
-                <i class="bi bi-person"></i> <strong>Mozo:</strong> mozo@restaurante.com / mozo123
+                <i class="bi bi-person"></i> <strong>Mozo:</strong> mozo / mozo123
             </div>
             <div class="mb-1">
-                <i class="bi bi-egg-fried"></i> <strong>Cocina:</strong> cocina@restaurante.com / cocina123
+                <i class="bi bi-egg-fried"></i> <strong>Cocina:</strong> cocina / cocina123
             </div>
             <div>
-                <i class="bi bi-cash-coin"></i> <strong>Caja:</strong> caja@restaurante.com / caja123
+                <i class="bi bi-cash-coin"></i> <strong>Caja:</strong> caja / caja123
             </div>
         </div>
     </div>

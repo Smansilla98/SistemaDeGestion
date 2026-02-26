@@ -20,7 +20,7 @@
             <div class="col-md-4">
                 <label for="search" class="form-label">Buscar</label>
                 <input type="text" class="form-control" id="search" name="search" 
-                       value="{{ request('search') }}" placeholder="Nombre o email...">
+                       value="{{ request('search') }}" placeholder="Nombre o usuario...">
             </div>
             <div class="col-md-3">
                 <label for="role" class="form-label">Rol</label>
@@ -55,7 +55,7 @@
                 <thead>
                     <tr>
                         <th>Nombre</th>
-                        <th>Email</th>
+                        <th>Usuario</th>
                         <th>Rol</th>
                         <th>Mesas Asignadas</th>
                         <th>Estado</th>
@@ -74,7 +74,7 @@
                                 <strong>{{ $user->name }}</strong>
                             </div>
                         </td>
-                        <td>{{ $user->email }}</td>
+                        <td>{{ $user->username }}</td>
                         <td>
                             @php
                                 $roleColors = [
