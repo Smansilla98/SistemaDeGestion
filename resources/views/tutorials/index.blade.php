@@ -4,13 +4,64 @@
 
 @section('content')
 <div class="row mb-4">
-    <div class="col-12">
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
-            <i class="bi bi-journal-bookmark"></i> Tutoriales
-        </h1>
-        <p class="text-muted">Visualiza los manuales y guías en formato PDF.</p>
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
+                <i class="bi bi-journal-bookmark"></i> Tutoriales
+            </h1>
+            <p class="text-muted mb-0">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
+        </div>
+        @if(auth()->check() && auth()->user()->role === 'ADMIN')
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
+            <i class="bi bi-plus-lg"></i> Agregar tutorial
+        </button>
+        @endif
     </div>
 </div>
+
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+@endif
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+@endif
+
+@if(auth()->check() && auth()->user()->role === 'ADMIN')
+<!-- Modal Agregar tutorial -->
+<div class="modal fade" id="addTutorialModal" tabindex="-1" aria-labelledby="addTutorialModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('tutorials.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTutorialModalLabel"><i class="bi bi-upload me-2"></i>Agregar tutorial (PDF)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    @error('file')
+                    <div class="alert alert-danger py-2">{{ $message }}</div>
+                    @enderror
+                    <div class="mb-3">
+                        <label for="tutorial_file" class="form-label">Archivo PDF <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control @error('file') is-invalid @enderror" id="tutorial_file" name="file" accept=".pdf" required>
+                        <small class="text-muted">Máximo 20 MB. Solo archivos PDF.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @if(count($pdfs) > 0)
 <div class="row g-4">
@@ -30,14 +81,25 @@
                     </div>
                 </div>
                 <div class="mt-auto">
-                    <a href="{{ $pdf['url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="bi bi-box-arrow-up-right"></i> Abrir PDF
-                    </a>
-                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2 btn-view-here" 
-                            data-url="{{ $pdf['url'] }}" 
-                            data-title="{{ Str::title(str_replace(['-', '_'], ' ', $pdf['title'])) }}">
-                        <i class="bi bi-display"></i> Ver aquí
-                    </button>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <a href="{{ $pdf['url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm flex-grow-1">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1 btn-view-here" 
+                                data-url="{{ $pdf['url'] }}" 
+                                data-title="{{ Str::title(str_replace(['-', '_'], ' ', $pdf['title'])) }}">
+                            <i class="bi bi-display"></i> Ver aquí
+                        </button>
+                    </div>
+                    @if(auth()->check() && auth()->user()->role === 'ADMIN')
+                    <form action="{{ route('tutorials.destroy', ['filename' => $pdf['name']]) }}" method="POST" class="mt-2" onsubmit="return confirm('¿Eliminar este tutorial?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -68,7 +130,11 @@
         <i class="bi bi-folder2-open text-muted" style="font-size: 4rem;"></i>
         <h5 class="mt-3">No hay tutoriales disponibles</h5>
         <p class="text-muted mb-0">
-            Los archivos PDF que se coloquen en la carpeta <code>public/tutoriales</code> del servidor aparecerán aquí.
+            @if(auth()->check() && auth()->user()->role === 'ADMIN')
+            Usá el botón <strong>Agregar tutorial</strong> para subir un PDF.
+            @else
+            Los tutoriales en PDF aparecerán aquí cuando un administrador los agregue.
+            @endif
         </p>
     </div>
 </div>
