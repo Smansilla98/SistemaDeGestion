@@ -277,8 +277,11 @@
 
     <div class="text-center mt-4">
         <div class="d-grid gap-2">
-            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-printer"></i> Factura
+            <a href="{{ route('tables.print-consolidated-receipt-auto', $table) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-printer"></i> Imprimir recibo
+            </a>
+            <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-file-pdf"></i> Descargar PDF
             </a>
             <a href="{{ route('tables.index') }}" class="btn btn-success">
                 <i class="bi bi-check-circle"></i> Finalizar
@@ -298,10 +301,13 @@
             </div>
             <div class="modal-body">
                 <p class="mb-3">Mesa <strong>{{ $table->number }}</strong> cerrada exitosamente.</p>
-                <p class="text-muted mb-4">Seleccione una opción para imprimir:</p>
+                <p class="text-muted mb-4">Se abrió la ventana del recibo para imprimir (solo aceptar en el diálogo). Si la cerraste, podés volver a imprimir:</p>
                 <div class="d-grid gap-2">
-                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-success">
-                        <i class="bi bi-printer"></i> Factura
+                    <a href="{{ route('tables.print-consolidated-receipt-auto', $table) }}" target="_blank" class="btn btn-outline-success">
+                        <i class="bi bi-printer"></i> Imprimir recibo
+                    </a>
+                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-file-pdf"></i> Descargar PDF
                     </a>
                 </div>
             </div>
@@ -336,19 +342,14 @@
 
 @push('scripts')
 <script>
-(function() {
-    var printed = false;
-    function doPrint() {
-        if (printed) return;
-        printed = true;
-        window.focus();
-        window.print();
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(doPrint, 300);
-    });
-    if (document.readyState === 'complete') setTimeout(doPrint, 300);
-})();
+document.addEventListener('DOMContentLoaded', function() {
+    // Abrir ventana de impresión del recibo (diálogo de impresión; el usuario solo acepta)
+    var receiptWin = window.open('{{ route('tables.print-consolidated-receipt-auto', $table) }}', 'receipt_print', 'noopener,noreferrer,width=450,height=700');
+    if (receiptWin) setTimeout(function() { try { if (receiptWin && !receiptWin.closed) receiptWin.close(); } catch (e) {} }, 3500);
+    // Mostrar modal con opción de reimprimir o finalizar
+    const printModal = new bootstrap.Modal(document.getElementById('printTicketModal'));
+    printModal.show();
+});
 </script>
 @endpush
 @endsection

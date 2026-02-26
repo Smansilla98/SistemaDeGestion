@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{table}/close-summary', [TableController::class, 'closeSummary'])->name('close-summary');
         Route::get('/{table}/consolidated-receipt', [TableController::class, 'consolidatedReceipt'])->name('consolidated-receipt');
         Route::get('/{table}/print-consolidated-receipt', [TableController::class, 'printConsolidatedReceipt'])->name('print-consolidated-receipt');
+        Route::get('/{table}/print-consolidated-receipt-auto', [TableController::class, 'printConsolidatedReceiptAuto'])->name('print-consolidated-receipt-auto');
         Route::get('/{table}/close', [TableController::class, 'showCloseTable'])->name('show-close');
         Route::post('/{table}/close', [TableController::class, 'closeTable'])->name('close');
         Route::post('/{table}/process-payment', [TableController::class, 'processPayment'])->name('process-payment');
