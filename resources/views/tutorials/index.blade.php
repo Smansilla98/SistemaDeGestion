@@ -5,15 +5,15 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
+        <div class="min-w-0">
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: clamp(1.35rem, 5vw, 2.5rem);">
                 <i class="bi bi-journal-bookmark"></i> Tutoriales
             </h1>
-            <p class="text-white mb-0">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
+            <p class="text-white mb-0 opacity-75 small">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
         </div>
         @if(auth()->check() && auth()->user()->role === 'ADMIN')
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
-            <i class="bi bi-plus-lg"></i> Agregar tutorial
+        <button type="button" class="btn btn-primary flex-shrink-0" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
+            <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">Agregar tutorial</span><span class="d-inline d-sm-none">Agregar</span>
         </button>
         @endif
     </div>

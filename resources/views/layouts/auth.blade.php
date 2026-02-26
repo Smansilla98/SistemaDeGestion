@@ -242,6 +242,12 @@
             border-left: 4px solid var(--conurbania-danger);
         }
 
+        .alert-success {
+            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+            color: var(--conurbania-primary);
+            border-left: 4px solid var(--conurbania-primary);
+        }
+
         .text-muted {
             color: var(--mosaic-text-secondary) !important;
             font-family: var(--font-secondary);
@@ -267,8 +273,14 @@
 
         @media (max-width: 768px) {
             .auth-card .card-body {
-                padding: 2rem 1.5rem;
+                padding: 1.5rem 1rem;
             }
+            .auth-title { font-size: 1.5rem; }
+            .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+        }
+        .auth-card .form-control {
+            font-size: 16px;
+            min-height: 48px;
         }
     </style>
 </head>
@@ -288,14 +300,20 @@
                                 @endif
                             </div>
                             <h2 class="auth-title">Sistema de Gestión</h2>
-                            <p class="auth-subtitle">Inicia sesión para continuar</p>
+                            <p class="auth-subtitle">@yield('subtitle', 'Inicia sesión para continuar')</p>
                         </div>
 
-                        @if($errors->any())
+                        @if(isset($errors) && $errors->any())
                             <div class="alert alert-danger mb-4">
                                 @foreach($errors->all() as $error)
                                     <div><i class="bi bi-exclamation-circle"></i> {{ $error }}</div>
                                 @endforeach
+                            </div>
+                        @endif
+
+                        @if(session('success'))
+                            <div class="alert alert-success mb-4">
+                                <i class="bi bi-check-circle"></i> {{ session('success') }}
                             </div>
                         @endif
 
@@ -307,9 +325,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @stack('scripts')
     <script>
         // Integrar SweetAlert2 para mensajes de error
-        @if($errors->any())
+        @if(isset($errors) && $errors->any())
             Swal.fire({
                 icon: 'error',
                 title: 'Error de Validación',

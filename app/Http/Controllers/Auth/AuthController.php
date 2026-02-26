@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Restaurant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -16,6 +17,46 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         return view('auth.login');
+    }
+
+    /**
+     * Mostrar formulario de registro
+     */
+    public function showRegisterForm()
+    {
+        return view('auth.register');
+    }
+
+    /**
+     * Procesar registro de nuevo usuario
+     */
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'username.unique' => 'Ese nombre de usuario ya está en uso.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+        ]);
+
+        $restaurant = Restaurant::where('is_active', true)->first();
+        if (!$restaurant) {
+            return back()->withErrors(['register' => 'No hay restaurantes disponibles para el registro. Contacta al administrador.'])->withInput();
+        }
+
+        User::create([
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => 'email@email.com',
+            'password' => Hash::make($validated['password']),
+            'restaurant_id' => $restaurant->id,
+            'role' => 'MOZO',
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('login')->with('success', 'Cuenta creada. Ya podés iniciar sesión.');
     }
 
     /**

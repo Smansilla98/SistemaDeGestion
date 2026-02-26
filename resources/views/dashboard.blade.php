@@ -247,23 +247,36 @@
 
     @media (max-width: 768px) {
         .mosaic-dashboard {
-            padding: 1rem 0;
+            padding: 0.75rem 0;
+        }
+
+        .mosaic-dashboard .row.mb-4 h1 {
+            font-size: 1.5rem !important;
         }
 
         .mosaic-card {
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
         }
 
         .mosaic-value {
-            font-size: 2rem;
+            font-size: 1.75rem;
         }
 
         .mosaic-icon {
-            width: 60px;
-            height: 60px;
-            font-size: 2rem;
+            width: 56px;
+            height: 56px;
+            font-size: 1.75rem;
         }
+
+        .mosaic-card:hover {
+            transform: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .mosaic-value { font-size: 1.5rem; }
+        .mosaic-label { font-size: 0.75rem; }
     }
 </style>
 @endpush
