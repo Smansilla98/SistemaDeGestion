@@ -163,16 +163,10 @@
         <div class="logo-container">
             <img src="{{ public_path('logo.png') }}" alt="Logo" onerror="this.style.display='none';">
         </div>
-        <h1>RECIBO</h1>
+        <h1>Detalle de la Mesa</h1>
     </div>
     
     <div class="border-asterisk">************************</div>
-    
-    <div class="header-info">
-        <span>Terminal#1</span>
-        <span>{{ now()->format('d-m-Y') }} {{ now()->format('h:iA') }}</span>
-    </div>
-    
     <div class="dashed-line"></div>
 
     <div class="order-info">
@@ -273,15 +267,6 @@
     </div>
     @endif
 
-    @if($closedOrders->count() > 0)
-    <div class="orders-info">
-        <p><strong>Pedidos:</strong> 
-        @foreach($closedOrders as $order)
-            {{ $order->number }}{{ !$loop->last ? ', ' : '' }}
-        @endforeach
-        </p>
-    </div>
-    @endif
 
     <div class="dashed-line"></div>
 
@@ -289,11 +274,7 @@
         <div class="border-asterisk">************************</div>
         <div class="thank-you">¡MUCHAS GRACIAS!</div>
         <div class="border-asterisk">************************</div>
-        <div class="barcode-placeholder">
-            <div style="height: 25px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 6px;">
-                [BARCODE]
-            </div>
-        </div>
+        
         <p>{{ now()->format('d/m/Y H:i:s') }}</p>
     </div>
 </body>

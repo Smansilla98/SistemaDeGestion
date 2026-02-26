@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>RECEIPT - {{ $order->number }}</title>
+    <title>Detalle del Pedido</title>
     <style>
         * {
             margin: 0;
@@ -134,12 +134,6 @@
             font-weight: bold;
             margin: 5px 0;
         }
-        .barcode-placeholder {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 8px;
-            color: #666;
-        }
     </style>
 </head>
 <body>
@@ -149,15 +143,10 @@
         <div class="logo-container">
             <img src="{{ public_path('logo.png') }}" alt="Logo" onerror="this.style.display='none';">
         </div>
-        <h1>RECEIPT</h1>
+        <h1>Detalle del Pedido</h1>
     </div>
     
     <div class="border-asterisk">********************************</div>
-    
-    <div class="header-info">
-        <span>Terminal#1</span>
-        <span>{{ now()->format('d-m-Y') }} {{ now()->format('h:iA') }}</span>
-    </div>
     
     <div class="dashed-line"></div>
 
@@ -201,7 +190,7 @@
         </div>
         @endif
         <div class="total-line final">
-            <span>TOTAL AMOUNT:</span>
+            <span>TOTAL A PAGAR:</span>
             <span>${{ number_format($order->total, 2) }}</span>
         </div>
     </div>
@@ -219,7 +208,7 @@
         </div>
         @if($payment->operation_number)
         <div class="payment-line" style="font-size: 9px; color: #666;">
-            <span>Approval#:</span>
+            <span>Número de Operación:</span>
             <span>{{ $payment->operation_number }}</span>
         </div>
         @endif
@@ -232,7 +221,7 @@
         </div>
         @if($change > 0)
         <div class="change-line">
-            <span>CHANGE:</span>
+                <span>Vuelto:</span>
             <span>${{ number_format($change, 2) }}</span>
         </div>
         @endif
@@ -243,13 +232,8 @@
 
     <div class="footer">
         <div class="border-asterisk">********************************</div>
-        <div class="thank-you">THANK YOU!</div>
+        <div class="thank-you">¡MUCHAS GRACIAS!</div>
         <div class="border-asterisk">********************************</div>
-        <div class="barcode-placeholder">
-            <div style="height: 40px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center;">
-                [BARCODE]
-            </div>
-        </div>
         <p>{{ now()->format('d/m/Y H:i:s') }}</p>
     </div>
 </body>
