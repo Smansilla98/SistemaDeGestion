@@ -336,11 +336,19 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Abrir modal automáticamente al cargar la página
-    const printModal = new bootstrap.Modal(document.getElementById('printTicketModal'));
-    printModal.show();
-});
+(function() {
+    var printed = false;
+    function doPrint() {
+        if (printed) return;
+        printed = true;
+        window.focus();
+        window.print();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(doPrint, 300);
+    });
+    if (document.readyState === 'complete') setTimeout(doPrint, 300);
+})();
 </script>
 @endpush
 @endsection
