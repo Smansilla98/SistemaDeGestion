@@ -95,6 +95,27 @@ class Product extends Model
     }
 
     /**
+     * Relación: Un producto vendible puede estar compuesto por insumos (receta).
+     * product_id = este producto, ingredient_id = producto tipo INSUMO.
+     */
+    public function ingredients(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'product_ingredients', 'product_id', 'ingredient_id')
+            ->withPivot('quantity', 'unit')
+            ->withTimestamps();
+    }
+
+    /**
+     * Relación: Un insumo puede ser usado en varios productos (recetas que lo incluyen).
+     */
+    public function usedInProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'product_ingredients', 'ingredient_id', 'product_id')
+            ->withPivot('quantity', 'unit')
+            ->withTimestamps();
+    }
+
+    /**
      * Relación: Un insumo puede tener un proveedor
      */
     public function supplier(): BelongsTo
@@ -144,6 +165,14 @@ class Product extends Model
     public function scopeInsumos($query)
     {
         return $query->where('type', 'INSUMO');
+    }
+
+    /**
+     * Indica si el producto tiene receta (insumos asociados).
+     */
+    public function hasRecipe(): bool
+    {
+        return $this->ingredients()->exists();
     }
 }
 

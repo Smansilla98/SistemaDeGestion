@@ -981,13 +981,8 @@ class OrderController extends Controller
                     if (!$product->is_active) {
                         throw new \Exception("El producto '{$product->name}' no está activo");
                     }
-                    // Validar stock antes de crear el pedido
-                    if ($product->has_stock) {
-                        $currentStock = $product->getCurrentStock($restaurantId);
-                        if ($currentStock < $itemData['quantity']) {
-                            throw new \Exception("Stock insuficiente para '{$product->name}'. Disponible: {$currentStock}, Solicitado: {$itemData['quantity']}");
-                        }
-                    }
+                    // Validar stock (producto con has_stock o receta con insumos)
+                    app(\App\Services\StockService::class)->ensureStockForSale($restaurantId, $product->id, (int) $itemData['quantity']);
                 }
 
                 // Crear pedido rápido (sin mesa)

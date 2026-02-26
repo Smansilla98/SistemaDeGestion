@@ -83,14 +83,67 @@ class StockService
     }
 
     /**
-     * Descontar stock por venta
+     * Verificar que haya stock suficiente para vender (producto con has_stock o receta con insumos).
+     * Lanza \Exception con mensaje claro si no alcanza.
+     */
+    public function ensureStockForSale(int $restaurantId, int $productId, int $quantity): void
+    {
+        $product = Product::with('ingredients')->findOrFail($productId);
+
+        if ($product->hasRecipe()) {
+            foreach ($product->ingredients as $ingredient) {
+                $required = $ingredient->pivot->quantity * $quantity;
+                $current = $ingredient->getCurrentStock($restaurantId);
+                if ($current < $required) {
+                    $unit = $ingredient->pivot->unit ?? $ingredient->unit ?? '';
+                    throw new \Exception(
+                        "Stock insuficiente de '{$ingredient->name}'. Disponible: {$current} {$unit}, Necesario: {$required} {$unit}"
+                    );
+                }
+            }
+            return;
+        }
+
+        if ($product->has_stock) {
+            $current = $product->getCurrentStock($restaurantId);
+            if ($current < $quantity) {
+                throw new \Exception(
+                    "Stock insuficiente para '{$product->name}'. Disponible: {$current}, Solicitado: {$quantity}"
+                );
+            }
+        }
+    }
+
+    /**
+     * Descontar stock por venta.
+     * Si el producto tiene receta (insumos), descuenta de cada insumo.
+     * Si no, y tiene has_stock, descuenta del producto.
      */
     public function deductStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null): void
     {
-        $product = Product::findOrFail($productId);
+        $product = Product::with('ingredients')->findOrFail($productId);
+
+        if ($product->hasRecipe()) {
+            foreach ($product->ingredients as $ingredient) {
+                $toDeduct = (int) ($ingredient->pivot->quantity * $quantity);
+                if ($toDeduct <= 0) {
+                    continue;
+                }
+                $this->recordMovement([
+                    'restaurant_id' => $restaurantId,
+                    'product_id' => $ingredient->id,
+                    'user_id' => auth()->id(),
+                    'type' => 'SALIDA',
+                    'quantity' => $toDeduct,
+                    'reason' => 'Venta (receta: ' . $product->name . ')',
+                    'reference' => $orderId ? "order_{$orderId}" : null,
+                ]);
+            }
+            return;
+        }
 
         if (!$product->has_stock) {
-            return; // No maneja stock
+            return;
         }
 
         $this->recordMovement([
