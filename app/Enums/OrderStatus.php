@@ -6,7 +6,7 @@ enum OrderStatus: string
 {
     case ABIERTO = 'ABIERTO';
     case ENVIADO = 'ENVIADO';
-    case EN_PREPARACION = 'EN_PREPARACION';
+    case EN_PREPARACION = 'EN PREPARACION';
     case LISTO = 'LISTO';
     case ENTREGADO = 'ENTREGADO';
     case CERRADO = 'CERRADO';
