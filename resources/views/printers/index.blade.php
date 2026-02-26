@@ -7,7 +7,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-printer"></i> Impresoras</h1>
-            <p class="text-muted">Configuración de impresoras térmicas</p>
+            <p class="text-white">Configuración de impresoras térmicas</p>
         </div>
         @can('create', App\Models\Printer::class)
         <a href="{{ route('printers.create') }}" class="btn btn-primary">
