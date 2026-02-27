@@ -370,7 +370,9 @@ function renderQuickOrderItems() {
     let html = '';
     
     quickOrderItems.forEach((item, index) => {
-        const subtotal = item.price * item.quantity;
+        const price = Number(item.price) || 0;
+        const qty = parseInt(item.quantity, 10) || 1;
+        const subtotal = price * qty;
         total += subtotal;
         
         html += `
@@ -379,13 +381,13 @@ function renderQuickOrderItems() {
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="flex-grow-1">
                             <strong>${item.name}</strong>
-                            <div class="text-muted small">$${item.price.toFixed(2)} c/u</div>
+                            <div class="text-muted small">$${price.toFixed(2)} c/u</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQuickOrderQuantity(${index}, -1)">
                                 <i class="bi bi-dash"></i>
                             </button>
-                            <span class="fw-bold">${item.quantity}</span>
+                            <span class="fw-bold">${qty}</span>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQuickOrderQuantity(${index}, 1)">
                                 <i class="bi bi-plus"></i>
                             </button>
@@ -403,7 +405,7 @@ function renderQuickOrderItems() {
     });
     
     container.innerHTML = html;
-    totalEl.textContent = `$${total.toFixed(2)}`;
+    totalEl.textContent = `$${(Number(total)).toFixed(2)}`;
     
     validateQuickOrderForm();
 }
@@ -554,8 +556,8 @@ async function loadExistingOrderItems(orderId) {
             quickOrderItems = data.order.items.map(item => ({
                 product_id: item.product_id,
                 name: item.product_name,
-                price: item.unit_price,
-                quantity: item.quantity,
+                price: parseFloat(item.unit_price) || 0,
+                quantity: parseInt(item.quantity, 10) || 1,
                 observations: item.observations || '',
                 modifiers: item.modifiers || []
             }));
@@ -1007,8 +1009,8 @@ function renderOrders(orders) {
                         <form action="/orders/${order.id}" method="POST" class="d-inline" id="deleteQuickOrderForm${order.id}">
                             <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}">
                             <input type="hidden" name="_method" value="DELETE">
-                            <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteQuickOrder(${order.id}, '${String(order.number).replace(/'/g, "\\'")}')" title="Eliminar">
-                                <i class="bi bi-trash"></i>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteQuickOrder(${order.id}, '${String(order.number).replace(/'/g, "\\'")}')" title="Eliminar pedido">
+                                <i class="bi bi-trash"></i> Eliminar
                             </button>
                         </form>
                         ` : ''}
