@@ -194,9 +194,16 @@
                     <!-- Los métodos de pago se agregarán dinámicamente aquí -->
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <p class="text-muted small mb-2">Podés dividir la cuenta: en partes iguales (ej. 4 personas) o que cada uno abone lo suyo y agregar el restante.</p>
+                <div class="d-flex flex-wrap gap-2 mb-3">
                     <button type="button" class="btn btn-outline-primary" onclick="addPaymentMethod()">
                         <i class="bi bi-plus-circle"></i> Agregar Método de Pago
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="splitEqually()" title="Ej: 4 personas, cada una paga la misma parte">
+                        <i class="bi bi-people"></i> Dividir en partes iguales
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="addRemainingAmount()" title="Agregar una fila con el monto restante a pagar">
+                        <i class="bi bi-cash-stack"></i> Completar con el restante
                     </button>
                 </div>
 
@@ -274,6 +281,62 @@ function addPaymentMethod() {
 
 function removePaymentMethod(paymentId) {
     paymentMethods = paymentMethods.filter(p => p.id !== paymentId);
+    renderPayments();
+    updatePaymentSummary();
+}
+
+// Dividir el total en N partes iguales (ej. 4 personas)
+function splitEqually() {
+    const total = totalAmount;
+    if (total <= 0) return;
+    Swal.fire({
+        title: '¿En cuántas partes dividir?',
+        input: 'number',
+        inputLabel: 'Número de personas (o pagos)',
+        inputMin: 2,
+        inputMax: 20,
+        inputValue: 2,
+        showCancelButton: true,
+        confirmButtonText: 'Aplicar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        const n = Math.max(2, Math.min(20, parseInt(result.value, 10) || 2));
+        paymentMethods = [];
+        paymentCounter = 0;
+        const part = Math.floor(total * 100 / n) / 100;
+        const lastPart = Math.round((total - part * (n - 1)) * 100) / 100;
+        for (let i = 0; i < n; i++) {
+            paymentCounter++;
+            paymentMethods.push({
+                id: `payment_${paymentCounter}`,
+                method: 'EFECTIVO',
+                amount: i === n - 1 ? lastPart : part,
+                operation_number: '',
+                notes: `Parte ${i + 1} de ${n}`
+            });
+        }
+        renderPayments();
+        updatePaymentSummary();
+    });
+}
+
+// Agregar una fila con el monto restante a pagar
+function addRemainingAmount() {
+    const totalPaid = paymentMethods.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const remaining = Math.round((totalAmount - totalPaid) * 100) / 100;
+    if (remaining <= 0) {
+        Swal.fire({ icon: 'info', title: 'Cuenta cubierta', text: 'El total ya está cubierto. Si hay vuelto, podés ajustar montos.' });
+        return;
+    }
+    paymentCounter++;
+    paymentMethods.push({
+        id: `payment_${paymentCounter}`,
+        method: 'EFECTIVO',
+        amount: remaining,
+        operation_number: '',
+        notes: 'Restante'
+    });
     renderPayments();
     updatePaymentSummary();
 }

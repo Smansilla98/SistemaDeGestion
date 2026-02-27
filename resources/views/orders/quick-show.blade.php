@@ -797,7 +797,9 @@ function renderAddItemsList() {
     let html = '';
     
     addItemsList.forEach((item, index) => {
-        const subtotal = item.price * item.quantity;
+        const price = Number(item.price) || 0;
+        const qty = parseInt(item.quantity, 10) || 1;
+        const subtotal = price * qty;
         total += subtotal;
         
         html += `
@@ -806,13 +808,13 @@ function renderAddItemsList() {
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="flex-grow-1">
                             <strong>${item.name}</strong>
-                            <div class="text-muted small">$${item.price.toFixed(2)} c/u</div>
+                            <div class="text-muted small">$${price.toFixed(2)} c/u</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAddItemsQuantity(${index}, -1)">
                                 <i class="bi bi-dash"></i>
                             </button>
-                            <span class="fw-bold">${item.quantity}</span>
+                            <span class="fw-bold">${qty}</span>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAddItemsQuantity(${index}, 1)">
                                 <i class="bi bi-plus"></i>
                             </button>
@@ -830,7 +832,7 @@ function renderAddItemsList() {
     });
     
     container.innerHTML = html;
-    totalEl.textContent = `$${total.toFixed(2)}`;
+    totalEl.textContent = `$${(Number(total)).toFixed(2)}`;
     confirmBtn.disabled = false;
 }
 

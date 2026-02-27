@@ -72,8 +72,9 @@ class OrderPolicy
             return false;
         }
 
-        // Solo admin puede eliminar, y solo si está abierto o cancelado
-        return $user->role === 'ADMIN' && in_array($order->status, ['ABIERTO', 'CANCELADO']);
+        // ADMIN, MOZO y CAJERO pueden eliminar pedidos en ABIERTO o CANCELADO (sin pagos; lo valida el controller)
+        return in_array($user->role, ['ADMIN', 'MOZO', 'CAJERO'])
+            && in_array($order->status, ['ABIERTO', 'CANCELADO']);
     }
 }
 
