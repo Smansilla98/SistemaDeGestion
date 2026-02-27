@@ -1,6 +1,6 @@
 {{-- Estilos estándar para todos los tickets: 80mm, largo = contenido, corte debajo --}}
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-weight: 700; }
 html { height: auto; min-height: 0; }
 body {
     font-family: 'Courier New', monospace;

@@ -318,16 +318,14 @@
                     <h6>Imprimir:</h6>
                     <div class="d-grid gap-2">
                         <a href="{{ route('orders.print.kitchen', $order) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver PDF (Cocina)
+                            <i class="bi bi-printer"></i> Ticket Cocina
                         </a>
-                        @if($order->status === 'CERRADO')
                         <a href="{{ route('orders.print.invoice', $order) }}" target="_blank" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-printer"></i> Factura
+                            <i class="bi bi-printer"></i> Recibo / Factura
                         </a>
                         <a href="{{ route('orders.print.ticket', $order) }}" target="_blank" class="btn btn-sm btn-outline-info">
                             <i class="bi bi-printer"></i> Ticket Simple
                         </a>
-                        @endif
                     </div>
                 </div>
             </div>
