@@ -1,4 +1,4 @@
-{{-- Estilos estándar para todos los tickets: 80mm, largo = contenido, corte debajo --}}
+{{-- Estilos para tickets térmicos: ancho 72mm (área imprimible Citizen CT-E301), zona de corte al final --}}
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-weight: 700; }
 html { height: auto; min-height: 0; }
@@ -6,20 +6,28 @@ body {
     font-family: 'Courier New', monospace;
     font-size: 14px;
     line-height: 1.2;
-    width: 80mm;
-    max-width: 80mm;
-    padding: 3mm 3mm 2mm 3mm;
+    width: 72mm;
+    max-width: 72mm;
+    padding: 3mm 2mm 0 2mm;
     margin: 0 auto;
     height: auto;
     min-height: 0;
 }
-.ticket { width: 80mm; max-width: 80mm; margin: 0; min-height: 0; }
+.ticket { width: 72mm; max-width: 72mm; margin: 0; min-height: 0; }
+/* Zona de corte: espacio y línea final para que la guillotina corte justo debajo (CT-E301) */
+.ticket::after {
+    content: '';
+    display: block;
+    height: 5mm;
+    margin-top: 2mm;
+    border-top: 1px dashed #000;
+}
 .border-asterisk { text-align: center; font-size: 11px; letter-spacing: 0.5px; margin: 2px 0; }
 .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 3px; margin-bottom: 4px; }
 .header h1 { font-size: 18px; font-weight: bold; margin: 2px 0; text-transform: uppercase; }
 .header p { font-size: 13px; margin: 1px 0; }
 .logo-container { text-align: center; margin-bottom: 2px; }
-.logo-container img { max-width: 55mm; max-height: 18mm; object-fit: contain; }
+.logo-container img { max-width: 68mm; max-height: 18mm; object-fit: contain; }
 .dashed-line { border-top: 1px dashed #000; margin: 2px 0; }
 .order-info { margin-bottom: 4px; font-size: 13px; }
 .order-info p { margin: 1px 0; }
@@ -49,14 +57,14 @@ td.prod { word-break: break-word; }
 
 @media print {
     @page {
-        size: 80mm auto;
+        size: 72mm auto;
         margin: 0;
     }
     html, body {
         margin: 0 !important;
-        padding: 2mm 2mm 0 2mm !important;
-        width: 80mm !important;
-        max-width: 80mm !important;
+        padding: 2mm 1mm 0 1mm !important;
+        width: 72mm !important;
+        max-width: 72mm !important;
         min-height: 0 !important;
         height: auto !important;
         overflow: visible !important;
@@ -66,6 +74,10 @@ td.prod { word-break: break-word; }
     .ticket {
         padding: 0 !important;
         min-height: 0 !important;
+    }
+    .ticket::after {
+        height: 4mm !important;
+        margin-top: 1mm !important;
     }
 }
 </style>

@@ -10,6 +10,23 @@ use Illuminate\Support\Facades\File;
 
 class PrintService
 {
+    /** Ancho imprimible Citizen CT-E301: 72 mm en puntos */
+    protected const TICKET_WIDTH_PT = 204.09;
+
+    /** Comando ESC/POS corte total (GS V 0) - Citizen CT-E301 guillotina */
+    protected const ESCPOS_FULL_CUT = "\x1D\x56\x00";
+
+    /**
+     * Altura del PDF en puntos según cantidad de líneas (72mm ancho; corte al final).
+     */
+    protected function ticketHeightPt(int $itemsCount, bool $withTotalsAndPayments = false): float
+    {
+        $basePt = $withTotalsAndPayments ? 180 : 130;
+        $perItemPt = 20;
+        $height = $basePt + ($itemsCount * $perItemPt);
+        return max(self::TICKET_WIDTH_PT, min($height, 1200));
+    }
+
     /**
      * Agrupar items del pedido por producto (para la vista print-kitchen)
      */
@@ -50,8 +67,9 @@ class PrintService
         $groupedItems = $this->groupOrderItems($order->items);
 
         try {
+            $heightPt = $this->ticketHeightPt($groupedItems->count(), false);
             $pdf = Pdf::loadView('orders.print-kitchen', compact('order', 'groupedItems'))
-                ->setPaper([0, 0, 226.77, 841.89], 'portrait')
+                ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
                 ->setOption('enable-local-file-access', true);
 
             if ($printer && $printer->is_active) {
@@ -110,8 +128,13 @@ class PrintService
     public function printTicket(Order $order, ?Printer $printer = null)
     {
         try {
-            $pdf = Pdf::loadView('orders.print-ticket', compact('order'))
-                ->setPaper([0, 0, 226.77, 841.89], 'portrait')
+            $order->load(['table', 'items.product', 'items.modifiers', 'payments']);
+            $groupedItems = $this->groupOrderItems($order->items);
+            $extraLines = ($order->payments && $order->payments->count() > 0) ? $order->payments->count() * 2 + 2 : 0;
+            $heightPt = $this->ticketHeightPt($groupedItems->count() + $extraLines, true);
+
+            $pdf = Pdf::loadView('orders.print-ticket', compact('order', 'groupedItems'))
+                ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
                 ->setOption('enable-local-file-access', true);
 
             if ($printer && $printer->is_active) {
@@ -177,6 +200,8 @@ class PrintService
             // Leer archivo PDF y enviar como raw (para impresoras que aceptan PDF)
             $content = file_get_contents($filePath);
             socket_write($socket, $content);
+            // Enviar comando de corte total ESC/POS (GS V 0) para que la CT-E301 corte al final
+            socket_write($socket, self::ESCPOS_FULL_CUT);
             socket_close($socket);
 
             // Limpiar archivo temporal

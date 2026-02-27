@@ -439,11 +439,18 @@ class OrderController extends Controller
         }
 
         try {
+            $wasQuickOrder = !$order->table_id;
+
             // Eliminar items primero (si hay restricciones de foreign key)
             $order->items()->delete();
-            
+
             // Eliminar el pedido
             $order->delete();
+
+            if ($wasQuickOrder && \Illuminate\Support\Facades\Route::has('orders.quick.index')) {
+                return redirect()->route('orders.quick.index')
+                    ->with('success', 'Pedido eliminado exitosamente');
+            }
 
             return redirect()->route('orders.index')
                 ->with('success', 'Pedido eliminado exitosamente');

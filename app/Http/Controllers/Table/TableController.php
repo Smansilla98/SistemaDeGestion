@@ -1264,15 +1264,21 @@ class TableController extends Controller
     }
 
     /**
-     * Imprimir recibo consolidado (formato ticket térmico 80mm) - PDF
+     * Imprimir recibo consolidado (formato ticket térmico 72mm, Citizen CT-E301) - PDF
      */
     public function printConsolidatedReceipt(Table $table)
     {
         Gate::authorize('view', $table);
         $data = $this->getConsolidatedReceiptData($table);
+        $consolidatedItems = $data['consolidatedItems'] ?? collect();
+        $payments = $data['payments'] ?? collect();
+        $extraLines = $payments->count() > 0 ? $payments->count() * 2 + 2 : 0;
+        $itemsCount = $consolidatedItems->count() + $extraLines;
+        $basePt = 180;
+        $heightPt = max(204.09, min($basePt + ($itemsCount * 20), 1200)); // 72mm ancho, alto dinámico
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tables.print-consolidated-receipt', $data)
-            ->setPaper([0, 0, 226.77, 841.89], 'portrait')
+            ->setPaper([0, 0, 204.09, $heightPt], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("recibo-consolidado-mesa-{$table->number}.pdf");
