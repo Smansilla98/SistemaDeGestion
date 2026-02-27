@@ -134,7 +134,7 @@
                                                placeholder="🔍 Buscar producto..." style="max-width: 100%; min-width: 250px;">
                                     </div>
                                 </div>
-                                <div class="card-body" style="max-height: 60vh; overflow-y: auto;">
+                                <div class="card-body quick-order-products-scroll">
                                     <div id="quickOrderProductsAccordion">
                                 @foreach($products as $categoryName => $categoryProducts)
                                     <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
@@ -194,7 +194,7 @@
                         </div>
 
                         <div class="col-lg-4">
-                            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                            <div class="card border-0 shadow-sm sticky-top quick-order-summary" style="top: 20px;">
                                 <div class="card-header bg-success text-white">
                                     <h5 class="mb-0"><i class="bi bi-receipt"></i> Resumen del Pedido</h5>
                                 </div>
@@ -213,7 +213,7 @@
                                         <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
                                         <p class="mt-2">No hay items en el pedido</p>
                                     </div>
-                                    <div id="quickOrderItemsList" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
+                                    <div id="quickOrderItemsList" class="mb-3 quick-order-items-scroll"></div>
 
                                     <div class="border-top pt-3 pb-2">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -239,6 +239,41 @@
 
 @push('styles')
 <style>
+.quick-order-products-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.quick-order-items-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+#newQuickOrderModal .modal-body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+@media (max-width: 768px) {
+    /* En mobile evitamos scroll anidado dentro del modal: que scrollee solo la modal-body */
+    #newQuickOrderModal .quick-order-products-scroll,
+    #newQuickOrderModal .quick-order-items-scroll {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* Sticky dentro de modal en mobile suele “trabar” el scroll */
+    #newQuickOrderModal .quick-order-summary {
+        position: static !important;
+        top: auto !important;
+    }
+}
+
 .category-section-modal {
     margin-bottom: 1.5rem;
 }
