@@ -449,6 +449,24 @@
 </div>
 @endif
 
+@push('styles')
+<style>
+#addItemsModal .modal-body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+@media (max-width: 768px) {
+    /* Evita “saltos”/bloqueos al usar sticky dentro de modal en mobile */
+    #addItemsModal .sticky-top {
+        position: static !important;
+        top: auto !important;
+    }
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 // Función para actualizar estado de item

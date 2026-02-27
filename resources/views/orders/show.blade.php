@@ -33,57 +33,59 @@
                 @endif
             </div>
             <div class="card-body">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
-                            <th>Precio Unit.</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($groupedItems as $item)
-                        <tr>
-                            <td>
-                                <strong>{{ $item['product']->name }}</strong>
-                                @if($item['product']->category)
-                                    <br><small class="text-muted">{{ $item['product']->category->name }}</small>
-                                @endif
-                                @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
-                                    <br><small class="text-info">
-                                        @foreach($item['modifiers'] as $modifier)
-                                            + {{ $modifier->name }} 
-                                        @endforeach
-                                    </small>
-                                @endif
-                                @if(!empty($item['observations']))
-                                <br><small class="text-muted">{{ $item['observations'] }}</small>
-                                @endif
-                            </td>
-                            <td>{{ $item['quantity'] }}</td>
-                            <td>${{ number_format($item['unit_price'], 2) }}</td>
-                            <td><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3">Subtotal</th>
-                            <th>${{ number_format($order->subtotal, 2) }}</th>
-                        </tr>
-                        @if($order->discount > 0)
-                        <tr>
-                            <th colspan="3">Descuento</th>
-                            <th>-${{ number_format($order->discount, 2) }}</th>
-                        </tr>
-                        @endif
-                        <tr>
-                            <th colspan="3">Total</th>
-                            <th>${{ number_format($order->total, 2) }}</th>
-                        </tr>
-                    </tfoot>
-                </table>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($groupedItems as $item)
+                            <tr>
+                                <td>
+                                    <strong>{{ $item['product']->name }}</strong>
+                                    @if($item['product']->category)
+                                        <br><small class="text-muted">{{ $item['product']->category->name }}</small>
+                                    @endif
+                                    @if(isset($item['modifiers']) && $item['modifiers']->count() > 0)
+                                        <br><small class="text-info">
+                                            @foreach($item['modifiers'] as $modifier)
+                                                + {{ $modifier->name }} 
+                                            @endforeach
+                                        </small>
+                                    @endif
+                                    @if(!empty($item['observations']))
+                                    <br><small class="text-muted">{{ $item['observations'] }}</small>
+                                    @endif
+                                </td>
+                                <td>{{ $item['quantity'] }}</td>
+                                <td>${{ number_format($item['unit_price'], 2) }}</td>
+                                <td><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3">Subtotal</th>
+                                <th>${{ number_format($order->subtotal, 2) }}</th>
+                            </tr>
+                            @if($order->discount > 0)
+                            <tr>
+                                <th colspan="3">Descuento</th>
+                                <th>-${{ number_format($order->discount, 2) }}</th>
+                            </tr>
+                            @endif
+                            <tr>
+                                <th colspan="3">Total</th>
+                                <th>${{ number_format($order->total, 2) }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
 
