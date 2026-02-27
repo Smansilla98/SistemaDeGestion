@@ -1003,6 +1003,15 @@ function renderOrders(orders) {
                             <i class="bi bi-cash-coin"></i> Cerrar Cuenta
                         </a>
                         ` : ''}
+                        ${(order.status === 'ABIERTO' || order.status === 'CANCELADO') ? `
+                        <form action="/orders/${order.id}" method="POST" class="d-inline" id="deleteQuickOrderForm${order.id}">
+                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteQuickOrder(${order.id}, '${String(order.number).replace(/'/g, "\\'")}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -1028,6 +1037,25 @@ function renderOrders(orders) {
             });
         }, 2000);
     }, 200);
+}
+
+// Confirmar y enviar eliminación de pedido rápido
+function confirmDeleteQuickOrder(orderId, orderNumber) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar pedido?',
+        html: `¿Eliminar el pedido <strong>#${orderNumber}</strong>? Solo se pueden eliminar pedidos en estado ABIERTO o CANCELADO sin pagos.`,
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.getElementById('deleteQuickOrderForm' + orderId);
+            if (form) form.submit();
+        }
+    });
 }
 
 // Función para obtener el badge de estado

@@ -314,6 +314,20 @@
                     @endif
                 @endif
 
+                @can('delete', $order)
+                @if(in_array($order->status, ['ABIERTO', 'CANCELADO']) && $order->payments->count() === 0)
+                <div class="mt-3">
+                    <form action="{{ route('orders.destroy', $order) }}" method="POST" class="d-inline w-100" id="deleteOrderFormQuick" onsubmit="return confirm('¿Eliminar este pedido? Esta acción no se puede deshacer.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-trash"></i> Eliminar pedido
+                        </button>
+                    </form>
+                </div>
+                @endif
+                @endcan
+
                 <div class="mt-3">
                     <h6>Imprimir:</h6>
                     <div class="d-grid gap-2">

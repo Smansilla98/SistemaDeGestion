@@ -58,6 +58,21 @@ class OrderPrintController extends Controller
         return $groupedItems;
     }
 
+    /** Ancho imprimible Citizen CT-E301: 72 mm en puntos (203 dpi) */
+    protected const TICKET_WIDTH_PT = 204.09;
+
+    /**
+     * Calcular altura del PDF en puntos para que el ticket se adapte al contenido.
+     * Ancho 72mm (área imprimible CT-E301). Alto mínimo 72mm, crece con los ítems.
+     */
+    protected function ticketHeightPt(int $itemsCount, bool $withTotalsAndPayments = false): float
+    {
+        $basePt = $withTotalsAndPayments ? 180 : 130; // cabecera + pie; factura/ticket llevan totales y pagos
+        $perItemPt = 20;
+        $height = $basePt + ($itemsCount * $perItemPt);
+        return max(self::TICKET_WIDTH_PT, min($height, 1200)); // mínimo 72mm, máximo ~423mm
+    }
+
     /**
      * Generar PDF de ticket de cocina
      */
@@ -79,9 +94,9 @@ class OrderPrintController extends Controller
             }
         }
 
-        // Por defecto, mostrar PDF
+        $heightPt = $this->ticketHeightPt($groupedItems->count(), false);
         $pdf = Pdf::loadView('orders.print-kitchen', compact('order', 'groupedItems'))
-            ->setPaper([0, 0, 226.77, 841.89], 'portrait')
+            ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("ticket-cocina-{$order->number}.pdf");
@@ -120,7 +135,7 @@ class OrderPrintController extends Controller
     }
 
     /**
-     * Generar PDF de factura (formato ticket térmico 80mm)
+     * Generar PDF de factura (formato ticket térmico 72mm, Citizen CT-E301)
      */
     public function invoice(Order $order)
     {
@@ -129,8 +144,14 @@ class OrderPrintController extends Controller
         // Agrupar items por producto
         $groupedItems = $this->groupOrderItems($order->items);
 
+        $extraLines = 0;
+        if ($order->payments && $order->payments->count() > 0) {
+            $extraLines = $order->payments->count() * 2 + 2; // líneas de pago + total pagado + vuelto
+        }
+        $heightPt = $this->ticketHeightPt($groupedItems->count() + $extraLines, true);
+
         $pdf = Pdf::loadView('orders.print-invoice', compact('order', 'groupedItems'))
-            ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
+            ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("factura-{$order->number}.pdf");
@@ -146,8 +167,11 @@ class OrderPrintController extends Controller
         // Agrupar items por producto
         $groupedItems = $this->groupOrderItems($order->items);
 
+        $extraLines = ($order->payments && $order->payments->count() > 0) ? $order->payments->count() * 2 + 2 : 0;
+        $heightPt = $this->ticketHeightPt($groupedItems->count() + $extraLines, true);
+
         $pdf = Pdf::loadView('orders.print-ticket', compact('order', 'groupedItems'))
-            ->setPaper([0, 0, 226.77, 841.89], 'portrait') // 80mm de ancho
+            ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("ticket-{$order->number}.pdf");
