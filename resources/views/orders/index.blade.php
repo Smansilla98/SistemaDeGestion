@@ -175,7 +175,7 @@ function confirmDeleteOrder(orderId, orderNumber) {
         html: `
             <p>¿Estás seguro de eliminar el pedido <strong>#${orderNumber}</strong>?</p>
             <div class="alert alert-warning mt-3">
-                <small><i class="bi bi-info-circle"></i> Solo se pueden eliminar pedidos en estado <strong>ABIERTO</strong> o <strong>CANCELADO</strong> sin pagos asociados.</small>
+                <small><i class="bi bi-info-circle"></i> Solo se pueden eliminar pedidos en estado <strong>ABIERTO</strong>, <strong>EN PREPARACIÓN</strong> o <strong>CANCELADO</strong> sin pagos asociados.</small>
             </div>
             <p class="text-danger small mt-2"><strong>Esta acción no se puede deshacer.</strong></p>
         `,
