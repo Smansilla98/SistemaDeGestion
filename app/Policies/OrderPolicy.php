@@ -72,9 +72,9 @@ class OrderPolicy
             return false;
         }
 
-        // ADMIN, MOZO y CAJERO pueden eliminar pedidos en ABIERTO o CANCELADO (sin pagos; lo valida el controller)
+        // ADMIN, MOZO y CAJERO pueden eliminar pedidos en ABIERTO, EN_PREPARACION o CANCELADO (sin pagos; lo valida el controller)
         return in_array($user->role, ['ADMIN', 'MOZO', 'CAJERO'])
-            && in_array($order->status, ['ABIERTO', 'CANCELADO']);
+            && in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO']);
     }
 }
 

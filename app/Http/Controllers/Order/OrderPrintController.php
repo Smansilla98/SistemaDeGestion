@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Order;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\PrintService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -175,6 +176,26 @@ class OrderPrintController extends Controller
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("ticket-{$order->number}.pdf");
+    }
+
+    /**
+     * Ticket simple de un solo ítem (para cocina: una comanda por ítem).
+     */
+    public function itemTicket(Order $order, OrderItem $item)
+    {
+        if ($item->order_id !== $order->id) {
+            abort(404);
+        }
+        $item->load(['product.category', 'modifiers']);
+        $order->load(['user']);
+
+        $heightPt = $this->ticketHeightPt(1, false);
+
+        $pdf = Pdf::loadView('orders.print-ticket-item', compact('order', 'item'))
+            ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
+            ->setOption('enable-local-file-access', true);
+
+        return $pdf->stream("ticket-{$order->number}-item-{$item->id}.pdf");
     }
 }
 

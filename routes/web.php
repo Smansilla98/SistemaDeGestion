@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/comanda', [\App\Http\Controllers\Order\OrderPrintController::class, 'comanda'])->name('comanda');
             Route::get('/invoice', [\App\Http\Controllers\Order\OrderPrintController::class, 'invoice'])->name('invoice');
             Route::get('/ticket', [\App\Http\Controllers\Order\OrderPrintController::class, 'ticket'])->name('ticket');
+            Route::get('/item/{item}/ticket', [\App\Http\Controllers\Order\OrderPrintController::class, 'itemTicket'])->name('item-ticket');
         });
     });
 

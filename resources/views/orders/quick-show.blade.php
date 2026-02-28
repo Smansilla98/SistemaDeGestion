@@ -124,7 +124,10 @@
                                         }
                                         $canUpdate = in_array($userRole, ['ADMIN', 'MOZO', 'COCINA']);
                                     @endphp
-                                    
+                                    <div class="d-flex flex-wrap gap-1 align-items-center">
+                                    <a href="{{ route('orders.print.item-ticket', [$order, $item]) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimir ticket de este ítem (1 por ítem para cocina)">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
                                     @if($canUpdate)
                                         @if($itemStatus === 'EN_PREPARACION')
                                             <button class="btn btn-sm btn-info update-item-status" 
@@ -146,6 +149,7 @@
                                     @else
                                         <span class="text-muted" title="Rol: {{ $userRole }} - No tiene permisos para actualizar">-</span>
                                     @endif
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -341,6 +345,7 @@
                             <i class="bi bi-printer"></i> Ticket Simple
                         </a>
                     </div>
+                    <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> Ticket <strong>por ítem</strong>: usá el botón <i class="bi bi-printer"></i> en cada fila de la tabla para imprimir una comanda por ítem.</p>
                 </div>
             </div>
         </div>
@@ -876,9 +881,10 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
         }
     });
     
-    // Agregar items uno por uno
+    // Agregar items uno por uno y guardar el id del último creado para imprimir su ticket
     let successCount = 0;
     let errorMessages = [];
+    let lastAddedItemId = null;
     
     for (const item of addItemsList) {
         try {
@@ -914,6 +920,7 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
             
             if (data.success || response.ok) {
                 successCount++;
+                if (data.item_id) lastAddedItemId = data.item_id;
             } else {
                 const errorMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'Error');
                 errorMessages.push(`${item.name}: ${errorMsg}`);
@@ -925,11 +932,18 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
     }
     
     if (successCount > 0) {
+        // Imprimir automáticamente el ticket del último ítem añadido (como en el resto del circuito)
+        if (lastAddedItemId) {
+            const printUrl = `/orders/{{ $order->id }}/print/item/${lastAddedItemId}/ticket`;
+            const printWin = window.open(printUrl, 'item_ticket_print', 'noopener,noreferrer,width=400,height=600');
+            if (printWin) setTimeout(function() { try { printWin.focus(); } catch (e) {} }, 300);
+        }
         Swal.fire({
             icon: 'success',
             title: '¡Items agregados!',
             html: `
                 <p>Se agregaron ${successCount} item(s) al pedido.</p>
+                ${lastAddedItemId ? '<p class="text-muted small"><i class="bi bi-printer"></i> Se abrió el ticket del último ítem para imprimir.</p>' : ''}
                 ${errorMessages.length > 0 ? `<p class="text-danger small">Errores: ${errorMessages.join(', ')}</p>` : ''}
             `,
             confirmButtonColor: '#1e8081'

@@ -272,12 +272,13 @@ class OrderController extends Controller
         ]);
 
         try {
-            $this->orderService->addItem($order, $validated);
+            $orderItem = $this->orderService->addItem($order, $validated);
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Item agregado al pedido exitosamente'
+                    'message' => 'Item agregado al pedido exitosamente',
+                    'item_id' => $orderItem->id,
                 ]);
             }
 
@@ -422,15 +423,15 @@ class OrderController extends Controller
 
     /**
      * Eliminar pedido
-     * Solo ADMIN puede eliminar pedidos en estado ABIERTO o CANCELADO
+     * Se pueden eliminar pedidos en estado ABIERTO, EN_PREPARACION o CANCELADO sin pagos.
      */
     public function destroy(Order $order)
     {
         Gate::authorize('delete', $order);
 
         // Verificar que el pedido esté en un estado que permita eliminación
-        if (!in_array($order->status, ['ABIERTO', 'CANCELADO'])) {
-            return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO o CANCELADO');
+        if (!in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
+            return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO, EN PREPARACIÓN o CANCELADO');
         }
 
         // Verificar que no tenga pagos asociados
