@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Printer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
@@ -81,6 +82,28 @@ class PrintService
             Log::error('Error al imprimir ticket de cocina: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Imprimir ticket de un solo ítem (comanda por ítem para cocina).
+     */
+    public function printItemTicket(Order $order, OrderItem $item, ?Printer $printer = null)
+    {
+        if ($item->order_id !== $order->id) {
+            throw new \InvalidArgumentException('El ítem no pertenece al pedido');
+        }
+        $item->load(['product.category', 'modifiers']);
+        $order->load(['table', 'user']);
+
+        $heightPt = $this->ticketHeightPt(1, false);
+        $pdf = Pdf::loadView('orders.print-ticket-item', compact('order', 'item'))
+            ->setPaper([0, 0, self::TICKET_WIDTH_PT, $heightPt], 'portrait')
+            ->setOption('enable-local-file-access', true);
+
+        if ($printer && $printer->is_active) {
+            return $this->sendToPrinter($pdf, $printer, "ticket-{$order->number}-item-{$item->id}.pdf");
+        }
+        return $this->saveToFile($pdf, "kitchen", "ticket-{$order->number}-item-{$item->id}.pdf");
     }
 
     /**
