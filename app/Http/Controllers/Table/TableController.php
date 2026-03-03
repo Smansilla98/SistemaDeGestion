@@ -135,32 +135,77 @@ class TableController extends Controller
         // Normalizar boolean
         $validated['send_to_kitchen'] = $request->boolean('send_to_kitchen');
 
-        $data = [
-            'restaurant_id' => auth()->user()->restaurant_id,
-            'table_id' => $table->id,
-            'user_id' => auth()->id(),
-            'observations' => $validated['observations'] ?? null,
-            'items' => $validated['items'],
-        ];
-
         try {
+            $order = null;
+            $addedToExisting = false;
+
+            // Si la mesa ya tiene un pedido abierto, agregar ítems a ese pedido e imprimir solo los nuevos
+            if ($table->current_order_id) {
+                $existingOrder = Order::find($table->current_order_id);
+                if ($existingOrder && $existingOrder->table_id == $table->id
+                    && !in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
+                    $order = $existingOrder;
+                    $addedToExisting = true;
+                }
+            }
+
+            if ($addedToExisting && $order) {
+                $newItems = [];
+                foreach ($validated['items'] as $itemData) {
+                    $newItems[] = $this->orderService->addItem($order, $itemData);
+                }
+                $order->load(['table', 'items.product', 'items.modifiers']);
+
+                // Imprimir solo un ticket por cada ítem nuevo (no el pedido completo)
+                if ($validated['send_to_kitchen']) {
+                    $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                    foreach ($newItems as $orderItem) {
+                        try {
+                            $this->printService->printItemTicket($order, $orderItem, $printer);
+                        } catch (\Exception $e) {
+                            Log::warning('Error al imprimir ticket ítem: ' . $e->getMessage(), ['item_id' => $orderItem->id]);
+                        }
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => count($newItems) > 1
+                        ? count($newItems) . ' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
+                        : 'Ítem agregado. Se imprimió el ticket del nuevo ítem en cocina.',
+                    'order_id' => $order->id,
+                    'order_number' => $order->number,
+                    'added_to_existing' => true,
+                    'kitchen_ticket_url' => null,
+                    'comanda_url' => route('orders.print.comanda', $order),
+                ]);
+            }
+
+            // Pedido nuevo: crear y imprimir ticket completo
+            $data = [
+                'restaurant_id' => auth()->user()->restaurant_id,
+                'table_id' => $table->id,
+                'user_id' => auth()->id(),
+                'observations' => $validated['observations'] ?? null,
+                'items' => $validated['items'],
+            ];
             $order = $this->orderService->createOrder($data);
 
             foreach ($data['items'] as $itemData) {
                 $this->orderService->addItem($order, $itemData);
             }
 
-            // Recargar el pedido con sus relaciones
             $order->load(['table', 'items.product', 'items.modifiers']);
 
-            // Impresión automática sin pedir permiso: enviar a la impresora configurada en el sistema
-            try {
-                $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
-                if ($printer) {
-                    $this->printService->printKitchenTicket($order, $printer);
+            if ($validated['send_to_kitchen']) {
+                try {
+                    $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                    if ($printer) {
+                        $this->printService->printKitchenTicket($order, $printer);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
                 }
-            } catch (\Exception $e) {
-                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
             }
 
             return response()->json([
@@ -168,6 +213,7 @@ class TableController extends Controller
                 'message' => 'Pedido creado. Ticket enviado a la impresora.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'added_to_existing' => false,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
@@ -271,32 +317,74 @@ class TableController extends Controller
         // Normalizar boolean
         $validated['send_to_kitchen'] = $request->boolean('send_to_kitchen');
 
-        $data = [
-            'restaurant_id' => auth()->user()->restaurant_id,
-            'subsector_item_id' => $item->id,
-            'user_id' => auth()->id(),
-            'observations' => $validated['observations'] ?? null,
-            'items' => $validated['items'],
-        ];
-
         try {
+            $order = null;
+            $addedToExisting = false;
+
+            if ($item->current_order_id) {
+                $existingOrder = Order::find($item->current_order_id);
+                if ($existingOrder && $existingOrder->subsector_item_id == $item->id
+                    && !in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
+                    $order = $existingOrder;
+                    $addedToExisting = true;
+                }
+            }
+
+            if ($addedToExisting && $order) {
+                $newItems = [];
+                foreach ($validated['items'] as $itemData) {
+                    $newItems[] = $this->orderService->addItem($order, $itemData);
+                }
+                $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
+
+                if ($validated['send_to_kitchen']) {
+                    $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                    foreach ($newItems as $orderItem) {
+                        try {
+                            $this->printService->printItemTicket($order, $orderItem, $printer);
+                        } catch (\Exception $e) {
+                            Log::warning('Error al imprimir ticket ítem: ' . $e->getMessage(), ['item_id' => $orderItem->id]);
+                        }
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => count($newItems) > 1
+                        ? count($newItems) . ' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
+                        : 'Ítem agregado. Se imprimió el ticket del nuevo ítem en cocina.',
+                    'order_id' => $order->id,
+                    'order_number' => $order->number,
+                    'added_to_existing' => true,
+                    'kitchen_ticket_url' => null,
+                    'comanda_url' => route('orders.print.comanda', $order),
+                ]);
+            }
+
+            $data = [
+                'restaurant_id' => auth()->user()->restaurant_id,
+                'subsector_item_id' => $item->id,
+                'user_id' => auth()->id(),
+                'observations' => $validated['observations'] ?? null,
+                'items' => $validated['items'],
+            ];
             $order = $this->orderService->createOrder($data);
 
             foreach ($data['items'] as $itemData) {
                 $this->orderService->addItem($order, $itemData);
             }
 
-            // Recargar el pedido con sus relaciones
             $order->load(['subsectorItem.subsector', 'items.product', 'items.modifiers']);
 
-            // Impresión automática sin pedir permiso: enviar a la impresora configurada
-            try {
-                $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
-                if ($printer) {
-                    $this->printService->printKitchenTicket($order, $printer);
+            if ($validated['send_to_kitchen']) {
+                try {
+                    $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
+                    if ($printer) {
+                        $this->printService->printKitchenTicket($order, $printer);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
                 }
-            } catch (\Exception $e) {
-                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
             }
 
             return response()->json([
@@ -304,6 +392,7 @@ class TableController extends Controller
                 'message' => 'Pedido creado. Ticket enviado a la impresora.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'added_to_existing' => false,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);

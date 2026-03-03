@@ -1187,8 +1187,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.message || 'No se pudo crear el pedido');
                 }
 
-                // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
-                if (data.kitchen_ticket_url && printWin && !printWin.closed) {
+                // Si se agregaron ítems a un pedido existente, no abrir ticket completo (ya se imprimieron solo los nuevos)
+                if (data.added_to_existing && printWin && !printWin.closed) {
+                    printWin.close();
+                }
+                // Abrir ticket de cocina solo cuando es pedido nuevo
+                else if (data.kitchen_ticket_url && printWin && !printWin.closed) {
                     printWin.location.href = data.kitchen_ticket_url;
                     setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
                 } else if (data.kitchen_ticket_url) {
@@ -1198,10 +1202,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Pedido creado',
+                    title: data.added_to_existing ? 'Ítems agregados' : 'Pedido creado',
                     html: `
-                        <p>Pedido <strong>${data.order_number}</strong> creado exitosamente.</p>
-                        <p class="text-muted small">${data.message || 'Se ha abierto el ticket de cocina para imprimir desde tu equipo.'}</p>
+                        <p>${data.added_to_existing ? `Pedido <strong>${data.order_number}</strong>.` : `Pedido <strong>${data.order_number}</strong> creado exitosamente.`}</p>
+                        <p class="text-muted small">${data.message || (data.added_to_existing ? 'Se imprimieron solo los nuevos ítems en cocina.' : 'Se ha abierto el ticket de cocina para imprimir desde tu equipo.')}</p>
                         ${data.kitchen_ticket_url ? `
                             <div class="mt-3">
                                 <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm btn-outline-primary">
