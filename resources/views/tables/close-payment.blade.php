@@ -101,14 +101,22 @@
 </style>
 
 <div class="row mb-4">
+    <div class="col-12 d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Cerrar Mesa - Procesar Pago</h1>
+            <p class="text-white mb-1">Mesa {{ $table->number }} - {{ $table->sector->name ?? 'Sin sector' }}</p>
+            @if($table->currentSession && $table->currentSession->waiter)
+                <p class="text-white mb-0">
+                    <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
+                </p>
+            @endif
+        </div>
+        <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-lg btn-outline-light">
+            <i class="bi bi-printer"></i> Imprimir ticket primero
+        </a>
+    </div>
     <div class="col-12">
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Cerrar Mesa - Procesar Pago</h1>
-        <p class="text-white">Mesa {{ $table->number }} - {{ $table->sector->name ?? 'Sin sector' }}</p>
-        @if($table->currentSession && $table->currentSession->waiter)
-            <p class="text-white">
-                <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
-            </p>
-        @endif
+        <p class="text-white-50 small mb-0">Podés imprimir el recibo de la mesa antes de cargar los métodos de pago y cerrar.</p>
     </div>
 </div>
 
@@ -214,6 +222,9 @@
                 </div>
 
                 <div class="d-grid gap-2 mt-4">
+                    <a href="{{ route('tables.print-consolidated-receipt', $table) }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-printer"></i> Imprimir ticket (antes de cerrar)
+                    </a>
                     <button type="submit" class="btn btn-success btn-lg" id="submitPaymentBtn" disabled>
                         <i class="bi bi-check-circle"></i> Procesar Pago y Cerrar Mesa
                     </button>
