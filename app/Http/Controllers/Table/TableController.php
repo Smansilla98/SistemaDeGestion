@@ -1361,7 +1361,8 @@ class TableController extends Controller
     }
 
     /**
-     * Imprimir recibo consolidado (formato ticket térmico 72mm, Citizen CT-E301) - PDF
+     * Imprimir recibo consolidado (formato ticket térmico 72mm, Citizen CT-E301) - PDF.
+     * Altura dinámica según contenido: más ítems o líneas (ej. "c/u") = más largo en mm.
      */
     public function printConsolidatedReceipt(Table $table)
     {
@@ -1369,13 +1370,19 @@ class TableController extends Controller
         $data = $this->getConsolidatedReceiptData($table);
         $consolidatedItems = $data['consolidatedItems'] ?? collect();
         $payments = $data['payments'] ?? collect();
-        $extraLines = $payments->count() > 0 ? $payments->count() * 2 + 2 : 0;
-        $itemsCount = $consolidatedItems->count() + $extraLines;
-        $basePt = 180;
-        $heightPt = max(204.09, min($basePt + ($itemsCount * 20), 1200)); // 72mm ancho, alto dinámico
+
+        // Estimar líneas de contenido: cada ítem = 1 línea; si quantity > 1 suma línea "c/u"
+        $itemLines = $consolidatedItems->sum(fn ($i) => 1 + (((int) ($i['quantity'] ?? 0) > 1) ? 1 : 0));
+        $paymentLines = $payments->count() > 0 ? $payments->count() * 2 + 3 : 0;
+        $contentLines = $itemLines + $paymentLines;
+
+        $widthPt = 204.09; // 72mm
+        $basePt = 260;    // cabecera, datos mesa, totales, pie
+        $perLinePt = 22;  // altura por línea de ítem/texto
+        $heightPt = max($widthPt, min($basePt + (int) $contentLines * $perLinePt, 1700)); // máx ~600mm
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tables.print-consolidated-receipt', $data)
-            ->setPaper([0, 0, 204.09, $heightPt], 'portrait')
+            ->setPaper([0, 0, $widthPt, $heightPt], 'portrait')
             ->setOption('enable-local-file-access', true);
 
         return $pdf->stream("recibo-consolidado-mesa-{$table->number}.pdf");
