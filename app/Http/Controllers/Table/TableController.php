@@ -1254,20 +1254,25 @@ class TableController extends Controller
 
         if ($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) {
             if (!$sessionId) {
-                $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
-                    ->whereHas('order', fn($q) => $q->where('table_id', $table->id))
-                    ->whereNotNull('table_session_id')
-                    ->orderBy('created_at', 'desc')
-                    ->first();
-                if ($recentPayment) {
-                    $sessionId = $recentPayment->table_session_id;
+                // Prioridad 1: sesión actual de la mesa (para imprimir antes de cerrar)
+                if ($table->current_session_id) {
+                    $sessionId = $table->current_session_id;
                 } else {
-                    $lastSession = \App\Models\TableSession::where('table_id', $table->id)
-                        ->where('status', \App\Models\TableSession::STATUS_CERRADA)
-                        ->orderBy('ended_at', 'desc')
+                    $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
+                        ->whereHas('order', fn($q) => $q->where('table_id', $table->id))
+                        ->whereNotNull('table_session_id')
+                        ->orderBy('created_at', 'desc')
                         ->first();
-                    if ($lastSession) {
-                        $sessionId = $lastSession->id;
+                    if ($recentPayment) {
+                        $sessionId = $recentPayment->table_session_id;
+                    } else {
+                        $lastSession = \App\Models\TableSession::where('table_id', $table->id)
+                            ->where('status', \App\Models\TableSession::STATUS_CERRADA)
+                            ->orderBy('ended_at', 'desc')
+                            ->first();
+                        if ($lastSession) {
+                            $sessionId = $lastSession->id;
+                        }
                     }
                 }
             }
@@ -1283,17 +1288,19 @@ class TableController extends Controller
                 $totalSubtotal = 0;
                 $totalDiscount = 0;
             } else {
-                $closedOrders = Order::where('table_id', $table->id)
+                // Pedidos de la sesión (abiertos y cerrados) para armar el recibo
+                $sessionOrders = Order::where('table_id', $table->id)
                     ->where('table_session_id', $sessionId)
-                    ->where('status', Order::STATUS_CERRADO)
-                    ->whereNotNull('closed_at')
                     ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
-                    ->orderBy('closed_at', 'desc')
+                    ->orderBy('created_at', 'asc')
                     ->get();
 
-                if ($closedOrders->isNotEmpty()) {
+                // Para la vista: usar todos los pedidos de la sesión (mozo, cantidad); closedOrders para compatibilidad
+                $closedOrders = $sessionOrders->isNotEmpty() ? $sessionOrders : collect();
+
+                if ($sessionOrders->isNotEmpty()) {
                     $consolidatedItems = collect();
-                    foreach ($closedOrders as $order) {
+                    foreach ($sessionOrders as $order) {
                         if (!$order->relationLoaded('items')) {
                             $order->load('items.product.category', 'items.modifiers');
                         }
@@ -1325,9 +1332,9 @@ class TableController extends Controller
                             }
                         }
                     }
-                    $totalSubtotal = $closedOrders->sum('subtotal');
-                    $totalDiscount = $closedOrders->sum('discount');
-                    $totalAmount = $closedOrders->sum('total');
+                    $totalSubtotal = $sessionOrders->sum('subtotal');
+                    $totalDiscount = $sessionOrders->sum('discount');
+                    $totalAmount = $sessionOrders->sum('total');
                 }
             }
         }
@@ -1349,6 +1356,7 @@ class TableController extends Controller
             }
         }
 
+        $table->load('sector');
         return compact('table', 'closedOrders', 'consolidatedItems', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'payments');
     }
 
