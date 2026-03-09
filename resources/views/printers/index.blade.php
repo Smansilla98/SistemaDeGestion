@@ -113,6 +113,11 @@
                 </tbody>
             </table>
         </div>
+        @if($printers->hasPages())
+        <div class="d-flex justify-content-center mt-3">
+            {{ $printers->links() }}
+        </div>
+        @endif
     </div>
 </div>
 

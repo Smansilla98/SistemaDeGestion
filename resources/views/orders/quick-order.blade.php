@@ -298,6 +298,7 @@
 <script>
 let quickOrderItems = [];
 let quickOrderItemCounter = 0;
+const currentUserIsAdmin = @json(auth()->user()->role === 'ADMIN');
 
 // Búsqueda de productos
 document.getElementById('quickOrderProductSearch')?.addEventListener('input', function() {
@@ -1005,7 +1006,7 @@ function renderOrders(orders) {
                             <i class="bi bi-cash-coin"></i> Cerrar Cuenta
                         </a>
                         ` : ''}
-                        ${(order.status === 'ABIERTO' || order.status === 'CANCELADO') ? `
+                        ${(currentUserIsAdmin || order.status === 'ABIERTO' || order.status === 'CANCELADO') ? `
                         <form action="/orders/${order.id}" method="POST" class="d-inline" id="deleteQuickOrderForm${order.id}">
                             <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}">
                             <input type="hidden" name="_method" value="DELETE">
@@ -1046,7 +1047,7 @@ function confirmDeleteQuickOrder(orderId, orderNumber) {
     Swal.fire({
         icon: 'warning',
         title: '¿Eliminar pedido?',
-        html: `¿Eliminar el pedido <strong>#${orderNumber}</strong>? Solo se pueden eliminar pedidos en estado ABIERTO o CANCELADO sin pagos.`,
+        html: `¿Eliminar el pedido <strong>#${orderNumber}</strong>? Esta acción no se puede deshacer.`,
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
         cancelButtonColor: '#6c757d',

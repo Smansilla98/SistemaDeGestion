@@ -13,8 +13,8 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header">
-        <form method="GET" action="{{ route('reports.products') }}" class="row g-3">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <form method="GET" action="{{ route('reports.products') }}" class="row g-3 flex-grow-1">
             <div class="col-md-4">
                 <label class="form-label">Fecha Desde</label>
                 <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
@@ -28,6 +28,9 @@
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </form>
+        <a href="{{ route('reports.products.export') }}" class="btn btn-sm btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exportar catálogo Excel
+        </a>
     </div>
     <div class="card-body">
         <div class="table-responsive">

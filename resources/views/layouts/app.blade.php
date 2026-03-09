@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="{{ $colors['primary'] }}">
     <title>@yield('title', 'Sistema de Gestión de Restaurante')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1021,6 +1023,38 @@
         </div>
         <div class="nova-header-right">
             @auth
+            @php
+                $headerUnreadCount = auth()->user()->unreadNotifications()->count();
+                $headerNotifications = auth()->user()->unreadNotifications()->latest()->limit(5)->get();
+            @endphp
+            <div class="dropdown me-2">
+                <button type="button" class="btn btn-link text-white p-0 position-relative" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                    @if($headerUnreadCount > 0)
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
+                    @endif
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow" style="min-width: 280px; max-height: 320px; overflow-y: auto;">
+                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                        <strong>Notificaciones</strong>
+                        @if($headerUnreadCount > 0)
+                        <form action="{{ route('notifications.read-all') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-link p-0 text-muted">Marcar todas leídas</button>
+                        </form>
+                        @endif
+                    </div>
+                    @forelse($headerNotifications as $n)
+                    <a href="{{ route('notifications.read', $n->id) }}" class="dropdown-item py-2">
+                        <span class="d-block">{{ $n->data['message'] ?? 'Notificación' }}</span>
+                        <small class="text-muted">{{ $n->created_at->diffForHumans() }}</small>
+                    </a>
+                    @empty
+                    <div class="px-3 py-3 text-muted small">No tenés notificaciones nuevas.</div>
+                    @endforelse
+                    <a href="{{ route('notifications.index') }}" class="dropdown-item text-center py-2 text-primary small border-top">Ver todas</a>
+                </div>
+            </div>
             <div class="nova-header-role-badge">
                 <i class="bi bi-person-badge"></i>
                 <span>{{ strtoupper(auth()->user()->role) }}</span>
@@ -1052,6 +1086,17 @@
     <main class="nova-main">
         @yield('content')
     </main>
+
+    <!-- Service worker PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (e) {
+                    console.error('SW registration failed', e);
+                });
+            });
+        }
+    </script>
 
     <!-- Scripts para feedback visual mejorado -->
     <script>

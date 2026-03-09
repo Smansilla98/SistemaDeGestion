@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Category;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -68,17 +70,11 @@ class CategoryController extends Controller
     /**
      * Crear nueva categoría
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
         Gate::authorize('create', Category::class);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'display_order' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
+        $validated = $request->validated();
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
         $validated['is_active'] = $request->has('is_active');
 
@@ -118,17 +114,11 @@ class CategoryController extends Controller
     /**
      * Actualizar categoría
      */
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
         Gate::authorize('update', $category);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'display_order' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
+        $validated = $request->validated();
         $validated['is_active'] = $request->has('is_active');
 
         $oldAttributes = $category->getAttributes();

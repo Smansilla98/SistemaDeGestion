@@ -422,21 +422,23 @@ class OrderController extends Controller
     }
 
     /**
-     * Eliminar pedido
-     * Se pueden eliminar pedidos en estado ABIERTO, EN_PREPARACION o CANCELADO sin pagos.
+     * Eliminar pedido.
+     * ADMIN puede eliminar cualquier pedido en cualquier estado (con o sin pagos; los pagos se eliminan en cascada).
+     * MOZO y CAJERO solo pueden eliminar en ABIERTO, EN_PREPARACION o CANCELADO y sin pagos.
      */
     public function destroy(Order $order)
     {
         Gate::authorize('delete', $order);
 
-        // Verificar que el pedido esté en un estado que permita eliminación
-        if (!in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
-            return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO, EN PREPARACIÓN o CANCELADO');
-        }
+        $isAdmin = auth()->user()->role === 'ADMIN';
 
-        // Verificar que no tenga pagos asociados
-        if ($order->payments()->count() > 0) {
-            return back()->with('error', 'No se puede eliminar un pedido que tiene pagos asociados');
+        if (!$isAdmin) {
+            if (!in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
+                return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO, EN PREPARACIÓN o CANCELADO');
+            }
+            if ($order->payments()->count() > 0) {
+                return back()->with('error', 'No se puede eliminar un pedido que tiene pagos asociados');
+            }
         }
 
         try {

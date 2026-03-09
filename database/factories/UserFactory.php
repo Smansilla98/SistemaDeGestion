@@ -23,12 +23,17 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $username = fake()->unique()->userName();
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'username' => $username,
+            'email' => $username . '@example.com',
+            'email_verified_at' => null,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'restaurant_id' => \App\Models\Restaurant::factory()->create()->id,
+            'role' => 'MOZO',
+            'is_active' => true,
         ];
     }
 

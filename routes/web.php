@@ -25,7 +25,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'detect.mobile'])->group(function () {
     
     // Dashboard
     Route::get('/', function () {
@@ -33,6 +33,13 @@ Route::middleware('auth')->group(function () {
     });
     
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
+    // Notificaciones (campana y listado)
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -254,6 +261,21 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Rutas Mobile (/m)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('m')->name('m.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'index'])->name('dashboard');
+
+        Route::prefix('pedidos')->name('pedidos.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'show'])->name('show');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Reportes
     |--------------------------------------------------------------------------
     */
@@ -271,7 +293,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/sales', [\App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');
         Route::get('/sales/export', [\App\Http\Controllers\Report\ReportController::class, 'exportSales'])->name('sales.export');
+        Route::get('/sales/export-pdf', [\App\Http\Controllers\Report\ReportController::class, 'exportSalesPdf'])->name('sales.export-pdf');
         Route::get('/products', [\App\Http\Controllers\Report\ReportController::class, 'products'])->name('products');
+        Route::get('/products/export', [\App\Http\Controllers\Report\ReportController::class, 'exportProducts'])->name('products.export');
+        Route::get('/orders/export', [\App\Http\Controllers\Report\ReportController::class, 'exportOrders'])->name('orders.export');
         Route::get('/staff', [\App\Http\Controllers\Report\ReportController::class, 'staff'])->name('staff');
     });
 

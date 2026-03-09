@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,16 +32,9 @@ class AuthController extends Controller
     /**
      * Procesar registro de nuevo usuario
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ], [
-            'username.unique' => 'Ese nombre de usuario ya está en uso.',
-            'password.confirmed' => 'Las contraseñas no coinciden.',
-        ]);
+        $validated = $request->validated();
 
         $restaurant = Restaurant::where('is_active', true)->first();
         if (!$restaurant) {
@@ -62,12 +57,9 @@ class AuthController extends Controller
     /**
      * Procesar login
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'username' => 'required|string',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validated();
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();

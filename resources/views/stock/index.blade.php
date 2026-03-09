@@ -25,8 +25,14 @@
 @endif
 
 <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Productos con Stock</h5>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <h5 class="mb-0">Productos con Stock</h5>
+            <form method="GET" action="{{ route('stock.index') }}" class="d-flex gap-2 ms-2">
+                <input type="text" name="search" class="form-control form-control-sm" style="max-width: 200px;" placeholder="Buscar producto..." value="{{ old('search', request('search')) }}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+            </form>
+        </div>
         <a href="{{ route('stock.movements') }}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-list-ul"></i> Ver Movimientos
         </a>
@@ -82,6 +88,11 @@
                 </tbody>
             </table>
         </div>
+        @if($products->hasPages())
+        <div class="d-flex justify-content-center mt-3">
+            {{ $products->links() }}
+        </div>
+        @endif
     </div>
 </div>
 

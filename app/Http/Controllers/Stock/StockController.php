@@ -32,11 +32,11 @@ class StockController extends Controller
             ->where('has_stock', true)
             ->with(['category']);
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->orderBy('name')->get();
+        $products = $query->orderBy('name')->paginate(20)->withQueryString();
 
         // Agregar stock actual a cada producto
         foreach ($products as $product) {

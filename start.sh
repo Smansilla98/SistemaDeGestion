@@ -62,6 +62,12 @@ composer dump-autoload --no-interaction --optimize || true
 echo "=== Verificando storage ==="
 php artisan storage:link || true
 
+# Cache de configuración (producción)
+if [ "${APP_ENV:-local}" = "production" ]; then
+    echo "=== Config cache ==="
+    php artisan config:cache || true
+fi
+
 echo ""
 echo "=========================================="
 echo "=== Servidor iniciado ==="
