@@ -27,7 +27,7 @@ class PrinterController extends Controller
         $printers = Printer::where('restaurant_id', $restaurantId)
             ->orderBy('type')
             ->orderBy('name')
-            ->get();
+            ->paginate(20);
 
         return view('printers.index', compact('printers'));
     }

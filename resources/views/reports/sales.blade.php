@@ -28,9 +28,17 @@
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </form>
-        <a href="{{ route('reports.sales.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-success ms-3">
-            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
-        </a>
+        <div class="d-flex flex-wrap gap-2 ms-3">
+            <a href="{{ route('reports.sales.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Ventas Excel
+            </a>
+            <a href="{{ route('reports.sales.export-pdf', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-danger">
+                <i class="bi bi-file-earmark-pdf"></i> Ventas PDF
+            </a>
+            <a href="{{ route('reports.orders.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Pedidos Excel
+            </a>
+        </div>
     </div>
     <div class="card-body">
         <div class="row mb-4">

@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Exports\OrdersExport;
+use App\Exports\ProductsExport;
+use App\Exports\SalesExport;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\OrderItem;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -77,16 +81,74 @@ class ReportController extends Controller
     public function exportSales(Request $request)
     {
         $restaurantId = auth()->user()->restaurant_id;
-        
         $startDate = $request->input('date_from', Carbon::today()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('date_to', Carbon::today()->format('Y-m-d'));
-
         $filename = 'ventas_' . $startDate . '_' . $endDate . '.xlsx';
 
-        // Nota: Requiere instalar maatwebsite/excel
-        // return Excel::download(new SalesExport($startDate, $endDate, $restaurantId), $filename);
-        
-        return redirect()->back()->with('info', 'Funcionalidad de exportación a Excel requiere instalar el paquete maatwebsite/excel');
+        return Excel::download(
+            new SalesExport($startDate, $endDate, $restaurantId),
+            $filename
+        );
+    }
+
+    /**
+     * Exportar reporte de ventas a PDF
+     */
+    public function exportSalesPdf(Request $request)
+    {
+        $restaurantId = auth()->user()->restaurant_id;
+        $dateFrom = $request->input('date_from', Carbon::today()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', Carbon::today()->format('Y-m-d'));
+
+        $salesByDay = Payment::where('restaurant_id', $restaurantId)
+            ->whereBetween('created_at', [$dateFrom, Carbon::parse($dateTo)->endOfDay()])
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+        $salesByMethod = Payment::where('restaurant_id', $restaurantId)
+            ->whereBetween('created_at', [$dateFrom, Carbon::parse($dateTo)->endOfDay()])
+            ->selectRaw('payment_method, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->get();
+        $totalSales = Payment::where('restaurant_id', $restaurantId)
+            ->whereBetween('created_at', [$dateFrom, Carbon::parse($dateTo)->endOfDay()])
+            ->sum('amount');
+
+        $pdf = Pdf::loadView('reports.sales-pdf', compact('salesByDay', 'salesByMethod', 'totalSales', 'dateFrom', 'dateTo'));
+        return $pdf->download('reporte-ventas-' . $dateFrom . '-' . $dateTo . '.pdf');
+    }
+
+    /**
+     * Exportar productos a Excel
+     */
+    public function exportProducts(Request $request)
+    {
+        $restaurantId = auth()->user()->restaurant_id;
+        $type = $request->input('type', 'PRODUCT');
+        $filename = 'productos_' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(
+            new ProductsExport($restaurantId, $type),
+            $filename
+        );
+    }
+
+    /**
+     * Exportar pedidos a Excel
+     */
+    public function exportOrders(Request $request)
+    {
+        $restaurantId = auth()->user()->restaurant_id;
+        $dateFrom = $request->input('date_from', Carbon::today()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', Carbon::today()->format('Y-m-d'));
+        $status = $request->input('status');
+        $filename = 'pedidos_' . $dateFrom . '_' . $dateTo . '.xlsx';
+
+        return Excel::download(
+            new OrdersExport($restaurantId, $dateFrom, $dateTo, $status),
+            $filename
+        );
     }
 
     /**

@@ -6,7 +6,9 @@ use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\User;
 use App\Models\Supplier;
+use App\Notifications\LowStockNotification;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -53,6 +55,17 @@ class StockService
                 'reason' => $data['reason'] ?? null,
                 'reference' => $data['reference'] ?? null,
             ]);
+
+            // Notificar stock bajo a ADMIN y CAJERO si quedó por debajo del mínimo
+            if ($product->stock_minimum !== null && $newStock <= $product->stock_minimum) {
+                $users = User::where('restaurant_id', $data['restaurant_id'])
+                    ->where('is_active', true)
+                    ->whereIn('role', ['ADMIN', 'CAJERO'])
+                    ->get();
+                foreach ($users as $user) {
+                    $user->notify(new LowStockNotification($product, (int) $newStock, (int) $product->stock_minimum, $data['restaurant_id']));
+                }
+            }
 
             // Si es una ENTRADA y tiene información de compra, registrar la compra
             if ($data['type'] === 'ENTRADA' && isset($data['purchase_data'])) {

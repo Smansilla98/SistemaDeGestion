@@ -7,7 +7,9 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Table;
 use App\Models\TableSession;
+use App\Models\User;
 use App\Enums\OrderStatus;
+use App\Notifications\OrderCreatedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -113,6 +115,13 @@ class OrderService
                 ]);
             }
             // Si no hay mesa ni subsector, es un pedido rápido (no actualizar nada)
+
+            // Notificar a cocina el nuevo pedido
+            User::where('restaurant_id', $order->restaurant_id)
+                ->where('is_active', true)
+                ->whereIn('role', ['COCINA', 'ADMIN'])
+                ->get()
+                ->each(fn ($u) => $u->notify(new OrderCreatedNotification($order)));
 
             return $order;
         });

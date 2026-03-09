@@ -13,6 +13,7 @@ use App\Models\CashRegisterSession;
 use App\Services\OrderService;
 use App\Services\PrintService;
 use App\Services\StockService;
+use App\Services\TableService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,8 @@ class TableController extends Controller
     public function __construct(
         private OrderService $orderService,
         private PrintService $printService,
-        private StockService $stockService
+        private StockService $stockService,
+        private TableService $tableService
     ) {}
     /**
      * Mostrar lista de mesas
@@ -772,7 +774,6 @@ class TableController extends Controller
         }
 
         try {
-            // MÓDULO 4: Validación de métodos de pago incluyendo QR y MIXTO
             $validated = $request->validate([
                 'payments' => 'required|array|min:1',
                 'payments.*.payment_method' => 'required|in:EFECTIVO,DEBITO,CREDITO,TRANSFERENCIA,QR,MIXTO',
@@ -793,227 +794,29 @@ class TableController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($table, $validated, $request, $respond) {
-            // Obtener todos los pedidos activos
-            $activeOrders = Order::where('table_id', $table->id)
-                ->where('table_session_id', $table->current_session_id)
-                ->where('status', '!=', Order::STATUS_CERRADO)
-                ->where('status', '!=', Order::STATUS_CANCELADO)
-                ->with(['items.product'])
-                ->get();
+            $result = $this->tableService->processTablePayment($table, $validated, (int) auth()->id());
 
-            if ($activeOrders->isEmpty()) {
-                return $respond(false, 'No hay pedidos activos para cerrar');
+            if (!$result['success']) {
+                return $respond(false, $result['message'] ?? 'Error al procesar el pago');
             }
 
-            // Calcular subtotal base
-            $baseSubtotal = $activeOrders->sum('subtotal');
-            $baseDiscount = $activeOrders->sum('discount');
-            
-            // Aplicar descuento adicional si se seleccionó un tipo de descuento
-            $additionalDiscount = 0;
-            $discountType = null;
-            if (!empty($validated['discount_type_id'])) {
-                $discountType = \App\Models\DiscountType::find($validated['discount_type_id']);
-                if ($discountType && $discountType->restaurant_id === $table->restaurant_id) {
-                    $additionalDiscount = $discountType->calculateDiscount($baseSubtotal);
-                }
-            }
-            
-            // Calcular total con descuento adicional
-            $totalDiscount = $baseDiscount + $additionalDiscount;
-            $totalAmount = $baseSubtotal - $totalDiscount;
-            $totalPaid = collect($validated['payments'])->sum('amount');
-
-            // Validar que el total pagado sea mayor o igual al total (permite cambio)
-            if ($totalPaid < $totalAmount - 0.01) {
-                return $respond(false, "El total pagado ($${totalPaid}) es menor al total a pagar ($${totalAmount}). Faltan $" . number_format($totalAmount - $totalPaid, 2));
-            }
-            
-            // Calcular cambio si hay excedente
-            $change = $totalPaid - $totalAmount;
-
-            // Aplicar descuento adicional proporcionalmente a cada pedido
-            if ($additionalDiscount > 0 && $baseSubtotal > 0) {
-                foreach ($activeOrders as $order) {
-                    // Calcular proporción del descuento para este pedido
-                    $orderProportion = $order->subtotal / $baseSubtotal;
-                    $orderAdditionalDiscount = round($additionalDiscount * $orderProportion, 2);
-                    
-                    // Aplicar descuento adicional al pedido
-                    $order->discount += $orderAdditionalDiscount;
-                    $order->total = $order->subtotal - $order->discount;
-                    $order->save();
-                }
-            }
-
-            // Cerrar todos los pedidos
-            $ordersClosed = [];
-            $allItems = collect();
-            $finalTotalSubtotal = 0;
-            $finalTotalDiscount = 0;
-
-            foreach ($activeOrders as $order) {
-                $order->load(['items.product.category', 'items.modifiers']);
-                $this->orderService->closeOrder($order, false);
-                
-                $finalTotalSubtotal += $order->subtotal;
-                $finalTotalDiscount += $order->discount;
-                
-                foreach ($order->items as $item) {
-                    $existingItem = $allItems->first(function ($i) use ($item) {
-                        return $i['product_id'] === $item->product_id;
-                    });
-                    
-                    if ($existingItem) {
-                        $existingItem['quantity'] += $item->quantity;
-                        $existingItem['subtotal'] += $item->subtotal;
-                        $existingItem['unit_price'] = $existingItem['subtotal'] / $existingItem['quantity'];
-                    } else {
-                        $allItems->push([
-                            'product_id' => $item->product_id,
-                            'product_name' => $item->product->name,
-                            'quantity' => $item->quantity,
-                            'unit_price' => $item->unit_price,
-                            'subtotal' => $item->subtotal,
-                            'modifiers' => $item->modifiers,
-                            'observations' => $item->observations,
-                        ]);
-                    }
-                }
-                $ordersClosed[] = $order;
-            }
-
-            // Verificar stock después de cerrar los pedidos
-            // Recorrer todos los items de todos los pedidos para verificar stock
-            $stockVerificationErrors = [];
-            foreach ($ordersClosed as $order) {
-                foreach ($order->items as $item) {
-                    if ($item->product->has_stock) {
-                        $currentStock = $item->product->getCurrentStock($order->restaurant_id);
-                        $expectedStock = $item->product->getCurrentStock($order->restaurant_id);
-                        
-                        // Verificar que el stock se haya reducido correctamente
-                        // El stock debería haberse reducido cuando se agregó el item al pedido
-                        // Aquí solo verificamos que no haya inconsistencias
-                        if ($currentStock < 0) {
-                            $stockVerificationErrors[] = "Stock negativo detectado para '{$item->product->name}': {$currentStock}";
-                        }
-                    }
-                }
-            }
-            
-            // Si hay errores de stock, registrar en logs pero no bloquear el cierre
-            if (!empty($stockVerificationErrors)) {
-                Log::warning('Errores de verificación de stock al cerrar mesa', [
-                    'table_id' => $table->id,
-                    'restaurant_id' => $table->restaurant_id,
-                    'errors' => $stockVerificationErrors,
-                    'user_id' => auth()->id()
-                ]);
-            }
-
-            // Crear pagos consolidados por sesión de mesa
-            // Asociar cada pago al primer pedido (para mantener relación con order_id) pero con table_session_id
-            $firstOrder = !empty($ordersClosed) ? $ordersClosed[0] : null;
-            if (!$firstOrder) {
-                return $respond(false, 'No se pudo obtener el pedido para asociar el pago');
-            }
-            
-            // Obtener la sesión de caja activa del restaurante
-            $cashRegisterSession = CashRegisterSession::where('restaurant_id', $table->restaurant_id)
-                ->where('status', CashRegisterSession::STATUS_ABIERTA)
-                ->orderBy('opened_at', 'desc')
-                ->first();
-            
-            // Si no hay sesión de caja activa, registrar en logs pero continuar
-            if (!$cashRegisterSession) {
-                Log::warning('No se encontró sesión de caja activa al procesar pago', [
-                    'table_id' => $table->id,
-                    'restaurant_id' => $table->restaurant_id,
-                    'user_id' => auth()->id()
-                ]);
-            }
-            
-            // Obtener información del mozo (del primer pedido)
-            $waiterName = $firstOrder->user->name ?? 'N/A';
-            
-            $paymentsCreated = [];
-            foreach ($validated['payments'] as $paymentData) {
-                // Construir notas con información de mesa y mozo
-                $notes = $paymentData['notes'] ?? '';
-                $additionalInfo = "Mesa: {$table->number} | Mozo: {$waiterName}";
-                if ($notes) {
-                    $notes = "{$additionalInfo} | {$notes}";
-                } else {
-                    $notes = $additionalInfo;
-                }
-                
-                $payment = Payment::create([
-                    'restaurant_id' => $table->restaurant_id,
-                    'order_id' => $firstOrder->id, // Asociar al primer pedido para mantener relación
-                    'table_session_id' => $table->current_session_id, // Asociar a la sesión de mesa para arqueo
-                    'cash_register_session_id' => $cashRegisterSession->id ?? null, // Asociar a la sesión de caja
-                    'user_id' => auth()->id(),
-                    'payment_method' => $paymentData['payment_method'],
-                    'amount' => $paymentData['amount'],
-                    'operation_number' => $paymentData['operation_number'] ?? null,
-                    'notes' => $notes,
-                ]);
-                $paymentsCreated[] = $payment;
-            }
-
-            // Guardar el table_session_id ANTES de limpiarlo
-            $savedSessionId = $table->current_session_id;
-            
-            // Liberar la mesa
-            // Usar DB::statement para asegurar que el enum se actualice correctamente
-            DB::table('table_sessions')
-                ->where('id', $savedSessionId)
-                ->update([
-                    'ended_at' => now(),
-                    'status' => 'CERRADA', // Usar string directo para evitar problemas con el enum
-                    'updated_at' => now(),
-                ]);
-            $table->update([
-                'status' => 'LIBRE',
-                'current_order_id' => null,
-                'current_session_id' => null,
-            ]);
-
-            // Recalcular totales desde items consolidados para asegurar precisión
-            $finalTotalSubtotal = $allItems->sum('subtotal');
-            $finalTotalDiscount = $finalTotalDiscount; // Ya calculado arriba
-            $finalTotalAmount = $finalTotalSubtotal - $finalTotalDiscount;
-            
-            // Mensaje de éxito con información de cambio si aplica
-            $successMessage = 'Mesa cerrada y pago procesado exitosamente.';
-            if ($change > 0.01) {
-                $successMessage .= " Cambio: $" . number_format($change, 2);
-            }
-
-            // Si es petición AJAX, devolver JSON
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => $successMessage,
-                    'redirect' => route('tables.consolidated-receipt', $table),
-                    'session_id' => $savedSessionId,
-                    'change' => $change > 0.01 ? $change : 0
+                    'message' => $result['message'],
+                    'redirect' => $result['redirect'],
+                    'session_id' => $result['session_id'] ?? null,
+                    'change' => $result['change'] ?? 0,
                 ]);
             }
 
-            return redirect()->route('tables.consolidated-receipt', $table)
-                ->with('success', $successMessage)
-                ->with('table_session_id', $savedSessionId) // Usar el ID guardado antes de limpiarlo
-                ->with('total_amount', $finalTotalAmount) // Usar totales recalculados
-                ->with('total_subtotal', $finalTotalSubtotal)
-                ->with('total_discount', $finalTotalDiscount)
-                ->with('change', $change > 0.01 ? $change : 0) // Agregar cambio a la sesión
-                ->with('orders_closed', $ordersClosed)
-                ->with('consolidated_items', $allItems)
-                ->with('payments', collect($paymentsCreated));
-            });
+            $flash = $result['flash'] ?? [];
+            $redirect = redirect()->route('tables.consolidated-receipt', $table)
+                ->with('success', $result['message']);
+            foreach ($flash as $key => $value) {
+                $redirect->with($key, $value);
+            }
+            return $redirect;
         } catch (\Exception $e) {
             Log::error('Error al procesar pago: ' . $e->getMessage(), [
                 'table_id' => $table->id,
@@ -1240,124 +1043,11 @@ class TableController extends Controller
     }
 
     /**
-     * Datos para recibo consolidado (sesión o BD). Usado por PDF y por vista auto-print.
+     * Datos para recibo consolidado (sesión o BD). Delega a TableService.
      */
     protected function getConsolidatedReceiptData(Table $table): array
     {
-        $closedOrders = collect(session('orders_closed', []));
-        $consolidatedItems = collect(session('consolidated_items', []));
-        $totalAmount = session('total_amount', 0);
-        $totalSubtotal = session('total_subtotal', 0);
-        $totalDiscount = session('total_discount', 0);
-        $sessionId = session('table_session_id');
-        $payments = collect(session('payments', []));
-
-        if ($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) {
-            if (!$sessionId) {
-                // Prioridad 1: sesión actual de la mesa (para imprimir antes de cerrar)
-                if ($table->current_session_id) {
-                    $sessionId = $table->current_session_id;
-                } else {
-                    $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
-                        ->whereHas('order', fn($q) => $q->where('table_id', $table->id))
-                        ->whereNotNull('table_session_id')
-                        ->orderBy('created_at', 'desc')
-                        ->first();
-                    if ($recentPayment) {
-                        $sessionId = $recentPayment->table_session_id;
-                    } else {
-                        $lastSession = \App\Models\TableSession::where('table_id', $table->id)
-                            ->where('status', \App\Models\TableSession::STATUS_CERRADA)
-                            ->orderBy('ended_at', 'desc')
-                            ->first();
-                        if ($lastSession) {
-                            $sessionId = $lastSession->id;
-                        }
-                    }
-                }
-            }
-
-            if (!$sessionId) {
-                Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
-                    'table_id' => $table->id,
-                    'restaurant_id' => $table->restaurant_id
-                ]);
-                $closedOrders = collect();
-                $consolidatedItems = collect();
-                $totalAmount = 0;
-                $totalSubtotal = 0;
-                $totalDiscount = 0;
-            } else {
-                // Pedidos de la sesión (abiertos y cerrados) para armar el recibo
-                $sessionOrders = Order::where('table_id', $table->id)
-                    ->where('table_session_id', $sessionId)
-                    ->with(['items.product.category', 'items.modifiers', 'user', 'payments'])
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-
-                // Para la vista: usar todos los pedidos de la sesión (mozo, cantidad); closedOrders para compatibilidad
-                $closedOrders = $sessionOrders->isNotEmpty() ? $sessionOrders : collect();
-
-                if ($sessionOrders->isNotEmpty()) {
-                    $consolidatedItems = collect();
-                    foreach ($sessionOrders as $order) {
-                        if (!$order->relationLoaded('items')) {
-                            $order->load('items.product.category', 'items.modifiers');
-                        }
-                        foreach ($order->items as $item) {
-                            $existingItemIndex = $consolidatedItems->search(fn($i) => $i['product_id'] === $item->product_id);
-                            if ($existingItemIndex !== false) {
-                                $existingItem = $consolidatedItems[$existingItemIndex];
-                                $newQuantity = $existingItem['quantity'] + $item->quantity;
-                                $newSubtotal = $existingItem['subtotal'] + $item->subtotal;
-                                $consolidatedItems[$existingItemIndex] = [
-                                    'product_id' => $existingItem['product_id'],
-                                    'product_name' => $existingItem['product_name'],
-                                    'quantity' => $newQuantity,
-                                    'unit_price' => $newSubtotal / $newQuantity,
-                                    'subtotal' => $newSubtotal,
-                                    'modifiers' => $existingItem['modifiers'] ?? $item->modifiers,
-                                    'observations' => $existingItem['observations'] ?? $item->observations,
-                                ];
-                            } else {
-                                $consolidatedItems->push([
-                                    'product_id' => $item->product_id,
-                                    'product_name' => $item->product->name,
-                                    'quantity' => $item->quantity,
-                                    'unit_price' => $item->unit_price,
-                                    'subtotal' => $item->subtotal,
-                                    'modifiers' => $item->modifiers,
-                                    'observations' => $item->observations,
-                                ]);
-                            }
-                        }
-                    }
-                    $totalSubtotal = $sessionOrders->sum('subtotal');
-                    $totalDiscount = $sessionOrders->sum('discount');
-                    $totalAmount = $sessionOrders->sum('total');
-                }
-            }
-        }
-
-        if ($closedOrders->isNotEmpty()) {
-            $totalSubtotal = $closedOrders->sum('subtotal');
-            $totalDiscount = $closedOrders->sum('discount');
-            $totalAmount = $closedOrders->sum('total');
-        } elseif ($consolidatedItems->isNotEmpty()) {
-            $totalSubtotal = $consolidatedItems->sum('subtotal');
-            $totalDiscount = $totalDiscount ?? 0;
-            $totalAmount = $totalSubtotal - $totalDiscount;
-        }
-
-        if ($sessionId && $payments->isEmpty()) {
-            $dbPayments = Payment::where('table_session_id', $sessionId)->with('user')->get();
-            if ($dbPayments->isNotEmpty()) {
-                $payments = $dbPayments;
-            }
-        }
-
-        $table->load('sector');
-        return compact('table', 'closedOrders', 'consolidatedItems', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'payments');
+        return $this->tableService->getConsolidatedReceiptData($table);
     }
 
     /**

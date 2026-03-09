@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\CheckRole::class,
         'session.timeout' => \App\Http\Middleware\CheckSessionTimeout::class,
+        'detect.mobile' => \App\Http\Middleware\DetectMobile::class,
     ];
 }

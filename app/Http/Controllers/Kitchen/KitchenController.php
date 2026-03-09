@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Kitchen;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\User;
+use App\Notifications\OrderDispatchedNotification;
 use App\Services\OrderService;
 use App\Services\NotificationService;
 use App\Events\KitchenOrderReady;
@@ -90,8 +92,14 @@ class KitchenController extends Controller
         // Cambiar estado a ENTREGADO (en el nuevo flujo, LISTO no existe)
         $order->update(['status' => 'ENTREGADO']);
 
-        // Notificar al mozo que el pedido está listo
+        // Notificar al mozo que el pedido está listo (cache para KDS)
         $this->notificationService->notifyOrderReady($order);
+        // Notificación en base de datos para campana del layout
+        User::where('restaurant_id', $order->restaurant_id)
+            ->where('is_active', true)
+            ->whereIn('role', ['MOZO', 'ADMIN'])
+            ->get()
+            ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, 'LISTO')));
 
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([
@@ -117,8 +125,12 @@ class KitchenController extends Controller
         $order->update(['status' => $validated['status']]);
 
         if ($validated['status'] === 'ENTREGADO') {
-            // Notificar al mozo que el pedido está listo
             $this->notificationService->notifyOrderReady($order);
+            User::where('restaurant_id', $order->restaurant_id)
+                ->where('is_active', true)
+                ->whereIn('role', ['MOZO', 'ADMIN'])
+                ->get()
+                ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, 'ENTREGADO')));
             $order->load(['table', 'user']);
         }
 

@@ -12,55 +12,55 @@ class AuthTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Test: Usuario puede hacer login
+     * Test: Usuario puede hacer login con username
      */
-    public function test_user_can_login()
+    public function test_user_can_login(): void
     {
         $user = User::factory()->create([
-            'email' => 'test@example.com',
+            'username' => 'testuser',
             'password' => bcrypt('password'),
             'role' => UserRole::MOZO,
+            'is_active' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'test@example.com',
+            'username' => 'testuser',
             'password' => 'password',
         ]);
 
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect(route('tables.index'));
         $this->assertAuthenticatedAs($user);
     }
 
     /**
      * Test: Usuario no puede hacer login con credenciales incorrectas
      */
-    public function test_user_cannot_login_with_invalid_credentials()
+    public function test_user_cannot_login_with_invalid_credentials(): void
     {
-        $user = User::factory()->create([
-            'email' => 'test@example.com',
+        User::factory()->create([
+            'username' => 'testuser',
             'password' => bcrypt('password'),
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'test@example.com',
+            'username' => 'testuser',
             'password' => 'wrong-password',
         ]);
 
-        $response->assertSessionHasErrors();
+        $response->assertSessionHasErrors('username');
         $this->assertGuest();
     }
 
     /**
      * Test: Usuario autenticado puede hacer logout
      */
-    public function test_authenticated_user_can_logout()
+    public function test_authenticated_user_can_logout(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['username' => 'logoutuser']);
 
-        $response = $this->actingAs($user)
-            ->post('/logout');
+        $response = $this->actingAs($user)->post('/logout');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('login'));
         $this->assertGuest();
     }
 }

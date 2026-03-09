@@ -65,6 +65,8 @@ class OrderPolicy
 
     /**
      * Determinar si el usuario puede eliminar el pedido
+     * ADMIN puede eliminar cualquier pedido en cualquier estado (rápidos o de mesa).
+     * MOZO y CAJERO solo en ABIERTO, EN_PREPARACION o CANCELADO (sin pagos; lo valida el controller).
      */
     public function delete(User $user, Order $order): bool
     {
@@ -72,8 +74,11 @@ class OrderPolicy
             return false;
         }
 
-        // ADMIN, MOZO y CAJERO pueden eliminar pedidos en ABIERTO, EN_PREPARACION o CANCELADO (sin pagos; lo valida el controller)
-        return in_array($user->role, ['ADMIN', 'MOZO', 'CAJERO'])
+        if ($user->role === 'ADMIN') {
+            return true;
+        }
+
+        return in_array($user->role, ['MOZO', 'CAJERO'])
             && in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO']);
     }
 }
