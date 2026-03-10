@@ -39,10 +39,11 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# Limpieza segura
+# Limpieza de cachés (evita vistas/config viejos en cada deploy)
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
 php artisan route:clear || true
+php artisan view:clear || true
 
 # Ejecutar migraciones siempre (para aplicar nuevas migraciones en cada deploy)
 echo "=== Ejecutando migraciones ==="
@@ -58,14 +59,17 @@ php artisan fix:table-sessions-enum 2>/dev/null || true
 # Regenerar autoloader de Composer (por si hay cambios en clases)
 composer dump-autoload --no-interaction --optimize || true
 
-# Storage
+# Storage (enlace simbólico para uploads y logs)
 echo "=== Verificando storage ==="
 php artisan storage:link || true
 
-# Cache de configuración (producción)
+# Producción: cachear config, rutas y vistas para mejor rendimiento
 if [ "${APP_ENV:-local}" = "production" ]; then
-    echo "=== Config cache ==="
+    echo "=== Cache de producción ==="
     php artisan config:cache || true
+    php artisan route:cache || true
+    php artisan view:cache || true
+    php artisan event:cache 2>/dev/null || true
 fi
 
 echo ""
