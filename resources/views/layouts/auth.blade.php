@@ -1,16 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Login') - Sistema de Gestión de Restaurante</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @php
-        // Obtener configuraciones visuales del restaurante (si hay un restaurante por defecto o usar valores por defecto)
-        // En el login no hay usuario autenticado, así que usamos valores por defecto o el primer restaurante
+        // Definir $colors y $fonts PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $restaurant = \App\Models\Restaurant::first();
         $settings = $restaurant?->settings ?? [];
         $colors = $settings['colors'] ?? [
@@ -22,8 +14,6 @@
             'primary' => 'Inter',
             'secondary' => 'Roboto',
         ];
-        
-        // Función para convertir hex a rgba con transparencia
         function hexToRgba($hex, $alpha = 0.1) {
             $hex = str_replace('#', '', $hex);
             $r = hexdec(substr($hex, 0, 2));
@@ -31,21 +21,22 @@
             $b = hexdec(substr($hex, 4, 2));
             return "rgba($r, $g, $b, $alpha)";
         }
-        
-        // Calcular versiones con transparencia
         $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
         $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
         $secondaryRgba10 = hexToRgba($colors['secondary'], 0.1);
         $secondaryRgba30 = hexToRgba($colors['secondary'], 0.3);
         $accentRgba10 = hexToRgba($colors['accent'], 0.1);
-        
-        // Cargar fuentes de Google Fonts
         $primaryFont = str_replace(' ', '+', $fonts['primary']);
         $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
-        
-        // Logo
         $logo = $settings['logo'] ?? null;
     @endphp
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Login') - Sistema de Gestión de Restaurante</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
     @if($primaryFont !== $secondaryFont)
