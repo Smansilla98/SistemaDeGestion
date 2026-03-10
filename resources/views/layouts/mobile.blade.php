@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Gestión Mobile')</title>
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
     @php
+        // Definir $colors PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $user = auth()->user();
         $role = $user?->role;
         $restaurant = $user ? \App\Models\Restaurant::find($user->restaurant_id) : null;
@@ -17,6 +13,11 @@
             'accent' => '#c94a2d',
         ];
     @endphp
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Gestión Mobile')</title>
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">

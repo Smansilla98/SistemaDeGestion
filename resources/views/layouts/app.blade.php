@@ -1,19 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <meta name="theme-color" content="{{ $colors['primary'] }}">
-    <title>@yield('title', 'Sistema de Gestión de Restaurante')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @php
-        // Obtener configuraciones visuales del restaurante
+        // Definir $colors y $fonts PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
         $settings = $restaurant?->settings ?? [];
         $colors = $settings['colors'] ?? [
@@ -25,8 +14,6 @@
             'primary' => 'Inter',
             'secondary' => 'Roboto',
         ];
-        
-        // Función para convertir hex a rgba con transparencia
         function hexToRgba($hex, $alpha = 0.1) {
             $hex = str_replace('#', '', $hex);
             $r = hexdec(substr($hex, 0, 2));
@@ -34,19 +21,25 @@
             $b = hexdec(substr($hex, 4, 2));
             return "rgba($r, $g, $b, $alpha)";
         }
-        
-        // Calcular versiones con transparencia
         $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
         $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
         $secondaryRgba10 = hexToRgba($colors['secondary'], 0.1);
         $secondaryRgba30 = hexToRgba($colors['secondary'], 0.3);
         $accentRgba10 = hexToRgba($colors['accent'], 0.1);
-        
-        // Cargar fuentes de Google Fonts
         $primaryFont = str_replace(' ', '+', $fonts['primary']);
         $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
     @endphp
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
+    <title>@yield('title', 'Sistema de Gestión de Restaurante')</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="{{ $colors['primary'] }}">
     @if($primaryFont !== $secondaryFont)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
