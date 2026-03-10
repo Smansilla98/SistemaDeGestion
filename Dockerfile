@@ -1,5 +1,6 @@
 # Dockerfile Unificado - Laravel con MySQL
-FROM php:8.2-cli
+# PHP 8.3 requerido por maennchen/zipstream-php 3.x (maatwebsite/excel)
+FROM php:8.3-cli
 
 # Variables de entorno
 ENV DEBIAN_FRONTEND=noninteractive
