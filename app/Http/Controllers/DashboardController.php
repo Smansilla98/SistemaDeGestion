@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Payment;
 use App\Models\TableSession;
+use App\Models\CashRegisterSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -29,12 +30,21 @@ class DashboardController extends Controller
         
         $totalTables = Table::where('restaurant_id', $restaurantId)->count();
 
+        // Ventas de la sesión de caja abierta actual (si hay)
+        $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('status', CashRegisterSession::STATUS_ABIERTA)
+            ->first();
+        $ventasSesion = $activeSession
+            ? (float) Payment::where('cash_register_session_id', $activeSession->id)->sum('amount')
+            : 0;
+
         $stats = [
             'ventas_hoy' => Order::where('restaurant_id', $restaurantId)
                 ->where('status', 'CERRADO')
                 ->whereDate('created_at', $today)
                 ->sum('total'),
-            
+            'ventas_sesion' => $ventasSesion,
+            'tiene_sesion_abierta' => (bool) $activeSession,
             'today_orders' => Order::where('restaurant_id', $restaurantId)
                 ->whereDate('created_at', $today)
                 ->count(),

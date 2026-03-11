@@ -353,11 +353,16 @@
                         <div class="mosaic-icon">
                             <i class="bi bi-currency-dollar"></i>
                         </div>
-                        <div class="mosaic-label">Ventas de Hoy</div>
-                        <div class="mosaic-value">${{ number_format($stats['ventas_hoy'], 0) }}</div>
+                        <div class="mosaic-label d-flex align-items-center justify-content-between gap-2">
+                            <span>Ventas de sesión</span>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-body border-0 shadow-none min-w-auto" style="font-size: 1rem; line-height: 1;" onclick="event.preventDefault(); event.stopPropagation(); toggleVentasSesion();" title="Mostrar/ocultar monto">
+                                <i class="bi bi-eye" id="ventasSesionToggleIcon" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="mosaic-value" id="ventasSesionValue">${{ number_format($stats['ventas_sesion'] ?? 0, 0) }}</div>
                         <div class="mosaic-trend mosaic-trend-up">
                             <i class="bi bi-graph-up-arrow"></i>
-                            <span>Hoy</span>
+                            <span>{{ ($stats['tiene_sesion_abierta'] ?? false) ? 'Sesión abierta' : 'Sin sesión' }}</span>
                         </div>
                     </div>
                 </a>
@@ -674,4 +679,33 @@
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    var STORAGE_KEY = 'dashboard_ventas_sesion_oculto';
+    var el = document.getElementById('ventasSesionValue');
+    var icon = document.getElementById('ventasSesionToggleIcon');
+    if (!el || !icon) return;
+
+    function aplicarEstado(oculto) {
+        el.style.visibility = oculto ? 'hidden' : 'visible';
+        el.style.opacity = oculto ? '0' : '1';
+        el.setAttribute('aria-hidden', oculto ? 'true' : 'false');
+        icon.classList.remove('bi-eye', 'bi-eye-slash');
+        icon.classList.add(oculto ? 'bi-eye-slash' : 'bi-eye');
+        icon.setAttribute('title', oculto ? 'Mostrar monto' : 'Ocultar monto');
+    }
+
+    window.toggleVentasSesion = function() {
+        var oculto = localStorage.getItem(STORAGE_KEY) === '1';
+        oculto = !oculto;
+        localStorage.setItem(STORAGE_KEY, oculto ? '1' : '0');
+        aplicarEstado(oculto);
+    };
+
+    aplicarEstado(localStorage.getItem(STORAGE_KEY) === '1');
+})();
+</script>
+@endpush
 @endsection
