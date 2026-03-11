@@ -934,7 +934,7 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
     if (successCount > 0) {
         // Imprimir automáticamente el ticket del último ítem añadido (como en el resto del circuito)
         if (lastAddedItemId) {
-            const printUrl = `/orders/{{ $order->id }}/print/item/${lastAddedItemId}/ticket`;
+            const printUrl = `/orders/{{ $order->id }}/print/item/${lastAddedItemId}/ticket/auto`;
             const printWin = window.open(printUrl, 'item_ticket_print', 'noopener,noreferrer,width=400,height=600');
             if (printWin) setTimeout(function() { try { printWin.focus(); } catch (e) {} }, 300);
         }

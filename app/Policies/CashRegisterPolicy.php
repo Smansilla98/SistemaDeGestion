@@ -16,7 +16,7 @@ class CashRegisterPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**
@@ -24,7 +24,7 @@ class CashRegisterPolicy
      */
     public function view(User $user, CashRegister $cashRegister): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
             && $user->restaurant_id === $cashRegister->restaurant_id;
     }
 
@@ -33,7 +33,7 @@ class CashRegisterPolicy
      */
     public function openSession(User $user, CashRegister $cashRegister): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
             && $user->restaurant_id === $cashRegister->restaurant_id;
     }
 
@@ -42,7 +42,7 @@ class CashRegisterPolicy
      */
     public function closeSession(User $user, CashRegisterSession $session): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
             && $user->restaurant_id === $session->cashRegister->restaurant_id;
     }
 
@@ -51,7 +51,7 @@ class CashRegisterPolicy
      */
     public function processPayment(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**

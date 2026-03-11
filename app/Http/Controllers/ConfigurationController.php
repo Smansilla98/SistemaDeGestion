@@ -14,7 +14,7 @@ class ConfigurationController extends Controller
     public function __construct(
         private DatabaseResetService $databaseResetService
     ) {
-        $this->middleware('role:ADMIN');
+        $this->middleware('role:ADMIN,GERENTE');
     }
 
     /**

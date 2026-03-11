@@ -20,6 +20,7 @@ class User extends Authenticatable
      */
     // Roles de usuario
     const ROLE_ADMIN = 'ADMIN';
+    const ROLE_GERENTE = 'GERENTE';  // Entre ADMIN y SUPERVISOR: mismo que admin excepto Cocina, Descuentos, Sectores, Categorías, Impresoras, Finanzas y reportes
     const ROLE_CAJERO = 'CAJERO';
     const ROLE_MOZO = 'MOZO';
     const ROLE_COCINA = 'COCINA';
@@ -109,6 +110,7 @@ class User extends Authenticatable
     {
         return [
             self::ROLE_ADMIN,
+            self::ROLE_GERENTE,
             self::ROLE_CAJERO,
             self::ROLE_MOZO,
             self::ROLE_COCINA,
@@ -147,6 +149,14 @@ class User extends Authenticatable
     public function isCajero(): bool
     {
         return $this->role === self::ROLE_CAJERO;
+    }
+
+    /**
+     * Verificar si el usuario es gerente (admin restringido: sin Cocina, Descuentos, Sectores, Categorías, Impresoras, Reportes)
+     */
+    public function isGerente(): bool
+    {
+        return $this->role === self::ROLE_GERENTE;
     }
 
     /**

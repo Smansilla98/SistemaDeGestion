@@ -15,7 +15,7 @@ class StockPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**
@@ -32,7 +32,7 @@ class StockPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return in_array($user->role, ['ADMIN', 'GERENTE']);
     }
 
     /**
@@ -40,7 +40,7 @@ class StockPolicy
      */
     public function update(User $user, Stock $stock): bool
     {
-        return $user->role === 'ADMIN' 
+        return in_array($user->role, ['ADMIN', 'GERENTE']) 
             && $user->restaurant_id === $stock->restaurant_id;
     }
 
@@ -49,7 +49,7 @@ class StockPolicy
      */
     public function delete(User $user, Stock $stock): bool
     {
-        return $user->role === 'ADMIN' 
+        return in_array($user->role, ['ADMIN', 'GERENTE']) 
             && $user->restaurant_id === $stock->restaurant_id;
     }
 }

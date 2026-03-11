@@ -197,5 +197,23 @@ class OrderPrintController extends Controller
 
         return $pdf->stream("ticket-{$order->number}-item-{$item->id}.pdf");
     }
+
+    /**
+     * Ticket de un ítem en HTML con impresión automática (para órdenes rápidas).
+     * Abre el diálogo de impresión del navegador y cierra la ventana después.
+     */
+    public function itemTicketAuto(Order $order, OrderItem $item)
+    {
+        if ($item->order_id !== $order->id) {
+            abort(404);
+        }
+        $item->load(['product.category', 'modifiers']);
+        $order->load(['table', 'user']);
+
+        return response()->view('orders.print-ticket-item-auto', [
+            'order' => $order,
+            'item' => $item,
+        ]);
+    }
 }
 

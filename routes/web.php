@@ -48,8 +48,8 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     */
     Route::prefix('tutorials')->name('tutorials.')->group(function () {
         Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\TutorialController::class, 'store'])->name('store')->middleware('role:ADMIN');
-        Route::delete('/{filename}', [\App\Http\Controllers\TutorialController::class, 'destroy'])->name('destroy')->middleware('role:ADMIN')->where('filename', '[^/]+');
+        Route::post('/', [\App\Http\Controllers\TutorialController::class, 'store'])->name('store')->middleware('role:ADMIN,GERENTE');
+        Route::delete('/{filename}', [\App\Http\Controllers\TutorialController::class, 'destroy'])->name('destroy')->middleware('role:ADMIN,GERENTE')->where('filename', '[^/]+');
     });
 
     /*
@@ -124,6 +124,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
             Route::get('/invoice', [\App\Http\Controllers\Order\OrderPrintController::class, 'invoice'])->name('invoice');
             Route::get('/ticket', [\App\Http\Controllers\Order\OrderPrintController::class, 'ticket'])->name('ticket');
             Route::get('/item/{item}/ticket', [\App\Http\Controllers\Order\OrderPrintController::class, 'itemTicket'])->name('item-ticket');
+            Route::get('/item/{item}/ticket/auto', [\App\Http\Controllers\Order\OrderPrintController::class, 'itemTicketAuto'])->name('item-ticket.auto');
         });
     });
 
@@ -183,7 +184,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Módulo de Caja
     |--------------------------------------------------------------------------
     */
-    Route::prefix('cash-register')->name('cash-register.')->middleware('role:CAJERO,ADMIN')->group(function () {
+    Route::prefix('cash-register')->name('cash-register.')->middleware('role:CAJERO,ADMIN,GERENTE')->group(function () {
         Route::get('/', [CashRegisterController::class, 'index'])->name('index');
         Route::post('/sessions', [CashRegisterController::class, 'openSession'])->name('open-session');
         Route::get('/sessions/{session}', [CashRegisterController::class, 'session'])->name('session');
@@ -206,7 +207,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Gestión de Productos
     |--------------------------------------------------------------------------
     */
-    Route::prefix('categories')->name('categories.')->group(function () {
+    Route::prefix('categories')->name('categories.')->middleware('role:ADMIN')->group(function () {
         Route::get('/', [\App\Http\Controllers\Category\CategoryController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Category\CategoryController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Category\CategoryController::class, 'store'])->name('store');
@@ -252,7 +253,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Control de Stock
     |--------------------------------------------------------------------------
     */
-    Route::prefix('stock')->name('stock.')->middleware('role:ADMIN,CAJERO')->group(function () {
+    Route::prefix('stock')->name('stock.')->middleware('role:ADMIN,GERENTE,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Stock\StockController::class, 'index'])->name('index');
         Route::get('/movements', [\App\Http\Controllers\Stock\StockController::class, 'movements'])->name('movements');
         Route::get('/movements/create', [\App\Http\Controllers\Stock\StockController::class, 'createMovement'])->name('create-movement');
@@ -305,7 +306,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Gestión de Usuarios (Solo ADMIN)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('users')->name('users.')->middleware('role:ADMIN')->group(function () {
+    Route::prefix('users')->name('users.')->middleware('role:ADMIN,GERENTE')->group(function () {
         Route::get('/', [\App\Http\Controllers\User\UserController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\User\UserController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\User\UserController::class, 'store'])->name('store');
@@ -350,7 +351,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Configuración (Solo ADMIN)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('configuration')->name('configuration.')->middleware('role:ADMIN')->group(function () {
+    Route::prefix('configuration')->name('configuration.')->middleware('role:ADMIN,GERENTE')->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');

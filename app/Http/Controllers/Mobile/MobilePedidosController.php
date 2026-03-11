@@ -16,9 +16,9 @@ class MobilePedidosController extends Controller
         $role = $user?->role;
         $restaurantId = $user->restaurant_id;
 
-        $tables = Table::where('restaurant_id', $restaurantId)
-            ->orderBy('number')
-            ->get();
+        $tables = Table::sortByNumericGroup(
+            Table::where('restaurant_id', $restaurantId)->get()
+        );
 
         $products = Product::where('restaurant_id', $restaurantId)
             ->where('is_active', true)

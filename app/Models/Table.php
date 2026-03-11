@@ -95,6 +95,32 @@ class Table extends Model
             self::STATUS_CERRADA,
         ];
     }
+
+    /**
+     * Parte numérica inicial del número de mesa (para orden 0-9, 10-19, etc.).
+     * Ej: "1" -> 1, "1-b" -> 1, "10" -> 10, "11 bis" -> 11.
+     */
+    public function getNumericSortKey(): int
+    {
+        $number = trim($this->number ?? '');
+        if ($number === '') {
+            return 0;
+        }
+        if (preg_match('/^(\d+)/', $number, $m)) {
+            return (int) $m[1];
+        }
+        return 0;
+    }
+
+    /**
+     * Ordenar una colección de mesas por grupos numéricos (0-9, 10-19, …) y luego por número completo.
+     */
+    public static function sortByNumericGroup($tables)
+    {
+        return $tables->sortBy(function (Table $table) {
+            return [$table->getNumericSortKey(), $table->number];
+        })->values();
+    }
 }
 
 

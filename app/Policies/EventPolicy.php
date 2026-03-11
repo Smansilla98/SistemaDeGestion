@@ -12,7 +12,7 @@ class EventPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -24,7 +24,7 @@ class EventPolicy
             return false;
         }
 
-        return in_array($user->role, ['ADMIN', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -56,7 +56,7 @@ class EventPolicy
             return false;
         }
 
-        return $user->role === 'ADMIN';
+        return in_array($user->role, ['ADMIN', 'GERENTE']);
     }
 }
 

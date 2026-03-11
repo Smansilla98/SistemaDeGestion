@@ -67,6 +67,11 @@ class TableController extends Controller
             }
         }
 
+        // Ordenar mesas por grupos numéricos (0-9, 10-19, etc.) y luego por número completo
+        foreach ($sectors as $sector) {
+            $sector->setRelation('tables', Table::sortByNumericGroup($sector->tables));
+        }
+
         // Obtener mozos disponibles para asignación
         $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
             ->where('role', 'MOZO')
@@ -92,7 +97,7 @@ class TableController extends Controller
     public function storeOrder(Request $request, Table $table)
     {
         // Solo ADMIN / MOZO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -253,10 +258,10 @@ class TableController extends Controller
                 ->whereNull('parent_id')
                 ->firstOrFail();
 
-            // Cargar mesas del sector principal
-            $tables = Table::where('sector_id', $sectorId)
-                ->orderBy('number')
-                ->get();
+            // Cargar mesas del sector principal y ordenar por grupos numéricos (0-9, 10-19, etc.)
+            $tables = Table::sortByNumericGroup(
+                Table::where('sector_id', $sectorId)->get()
+            );
             
             // Cargar subsectores con sus items ordenados
             $selectedSector->load(['subsectors' => function($query) {
@@ -291,7 +296,7 @@ class TableController extends Controller
     public function storeOrderFromSubsectorItem(Request $request, \App\Models\SubsectorItem $item)
     {
         // Solo ADMIN / MOZO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -506,7 +511,7 @@ class TableController extends Controller
     public function updateLayout(Request $request)
     {
         // Verificar permisos: solo ADMIN y MOZO pueden actualizar layouts
-        if (!in_array(auth()->user()->role, ['ADMIN', 'MOZO'])) {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
             abort(403, 'No tienes permisos para actualizar el layout');
         }
 

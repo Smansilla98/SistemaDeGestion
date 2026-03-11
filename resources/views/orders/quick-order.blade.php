@@ -298,7 +298,7 @@
 <script>
 let quickOrderItems = [];
 let quickOrderItemCounter = 0;
-const currentUserIsAdmin = @json(auth()->user()->role === 'ADMIN');
+const currentUserIsAdmin = @json(in_array(auth()->user()->role, ['ADMIN', 'GERENTE']));
 
 // Búsqueda de productos
 document.getElementById('quickOrderProductSearch')?.addEventListener('input', function() {
@@ -793,13 +793,20 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         }
         
         if (data.success) {
-            // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
-            if (data.kitchen_ticket_url && printWin && !printWin.closed) {
-                printWin.location.href = data.kitchen_ticket_url;
+            // Órdenes rápidas: imprimir desde /orders/{id}/print/item/{itemId}/ticket (un ticket por ítem)
+            const urls = data.item_ticket_urls && data.item_ticket_urls.length ? data.item_ticket_urls : (data.kitchen_ticket_url ? [data.kitchen_ticket_url] : []);
+            if (urls.length) {
+                if (printWin && !printWin.closed) {
+                    printWin.location.href = urls[0];
+                } else {
+                    window.open(urls[0], 'item_ticket_print', 'noopener,noreferrer,width=450,height=700');
+                }
+                for (let i = 1; i < urls.length; i++) {
+                    setTimeout(function() {
+                        window.open(urls[i], 'item_ticket_print_' + i, 'noopener,noreferrer,width=450,height=700');
+                    }, 400 * i);
+                }
                 setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
-            } else if (data.kitchen_ticket_url) {
-                var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-                if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
             }
 
             Swal.fire({
