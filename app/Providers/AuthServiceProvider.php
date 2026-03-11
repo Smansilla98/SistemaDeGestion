@@ -67,11 +67,11 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('manage-users', function ($user) {
-            return $user->role === 'ADMIN';
+            return in_array($user->role, ['ADMIN', 'GERENTE']);
         });
 
         Gate::define('manage-configuration', function ($user) {
-            return $user->role === 'ADMIN';
+            return in_array($user->role, ['ADMIN', 'GERENTE']);
         });
     }
 }

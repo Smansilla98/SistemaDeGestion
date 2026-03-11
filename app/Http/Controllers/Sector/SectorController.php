@@ -148,13 +148,12 @@ class SectorController extends Controller
         Gate::authorize('view', $sector);
 
         $sector->load([
-            'tables' => function($query) {
-                $query->orderBy('number');
-            },
+            'tables',
             'subsectors.items' => function($query) {
                 $query->orderBy('position');
             }
         ]);
+        $sector->setRelation('tables', \App\Models\Table::sortByNumericGroup($sector->tables));
 
         return view('sectors.show', compact('sector'));
     }

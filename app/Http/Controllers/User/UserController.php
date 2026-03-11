@@ -23,8 +23,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        // Solo ADMIN puede ver usuarios
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para ver usuarios');
         }
 
@@ -62,7 +61,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para crear usuarios');
         }
 
@@ -75,7 +74,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para crear usuarios');
         }
 
@@ -102,7 +101,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para ver usuarios');
         }
 
@@ -133,7 +132,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para editar usuarios');
         }
 
@@ -151,7 +150,7 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para editar usuarios');
         }
 
@@ -188,7 +187,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE'])) {
             abort(403, 'No tienes permisos para eliminar usuarios');
         }
 

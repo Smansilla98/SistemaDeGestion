@@ -116,9 +116,9 @@ class TomaPedido extends Component
 
     public function getMesasProperty()
     {
-        return Table::where('restaurant_id', Auth::user()->restaurant_id)
-            ->orderBy('number')
-            ->get();
+        return Table::sortByNumericGroup(
+            Table::where('restaurant_id', Auth::user()->restaurant_id)->get()
+        );
     }
 
     public function getProductosProperty()

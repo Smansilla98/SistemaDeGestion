@@ -114,12 +114,13 @@ class DashboardController extends Controller
             ->orderBy('total_sales', 'desc')
             ->get();
 
-        // MÓDULO 5: Mesas activas con información de sesión
-        $activeTables = Table::where('restaurant_id', $restaurantId)
-            ->where('status', 'OCUPADA')
-            ->with(['currentSession.waiter', 'sector'])
-            ->orderBy('number')
-            ->get();
+        // MÓDULO 5: Mesas activas con información de sesión (orden 0-9, 10-19, etc.)
+        $activeTables = Table::sortByNumericGroup(
+            Table::where('restaurant_id', $restaurantId)
+                ->where('status', 'OCUPADA')
+                ->with(['currentSession.waiter', 'sector'])
+                ->get()
+        );
 
         // MÓDULO 5: Ingresos del día por método de pago (sin caché para datos en tiempo real)
         $incomeByMethod = Payment::where('restaurant_id', $restaurantId)

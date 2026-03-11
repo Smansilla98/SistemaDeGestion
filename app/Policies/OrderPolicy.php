@@ -12,7 +12,7 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'MOZO', 'COCINA', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'COCINA', 'CAJERO']);
     }
 
     /**
@@ -25,7 +25,7 @@ class OrderPolicy
             return false;
         }
 
-        return in_array($user->role, ['ADMIN', 'MOZO', 'COCINA', 'CAJERO']);
+        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'COCINA', 'CAJERO']);
     }
 
     /**
@@ -48,7 +48,7 @@ class OrderPolicy
         // ADMIN y MOZO pueden cambiar el estado de pedidos en flujo activo
         // Flujo simplificado: ABIERTO -> EN_PREPARACION -> ENTREGADO
         // También pueden agregar items a pedidos que no estén cerrados
-        if (in_array($user->role, ['ADMIN', 'MOZO'])) {
+        if (in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
             // Permitir actualizar pedidos que no estén cerrados o cancelados
             // Esto incluye agregar items y cerrar pedidos
             return !in_array($order->status, ['CERRADO', 'CANCELADO']);
@@ -74,7 +74,7 @@ class OrderPolicy
             return false;
         }
 
-        if ($user->role === 'ADMIN') {
+        if (in_array($user->role, ['ADMIN', 'GERENTE'])) {
             return true;
         }
 

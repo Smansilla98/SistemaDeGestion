@@ -79,6 +79,7 @@
                             @php
                                 $roleColors = [
                                     'ADMIN' => 'danger',
+                                    'GERENTE' => 'info',
                                     'SUPERVISOR' => 'warning',
                                     'ENCARGADO' => 'info',
                                     'MOZO' => 'primary',

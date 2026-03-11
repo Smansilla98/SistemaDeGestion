@@ -86,22 +86,29 @@ class OrderController extends Controller
         }
 
         // Búsqueda por texto (número de pedido, nombre de cliente, número de mesa)
-        if ($request->has('search') && $request->search !== '') {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('number', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('customer_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhereHas('table', function($tableQuery) use ($searchTerm) {
-                      $tableQuery->where('number', 'LIKE', "%{$searchTerm}%");
-                  })
-                  ->orWhereHas('user', function($userQuery) use ($searchTerm) {
-                      $userQuery->where('name', 'LIKE', "%{$searchTerm}%");
-                  });
+        if ($request->filled('search')) {
+            $searchTerm = trim($request->search);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('number', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('customer_name', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhereHas('table', function ($tableQuery) use ($searchTerm) {
+                        $tableQuery->where('number', 'LIKE', '%' . $searchTerm . '%');
+                    })
+                    ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                        $userQuery->where('name', 'LIKE', '%' . $searchTerm . '%');
+                    });
+                // Si el término es numérico, coincidir también por la parte numérica del pedido (ej: "048" con "ORD-2026-048" o "48")
+                if (preg_match('/^\d+$/', $searchTerm)) {
+                    $numericValue = (int) $searchTerm;
+                    $q->orWhereRaw("CAST(SUBSTRING_INDEX(number, '-', -1) AS UNSIGNED) = ?", [$numericValue])
+                        ->orWhere('number', $searchTerm);
+                }
             });
         }
 
         $orders = $query->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('orders.index', compact('orders'));
     }
@@ -430,7 +437,7 @@ class OrderController extends Controller
     {
         Gate::authorize('delete', $order);
 
-        $isAdmin = auth()->user()->role === 'ADMIN';
+        $isAdmin = in_array(auth()->user()->role, ['ADMIN', 'GERENTE']);
 
         if (!$isAdmin) {
             if (!in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
@@ -688,12 +695,16 @@ class OrderController extends Controller
                 Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
             }
 
+            // Para órdenes rápidas: imprimir automáticamente desde /orders/{id}/print/item/{itemId}/ticket/auto
+            $itemTicketUrls = $order->items->map(fn ($item) => route('orders.print.item-ticket.auto', [$order, $item]))->values()->all();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
-                'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
+                'kitchen_ticket_url' => $itemTicketUrls ? $itemTicketUrls[0] : route('orders.print.kitchen.auto', $order),
+                'item_ticket_urls' => $itemTicketUrls,
             ]);
         } catch (\Exception $e) {
             Log::error('Error al crear pedido rápido: ' . $e->getMessage());
