@@ -642,7 +642,7 @@ class OrderController extends Controller
         }
 
         $validated = $request->validate([
-            'customer_name' => 'required|string|min:2|max:255',
+            'customer_name' => 'nullable|string|max:255',
             'observations' => 'nullable|string|max:500',
             'send_to_kitchen' => 'nullable|boolean',
             'items' => 'required|array|min:1',
@@ -651,6 +651,10 @@ class OrderController extends Controller
             'items.*.observations' => 'nullable|string|max:500',
         ]);
 
+        $customerName = !empty(trim((string) ($validated['customer_name'] ?? '')))
+            ? trim($validated['customer_name'])
+            : 'Pedido en la barra';
+
         try {
             $orderData = [
                 'restaurant_id' => $restaurantId,
@@ -658,7 +662,7 @@ class OrderController extends Controller
                 'table_id' => null,
                 'subsector_item_id' => null,
                 'table_session_id' => null,
-                'customer_name' => $validated['customer_name'],
+                'customer_name' => $customerName,
                 'observations' => $validated['observations'] ?? null,
                 'items' => $validated['items'],
             ];
