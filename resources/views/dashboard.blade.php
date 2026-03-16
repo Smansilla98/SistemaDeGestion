@@ -278,6 +278,36 @@
         .mosaic-value { font-size: 1.5rem; }
         .mosaic-label { font-size: 0.75rem; }
     }
+
+    /* Botones de acceso rápido: grandes y claros para uso sencillo */
+    .btn-access-quick {
+        background: white;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 16px;
+        color: #1a202c;
+        font-size: 1rem;
+        min-height: 100px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .btn-access-quick:hover {
+        background: linear-gradient(135deg, #1e8081, #22565e);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(30, 128, 129, 0.35);
+    }
+    .btn-access-quick i {
+        color: #1e8081;
+        transition: color 0.25s ease;
+    }
+    .btn-access-quick:hover i {
+        color: white;
+    }
+    @media (max-width: 768px) {
+        .btn-access-quick { min-height: 88px; font-size: 0.95rem; padding: 1rem !important; }
+        .btn-access-quick i { font-size: 1.75rem !important; }
+    }
 </style>
 @endpush
 
@@ -297,35 +327,89 @@
             </div>
         </div>
 
+        @php
+            $perm = auth()->check() ? app(\App\Services\PermissionService::class) : null;
+            $navUser = auth()->user();
+            $canTables = $perm && $perm->allowed($navUser, 'tables.view');
+            $canOrders = $perm && $perm->allowed($navUser, 'orders.view');
+            $canKitchen = $perm && $perm->allowed($navUser, 'kitchen.view');
+            $canCashRegister = $perm && $perm->allowed($navUser, 'cash-register.view');
+            $canReports = $perm && $perm->allowed($navUser, 'reports.view');
+            $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
+        @endphp
+
+        <!-- Acceso rápido (botones grandes para uso sencillo) -->
+        @if(auth()->check())
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <h2 class="text-white mb-3" style="font-size: 1.25rem; font-weight: 600;">
+                    <i class="bi bi-lightning-charge"></i> Acceso rápido
+                </h2>
+            </div>
+            @if($canTables)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('tables.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-table d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Mesas</span>
+                </a>
+            </div>
+            @endif
+            @if($canOrders)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('orders.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-receipt d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Pedidos</span>
+                </a>
+            </div>
+            @endif
+            @if($canKitchen)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('kitchen.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-egg-fried d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Cocina</span>
+                </a>
+            </div>
+            @endif
+            @if($canCashRegister)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('cash-register.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-cash-coin d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Caja</span>
+                </a>
+            </div>
+            @endif
+            @if($canReports)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('reports.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-graph-up d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Reportes</span>
+                </a>
+            </div>
+            @endif
+            @if($canConfiguration)
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{{ route('configuration.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
+                    <i class="bi bi-gear d-block mb-2" style="font-size: 2rem;"></i>
+                    <span class="d-block fw-bold">Configuración</span>
+                </a>
+            </div>
+            @endif
+        </div>
+        @endif
+
         <!-- Stats Cards -->
         <div class="row g-4 mb-4">
             <div class="col-md-6 col-lg-3">
-                <a href="{{ url('/tables') }}" class="text-decoration-none text-body d-block">
+                <a href="{{ route('tables.index') }}" class="text-decoration-none text-body d-block">
                     <div class="mosaic-card mosaic-card-primary">
                         <div class="mosaic-icon">
                             <i class="bi bi-table"></i>
                         </div>
-                        <div class="mosaic-label">Mesas Ocupadas</div>
-                        <div class="mosaic-value">{{ $stats['mesas_ocupadas'] }}</div>
+                        <div class="mosaic-label">Mesas disponibles</div>
+                        <div class="mosaic-value">{{ $stats['mesas_libres'] }} <span class="fs-5 fw-normal text-muted">de {{ $stats['total_tables'] }}</span></div>
                         <div class="mosaic-trend mosaic-trend-up">
-                            <i class="bi bi-arrow-up"></i>
-                            <span>Activas</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <a href="{{ url('/tables') }}" class="text-decoration-none text-body d-block">
-                    <div class="mosaic-card mosaic-card-success">
-                        <div class="mosaic-icon">
                             <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="mosaic-label">Mesas Libres</div>
-                        <div class="mosaic-value">{{ $stats['mesas_libres'] }}</div>
-                        <div class="mosaic-trend mosaic-trend-up">
-                            <i class="bi bi-check"></i>
-                            <span>Disponibles</span>
+                            <span>{{ $stats['mesas_ocupadas'] }} ocupadas</span>
                         </div>
                     </div>
                 </a>

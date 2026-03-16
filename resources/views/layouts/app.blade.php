@@ -844,7 +844,36 @@
         </div>
 
         <nav class="nova-sidebar-nav">
+            @php
+                $perm = auth()->check() ? app(\App\Services\PermissionService::class) : null;
+                $navUser = auth()->user();
+                $canDashboard = $perm && $perm->allowed($navUser, 'dashboard.view');
+                $canTables = $perm && $perm->allowed($navUser, 'tables.view');
+                $canOrders = $perm && $perm->allowed($navUser, 'orders.view');
+                $canKitchen = $perm && $perm->allowed($navUser, 'kitchen.view');
+                $canCashRegister = $perm && $perm->allowed($navUser, 'cash-register.view');
+                $canDiscountTypes = $perm && $perm->allowed($navUser, 'discount-types.view');
+                $canSectors = $perm && $perm->allowed($navUser, 'sectors.view');
+                $canCategories = $perm && $perm->allowed($navUser, 'categories.view');
+                $canProducts = $perm && $perm->allowed($navUser, 'products.view');
+                $canStock = $perm && $perm->allowed($navUser, 'stock.view');
+                $canUsers = $perm && $perm->allowed($navUser, 'users.view');
+                $canPrinters = $perm && $perm->allowed($navUser, 'printers.view');
+                $canEvents = $perm && $perm->allowed($navUser, 'events.view');
+                $canRecurring = $perm && $perm->allowed($navUser, 'recurring-activities.view');
+                $canFixedExpenses = $perm && $perm->allowed($navUser, 'fixed-expenses.view');
+                $canReports = $perm && $perm->allowed($navUser, 'reports.view');
+                $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
+                $canTutorials = $perm && $perm->allowed($navUser, 'tutorials.view');
+                $showOperaciones = $canDashboard || $canTables || $canOrders || $canKitchen || $canCashRegister || $canDiscountTypes;
+                $showGestion = $canSectors || $canCategories || $canProducts || $canStock || $canUsers || $canPrinters;
+                $showPlanificacion = $canEvents || $canRecurring;
+                $showFinanzas = $canFixedExpenses || $canReports;
+            @endphp
+
+            @if(auth()->check())
             <!-- Grupo 1: Operaciones Diarias -->
+            @if($showOperaciones)
             <div class="nova-nav-group">
                 <div class="nova-nav-group-header {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'active' : '' }}" onclick="toggleNavGroup('operaciones-diarias')">
                     <i class="bi bi-calendar-day"></i>
@@ -852,33 +881,37 @@
                     <i class="bi bi-chevron-down ms-auto" id="operaciones-diarias-icon"></i>
                 </div>
                 <div class="nova-nav-group-items {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'show' : '' }}" id="operaciones-diarias-items">
+                    @if($canDashboard)
                     <a href="{{ route('dashboard') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <i class="bi bi-house"></i>
                         <span>Página Principal</span>
                     </a>
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO']))
+                    @endif
+                    @if($canTables)
                     <a href="{{ route('tables.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('tables.*') ? 'active' : '' }}">
                         <i class="bi bi-table"></i>
                         <span>Mesas</span>
                     </a>
+                    @endif
+                    @if($canOrders)
                     <a href="{{ route('orders.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('orders.*') ? 'active' : '' }}">
                         <i class="bi bi-receipt"></i>
                         <span>Pedidos</span>
                     </a>
                     @endif
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'COCINA']))
+                    @if($canKitchen)
                     <a href="{{ route('kitchen.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
                         <i class="bi bi-egg-fried"></i>
                         <span>Cocina</span>
                     </a>
                     @endif
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'CAJERO']))
+                    @if($canCashRegister)
                     <a href="{{ route('cash-register.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-coin"></i>
                         <span>Caja</span>
                     </a>
                     @endif
-                    @if(auth()->check() && auth()->user()->role === 'ADMIN')
+                    @if($canDiscountTypes)
                     <a href="{{ route('discount-types.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
                         <i class="bi bi-percent"></i>
                         <span>Descuentos</span>
@@ -886,9 +919,10 @@
                     @endif
                 </div>
             </div>
+            @endif
 
-            @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE']))
-            <!-- Grupo 2: Gestión del Restaurante (GERENTE sin Sectores, Categorías, Impresoras) -->
+            @if($showGestion)
+            <!-- Grupo 2: Gestión del Restaurante -->
             <div class="nova-nav-group">
                 <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'active' : '' }}" onclick="toggleNavGroup('gestion-restaurante')">
                     <i class="bi bi-gear-wide-connected"></i>
@@ -896,29 +930,37 @@
                     <i class="bi bi-chevron-down ms-auto" id="gestion-restaurante-icon"></i>
                 </div>
                 <div class="nova-nav-group-items {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'show' : '' }}" id="gestion-restaurante-items">
-                    @if(auth()->user()->role === 'ADMIN')
+                    @if($canSectors)
                     <a href="{{ route('sectors.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
                         <i class="bi bi-building"></i>
                         <span>Sectores</span>
                     </a>
+                    @endif
+                    @if($canCategories)
                     <a href="{{ route('categories.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                         <i class="bi bi-folder"></i>
                         <span>Categorías</span>
                     </a>
                     @endif
+                    @if($canProducts)
                     <a href="{{ route('products.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('products.*') ? 'active' : '' }}">
                         <i class="bi bi-cup-straw"></i>
                         <span>Productos</span>
                     </a>
+                    @endif
+                    @if($canStock)
                     <a href="{{ route('stock.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('stock.*') ? 'active' : '' }}">
                         <i class="bi bi-inboxes"></i>
                         <span>Stock</span>
                     </a>
+                    @endif
+                    @if($canUsers)
                     <a href="{{ route('users.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('users.*') ? 'active' : '' }}">
                         <i class="bi bi-people"></i>
                         <span>Usuarios</span>
                     </a>
-                    @if(auth()->user()->role === 'ADMIN')
+                    @endif
+                    @if($canPrinters)
                     <a href="{{ route('printers.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('printers.*') ? 'active' : '' }}">
                         <i class="bi bi-printer"></i>
                         <span>Impresoras</span>
@@ -926,7 +968,9 @@
                     @endif
                 </div>
             </div>
+            @endif
 
+            @if($showPlanificacion)
             <!-- Grupo 3: Planificación y Eventos -->
             <div class="nova-nav-group">
                 <div class="nova-nav-group-header {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'active' : '' }}" onclick="toggleNavGroup('planificacion')">
@@ -935,11 +979,13 @@
                     <i class="bi bi-chevron-down ms-auto" id="planificacion-icon"></i>
                 </div>
                 <div class="nova-nav-group-items {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'show' : '' }}" id="planificacion-items">
+                    @if($canEvents)
                     <a href="{{ route('events.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('events.*') ? 'active' : '' }}">
                         <i class="bi bi-calendar-event"></i>
                         <span>Eventos</span>
                     </a>
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']))
+                    @endif
+                    @if($canRecurring)
                     <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
                         <i class="bi bi-calendar-repeat"></i>
                         <span>Actividades Recurrentes</span>
@@ -947,9 +993,10 @@
                     @endif
                 </div>
             </div>
+            @endif
 
-            @if(in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
-            <!-- Grupo 4: Finanzas y Reportes (solo ADMIN y CAJERO; GERENTE no tiene acceso) -->
+            @if($showFinanzas)
+            <!-- Grupo 4: Finanzas y Reportes -->
             <div class="nova-nav-group">
                 <div class="nova-nav-group-header {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'active' : '' }}" onclick="toggleNavGroup('finanzas')">
                     <i class="bi bi-cash-stack"></i>
@@ -957,33 +1004,39 @@
                     <i class="bi bi-chevron-down ms-auto" id="finanzas-icon"></i>
                 </div>
                 <div class="nova-nav-group-items {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'show' : '' }}" id="finanzas-items">
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'CAJERO']))
+                    @if($canFixedExpenses)
                     <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-stack"></i>
                         <span>Gastos Fijos</span>
                     </a>
                     @endif
+                    @if($canReports)
                     <a href="{{ route('reports.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                         <i class="bi bi-graph-up"></i>
                         <span>Reportes</span>
                     </a>
+                    @endif
                 </div>
             </div>
             @endif
 
-            <!-- Configuración (sin grupo, siempre visible) -->
+            @if($canConfiguration)
+            <!-- Configuración -->
             <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
                 <span>Configuración</span>
             </a>
+            @endif
 
+            @if($canTutorials)
             <!-- Tutoriales -->
             <a href="{{ route('tutorials.index') }}" class="nova-nav-item {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark"></i>
                 <span>Tutoriales</span>
             </a>
+            @endif
 
-            @if(auth()->user()->role === 'ADMIN')
+            @if($navUser && $navUser->role === 'ADMIN')
             <!-- Permisos (solo ADMIN) -->
             <a href="{{ route('permissions.index') }}" class="nova-nav-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
                 <i class="bi bi-shield-lock"></i>
