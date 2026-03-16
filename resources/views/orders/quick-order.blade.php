@@ -92,38 +92,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Campo de nombre del cliente con selector -->
-                    <div class="mb-4">
-                        <label for="quickOrderCustomerSelect" class="form-label fw-bold">Nombre del Cliente *</label>
-                        <div class="row g-2">
-                            <div class="col-md-8">
-                                <select class="form-select form-select-lg" id="quickOrderCustomerSelect" required>
-                                    <option value="">-- Selecciona un cliente existente o crea uno nuevo --</option>
-                                    <option value="__NEW__" data-is-new="true">➕ Crear nuevo cliente</option>
-                                    <!-- Se llenará dinámicamente con clientes existentes -->
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="text" class="form-control form-select-lg" id="quickOrderCustomerName" 
-                                       placeholder="Nombre del cliente" 
-                                       style="display: none;" required>
-                            </div>
-                        </div>
-                        <input type="hidden" id="selectedOrderId" value="">
-                        <div id="selectedOrderInfo" class="mt-3" style="display: none;">
-                            <div class="alert alert-info mb-0 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-info-circle"></i> 
-                                    <strong>Pedido seleccionado:</strong> <span id="selectedOrderNumber"></span> - 
-                                    Total: $<span id="selectedOrderTotal"></span>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearSelectionBtn">
-                                    <i class="bi bi-x"></i> Limpiar selección
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="row g-4">
                         <div class="col-lg-8">
                             <div class="card border-0 shadow-sm">
@@ -428,192 +396,15 @@ function removeQuickOrderItem(index) {
     renderQuickOrderItems();
 }
 
-// Validar nombre del cliente
-// Variables para manejar pedidos existentes
-let selectedOrderId = null;
-let availableCustomers = [];
-
-// Cargar lista de clientes cuando se abre el modal
-document.getElementById('newQuickOrderModal')?.addEventListener('show.bs.modal', async function() {
-    await loadCustomersList();
-});
-
-// Cargar lista de clientes disponibles
-async function loadCustomersList() {
-    try {
-        const response = await fetch('{{ route("orders.quick.api.customers") }}', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            availableCustomers = data.customers;
-            const select = document.getElementById('quickOrderCustomerSelect');
-            
-            // Limpiar opciones existentes (excepto la primera y la de "Nuevo")
-            while (select.options.length > 2) {
-                select.remove(1);
-            }
-            
-            // Agregar clientes existentes
-            data.customers.forEach(customer => {
-                const option = document.createElement('option');
-                option.value = customer.customer_name;
-                option.textContent = `${customer.customer_name} (Pedido: ${customer.number} - Total: $${parseFloat(customer.total).toFixed(2)})`;
-                option.dataset.orderId = customer.id;
-                option.dataset.orderNumber = customer.number;
-                option.dataset.orderTotal = customer.total;
-                select.insertBefore(option, select.lastElementChild);
-            });
-        }
-    } catch (error) {
-        console.error('Error al cargar clientes:', error);
-    }
-}
-
-// Manejar selección de cliente del select
-document.getElementById('quickOrderCustomerSelect')?.addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    
-    if (selectedOption.value === '__NEW__') {
-        // Crear nuevo cliente
-        selectedOrderId = null;
-        document.getElementById('selectedOrderId').value = '';
-        document.getElementById('quickOrderCustomerName').style.display = 'block';
-        document.getElementById('quickOrderCustomerName').value = '';
-        document.getElementById('quickOrderCustomerName').focus();
-        document.getElementById('selectedOrderInfo').style.display = 'none';
-        quickOrderItems = [];
-        renderQuickOrderItems();
-    } else if (selectedOption.dataset.orderId) {
-        // Cliente existente seleccionado
-        selectedOrderId = selectedOption.dataset.orderId;
-        document.getElementById('selectedOrderId').value = selectedOrderId;
-        document.getElementById('quickOrderCustomerName').style.display = 'none';
-        document.getElementById('quickOrderCustomerName').value = selectedOption.value;
-        document.getElementById('selectedOrderNumber').textContent = selectedOption.dataset.orderNumber;
-        document.getElementById('selectedOrderTotal').textContent = parseFloat(selectedOption.dataset.orderTotal).toFixed(2);
-        document.getElementById('selectedOrderInfo').style.display = 'block';
-        
-        // Cargar items del pedido existente
-        loadExistingOrderItems(selectedOrderId);
-    } else {
-        // Opción por defecto
-        selectedOrderId = null;
-        document.getElementById('selectedOrderId').value = '';
-        document.getElementById('quickOrderCustomerName').style.display = 'none';
-        document.getElementById('selectedOrderInfo').style.display = 'none';
-    }
-    
-    validateQuickOrderForm();
-});
-
-// Validar cuando se escribe en el campo de nombre nuevo
-document.getElementById('quickOrderCustomerName')?.addEventListener('input', function() {
-    validateQuickOrderForm();
-});
-
-// Botón para limpiar selección
-document.getElementById('clearSelectionBtn')?.addEventListener('click', function() {
-    selectedOrderId = null;
-    document.getElementById('selectedOrderId').value = '';
-    document.getElementById('quickOrderCustomerSelect').value = '';
-    document.getElementById('quickOrderCustomerName').style.display = 'none';
-    document.getElementById('quickOrderCustomerName').value = '';
-    document.getElementById('selectedOrderInfo').style.display = 'none';
-    quickOrderItems = [];
-    renderQuickOrderItems();
-    validateQuickOrderForm();
-});
-
-// Función para validar el formulario
+// Función para validar el formulario (solo items; sin selector de cliente)
 function validateQuickOrderForm() {
     const confirmBtn = document.getElementById('quickOrderConfirmBtn');
-    const customerName = document.getElementById('quickOrderCustomerName').value.trim();
-    const customerSelect = document.getElementById('quickOrderCustomerSelect');
-    const hasCustomer = customerSelect.value === '__NEW__' ? customerName.length >= 2 : customerSelect.value !== '';
-    
-    confirmBtn.disabled = quickOrderItems.length === 0 || !hasCustomer;
-}
-
-// Cargar items de un pedido existente
-async function loadExistingOrderItems(orderId) {
-    try {
-        const response = await fetch(`/orders/quick/api/${orderId}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.order) {
-            // Cargar items existentes
-            quickOrderItems = data.order.items.map(item => ({
-                product_id: item.product_id,
-                name: item.product_name,
-                price: parseFloat(item.unit_price) || 0,
-                quantity: parseInt(item.quantity, 10) || 1,
-                observations: item.observations || '',
-                modifiers: item.modifiers || []
-            }));
-            
-            // Cargar observaciones del pedido
-            if (data.order.observations) {
-                document.getElementById('quickOrderObservations').value = data.order.observations;
-            }
-            
-            renderQuickOrderItems();
-            const confirmBtn = document.getElementById('quickOrderConfirmBtn');
-            const customerName = document.getElementById('quickOrderCustomerName').value.trim();
-            confirmBtn.disabled = quickOrderItems.length === 0 || customerName.length < 2;
-        }
-    } catch (error) {
-        console.error('Error al cargar items del pedido:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudieron cargar los items del pedido seleccionado',
-            confirmButtonColor: '#dc3545'
-        });
-    }
+    confirmBtn.disabled = quickOrderItems.length === 0;
 }
 
 // Enviar formulario
 document.getElementById('newQuickOrderForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
-    // Obtener nombre del cliente (del select o del input)
-    const customerSelect = document.getElementById('quickOrderCustomerSelect');
-    let customerName = '';
-    
-    if (customerSelect.value === '__NEW__') {
-        customerName = document.getElementById('quickOrderCustomerName').value.trim();
-        if (!customerName || customerName.length < 2) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Nombre requerido',
-                text: 'Debes ingresar el nombre del cliente',
-                confirmButtonColor: '#ffc107'
-            });
-            return;
-        }
-    } else if (customerSelect.value) {
-        customerName = customerSelect.value;
-    } else {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Cliente requerido',
-            text: 'Debes seleccionar un cliente existente o crear uno nuevo',
-            confirmButtonColor: '#ffc107'
-        });
-        return;
-    }
     
     if (quickOrderItems.length === 0) {
         Swal.fire({
@@ -625,126 +416,15 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         return;
     }
     
-    // Preparar datos
     const items = quickOrderItems.map(item => ({
         product_id: item.product_id,
-        name: item.name, // Mantener el nombre para mensajes de error
+        name: item.name,
         quantity: item.quantity,
         observations: item.observations || ''
     }));
     
-    // Si hay un pedido seleccionado, agregar items a ese pedido en lugar de crear uno nuevo
-    const orderId = document.getElementById('selectedOrderId').value;
-    
-    if (orderId) {
-        // Agregar items al pedido existente uno por uno
-        Swal.fire({
-            title: 'Agregando items...',
-            text: 'Por favor espera',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        
-        let successCount = 0;
-        let errorMessages = [];
-        
-        for (const item of items) {
-            try {
-                const response = await fetch(`/orders/${orderId}/items`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        product_id: item.product_id,
-                        quantity: item.quantity,
-                        observations: item.observations || ''
-                    })
-                });
-                
-                const contentType = response.headers.get('content-type');
-                let data;
-                
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    try {
-                        data = JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Respuesta no válida del servidor');
-                    }
-                }
-                
-                if (data.success || response.ok) {
-                    successCount++;
-                } else {
-                    errorMessages.push(`${item.name}: ${data.message || 'Error'}`);
-                }
-            } catch (error) {
-                console.error('Error al agregar item:', error);
-                errorMessages.push(`${item.name}: ${error.message || 'Error de conexión'}`);
-            }
-        }
-        
-        if (successCount > 0) {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Items agregados!',
-                html: `
-                    <p>Se agregaron ${successCount} item(s) al pedido existente.</p>
-                    ${errorMessages.length > 0 ? `<p class="text-danger small">Errores: ${errorMessages.join(', ')}</p>` : ''}
-                `,
-                confirmButtonColor: '#1e8081',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            // Cerrar modal y limpiar
-            const modal = bootstrap.Modal.getInstance(document.getElementById('newQuickOrderModal'));
-            if (modal) {
-                modal.hide();
-            }
-            
-            // Limpiar formulario
-            quickOrderItems = [];
-            selectedOrderId = null;
-            document.getElementById('quickOrderCustomerSelect').value = '';
-            document.getElementById('quickOrderCustomerName').style.display = 'none';
-            document.getElementById('quickOrderCustomerName').value = '';
-            document.getElementById('selectedOrderId').value = '';
-            document.getElementById('quickOrderObservations').value = '';
-            document.getElementById('quickOrderProductSearch').value = '';
-            document.getElementById('selectedOrderInfo').style.display = 'none';
-            renderQuickOrderItems();
-            filterQuickOrderProducts('');
-            
-            // Actualizar lista de pedidos
-            setTimeout(() => {
-                loadQuickOrders(false);
-            }, 500);
-            
-            return; // Salir de la función, no crear nuevo pedido
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                html: `<p>No se pudieron agregar los items:</p><p class="text-danger small">${errorMessages.join(', ')}</p>`,
-                confirmButtonColor: '#dc3545'
-            });
-            return;
-        }
-    }
-    
-    // Si no hay pedido seleccionado, crear uno nuevo (código original)
     const formData = {
-        customer_name: customerName,
+        customer_name: '',
         observations: document.getElementById('quickOrderObservations').value,
         send_to_kitchen: document.getElementById('quickOrderSendToKitchen').checked,
         items: items
@@ -826,7 +506,6 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             
             // Limpiar formulario
             quickOrderItems = [];
-            document.getElementById('quickOrderCustomerName').value = '';
             document.getElementById('quickOrderObservations').value = '';
             document.getElementById('quickOrderProductSearch').value = '';
             renderQuickOrderItems();
@@ -868,14 +547,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
 document.getElementById('newQuickOrderModal')?.addEventListener('hidden.bs.modal', function() {
     quickOrderItems = [];
     quickOrderItemCounter = 0;
-    selectedOrderId = null;
-    document.getElementById('quickOrderCustomerSelect').value = '';
-    document.getElementById('quickOrderCustomerName').style.display = 'none';
-    document.getElementById('quickOrderCustomerName').value = '';
-    document.getElementById('selectedOrderId').value = '';
     document.getElementById('quickOrderObservations').value = '';
     document.getElementById('quickOrderProductSearch').value = '';
-    document.getElementById('selectedOrderInfo').style.display = 'none';
     renderQuickOrderItems();
     filterQuickOrderProducts('');
 });
