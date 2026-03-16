@@ -104,6 +104,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Permisos específicos del usuario (sobreescriben los del rol)
+     */
+    public function userPermissions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserPermission::class);
+    }
+
+    /**
      * Obtener todos los roles disponibles
      */
     public static function getRoles(): array

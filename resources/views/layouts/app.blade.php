@@ -982,6 +982,14 @@
                 <i class="bi bi-journal-bookmark"></i>
                 <span>Tutoriales</span>
             </a>
+
+            @if(auth()->user()->role === 'ADMIN')
+            <!-- Permisos (solo ADMIN) -->
+            <a href="{{ route('permissions.index') }}" class="nova-nav-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-lock"></i>
+                <span>Permisos</span>
+            </a>
+            @endif
             @endif
         </nav>
 

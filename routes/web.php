@@ -356,4 +356,16 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permisos por rol y por usuario (solo ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('permissions')->name('permissions.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PermissionController::class, 'index'])->name('index');
+        Route::post('/role', [\App\Http\Controllers\PermissionController::class, 'updateRole'])->name('update-role');
+        Route::post('/user', [\App\Http\Controllers\PermissionController::class, 'updateUser'])->name('update-user');
+        Route::get('/user/{user}/matrix', [\App\Http\Controllers\PermissionController::class, 'userMatrix'])->name('user-matrix');
+    });
 });
