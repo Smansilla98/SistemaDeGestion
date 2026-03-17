@@ -338,7 +338,7 @@
             $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
         @endphp
 
-        <!-- Acceso rápido (botones grandes para uso sencillo) -->
+        <!-- Acceso rápido (botones grandes para uso sencillo) 
         @if(auth()->check())
         <div class="row g-3 mb-4">
             <div class="col-12">
@@ -395,7 +395,7 @@
             </div>
             @endif
         </div>
-        @endif
+        @endif-->
 
         <!-- Stats Cards -->
         <div class="row g-4 mb-4">
