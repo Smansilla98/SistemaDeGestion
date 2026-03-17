@@ -254,6 +254,77 @@
     </div>
 </div>
 
+<!-- Detalle de ventas: qué se vendió por mesa/pedido (todos los productos, con o sin stock) -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Detalle de ventas de la sesión</h5>
+            </div>
+            <div class="card-body">
+                @if(isset($salesDetail) && $salesDetail->count() > 0)
+                    @foreach($salesDetail as $order)
+                        <div class="border rounded mb-4 p-3">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                <div>
+                                    <strong>Pedido {{ $order->number }}</strong>
+                                    —
+                                    @if($order->table)
+                                        <span class="badge bg-primary">Mesa {{ $order->table->number }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">Pedido rápido</span>
+                                        @if($order->customer_name)
+                                            <span class="text-muted">{{ $order->customer_name }}</span>
+                                        @endif
+                                    @endif
+                                    @if($order->user)
+                                        <span class="text-muted small">· Mozo: {{ $order->user->name }}</span>
+                                    @endif
+                                </div>
+                                <div>
+                                    <strong>Total: ${{ number_format($order->total, 2) }}</strong>
+                                    <span class="text-muted small"> · {{ $order->created_at->format('d/m H:i') }}</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th class="text-center">Cant.</th>
+                                            <th class="text-end">P. unit.</th>
+                                            <th class="text-end">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($order->items as $item)
+                                        <tr>
+                                            <td>
+                                                {{ $item->product->name ?? 'Producto #' . $item->product_id }}
+                                                @if($item->product && $item->product->has_stock)
+                                                    <span class="badge bg-light text-dark border ms-1" title="Con stock">S</span>
+                                                @elseif($item->product)
+                                                    <span class="badge bg-light text-muted border ms-1" title="Sin control de stock">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">{{ $item->quantity }}</td>
+                                            <td class="text-end">${{ number_format($item->unit_price, 2) }}</td>
+                                            <td class="text-end">${{ number_format($item->subtotal ?? ($item->unit_price * $item->quantity), 2) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <p class="text-muted mb-0"><i class="bi bi-inbox"></i> No hay ventas con detalle en esta sesión (pedidos pagados aparecerán aquí).</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 @if($session->status === 'ABIERTA')
 <!-- Modal Registrar movimiento de caja (salida/ingreso) -->
 <div class="modal fade" id="movementModal" tabindex="-1">
@@ -266,7 +337,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Usá <strong>Salida (egreso)</strong> para pagos a empleados, gastos o retiros. <strong>Ingreso</strong> para entradas de efectivo (ej. cambio, reintegro).</p>
+                    <p class="text-muted small">Usá <strong>Salida (egreso)</strong> para pagos a empleados, pago a proveedores (cerveza, servilletas, insumos), gastos o retiros. <strong>Ingreso</strong> para entradas de efectivo (ej. cambio, reintegro).</p>
                     <div class="mb-3">
                         <label for="movement_type" class="form-label">Tipo <span class="text-danger">*</span></label>
                         <select class="form-select" id="movement_type" name="type" required>
@@ -281,7 +352,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="movement_description" class="form-label">Descripción <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="movement_description" name="description" value="{{ old('description') }}" placeholder="Ej: Pago empleados fin de jornada" maxlength="500" required>
+                        <input type="text" class="form-control" id="movement_description" name="description" value="{{ old('description') }}" placeholder="Ej: Pago empleados / Pago proveedor cerveza / Servilletas" maxlength="500" required>
                         @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-3">
