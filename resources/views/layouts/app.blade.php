@@ -40,6 +40,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     @if($primaryFont !== $secondaryFont)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -877,27 +879,26 @@
         }
     </style>
 </head>
-<body>
+<body class="conurbania-app">
+    <div class="layout">
     <!-- Sidebar -->
-    <aside class="nova-sidebar" id="novaSidebar">
-        <div class="nova-sidebar-header">
-            <a href="{{ route('dashboard') }}" class="logo">
-                @php
-                    $logo = $settings['logo'] ?? null;
-                @endphp
+    <aside class="sidebar" id="novaSidebar">
+        <div class="sb-logo">
+            <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+                @php $logo = $settings['logo'] ?? null; @endphp
                 @if($logo && Storage::disk('public')->exists($logo))
-                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 40px; filter: brightness(0) invert(1);">
+                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 32px; filter: brightness(0) invert(1);">
+                    <div><div class="sb-lname">{{ $restaurant->name ?? 'Conurbania' }}</div><div class="sb-lsub">Sistema de gestión</div></div>
                 @else
-                    <span class="sidebar-brand-icon"><i class="bi bi-play-circle-fill"></i></span>
-                    <span class="sidebar-brand-text">
-                        <span class="sidebar-brand-name">Conurbania</span>
-                        <span class="sidebar-brand-sub">Sistema de gestión</span>
-                    </span>
+                    <div class="sb-lmark sb-lmark-icon">
+                        <i class="bi bi-play-circle-fill"></i>
+                    </div>
+                    <div><div class="sb-lname">Conurbania</div><div class="sb-lsub">Sistema de gestión</div></div>
                 @endif
             </a>
         </div>
 
-        <nav class="nova-sidebar-nav">
+        <nav class="sb-nav">
             @php
                 $perm = auth()->check() ? app(\App\Services\PermissionService::class) : null;
                 $navUser = auth()->user();
@@ -924,141 +925,143 @@
             @endphp
 
             @if(auth()->check())
-            <!-- OPERACIONES -->
+            <div class="sb-label">Operaciones</div>
             @if($canDashboard || $canTables || $canOrders || $canKitchen || $canCashRegister || $canDiscountTypes)
-            <div class="nova-nav-section-title">Operaciones</div>
             @if($canDashboard)
-            <a href="{{ route('dashboard') }}" class="nova-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-grid-3x3-gap"></i>
+            <a href="{{ route('dashboard') }}" class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-3x3-gap sb-ico"></i>
                 <span>Página Principal</span>
             </a>
             @endif
             @if($canTables)
-            <a href="{{ route('tables.index') }}" class="nova-nav-item {{ request()->routeIs('tables.*') ? 'active' : '' }}">
-                <i class="bi bi-table"></i>
+            <a href="{{ route('tables.index') }}" class="sb-link {{ request()->routeIs('tables.*') ? 'active' : '' }}">
+                <i class="bi bi-table sb-ico"></i>
                 <span>Mesas</span>
-                @if($navTablesCount > 0)<span class="nav-item-badge nav-badge-green">{{ $navTablesCount }}</span>@endif
+                @if($navTablesCount > 0)<span class="sb-badge sb-bt">{{ $navTablesCount }}</span>@endif
             </a>
             @endif
             @if($canOrders)
-            <a href="{{ route('orders.index') }}" class="nova-nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i>
+            <a href="{{ route('orders.index') }}" class="sb-link {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt sb-ico"></i>
                 <span>Pedidos</span>
-                @if($navPendingOrdersCount > 0)<span class="nav-item-badge nav-badge-orange">{{ $navPendingOrdersCount }}</span>@endif
+                @if($navPendingOrdersCount > 0)<span class="sb-badge sb-ba">{{ $navPendingOrdersCount }}</span>@endif
             </a>
             @endif
             @if($canKitchen)
-            <a href="{{ route('kitchen.index') }}" class="nova-nav-item {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
-                <i class="bi bi-egg-fried"></i>
+            <a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
+                <i class="bi bi-egg-fried sb-ico"></i>
                 <span>Cocina</span>
             </a>
             @endif
             @if($canCashRegister)
-            <a href="{{ route('cash-register.index') }}" class="nova-nav-item {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
-                <i class="bi bi-plus-square"></i>
+            <a href="{{ route('cash-register.index') }}" class="sb-link {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
+                <i class="bi bi-plus-square sb-ico"></i>
                 <span>Caja</span>
             </a>
             @endif
             @if($canDiscountTypes)
-            <a href="{{ route('discount-types.index') }}" class="nova-nav-item {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
-                <i class="bi bi-clock"></i>
+            <a href="{{ route('discount-types.index') }}" class="sb-link {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
+                <i class="bi bi-percent sb-ico"></i>
                 <span>Descuentos</span>
             </a>
             @endif
             @endif
 
-            <!-- RESTAURANTE -->
             @if($canSectors || $canCategories || $canProducts || $canStock || $canUsers || $canPrinters)
-            <div class="nova-nav-section-title">Restaurante</div>
+            <div class="sb-div"></div>
+            <div class="sb-label">Restaurante</div>
             @if($canSectors)
-            <a href="{{ route('sectors.index') }}" class="nova-nav-item {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
-                <i class="bi bi-building"></i>
+            <a href="{{ route('sectors.index') }}" class="sb-link {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
+                <i class="bi bi-building sb-ico"></i>
                 <span>Sectores</span>
             </a>
             @endif
             @if($canCategories)
-            <a href="{{ route('categories.index') }}" class="nova-nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                <i class="bi bi-grid-3x3"></i>
+            <a href="{{ route('categories.index') }}" class="sb-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                <i class="bi bi-grid-3x3 sb-ico"></i>
                 <span>Categorías</span>
             </a>
             @endif
             @if($canProducts)
-            <a href="{{ route('products.index') }}" class="nova-nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <i class="bi bi-tag"></i>
+            <a href="{{ route('products.index') }}" class="sb-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <i class="bi bi-tag sb-ico"></i>
                 <span>Productos</span>
             </a>
             @endif
             @if($canStock)
-            <a href="{{ route('stock.index') }}" class="nova-nav-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-                <i class="bi bi-bag"></i>
+            <a href="{{ route('stock.index') }}" class="sb-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                <i class="bi bi-bag sb-ico"></i>
                 <span>Stock</span>
             </a>
             @endif
             @if($canUsers)
-            <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i>
+            <a href="{{ route('users.index') }}" class="sb-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people sb-ico"></i>
                 <span>Usuarios</span>
             </a>
             @endif
             @if($canPrinters)
-            <a href="{{ route('printers.index') }}" class="nova-nav-item {{ request()->routeIs('printers.*') ? 'active' : '' }}">
-                <i class="bi bi-printer"></i>
+            <a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
+                <i class="bi bi-printer sb-ico"></i>
                 <span>Impresoras</span>
             </a>
             @endif
             @endif
 
             @if($canEvents || $canRecurring)
-            <div class="nova-nav-section-title">Planificación</div>
+            <div class="sb-div"></div>
+            <div class="sb-label">Planificación</div>
             @if($canEvents)
-            <a href="{{ route('events.index') }}" class="nova-nav-item {{ request()->routeIs('events.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-event"></i>
+            <a href="{{ route('events.index') }}" class="sb-link {{ request()->routeIs('events.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event sb-ico"></i>
                 <span>Eventos</span>
             </a>
             @endif
             @if($canRecurring)
-            <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-repeat"></i>
+            <a href="{{ route('recurring-activities.index') }}" class="sb-link {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-repeat sb-ico"></i>
                 <span>Actividades Recurrentes</span>
             </a>
             @endif
             @endif
 
             @if($canFixedExpenses || $canReports)
-            <div class="nova-nav-section-title">Finanzas y Reportes</div>
+            <div class="sb-div"></div>
+            <div class="sb-label">Finanzas</div>
             @if($canFixedExpenses)
-            <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
-                <i class="bi bi-cash-stack"></i>
+            <a href="{{ route('fixed-expenses.index') }}" class="sb-link {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
+                <i class="bi bi-cash-stack sb-ico"></i>
                 <span>Gastos Fijos</span>
             </a>
             @endif
             @if($canReports)
-            <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up"></i>
+            <a href="{{ route('reports.index') }}" class="sb-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <i class="bi bi-graph-up sb-ico"></i>
                 <span>Reportes</span>
             </a>
             @endif
             @endif
 
+            @if($canConfiguration || $canTutorials || ($navUser && $navUser->role === 'ADMIN'))
+            <div class="sb-div"></div>
             @if($canConfiguration)
-            <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i>
+            <a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
+                <i class="bi bi-gear sb-ico"></i>
                 <span>Configuración</span>
             </a>
             @endif
-
             @if($canTutorials)
-            <a href="{{ route('tutorials.index') }}" class="nova-nav-item {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-bookmark"></i>
+            <a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-bookmark sb-ico"></i>
                 <span>Tutoriales</span>
             </a>
             @endif
-
             @if($navUser && $navUser->role === 'ADMIN')
-            <a href="{{ route('permissions.index') }}" class="nova-nav-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
-                <i class="bi bi-shield-lock"></i>
+            <a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-lock sb-ico"></i>
                 <span>Permisos</span>
             </a>
+            @endif
             @endif
             @endif
         </nav>
@@ -1068,17 +1071,15 @@
             $roleLabels = ['ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor'];
             $sidebarRoleLabel = $roleLabels[auth()->user()->role ?? ''] ?? auth()->user()->role;
         @endphp
-        <div class="nova-sidebar-footer">
-            <div class="nova-user-menu d-flex align-items-center w-100">
-                <div class="nova-user-avatar">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+        <div class="sb-footer">
+            <div class="sb-user">
+                <div class="sb-av">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
+                <div>
+                    <div class="sb-un">{{ auth()->user()->name }}</div>
+                    <div class="sb-ur">{{ $sidebarRoleLabel }}</div>
                 </div>
-                <div class="nova-user-info">
-                    <div class="nova-user-name">{{ auth()->user()->name }}</div>
-                    <div class="nova-user-role">{{ $sidebarRoleLabel }}</div>
-                </div>
-                <a href="#" class="nova-user-exit text-decoration-none" onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();" title="Cerrar sesión">
-                    <i class="bi bi-box-arrow-right"></i>
+                <a href="#" class="sb-lo" onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();" title="Cerrar sesión">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 8H3M6 5l-3 3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 4V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                 </a>
             </div>
             <form id="sidebar-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
@@ -1088,82 +1089,55 @@
         @endauth
     </aside>
 
-    <!-- Overlay para móvil -->
     <div class="nova-overlay" id="novaOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- Header -->
-    <header class="nova-header">
-        <div class="nova-header-left">
-            <button class="nova-sidebar-toggle" onclick="toggleSidebar()">
+    <div class="main">
+        <header class="topbar">
+            <button type="button" class="btn btn-g btn-sm d-md-none me-2" onclick="toggleSidebar()" aria-label="Menú">
                 <i class="bi bi-list"></i>
             </button>
-            <h5 class="nova-header-title mb-0">@yield('title', 'Sistema de Gestión')</h5>
-        </div>
-        <div class="nova-header-right">
+            <span class="tb-title">@yield('title', 'Sistema de Gestión')</span>
+            <div class="tb-sp"></div>
             @auth
             @php
                 $headerUnreadCount = auth()->user()->unreadNotifications()->count();
                 $headerNotifications = auth()->user()->unreadNotifications()->latest()->limit(5)->get();
             @endphp
-            <div class="dropdown me-2">
-                <button type="button" class="btn btn-link text-white p-0 position-relative" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones">
-                    <i class="bi bi-bell-fill fs-5"></i>
-                    @if($headerUnreadCount > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
-                    @endif
-                </button>
-                <div class="dropdown-menu dropdown-menu-end shadow" style="min-width: 280px; max-height: 320px; overflow-y: auto;">
-                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-                        <strong>Notificaciones</strong>
-                        @if($headerUnreadCount > 0)
-                        <form action="{{ route('notifications.read-all') }}" method="POST" class="d-inline">
+            @if($headerUnreadCount > 0)
+            <a href="{{ route('notifications.index') }}" class="btn btn-g btn-sm position-relative" title="Notificaciones">
+                <i class="bi bi-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px;">{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
+            </a>
+            @endif
+            <span class="tb-badge">{{ strtoupper(auth()->user()->role) }}</span>
+            <div class="dropdown">
+                <a href="#" class="tb-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="tb-uav">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
+                    {{ auth()->user()->name }}
+                    <i class="bi bi-chevron-down small"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><span class="dropdown-item-text small text-muted">Rol: {{ auth()->user()->role }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-link p-0 text-muted">Marcar todas leídas</button>
+                            <button type="submit" class="dropdown-item">
+                                <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+                            </button>
                         </form>
-                        @endif
-                    </div>
-                    @forelse($headerNotifications as $n)
-                    <a href="{{ route('notifications.read', $n->id) }}" class="dropdown-item py-2">
-                        <span class="d-block">{{ $n->data['message'] ?? 'Notificación' }}</span>
-                        <small class="text-muted">{{ $n->created_at->diffForHumans() }}</small>
-                    </a>
-                    @empty
-                    <div class="px-3 py-3 text-muted small">No tenés notificaciones nuevas.</div>
-                    @endforelse
-                    <a href="{{ route('notifications.index') }}" class="dropdown-item text-center py-2 text-primary small border-top">Ver todas</a>
-                </div>
-            </div>
-            <div class="nova-header-role-badge">
-                <i class="bi bi-person-badge"></i>
-                <span>{{ strtoupper(auth()->user()->role) }}</span>
-            </div>
-            <div class="nova-header-dropdown">
-                <button class="nova-header-dropdown-toggle" onclick="toggleHeaderMenu()">
-                    <i class="bi bi-person-circle"></i>
-                    <span>{{ auth()->user()->name }}</span>
-                    <i class="bi bi-chevron-down"></i>
-                </button>
-                <div class="nova-header-dropdown-menu" id="headerDropdownMenu">
-                    <div class="nova-dropdown-item">
-                        <small class="text-muted">Rol: {{ auth()->user()->role }}</small>
-                    </div>
-                    <hr class="my-1">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="nova-dropdown-item w-100 text-start">
-                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                        </button>
-                    </form>
-                </div>
+                    </li>
+                </ul>
             </div>
             @endauth
-        </div>
-    </header>
+        </header>
 
-    <!-- Main Content -->
-    <main class="nova-main">
-        @yield('content')
-    </main>
+        <div class="page">
+            @yield('content')
+        </div>
+    </div>
+    </div>
+    </div><!-- /.layout -->
 
     <!-- Service worker PWA -->
     <script>

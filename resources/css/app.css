@@ -1,4 +1,5 @@
 /* Estilos personalizados - Bootstrap 5 como base */
+@import 'conurbania.css';
 
 :root {
     --primary-color: #667eea;
