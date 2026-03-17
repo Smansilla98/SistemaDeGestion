@@ -135,27 +135,42 @@
         }
 
         .nova-sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .nova-sidebar-header .logo {
-            font-size: 1.75rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: white;
             text-decoration: none;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 0.75rem;
         }
 
+        .nova-sidebar-header .logo .sidebar-brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .nova-sidebar-header .logo .sidebar-brand-text { display: flex; flex-direction: column; gap: 0; }
+        .nova-sidebar-header .logo .sidebar-brand-name { font-size: 1.1rem; line-height: 1.2; }
+        .nova-sidebar-header .logo .sidebar-brand-sub { font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.02em; margin-top: 1px; }
+
         .nova-sidebar-header .logo img {
-            height: 50px;
+            height: 40px;
             width: auto;
-            max-width: 200px;
+            max-width: 160px;
             object-fit: contain;
             filter: brightness(0) invert(1);
         }
@@ -164,8 +179,32 @@
             display: none;
         }
 
+        .nova-nav-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.7);
+            padding: 1rem 1.25rem 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .nova-nav-item .nav-item-badge {
+            margin-left: auto;
+            min-width: 1.5rem;
+            height: 1.5rem;
+            padding: 0 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nova-nav-item .nav-item-badge.nav-badge-green { background: #22c55e; color: white; }
+        .nova-nav-item .nav-item-badge.nav-badge-orange { background: #f97316; color: white; }
+
         .nova-sidebar-nav {
-            padding: 1.5rem 0;
+            padding: 1.5rem 0 5rem;
         }
 
         .nova-nav-item {
@@ -275,42 +314,41 @@
         }
 
         .nova-sidebar-footer {
-            position: relative;
+            position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.15);
         }
 
         .nova-user-menu {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.75rem;
+            padding: 0.5rem 0;
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
         }
 
         .nova-user-menu:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .nova-user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
+            background: #22c55e;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
             font-weight: 700;
-            box-shadow: 0 4px 15px var(--conurbania-primary-30);
+            flex-shrink: 0;
         }
 
         .nova-user-info {
@@ -319,16 +357,29 @@
         }
 
         .nova-user-name {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 600;
+            color: white;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .nova-user-role {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .nova-user-exit {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .nova-user-exit:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         /* Header Mosaic Style */
@@ -835,10 +886,13 @@
                     $logo = $settings['logo'] ?? null;
                 @endphp
                 @if($logo && Storage::disk('public')->exists($logo))
-                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 50px; max-width: 200px; filter: brightness(0) invert(1);">
+                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 40px; filter: brightness(0) invert(1);">
                 @else
-                    <img src="{{ asset('logo.png') }}" alt="Conurbania" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" style="filter: brightness(0) invert(1);">
-                    <span style="display: none;">Conurbania</span>
+                    <span class="sidebar-brand-icon"><i class="bi bi-play-circle-fill"></i></span>
+                    <span class="sidebar-brand-text">
+                        <span class="sidebar-brand-name">Conurbania</span>
+                        <span class="sidebar-brand-sub">Sistema de gestión</span>
+                    </span>
                 @endif
             </a>
         </div>
@@ -865,163 +919,128 @@
                 $canReports = $perm && $perm->allowed($navUser, 'reports.view');
                 $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
                 $canTutorials = $perm && $perm->allowed($navUser, 'tutorials.view');
-                $showOperaciones = $canDashboard || $canTables || $canOrders || $canKitchen || $canCashRegister || $canDiscountTypes;
-                $showGestion = $canSectors || $canCategories || $canProducts || $canStock || $canUsers || $canPrinters;
-                $showPlanificacion = $canEvents || $canRecurring;
-                $showFinanzas = $canFixedExpenses || $canReports;
+                $navTablesCount = $canTables && $navUser && $navUser->restaurant_id ? \App\Models\Table::where('restaurant_id', $navUser->restaurant_id)->count() : 0;
+                $navPendingOrdersCount = $canOrders && $navUser && $navUser->restaurant_id ? \App\Models\Order::where('restaurant_id', $navUser->restaurant_id)->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])->count() : 0;
             @endphp
 
             @if(auth()->check())
-            <!-- Grupo 1: Operaciones Diarias -->
-            @if($showOperaciones)
-            <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'active' : '' }}" onclick="toggleNavGroup('operaciones-diarias')">
-                    <i class="bi bi-calendar-day"></i>
-                    <span>Operaciones Diarias</span>
-                    <i class="bi bi-chevron-down ms-auto" id="operaciones-diarias-icon"></i>
-                </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('dashboard') || request()->routeIs('tables.*') || request()->routeIs('orders.*') || request()->routeIs('kitchen.*') || request()->routeIs('cash-register.*') || request()->routeIs('discount-types.*') ? 'show' : '' }}" id="operaciones-diarias-items">
-                    @if($canDashboard)
-                    <a href="{{ route('dashboard') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <i class="bi bi-house"></i>
-                        <span>Página Principal</span>
-                    </a>
-                    @endif
-                    @if($canTables)
-                    <a href="{{ route('tables.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('tables.*') ? 'active' : '' }}">
-                        <i class="bi bi-table"></i>
-                        <span>Mesas</span>
-                    </a>
-                    @endif
-                    @if($canOrders)
-                    <a href="{{ route('orders.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('orders.*') ? 'active' : '' }}">
-                        <i class="bi bi-receipt"></i>
-                        <span>Pedidos</span>
-                    </a>
-                    @endif
-                    @if($canKitchen)
-                    <a href="{{ route('kitchen.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
-                        <i class="bi bi-egg-fried"></i>
-                        <span>Cocina</span>
-                    </a>
-                    @endif
-                    @if($canCashRegister)
-                    <a href="{{ route('cash-register.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
-                        <i class="bi bi-cash-coin"></i>
-                        <span>Caja</span>
-                    </a>
-                    @endif
-                    @if($canDiscountTypes)
-                    <a href="{{ route('discount-types.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
-                        <i class="bi bi-percent"></i>
-                        <span>Descuentos</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
+            <!-- OPERACIONES -->
+            @if($canDashboard || $canTables || $canOrders || $canKitchen || $canCashRegister || $canDiscountTypes)
+            <div class="nova-nav-section-title">Operaciones</div>
+            @if($canDashboard)
+            <a href="{{ route('dashboard') }}" class="nova-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-3x3-gap"></i>
+                <span>Página Principal</span>
+            </a>
+            @endif
+            @if($canTables)
+            <a href="{{ route('tables.index') }}" class="nova-nav-item {{ request()->routeIs('tables.*') ? 'active' : '' }}">
+                <i class="bi bi-table"></i>
+                <span>Mesas</span>
+                @if($navTablesCount > 0)<span class="nav-item-badge nav-badge-green">{{ $navTablesCount }}</span>@endif
+            </a>
+            @endif
+            @if($canOrders)
+            <a href="{{ route('orders.index') }}" class="nova-nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i>
+                <span>Pedidos</span>
+                @if($navPendingOrdersCount > 0)<span class="nav-item-badge nav-badge-orange">{{ $navPendingOrdersCount }}</span>@endif
+            </a>
+            @endif
+            @if($canKitchen)
+            <a href="{{ route('kitchen.index') }}" class="nova-nav-item {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
+                <i class="bi bi-egg-fried"></i>
+                <span>Cocina</span>
+            </a>
+            @endif
+            @if($canCashRegister)
+            <a href="{{ route('cash-register.index') }}" class="nova-nav-item {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
+                <i class="bi bi-plus-square"></i>
+                <span>Caja</span>
+            </a>
+            @endif
+            @if($canDiscountTypes)
+            <a href="{{ route('discount-types.index') }}" class="nova-nav-item {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
+                <i class="bi bi-clock"></i>
+                <span>Descuentos</span>
+            </a>
+            @endif
             @endif
 
-            @if($showGestion)
-            <!-- Grupo 2: Gestión del Restaurante -->
-            <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'active' : '' }}" onclick="toggleNavGroup('gestion-restaurante')">
-                    <i class="bi bi-gear-wide-connected"></i>
-                    <span>Gestión del Restaurante</span>
-                    <i class="bi bi-chevron-down ms-auto" id="gestion-restaurante-icon"></i>
-                </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('sectors.*') || request()->routeIs('categories.*') || request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('stock.*') || request()->routeIs('printers.*') ? 'show' : '' }}" id="gestion-restaurante-items">
-                    @if($canSectors)
-                    <a href="{{ route('sectors.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
-                        <i class="bi bi-building"></i>
-                        <span>Sectores</span>
-                    </a>
-                    @endif
-                    @if($canCategories)
-                    <a href="{{ route('categories.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                        <i class="bi bi-folder"></i>
-                        <span>Categorías</span>
-                    </a>
-                    @endif
-                    @if($canProducts)
-                    <a href="{{ route('products.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                        <i class="bi bi-cup-straw"></i>
-                        <span>Productos</span>
-                    </a>
-                    @endif
-                    @if($canStock)
-                    <a href="{{ route('stock.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-                        <i class="bi bi-inboxes"></i>
-                        <span>Stock</span>
-                    </a>
-                    @endif
-                    @if($canUsers)
-                    <a href="{{ route('users.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                        <i class="bi bi-people"></i>
-                        <span>Usuarios</span>
-                    </a>
-                    @endif
-                    @if($canPrinters)
-                    <a href="{{ route('printers.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('printers.*') ? 'active' : '' }}">
-                        <i class="bi bi-printer"></i>
-                        <span>Impresoras</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
+            <!-- RESTAURANTE -->
+            @if($canSectors || $canCategories || $canProducts || $canStock || $canUsers || $canPrinters)
+            <div class="nova-nav-section-title">Restaurante</div>
+            @if($canSectors)
+            <a href="{{ route('sectors.index') }}" class="nova-nav-item {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
+                <i class="bi bi-building"></i>
+                <span>Sectores</span>
+            </a>
+            @endif
+            @if($canCategories)
+            <a href="{{ route('categories.index') }}" class="nova-nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                <i class="bi bi-grid-3x3"></i>
+                <span>Categorías</span>
+            </a>
+            @endif
+            @if($canProducts)
+            <a href="{{ route('products.index') }}" class="nova-nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <i class="bi bi-tag"></i>
+                <span>Productos</span>
+            </a>
+            @endif
+            @if($canStock)
+            <a href="{{ route('stock.index') }}" class="nova-nav-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                <i class="bi bi-bag"></i>
+                <span>Stock</span>
+            </a>
+            @endif
+            @if($canUsers)
+            <a href="{{ route('users.index') }}" class="nova-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i>
+                <span>Usuarios</span>
+            </a>
+            @endif
+            @if($canPrinters)
+            <a href="{{ route('printers.index') }}" class="nova-nav-item {{ request()->routeIs('printers.*') ? 'active' : '' }}">
+                <i class="bi bi-printer"></i>
+                <span>Impresoras</span>
+            </a>
+            @endif
             @endif
 
-            @if($showPlanificacion)
-            <!-- Grupo 3: Planificación y Eventos -->
-            <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'active' : '' }}" onclick="toggleNavGroup('planificacion')">
-                    <i class="bi bi-calendar-check"></i>
-                    <span>Planificación y Eventos</span>
-                    <i class="bi bi-chevron-down ms-auto" id="planificacion-icon"></i>
-                </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('events.*') || request()->routeIs('recurring-activities.*') ? 'show' : '' }}" id="planificacion-items">
-                    @if($canEvents)
-                    <a href="{{ route('events.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('events.*') ? 'active' : '' }}">
-                        <i class="bi bi-calendar-event"></i>
-                        <span>Eventos</span>
-                    </a>
-                    @endif
-                    @if($canRecurring)
-                    <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
-                        <i class="bi bi-calendar-repeat"></i>
-                        <span>Actividades Recurrentes</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
+            @if($canEvents || $canRecurring)
+            <div class="nova-nav-section-title">Planificación</div>
+            @if($canEvents)
+            <a href="{{ route('events.index') }}" class="nova-nav-item {{ request()->routeIs('events.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event"></i>
+                <span>Eventos</span>
+            </a>
+            @endif
+            @if($canRecurring)
+            <a href="{{ route('recurring-activities.index') }}" class="nova-nav-item {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-repeat"></i>
+                <span>Actividades Recurrentes</span>
+            </a>
+            @endif
             @endif
 
-            @if($showFinanzas)
-            <!-- Grupo 4: Finanzas y Reportes -->
-            <div class="nova-nav-group">
-                <div class="nova-nav-group-header {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'active' : '' }}" onclick="toggleNavGroup('finanzas')">
-                    <i class="bi bi-cash-stack"></i>
-                    <span>Finanzas y Reportes</span>
-                    <i class="bi bi-chevron-down ms-auto" id="finanzas-icon"></i>
-                </div>
-                <div class="nova-nav-group-items {{ request()->routeIs('fixed-expenses.*') || request()->routeIs('reports.*') ? 'show' : '' }}" id="finanzas-items">
-                    @if($canFixedExpenses)
-                    <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
-                        <i class="bi bi-cash-stack"></i>
-                        <span>Gastos Fijos</span>
-                    </a>
-                    @endif
-                    @if($canReports)
-                    <a href="{{ route('reports.index') }}" class="nova-nav-item nova-nav-subitem {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                        <i class="bi bi-graph-up"></i>
-                        <span>Reportes</span>
-                    </a>
-                    @endif
-                </div>
-            </div>
+            @if($canFixedExpenses || $canReports)
+            <div class="nova-nav-section-title">Finanzas y Reportes</div>
+            @if($canFixedExpenses)
+            <a href="{{ route('fixed-expenses.index') }}" class="nova-nav-item {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
+                <i class="bi bi-cash-stack"></i>
+                <span>Gastos Fijos</span>
+            </a>
+            @endif
+            @if($canReports)
+            <a href="{{ route('reports.index') }}" class="nova-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <i class="bi bi-graph-up"></i>
+                <span>Reportes</span>
+            </a>
+            @endif
             @endif
 
             @if($canConfiguration)
-            <!-- Configuración -->
             <a href="{{ route('configuration.index') }}" class="nova-nav-item {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
                 <span>Configuración</span>
@@ -1029,7 +1048,6 @@
             @endif
 
             @if($canTutorials)
-            <!-- Tutoriales -->
             <a href="{{ route('tutorials.index') }}" class="nova-nav-item {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark"></i>
                 <span>Tutoriales</span>
@@ -1037,7 +1055,6 @@
             @endif
 
             @if($navUser && $navUser->role === 'ADMIN')
-            <!-- Permisos (solo ADMIN) -->
             <a href="{{ route('permissions.index') }}" class="nova-nav-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
                 <i class="bi bi-shield-lock"></i>
                 <span>Permisos</span>
@@ -1047,25 +1064,26 @@
         </nav>
 
         @auth
+        @php
+            $roleLabels = ['ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor'];
+            $sidebarRoleLabel = $roleLabels[auth()->user()->role ?? ''] ?? auth()->user()->role;
+        @endphp
         <div class="nova-sidebar-footer">
-            <div class="nova-user-menu" onclick="toggleUserMenu()">
+            <div class="nova-user-menu d-flex align-items-center w-100">
                 <div class="nova-user-avatar">
-                    {{ strtoupper(substr(auth()->user()->name ?? '', 0, 1)) }}
+                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                 </div>
                 <div class="nova-user-info">
                     <div class="nova-user-name">{{ auth()->user()->name }}</div>
-                    <div class="nova-user-role">{{ auth()->user()->role }}</div>
+                    <div class="nova-user-role">{{ $sidebarRoleLabel }}</div>
                 </div>
-                <i class="bi bi-chevron-up" id="userMenuIcon"></i>
+                <a href="#" class="nova-user-exit text-decoration-none" onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();" title="Cerrar sesión">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
             </div>
-            <div class="nova-header-dropdown-menu" id="userDropdownMenu">
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="nova-dropdown-item w-100 text-start">
-                        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                    </button>
-                </form>
-            </div>
+            <form id="sidebar-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
         </div>
         @endauth
     </aside>
@@ -1369,11 +1387,11 @@
             const userMenuButton = event.target.closest('.nova-user-menu');
             const headerMenuButton = event.target.closest('.nova-header-dropdown-toggle');
 
-            if (!userMenuButton && !userMenu.contains(event.target)) {
+            if (userMenu && !userMenuButton && !userMenu.contains(event.target)) {
                 userMenu.classList.remove('show');
             }
 
-            if (!headerMenuButton && !headerMenu.contains(event.target)) {
+            if (headerMenu && !headerMenuButton && !headerMenu.contains(event.target)) {
                 headerMenu.classList.remove('show');
             }
         });
