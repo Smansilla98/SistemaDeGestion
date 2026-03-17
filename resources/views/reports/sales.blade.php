@@ -125,62 +125,70 @@
             $totalIngresos = $session->cashMovements->where('type', 'INGRESO')->sum('amount');
             $totalEgresos = $session->cashMovements->where('type', 'EGRESO')->sum('amount');
         @endphp
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 cursor-pointer py-3"
+                 role="button"
+                 data-bs-toggle="collapse"
+                 data-bs-target="#session-detail-{{ $session->id }}"
+                 aria-expanded="false"
+                 aria-controls="session-detail-{{ $session->id }}">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-chevron-down session-chevron text-muted" style="transition: transform 0.2s ease;"></i>
                     <strong>{{ $session->cashRegister->name ?? 'Caja' }}</strong>
-                    <span class="text-muted ms-2">· Abierta por {{ $session->user->name ?? 'N/A' }}</span>
-                    <span class="badge bg-{{ $session->status === 'ABIERTA' ? 'success' : 'secondary' }} ms-2">{{ $session->status }}</span>
+                    <span class="text-muted">· Abierta por {{ $session->user->name ?? 'N/A' }}</span>
+                    <span class="badge bg-{{ $session->status === 'ABIERTA' ? 'success' : 'secondary' }}">{{ $session->status }}</span>
                 </div>
-                <div class="small">
-                    {{ $session->opened_at->format('d/m/Y H:i') }}
+                <div class="small d-flex align-items-center gap-2">
+                    <span class="text-muted">{{ $session->opened_at->format('d/m/Y H:i') }}</span>
                     @if($session->closed_at)
-                        — Cierre: {{ $session->closed_at->format('d/m/Y H:i') }}
+                        <span>— Cierre: {{ $session->closed_at->format('d/m/Y H:i') }}</span>
                     @else
-                        — <span class="text-success">Sesión abierta</span>
+                        <span class="text-success">Sesión abierta</span>
                     @endif
                 </div>
             </div>
-            <div class="card-body">
-                <div class="row g-2 mb-3">
-                    <div class="col-auto"><span class="badge bg-light text-dark">Inicial: ${{ number_format($session->initial_amount, 2) }}</span></div>
-                    <div class="col-auto"><span class="badge bg-success">Ventas: ${{ number_format($totalVentas, 2) }}</span></div>
-                    <div class="col-auto"><span class="badge bg-info">Ingresos: ${{ number_format($totalIngresos, 2) }}</span></div>
-                    <div class="col-auto"><span class="badge bg-danger">Egresos: ${{ number_format($totalEgresos, 2) }}</span></div>
-                    @if($session->closed_at && $session->final_amount !== null)
-                    <div class="col-auto"><span class="badge bg-primary">Cierre: ${{ number_format($session->final_amount, 2) }}</span></div>
-                    @endif
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Fecha / Hora</th>
-                                <th>Tipo</th>
-                                <th>Descripción</th>
-                                <th class="text-end">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($allRows as $row)
-                            <tr>
-                                <td>{{ $row->created_at->format('d/m H:i') }}</td>
-                                <td>
-                                    @if($row->type === 'Venta')
-                                        <span class="badge bg-success">{{ $row->type }}</span>
-                                        @if($row->payment_method)<small class="text-muted">· {{ $row->payment_method }}</small>@endif
-                                    @elseif($row->type === 'INGRESO')
-                                        <span class="badge bg-info">{{ $row->type }}</span>
-                                    @else
-                                        <span class="badge bg-danger">{{ $row->type }}</span>
-                                    @endif
-                                </td>
-                                <td>{{ $row->description }}</td>
-                                <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+            <div class="collapse" id="session-detail-{{ $session->id }}">
+                <div class="card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-auto"><span class="badge bg-light text-dark">Inicial: ${{ number_format($session->initial_amount, 2) }}</span></div>
+                        <div class="col-auto"><span class="badge bg-success">Ventas: ${{ number_format($totalVentas, 2) }}</span></div>
+                        <div class="col-auto"><span class="badge bg-info">Ingresos: ${{ number_format($totalIngresos, 2) }}</span></div>
+                        <div class="col-auto"><span class="badge bg-danger">Egresos: ${{ number_format($totalEgresos, 2) }}</span></div>
+                        @if($session->closed_at && $session->final_amount !== null)
+                        <div class="col-auto"><span class="badge bg-primary">Cierre: ${{ number_format($session->final_amount, 2) }}</span></div>
+                        @endif
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha / Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($allRows as $row)
+                                <tr>
+                                    <td>{{ $row->created_at->format('d/m H:i') }}</td>
+                                    <td>
+                                        @if($row->type === 'Venta')
+                                            <span class="badge bg-success">{{ $row->type }}</span>
+                                            @if($row->payment_method)<small class="text-muted">· {{ $row->payment_method }}</small>@endif
+                                        @elseif($row->type === 'INGRESO')
+                                            <span class="badge bg-info">{{ $row->type }}</span>
+                                        @else
+                                            <span class="badge bg-danger">{{ $row->type }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $row->description }}</td>
+                                    <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,5 +203,29 @@
         @endif
     </div>
 </div>
+
+@if(isset($cashSessions) && $cashSessions->count() > 0)
+@push('scripts')
+<script>
+document.querySelectorAll('[data-bs-toggle="collapse"][data-bs-target^="#session-detail-"]').forEach(function(header) {
+    var targetId = header.getAttribute('data-bs-target');
+    var target = document.querySelector(targetId);
+    if (!target) return;
+    target.addEventListener('show.bs.collapse', function() {
+        var chevron = header.querySelector('.session-chevron');
+        if (chevron) { chevron.classList.remove('bi-chevron-down'); chevron.classList.add('bi-chevron-up'); chevron.style.transform = 'rotate(0deg)'; }
+    });
+    target.addEventListener('hide.bs.collapse', function() {
+        var chevron = header.querySelector('.session-chevron');
+        if (chevron) { chevron.classList.remove('bi-chevron-up'); chevron.classList.add('bi-chevron-down'); }
+    });
+});
+</script>
+@endpush
+<style>
+.cursor-pointer { cursor: pointer; }
+.card-header[role="button"]:hover { background-color: rgba(0,0,0,.03); }
+</style>
+@endif
 @endsection
 
