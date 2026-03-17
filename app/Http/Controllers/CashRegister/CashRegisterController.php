@@ -198,7 +198,14 @@ class CashRegisterController extends Controller
         $totalEgresos = $session->cashMovements()->where('type', 'EGRESO')->sum('amount');
         $expectedAmount = $session->initial_amount + $totalPayments + $totalIngresos - $totalEgresos;
 
-        return view('cash-register.session', compact('session', 'totalPayments', 'totalIngresos', 'totalEgresos', 'expectedAmount'));
+        // Detalle de ventas: pedidos pagados en esta sesión con ítems y productos (con o sin stock)
+        $orderIds = $session->payments()->whereNotNull('order_id')->pluck('order_id')->unique()->values();
+        $salesDetail = Order::whereIn('id', $orderIds)
+            ->with(['table', 'user', 'items.product'])
+            ->orderBy('created_at')
+            ->get();
+
+        return view('cash-register.session', compact('session', 'totalPayments', 'totalIngresos', 'totalEgresos', 'expectedAmount', 'salesDetail'));
     }
 
     /**
