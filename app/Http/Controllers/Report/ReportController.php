@@ -6,6 +6,7 @@ use App\Exports\OrdersExport;
 use App\Exports\ProductsExport;
 use App\Exports\SalesExport;
 use App\Http\Controllers\Controller;
+use App\Models\CashRegisterSession;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Request;
@@ -72,7 +73,17 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('reports.sales', compact('salesByDay', 'salesByMethod', 'totalSales', 'totalOrders', 'dateFrom', 'dateTo', 'orders'));
+        // Sesiones de caja con actividad en el período (abiertas o cerradas en el rango)
+        $cashSessions = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('opened_at', '<=', Carbon::parse($dateTo)->endOfDay())
+            ->where(function ($q) use ($dateFrom) {
+                $q->whereNull('closed_at')->orWhere('closed_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+            })
+            ->with(['cashRegister', 'user', 'payments.order.table', 'payments.order.user', 'cashMovements'])
+            ->orderBy('opened_at', 'desc')
+            ->get();
+
+        return view('reports.sales', compact('salesByDay', 'salesByMethod', 'totalSales', 'totalOrders', 'dateFrom', 'dateTo', 'orders', 'cashSessions'));
     }
 
     /**
