@@ -1,7 +1,7 @@
 /* Conurbania — Sistema de diseño (mockup completo, clases cortas) */
 *,*::before,*::after{box-sizing:border-box;}
 .conurbania-app{
-  --t950:#04201a;--t900:#0a2e26;--t800:#0f3d32;--t700:#155240;--t600:#1d7a5c;
+  --t950:#031a16;--t900:#082822;--t800:#0f3d32;--t700:#155240;--t600:#1d7a5c;
   --t500:#1d9e75;--t400:#2ec28f;--t300:#5dcaa5;--t200:#9fe1cb;--t100:#d4f2e8;--t50:#edf9f4;
   --g900:#131a18;--g800:#1e2a27;--g700:#2d3d39;--g600:#4a5e59;--g500:#6b7f7a;
   --g400:#8fa39e;--g300:#b3c4bf;--g200:#d1ddd9;--g100:#e8eeec;--g50:#f4f7f6;
@@ -9,6 +9,7 @@
   --amber-500:#f59e0b;--amber-100:#fef3c7;--amber-800:#92400e;
   --red-500:#ef4444;--red-100:#fee2e2;--red-800:#991b1b;
   --blue-500:#3b82f6;--blue-100:#dbeafe;--blue-800:#1e40af;
+  --mosaic-bg:linear-gradient(135deg,#24696b 0%,#5f7477 50%,#262c3b 100%);
   --sw:244px;--hh:52px;
   --font:'Outfit',sans-serif;--mono:'DM Mono',monospace;
   --rsm:6px;--rmd:8px;--rlg:12px;--rxl:16px;
@@ -23,7 +24,7 @@
 .layout{display:flex;min-height:100vh}
 
 /* SIDEBAR */
-.sidebar{width:var(--sw);background:var(--t900);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:1000;transition:transform .25s ease;overflow:hidden}
+.sidebar{width:var(--sw);background:var(--mosaic-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:1000;transition:transform .25s ease;overflow:hidden}
 .sidebar.collapsed{transform:translateX(-100%)}
 .sb-logo{padding:18px 14px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(93,202,165,.1);flex-shrink:0}
 .sb-lmark,.sb-logo-mark{width:32px;height:32px;background:var(--t500);border-radius:var(--rmd);display:flex;align-items:center;justify-content:center;flex-shrink:0}
