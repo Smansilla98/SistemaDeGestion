@@ -112,6 +112,8 @@
                 'description' => $p->order ? 'Pedido ' . $p->order->number . ($p->order->table ? ' · Mesa ' . $p->order->table->number : ($p->order->customer_name ? ' · ' . $p->order->customer_name : '')) : 'Pago',
                 'amount' => $p->amount,
                 'payment_method' => $p->payment_method,
+                'order_id' => $p->order_id,
+                'order' => $p->order,
             ]);
             $movementsRows = $session->cashMovements->map(fn($m) => (object)[
                 'created_at' => $m->created_at,
@@ -119,6 +121,8 @@
                 'description' => $m->description,
                 'amount' => $m->amount,
                 'payment_method' => null,
+                'order_id' => null,
+                'order' => null,
             ]);
             $allRows = $paymentsRows->concat($movementsRows)->sortBy('created_at');
             $totalVentas = $session->payments->sum('amount');
@@ -182,7 +186,16 @@
                                             <span class="badge bg-danger">{{ $row->type }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ $row->description }}</td>
+                                    <td>
+                                        @if($row->type === 'Venta' && $row->order)
+                                            <a href="{{ $row->order->table_id ? route('orders.show', $row->order) : route('orders.quick.show', $row->order) }}" class="text-decoration-none fw-medium" title="Ver detalle del pedido (todo lo consumido)">
+                                                {{ $row->description }}
+                                                <i class="bi bi-box-arrow-up-right small ms-1"></i>
+                                            </a>
+                                        @else
+                                            {{ $row->description }}
+                                        @endif
+                                    </td>
                                     <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
                                 </tr>
                                 @endforeach
