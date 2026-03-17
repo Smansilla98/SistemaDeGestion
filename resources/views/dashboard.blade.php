@@ -2,766 +2,281 @@
 
 @section('title', 'Página Principal')
 
-@push('styles')
-<style>
-    .mosaic-dashboard {
-        min-height: 100vh;
-        padding: 2rem 0;
-    }
-
-    .mosaic-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .mosaic-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--card-gradient-start), var(--card-gradient-end));
-    }
-
-    .mosaic-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-    }
-
-    .mosaic-card-primary {
-        --card-gradient-start: #1e8081;
-        --card-gradient-end: #22565e;
-    }
-
-    .mosaic-card-success {
-        --card-gradient-start: #1e8081;
-        --card-gradient-end: #22565e;
-    }
-
-    .mosaic-card-warning {
-        --card-gradient-start: #7b7d84;
-        --card-gradient-end: #22565e;
-    }
-
-    .mosaic-card-info {
-        --card-gradient-start: #1e8081;
-        --card-gradient-end: #22565e;
-    }
-
-    .mosaic-card-danger {
-        --card-gradient-start: #c94a2d;
-        --card-gradient-end: #e67e51;
-    }
-
-    .mosaic-card-purple {
-        --card-gradient-start: #a8edea;
-        --card-gradient-end: #fed6e3;
-    }
-
-    .mosaic-icon {
-        width: 80px;
-        height: 80px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.5rem;
-        background: linear-gradient(135deg, var(--card-gradient-start), var(--card-gradient-end));
-        color: white;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .mosaic-value {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #1a202c;
-        margin: 0.5rem 0;
-        line-height: 1;
-    }
-
-    .mosaic-label {
-        font-size: 0.875rem;
-        color: #718096;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .mosaic-trend {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        margin-top: 0.5rem;
-    }
-
-    .mosaic-trend-up {
-        background: #c6f6d5;
-        color: #22543d;
-    }
-
-    .mosaic-trend-down {
-        background: #fed7d7;
-        color: #742a2a;
-    }
-
-    .mosaic-section-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        border: none;
-        height: 100%;
-    }
-
-    .mosaic-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .mosaic-section-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1a202c;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .mosaic-section-title i {
-        font-size: 1.5rem;
-        background: linear-gradient(135deg, #1e8081, #22565e);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .mosaic-table {
-        width: 100%;
-    }
-
-    .mosaic-table thead th {
-        background: #f7fafc;
-        color: #4a5568;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 1px;
-        padding: 1rem;
-        border: none;
-    }
-
-    .mosaic-table tbody td {
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        color: #2d3748;
-    }
-
-    .mosaic-table tbody tr:hover {
-        background: #f7fafc;
-    }
-
-    .mosaic-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .mosaic-list-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        transition: all 0.2s ease;
-    }
-
-    .mosaic-list-item:hover {
-        background: #f7fafc;
-        transform: translateX(5px);
-    }
-
-    .mosaic-list-item:last-child {
-        border-bottom: none;
-    }
-
-    .mosaic-list-number {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #1e8081, #22565e);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        margin-right: 1rem;
-        flex-shrink: 0;
-    }
-
-    .mosaic-list-content {
-        flex: 1;
-    }
-
-    .mosaic-list-title {
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 0.25rem;
-    }
-
-    .mosaic-list-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 15px;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .mosaic-empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: #a0aec0;
-    }
-
-    .mosaic-empty-state i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    @media (max-width: 768px) {
-        .mosaic-dashboard {
-            padding: 0.75rem 0;
-        }
-
-        .mosaic-dashboard .row.mb-4 h1 {
-            font-size: 1.5rem !important;
-        }
-
-        .mosaic-card {
-            padding: 1.25rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .mosaic-value {
-            font-size: 1.75rem;
-        }
-
-        .mosaic-icon {
-            width: 56px;
-            height: 56px;
-            font-size: 1.75rem;
-        }
-
-        .mosaic-card:hover {
-            transform: none;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .mosaic-value { font-size: 1.5rem; }
-        .mosaic-label { font-size: 0.75rem; }
-    }
-
-    /* Botones de acceso rápido: grandes y claros para uso sencillo */
-    .btn-access-quick {
-        background: white;
-        border: 2px solid rgba(255,255,255,0.3);
-        border-radius: 16px;
-        color: #1a202c;
-        font-size: 1rem;
-        min-height: 100px;
-        transition: all 0.25s ease;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    .btn-access-quick:hover {
-        background: linear-gradient(135deg, #1e8081, #22565e);
-        color: white;
-        border-color: transparent;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(30, 128, 129, 0.35);
-    }
-    .btn-access-quick i {
-        color: #1e8081;
-        transition: color 0.25s ease;
-    }
-    .btn-access-quick:hover i {
-        color: white;
-    }
-    @media (max-width: 768px) {
-        .btn-access-quick { min-height: 88px; font-size: 0.95rem; padding: 1rem !important; }
-        .btn-access-quick i { font-size: 1.75rem !important; }
-    }
-</style>
-@endpush
-
 @section('content')
-<div class="mosaic-dashboard">
-    <div class="container-fluid">
-        <!-- Header -->
-<div class="row mb-4">
-    <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
-                            <i class="bi bi-house"></i> Página Principal
-                        </h1>
-                    </div>
-                </div>
-            </div>
+<div class="ph">
+    <div class="ph-inner">
+        <div class="ph-title">
+            <i class="bi bi-grid-3x3-gap"></i>
+            Página Principal
         </div>
-
-        @php
-            $perm = auth()->check() ? app(\App\Services\PermissionService::class) : null;
-            $navUser = auth()->user();
-            $canTables = $perm && $perm->allowed($navUser, 'tables.view');
-            $canOrders = $perm && $perm->allowed($navUser, 'orders.view');
-            $canKitchen = $perm && $perm->allowed($navUser, 'kitchen.view');
-            $canCashRegister = $perm && $perm->allowed($navUser, 'cash-register.view');
-            $canReports = $perm && $perm->allowed($navUser, 'reports.view');
-            $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
-        @endphp
-
-        <!-- Acceso rápido (botones grandes para uso sencillo) 
-        @if(auth()->check())
-        <div class="row g-3 mb-4">
-            <div class="col-12">
-                <h2 class="text-white mb-3" style="font-size: 1.25rem; font-weight: 600;">
-                    <i class="bi bi-lightning-charge"></i> Acceso rápido
-                </h2>
-            </div>
-            @if($canTables)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('tables.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-table d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Mesas</span>
-                </a>
-            </div>
-            @endif
-            @if($canOrders)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('orders.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-receipt d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Pedidos</span>
-                </a>
-            </div>
-            @endif
-            @if($canKitchen)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('kitchen.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-egg-fried d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Cocina</span>
-                </a>
-            </div>
-            @endif
-            @if($canCashRegister)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('cash-register.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-cash-coin d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Caja</span>
-                </a>
-            </div>
-            @endif
-            @if($canReports)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('reports.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-graph-up d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Reportes</span>
-                </a>
-            </div>
-            @endif
-            @if($canConfiguration)
-            <div class="col-6 col-md-4 col-lg-2">
-                <a href="{{ route('configuration.index') }}" class="btn btn-access-quick w-100 py-4 px-3 text-decoration-none">
-                    <i class="bi bi-gear d-block mb-2" style="font-size: 2rem;"></i>
-                    <span class="d-block fw-bold">Configuración</span>
-                </a>
-            </div>
-            @endif
-        </div>
-        @endif-->
-
-        <!-- Stats Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-6 col-lg-3">
-                <a href="{{ route('tables.index') }}" class="text-decoration-none text-body d-block">
-                    <div class="mosaic-card mosaic-card-primary">
-                        <div class="mosaic-icon">
-                            <i class="bi bi-table"></i>
-                        </div>
-                        <div class="mosaic-label">Mesas disponibles</div>
-                        <div class="mosaic-value">{{ $stats['mesas_libres'] }} <span class="fs-5 fw-normal text-muted">de {{ $stats['total_tables'] }}</span></div>
-                        <div class="mosaic-trend mosaic-trend-up">
-                            <i class="bi bi-check-circle"></i>
-                            <span>{{ $stats['mesas_ocupadas'] }} ocupadas</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <a href="{{ url('/orders') }}" class="text-decoration-none text-body d-block">
-                    <div class="mosaic-card mosaic-card-warning">
-                        <div class="mosaic-icon">
-                            <i class="bi bi-clock-history"></i>
-                        </div>
-                        <div class="mosaic-label">Pedidos Pendientes</div>
-                        <div class="mosaic-value">{{ $stats['pedidos_pendientes'] }}</div>
-                        <div class="mosaic-trend mosaic-trend-up">
-                            <i class="bi bi-hourglass-split"></i>
-                            <span>En proceso</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <a href="{{ route('cash-register.index') }}" class="text-decoration-none text-body d-block">
-                    <div class="mosaic-card mosaic-card-info">
-                        <div class="mosaic-icon">
-                            <i class="bi bi-currency-dollar"></i>
-                        </div>
-                        <div class="mosaic-label d-flex align-items-center justify-content-between gap-2">
-                            <span>Ventas de sesión</span>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-body border-0 shadow-none min-w-auto" style="font-size: 1rem; line-height: 1;" onclick="event.preventDefault(); event.stopPropagation(); toggleVentasSesion();" title="Mostrar/ocultar monto">
-                                <i class="bi bi-eye" id="ventasSesionToggleIcon" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        <div class="mosaic-value" id="ventasSesionValue">${{ number_format($stats['ventas_sesion'] ?? 0, 0) }}</div>
-                        <div class="mosaic-trend mosaic-trend-up">
-                            <i class="bi bi-graph-up-arrow"></i>
-                            <span>{{ ($stats['tiene_sesion_abierta'] ?? false) ? 'Sesión abierta' : 'Sin sesión' }}</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Additional Stats -->
-        @if(isset($stats['low_stock_products']) && $stats['low_stock_products'] > 0)
-        <div class="row g-4 mb-4">
-            <div class="col-md-6 col-lg-3">
-                <div class="mosaic-card mosaic-card-danger">
-                    <div class="mosaic-icon">
-                        <i class="bi bi-exclamation-triangle"></i>
+        <div class="ph-sub">Resumen del día — {{ now()->translatedFormat('l d \d\e F, Y') }}</div>
     </div>
-                    <div class="mosaic-label">Productos Bajo Stock</div>
-                    <div class="mosaic-value">{{ $stats['low_stock_products'] }}</div>
-                    <div class="mosaic-trend mosaic-trend-down">
-                        <i class="bi bi-arrow-down"></i>
-                        <span>Requieren atención</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
+</div>
 
-        <!-- Main Content -->
-        <div class="row g-4">
-            <!-- Pedidos Recientes -->
-            <div class="col-lg-8">
-                <div class="mosaic-section-card">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-receipt"></i>
-                            <span>Pedidos Recientes</span>
+<div class="page">
+    <div class="sg">
+        <a href="{{ route('tables.index') }}" class="sc">
+            <div class="si"><i class="bi bi-table"></i></div>
+            <div class="sl">Mesas disponibles</div>
+            <div class="sv">{{ $stats['mesas_libres'] }} <span>de {{ $stats['total_tables'] }}</span></div>
+            <span class="badge bg-green">
+                <i class="bi bi-circle-fill" style="font-size: 6px;"></i>
+                {{ $stats['mesas_ocupadas'] }} ocupadas
+            </span>
+        </a>
+        <a href="{{ route('orders.index') }}" class="sc">
+            <div class="si"><i class="bi bi-receipt"></i></div>
+            <div class="sl">Pedidos pendientes</div>
+            <div class="sv">{{ $stats['pedidos_pendientes'] }}</div>
+            <span class="badge bg-teal">
+                <i class="bi bi-circle" style="font-size: 6px;"></i>
+                En proceso
+            </span>
+        </a>
+        <a href="{{ route('cash-register.index') }}" class="sc">
+            <div class="si"><i class="bi bi-currency-dollar"></i></div>
+            <div class="sl flex ia jb g2">
+                <span>Ventas de sesión</span>
+                <button type="button" class="btn btn-g btn-sm p-0 min-w-auto" style="font-size: 0.9rem;" onclick="event.preventDefault(); event.stopPropagation(); toggleVentasSesion();" title="Mostrar/ocultar monto">
+                    <i class="bi bi-eye" id="ventasSesionToggleIcon"></i>
+                </button>
+            </div>
+            <div class="sv" id="ventasSesionValue">${{ number_format($stats['ventas_sesion'] ?? 0, 0) }}</div>
+            <span class="badge bg-green">
+                <i class="bi bi-circle-fill" style="font-size: 6px;"></i>
+                {{ ($stats['tiene_sesion_abierta'] ?? false) ? 'Sesión abierta' : 'Sin sesión' }}
+            </span>
+        </a>
     </div>
-                        <a href="{{ route('orders.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white; border: none; border-radius: 10px;">
-                            Ver todos
-                        </a>
+
+    @if(isset($stats['low_stock_products']) && $stats['low_stock_products'] > 0)
+    <div class="sg mt4">
+        <div class="sc">
+            <div class="si"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="sl">Productos bajo stock</div>
+            <div class="sv">{{ $stats['low_stock_products'] }}</div>
+            <span class="badge bg-red">Requieren atención</span>
+        </div>
+    </div>
+    @endif
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-receipt"></i>
+                    Pedidos Recientes
+                </div>
+                <a href="{{ route('orders.index') }}" class="btn btn-o btn-sm">Ver todos</a>
             </div>
-                    <div class="table-responsive">
-                        @if($recentOrders->count() > 0)
-                            <table class="mosaic-table">
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Mesa/Cliente</th>
-                                    <th>Mozo</th>
-                                    <th>Estado</th>
-                                    <th>Total</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentOrders as $order)
-                                <tr>
-                                    <td>
-                                        @if($order->table_id === null)
-                                            <a href="{{ route('orders.quick.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
-                                                {{ $order->number }}
-                                            </a>
-                                        @else
-                                            <a href="{{ route('orders.show', $order) }}" style="color: #1e8081; font-weight: 600; text-decoration: none;">
-                                                {{ $order->number }}
-                                            </a>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($order->table)
-                                            Mesa {{ $order->table->number }}
-                                        @elseif($order->customer_name)
-                                            <span class="text-muted">
-                                                <i class="bi bi-person"></i> {{ $order->customer_name }}
-                                            </span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $order->user->name }}</td>
-                                    <td>
-                                            <span class="mosaic-badge" style="background: {{ $order->status === 'CERRADO' ? '#c6f6d5' : ($order->status === 'LISTO' ? '#bee3f8' : '#fed7d7') }}; color: {{ $order->status === 'CERRADO' ? '#22543d' : ($order->status === 'LISTO' ? '#2c5282' : '#742a2a') }};">
-                                            {{ $order->status }}
-                                        </span>
-                                    </td>
-                                        <td style="font-weight: 600; color: #2d3748;">${{ number_format($order->total, 2) }}</td>
-                                        <td style="color: #718096;">{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        @else
-                            <div class="mosaic-empty-state">
-                                <i class="bi bi-inbox"></i>
-                                <p>No hay pedidos recientes</p>
-                            </div>
-                        @endif
-                    </div>
+            @if($recentOrders->count() > 0)
+            <div class="tw">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Mesa/Cliente</th>
+                            <th>Mozo</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentOrders as $order)
+                        <tr>
+                            <td class="td-mono td-b">
+                                @if($order->table_id === null)
+                                    <a href="{{ route('orders.quick.show', $order) }}" class="text-decoration-none" style="color: var(--teal-600);">{{ $order->number }}</a>
+                                @else
+                                    <a href="{{ route('orders.show', $order) }}" class="text-decoration-none" style="color: var(--teal-600);">{{ $order->number }}</a>
+                                @endif
+                            </td>
+                            <td>
+                                @if($order->table)
+                                    Mesa {{ $order->table->number }}
+                                @elseif($order->customer_name)
+                                    <span class="text-muted">{{ $order->customer_name }}</span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>{{ $order->user->name }}</td>
+                            <td><span class="badge {{ $order->status === 'CERRADO' ? 'bg-gray' : ($order->status === 'LISTO' ? 'bg-blue' : 'bg-amber') }}">{{ $order->status }}</span></td>
+                            <td class="td-amt">${{ number_format($order->total, 2) }}</td>
+                            <td class="td-mono text-sm">{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <div class="empty">
+                <i class="bi bi-inbox"></i>
+                <div class="empty-t">No hay pedidos recientes</div>
+                <div class="empty-s">Los pedidos del día aparecerán aquí</div>
+            </div>
+            @endif
+        </div>
+
+        <div class="card">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-star"></i>
+                    Top Productos Hoy
                 </div>
             </div>
-
-            <!-- Productos Más Vendidos -->
-            <div class="col-lg-4">
-                <div class="mosaic-section-card">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-trophy"></i>
-                            <span>Top Productos Hoy</span>
-                        </div>
+            <div class="cb" style="padding: 12px 16px;">
+                @if($topProducts->count() > 0)
+                    @foreach($topProducts as $index => $product)
+                    <div class="top-product">
+                        <div class="tp-rank @if($index == 1) r2 @elseif($index == 2) r3 @endif">{{ $index + 1 }}</div>
+                        <div class="tp-name">{{ $product->name }}</div>
+                        <div class="tp-count">×{{ $product->total_quantity }}</div>
                     </div>
-                    @if($topProducts->count() > 0)
-                        <div>
-                            @foreach($topProducts as $index => $product)
-                            <div class="mosaic-list-item">
-                                <div class="mosaic-list-number">{{ $index + 1 }}</div>
-                                <div class="mosaic-list-content">
-                                    <div class="mosaic-list-title">{{ $product->name }}</div>
-                                </div>
-                                <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
-                                    {{ $product->total_quantity }}
-                                </span>
-                            </div>
-                            @endforeach
-                    </div>
+                    @endforeach
                 @else
-                        <div class="mosaic-empty-state">
-                            <i class="bi bi-inbox"></i>
-                            <p>No hay datos disponibles</p>
-                        </div>
+                <div class="empty" style="padding: 20px;">
+                    <div class="empty-t">No hay datos</div>
+                </div>
                 @endif
             </div>
         </div>
     </div>
 
-        <!-- Alertas de Stock -->
-        @if($outOfStockProducts->count() > 0 || $lowStockProducts->count() > 0)
-        <div class="row g-4 mt-4">
-            @if($outOfStockProducts->count() > 0)
-            <div class="col-lg-6">
-                <div class="mosaic-section-card" style="border-left: 6px solid #dc3545;">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-exclamation-triangle-fill" style="color: #dc3545;"></i>
-                            <span style="color: #dc3545;">Productos Sin Stock</span>
-                        </div>
-                        <span class="badge bg-danger fs-6">{{ $outOfStockProducts->count() }}</span>
-                    </div>
-                    <div>
-                        @foreach($outOfStockProducts as $product)
-                        <div class="mosaic-list-item" style="border-left: 3px solid #dc3545;">
-                            <div class="mosaic-list-content">
-                                <div class="mosaic-list-title">{{ $product->name }}</div>
-                                <small class="text-muted">{{ $product->category->name ?? 'Sin categoría' }}</small>
-                            </div>
-                            <span class="badge bg-danger">
-                                <i class="bi bi-x-circle-fill"></i> Sin Stock
-                            </span>
-                        </div>
-                        @endforeach
-                    </div>
+    @if(isset($salesByWaiter) && $salesByWaiter->count() > 0 || isset($incomeByMethod) && $incomeByMethod->count() > 0)
+    <div class="grid2 mt4">
+        @if(isset($salesByWaiter) && $salesByWaiter->count() > 0)
+        <div class="card">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-person-badge"></i>
+                    Ventas por Mozo (Hoy)
                 </div>
             </div>
-            @endif
-
-            @if($lowStockProducts->count() > 0)
-            <div class="col-lg-6">
-                <div class="mosaic-section-card" style="border-left: 6px solid #ffc107;">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-exclamation-circle-fill" style="color: #ffc107;"></i>
-                            <span style="color: #856404;">Productos con Stock Bajo</span>
-                        </div>
-                        <span class="badge bg-warning text-dark fs-6">{{ $lowStockProducts->count() }}</span>
+            <div class="cb" style="padding: 0;">
+                @foreach($salesByWaiter as $index => $waiter)
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--gray-50);">
+                    <div style="width: 24px; height: 24px; background: var(--teal-500); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white;">{{ $index + 1 }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--gray-800);">{{ $waiter->name }}</div>
+                        <div style="font-size: 11px; color: var(--gray-400);">{{ $waiter->payment_count }} pagos</div>
                     </div>
-                    <div>
-                        @foreach($lowStockProducts as $product)
-                        @php
-                            $currentStock = $product->getCurrentStock(auth()->user()->restaurant_id);
-                        @endphp
-                        <div class="mosaic-list-item" style="border-left: 3px solid #ffc107;">
-                            <div class="mosaic-list-content">
-                                <div class="mosaic-list-title">{{ $product->name }}</div>
-                                <small class="text-muted">{{ $product->category->name ?? 'Sin categoría' }}</small>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-warning text-dark">
-                                    Stock: {{ $currentStock }}
-                                </span>
-                                <small class="text-muted">(Mín: {{ $product->stock_minimum }})</small>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
+                    <span class="badge bg-teal font-mono">${{ number_format($waiter->total_sales, 2) }}</span>
                 </div>
+                @endforeach
             </div>
-            @endif
         </div>
         @endif
-
-        <!-- MÓDULO 5: Ventas por Mozo e Ingresos por Método -->
-        <div class="row g-4 mt-4">
-            @if(isset($salesByWaiter) && $salesByWaiter->count() > 0)
-            <div class="col-lg-6">
-                <div class="mosaic-section-card">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-person-badge"></i>
-                            <span>Ventas por Mozo (Hoy)</span>
-                        </div>
-                    </div>
-                    <div>
-                        @foreach($salesByWaiter as $index => $waiter)
-                        <div class="mosaic-list-item">
-                            <div class="mosaic-list-number">{{ $index + 1 }}</div>
-                            <div class="mosaic-list-content">
-                                <div class="mosaic-list-title">{{ $waiter->name }}</div>
-                                <small class="text-muted">{{ $waiter->payment_count }} pagos</small>
-                            </div>
-                            <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
-                                ${{ number_format($waiter->total_sales, 2) }}
-                            </span>
-                        </div>
-                        @endforeach
-                    </div>
+        @if(isset($incomeByMethod) && $incomeByMethod->count() > 0)
+        <div class="card">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-wallet2"></i>
+                    Ingresos por Método (Hoy)
                 </div>
             </div>
-            @endif
-
-            @if(isset($incomeByMethod) && $incomeByMethod->count() > 0)
-            <div class="col-lg-6">
-                <div class="mosaic-section-card">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-wallet2"></i>
-                            <span>Ingresos por Método (Hoy)</span>
-                        </div>
+            <div class="cb" style="padding: 0;">
+                @foreach($incomeByMethod as $method)
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--gray-50);">
+                    <div style="display: flex; align-items: center; gap: 6px; flex: 1; font-size: 13px; color: var(--gray-700); font-weight: 500;">
+                        @if($method->payment_method === 'EFECTIVO')<i class="bi bi-cash"></i>
+                        @elseif($method->payment_method === 'DEBITO')<i class="bi bi-credit-card"></i>
+                        @elseif($method->payment_method === 'CREDITO')<i class="bi bi-credit-card-2-front"></i>
+                        @elseif($method->payment_method === 'TRANSFERENCIA')<i class="bi bi-bank"></i>
+                        @elseif($method->payment_method === 'QR')<i class="bi bi-qr-code"></i>
+                        @else<i class="bi bi-wallet2"></i>
+                        @endif
+                        {{ $method->payment_method }}
                     </div>
-                    <div>
-                        @foreach($incomeByMethod as $method)
-                        <div class="mosaic-list-item">
-                            <div class="mosaic-list-content">
-                                <div class="mosaic-list-title">
-                                    @if($method->payment_method === 'EFECTIVO')
-                                        <i class="bi bi-cash text-success"></i> Efectivo
-                                    @elseif($method->payment_method === 'DEBITO')
-                                        <i class="bi bi-credit-card text-primary"></i> Débito
-                                    @elseif($method->payment_method === 'CREDITO')
-                                        <i class="bi bi-credit-card-2-front text-info"></i> Crédito
-                                    @elseif($method->payment_method === 'TRANSFERENCIA')
-                                        <i class="bi bi-bank text-secondary"></i> Transferencia
-                                    @elseif($method->payment_method === 'QR')
-                                        <i class="bi bi-qr-code text-warning"></i> QR
-                                    @elseif($method->payment_method === 'MIXTO')
-                                        <i class="bi bi-wallet2 text-dark"></i> Mixto
-                                    @else
-                                        {{ $method->payment_method }}
-                                    @endif
-                                </div>
-                            </div>
-                            <span class="mosaic-list-badge" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white;">
-                                ${{ number_format($method->total, 2) }}
-                            </span>
-                        </div>
-                        @endforeach
-                    </div>
+                    <span class="badge bg-green font-mono">${{ number_format($method->total, 2) }}</span>
                 </div>
-            </div>
-            @endif
-        </div>
-
-        <!-- MÓDULO 5: Mesas Activas -->
-        @if(isset($activeTables) && $activeTables->count() > 0)
-        <div class="row g-4 mt-4">
-            <div class="col-12">
-                <div class="mosaic-section-card">
-                    <div class="mosaic-section-header">
-                        <div class="mosaic-section-title">
-                            <i class="bi bi-table"></i>
-                            <span>Mesas Activas</span>
-                        </div>
-                        <a href="{{ route('tables.index') }}" class="btn btn-sm" style="background: linear-gradient(135deg, #1e8081, #22565e); color: white; border: none; border-radius: 10px;">
-                            Ver todas
-                        </a>
-                    </div>
-                    <div class="row g-3">
-                        @foreach($activeTables as $table)
-                        <div class="col-md-4 col-lg-3">
-                            <div class="card border-warning" style="border-width: 2px;">
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2">
-                                        <i class="bi bi-table"></i> Mesa {{ $table->number }}
-                                    </h6>
-                                    @if($table->currentSession && $table->currentSession->waiter)
-                                    <p class="card-text small mb-1">
-                                        <i class="bi bi-person-badge"></i> {{ $table->currentSession->waiter->name }}
-                                    </p>
-                                    @endif
-                                    @if($table->sector)
-                                    <p class="card-text small mb-2 text-muted">
-                                        <i class="bi bi-door-open"></i> {{ $table->sector->name }}
-                                    </p>
-                                    @endif
-                                    @if($table->currentSession && $table->currentSession->started_at)
-                                    <p class="card-text small text-muted mb-0">
-                                        <i class="bi bi-clock"></i> {{ $table->currentSession->started_at->format('H:i') }}
-                                    </p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
         @endif
     </div>
+    @endif
+
+    @if(isset($activeTables) && $activeTables->count() > 0)
+    <div class="card mt4">
+        <div class="ch">
+            <div class="ch-t">
+                <i class="bi bi-table"></i>
+                Mesas Activas
+            </div>
+            <a href="{{ route('tables.index') }}" class="btn btn-o btn-sm">Ver todas</a>
+        </div>
+        <div class="cb">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+                @foreach($activeTables as $table)
+                <div style="padding: 12px; border: 1px solid var(--gray-100); border-radius: var(--r-md);">
+                    <div style="font-weight: 600; color: var(--gray-800);">Mesa {{ $table->number }}</div>
+                    @if($table->currentSession && $table->currentSession->waiter)
+                    <div class="text-sm text-muted">{{ $table->currentSession->waiter->name }}</div>
+                    @endif
+                    @if($table->sector)
+                    <div class="text-sm text-muted">{{ $table->sector->name }}</div>
+                    @endif
+                    @if($table->currentSession && $table->currentSession->started_at)
+                    <div class="text-sm text-muted">{{ $table->currentSession->started_at->format('H:i') }}</div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @if($outOfStockProducts->count() > 0 || $lowStockProducts->count() > 0)
+    <div class="grid2 mt4">
+        @if($outOfStockProducts->count() > 0)
+        <div class="card" style="border-left: 4px solid var(--red-500);">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-exclamation-triangle-fill" style="color: var(--red-500);"></i>
+                    Productos sin stock
+                </div>
+                <span class="badge bg-red">{{ $outOfStockProducts->count() }}</span>
+            </div>
+            <div class="cb">
+                @foreach($outOfStockProducts as $product)
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-50);">
+                    <div>
+                        <div class="font-600">{{ $product->name }}</div>
+                        <small class="text-muted">{{ $product->category->name ?? 'Sin categoría' }}</small>
+                    </div>
+                    <span class="badge bg-red">Sin stock</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+        @if($lowStockProducts->count() > 0)
+        <div class="card" style="border-left: 4px solid var(--amber-500);">
+            <div class="ch">
+                <div class="ch-t">
+                    <i class="bi bi-exclamation-circle" style="color: var(--amber-500);"></i>
+                    Productos con stock bajo
+                </div>
+                <span class="badge bg-amber">{{ $lowStockProducts->count() }}</span>
+            </div>
+            <div class="cb">
+                @foreach($lowStockProducts as $product)
+                @php $currentStock = $product->getCurrentStock(auth()->user()->restaurant_id); @endphp
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-50);">
+                    <div>
+                        <div class="font-600">{{ $product->name }}</div>
+                        <small class="text-muted">Stock: {{ $currentStock }} (mín: {{ $product->stock_minimum }})</small>
+                    </div>
+                    <span class="badge bg-amber">{{ $currentStock }}</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+    @endif
 </div>
 
 @push('scripts')
