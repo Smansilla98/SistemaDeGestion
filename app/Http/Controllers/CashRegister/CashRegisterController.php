@@ -252,6 +252,44 @@ class CashRegisterController extends Controller
     }
 
     /**
+     * Registrar movimiento de caja (ingreso o egreso/salida)
+     * Ej: salida para pago a empleados, gastos, etc.
+     */
+    public function storeMovement(Request $request, CashRegisterSession $session)
+    {
+        if ($session->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a esta sesión');
+        }
+        if ($session->status !== 'ABIERTA') {
+            return back()->with('error', 'Solo se pueden registrar movimientos en sesiones abiertas');
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|in:INGRESO,EGRESO',
+            'amount' => 'required|numeric|min:0.01',
+            'description' => 'required|string|max:500',
+            'reference' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $this->cashRegisterService->recordMovement([
+                'restaurant_id' => auth()->user()->restaurant_id,
+                'cash_register_session_id' => $session->id,
+                'user_id' => auth()->id(),
+                'type' => $validated['type'],
+                'amount' => $validated['amount'],
+                'description' => $validated['description'],
+                'reference' => $validated['reference'] ?? null,
+            ]);
+            $tipo = $validated['type'] === 'EGRESO' ? 'Salida' : 'Ingreso';
+            return back()->with('success', $tipo . ' de caja registrada correctamente');
+        } catch (\Exception $e) {
+            Log::warning('Error al registrar movimiento de caja: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Eliminar movimiento de caja
      * Solo ADMIN puede eliminar movimientos, y solo si la sesión está abierta
      */

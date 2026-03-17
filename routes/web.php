@@ -189,6 +189,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/sessions', [CashRegisterController::class, 'openSession'])->name('open-session');
         Route::get('/sessions/{session}', [CashRegisterController::class, 'session'])->name('session');
         Route::post('/sessions/{session}/close', [CashRegisterController::class, 'closeSession'])->name('close-session');
+        Route::post('/sessions/{session}/movements', [CashRegisterController::class, 'storeMovement'])->name('session.store-movement');
         Route::post('/orders/{order}/payment', [CashRegisterController::class, 'processPayment'])->name('process-payment');
         Route::delete('/movements/{movement}', [CashRegisterController::class, 'destroyMovement'])->name('destroy-movement');
         

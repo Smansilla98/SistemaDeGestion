@@ -3,6 +3,18 @@
 @section('title', 'Sesión de Caja')
 
 @section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
 <div class="row mb-4">
     <div class="col-12">
         <a href="{{ route('cash-register.index') }}" class="btn btn-secondary mb-2">
@@ -176,10 +188,21 @@
     </div>
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0">Movimientos</h5>
+                @if($session->status === 'ABIERTA')
+                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#movementModal">
+                    <i class="bi bi-plus-lg"></i> Registrar salida / ingreso
+                </button>
+                @endif
             </div>
             <div class="card-body">
+                @if($session->cashMovements->count() > 0)
+                <p class="small text-muted mb-2">
+                    <strong>Ingresos:</strong> ${{ number_format($totalIngresos, 2) }} —
+                    <strong>Egresos:</strong> ${{ number_format($totalEgresos, 2) }}
+                </p>
+                @endif
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead>
@@ -230,6 +253,51 @@
         </div>
     </div>
 </div>
+
+@if($session->status === 'ABIERTA')
+<!-- Modal Registrar movimiento de caja (salida/ingreso) -->
+<div class="modal fade" id="movementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('cash-register.session.store-movement', $session) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-cash-stack"></i> Registrar movimiento de caja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Usá <strong>Salida (egreso)</strong> para pagos a empleados, gastos o retiros. <strong>Ingreso</strong> para entradas de efectivo (ej. cambio, reintegro).</p>
+                    <div class="mb-3">
+                        <label for="movement_type" class="form-label">Tipo <span class="text-danger">*</span></label>
+                        <select class="form-select" id="movement_type" name="type" required>
+                            <option value="EGRESO" {{ old('type') === 'INGRESO' ? '' : 'selected' }}>Salida (egreso)</option>
+                            <option value="INGRESO" {{ old('type') === 'INGRESO' ? 'selected' : '' }}>Ingreso</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="movement_amount" class="form-label">Monto ($) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="movement_amount" name="amount" value="{{ old('amount') }}" placeholder="0.00" required>
+                        @error('amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="movement_description" class="form-label">Descripción <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="movement_description" name="description" value="{{ old('description') }}" placeholder="Ej: Pago empleados fin de jornada" maxlength="500" required>
+                        @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="movement_reference" class="form-label">Referencia (opcional)</label>
+                        <input type="text" class="form-control" id="movement_reference" name="reference" value="{{ old('reference') }}" placeholder="Ej: Recibo Nº 001" maxlength="255">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @push('scripts')
 <script>
