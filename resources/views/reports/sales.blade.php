@@ -81,7 +81,7 @@
         </div>
 
         <h5>Ventas por Día</h5>
-        <div class="table-responsive">
+        <div class="table-responsive mb-4">
             <table class="table">
                 <thead>
                     <tr>
@@ -99,6 +99,100 @@
                 </tbody>
             </table>
         </div>
+
+        @if(isset($cashSessions) && $cashSessions->count() > 0)
+        <hr class="my-4">
+        <h5 class="mb-3"><i class="bi bi-cash-stack"></i> Detalle de movimientos por caja</h5>
+        <p class="text-muted small">Sesiones con actividad en el período. Ventas (pagos) e ingresos/egresos de cada caja.</p>
+        @foreach($cashSessions as $session)
+        @php
+            $paymentsRows = $session->payments->map(fn($p) => (object)[
+                'created_at' => $p->created_at,
+                'type' => 'Venta',
+                'description' => $p->order ? 'Pedido ' . $p->order->number . ($p->order->table ? ' · Mesa ' . $p->order->table->number : ($p->order->customer_name ? ' · ' . $p->order->customer_name : '')) : 'Pago',
+                'amount' => $p->amount,
+                'payment_method' => $p->payment_method,
+            ]);
+            $movementsRows = $session->cashMovements->map(fn($m) => (object)[
+                'created_at' => $m->created_at,
+                'type' => $m->type,
+                'description' => $m->description,
+                'amount' => $m->amount,
+                'payment_method' => null,
+            ]);
+            $allRows = $paymentsRows->concat($movementsRows)->sortBy('created_at');
+            $totalVentas = $session->payments->sum('amount');
+            $totalIngresos = $session->cashMovements->where('type', 'INGRESO')->sum('amount');
+            $totalEgresos = $session->cashMovements->where('type', 'EGRESO')->sum('amount');
+        @endphp
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>{{ $session->cashRegister->name ?? 'Caja' }}</strong>
+                    <span class="text-muted ms-2">· Abierta por {{ $session->user->name ?? 'N/A' }}</span>
+                    <span class="badge bg-{{ $session->status === 'ABIERTA' ? 'success' : 'secondary' }} ms-2">{{ $session->status }}</span>
+                </div>
+                <div class="small">
+                    {{ $session->opened_at->format('d/m/Y H:i') }}
+                    @if($session->closed_at)
+                        — Cierre: {{ $session->closed_at->format('d/m/Y H:i') }}
+                    @else
+                        — <span class="text-success">Sesión abierta</span>
+                    @endif
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-auto"><span class="badge bg-light text-dark">Inicial: ${{ number_format($session->initial_amount, 2) }}</span></div>
+                    <div class="col-auto"><span class="badge bg-success">Ventas: ${{ number_format($totalVentas, 2) }}</span></div>
+                    <div class="col-auto"><span class="badge bg-info">Ingresos: ${{ number_format($totalIngresos, 2) }}</span></div>
+                    <div class="col-auto"><span class="badge bg-danger">Egresos: ${{ number_format($totalEgresos, 2) }}</span></div>
+                    @if($session->closed_at && $session->final_amount !== null)
+                    <div class="col-auto"><span class="badge bg-primary">Cierre: ${{ number_format($session->final_amount, 2) }}</span></div>
+                    @endif
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th class="text-end">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($allRows as $row)
+                            <tr>
+                                <td>{{ $row->created_at->format('d/m H:i') }}</td>
+                                <td>
+                                    @if($row->type === 'Venta')
+                                        <span class="badge bg-success">{{ $row->type }}</span>
+                                        @if($row->payment_method)<small class="text-muted">· {{ $row->payment_method }}</small>@endif
+                                    @elseif($row->type === 'INGRESO')
+                                        <span class="badge bg-info">{{ $row->type }}</span>
+                                    @else
+                                        <span class="badge bg-danger">{{ $row->type }}</span>
+                                    @endif
+                                </td>
+                                <td>{{ $row->description }}</td>
+                                <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        @endforeach
+        @else
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="bi bi-cash-stack"></i> Detalle de movimientos por caja</h5>
+                <p class="text-muted mb-0">No hay sesiones de caja con actividad en el período seleccionado.</p>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endsection
