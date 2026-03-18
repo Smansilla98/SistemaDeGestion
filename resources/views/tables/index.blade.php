@@ -381,44 +381,45 @@
 @endpush
 
 @section('content')
-<div class="row mb-4">
-    <div class="col-12 tables-header d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-table"></i> Gestión de Mesas</h1>
+<div class="ph" style="background: #24696b;">
+    <div class="ph-inner">
+        <div class="ph-title">
+            <i class="bi bi-grid-3x3-gap"></i>
+            Gestión de Mesas
         </div>
-        <div class="tables-header-actions">
-            @can('create', App\Models\Table::class)
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTableModal">
-                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Nueva Mesa</span>
-            </button>
-            @endcan
-            <a href="{{ route('tables.layout') }}" class="btn btn-outline-primary">
-                <i class="bi bi-diagram-3"></i> <span class="d-none d-sm-inline">Layout</span>
-            </a>
-        </div>
+    </div>
+    <div class="ph-actions">
+        @can('create', App\Models\Table::class)
+        <button type="button" class="btn btn-p" data-bs-toggle="modal" data-bs-target="#createTableModal">
+            <i class="bi bi-plus"></i> Nueva Mesa
+        </button>
+        @endcan
+        <a href="{{ route('tables.layout') }}" class="btn btn-s">
+            <i class="bi bi-people"></i> Layout
+        </a>
     </div>
 </div>
 
+<div class="page">
 <!-- Búsqueda de mesas -->
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <input type="text" id="tableSearch" class="form-control" placeholder="🔍 Buscar mesa por número o nombre...">
-            </div>
+<div class="card mb-3">
+    <div class="cb">
+        <div class="sb-bar">
+            <i class="bi bi-search"></i>
+            <input type="text" id="tableSearch" placeholder="Buscar mesa por número o nombre...">
         </div>
     </div>
 </div>
 
 @foreach($sectors as $sector)
 <div class="card mb-4">
-    <div class="card-header sector-header">
-        <h5 class="mb-0">
+    <div class="ch sector-header" style="background: var(--g50);">
+        <div class="ch-t" style="color: var(--g800);">
             <i class="bi bi-door-open"></i> {{ $sector->name }}
             @if($sector->description)
                 <small class="text-muted d-none d-sm-inline">- {{ $sector->description }}</small>
             @endif
-        </h5>
+        </div>
     </div>
     <div class="card-body">
         <div class="row">
@@ -749,6 +750,8 @@
     </div>
 </div>
 @endif
+
+</div><!-- /.page -->
 
 <script>
 function openChangeStatusModal(tableId, currentStatus, capacity) {
