@@ -97,7 +97,7 @@
 
         body {
             font-family: var(--font-primary) !important;
-            background: var(--mosaic-bg) !important;
+            background: #f4f7f6 !important;
             color: var(--mosaic-text-primary) !important;
             overflow-x: hidden;
         }
