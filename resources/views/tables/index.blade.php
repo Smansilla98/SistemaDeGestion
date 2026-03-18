@@ -4,79 +4,131 @@
 
 @push('styles')
 <style>
-    /* Estilos generales para botones de mesas */
+    /* Grid de mesas: 4 columnas en pantallas anchas */
+    .tables-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.25rem;
+    }
+    @media (min-width: 1200px) {
+        .tables-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .tables-grid-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    /* Card de mesa: blanca, sombra, bordes redondeados */
+    .table-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--g100, #e8eeec);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        transition: box-shadow 0.2s ease;
+    }
+    .table-card:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .table-card-body {
+        padding: 1.25rem 1.25rem 1rem;
+    }
+    .table-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .table-card-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #131a18;
+        line-height: 1.2;
+    }
+    .table-status-pill {
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+    }
+    .table-status-pill.table-status-libre { background: #22c55e; color: #fff; }
+    .table-status-pill.table-status-ocupada { background: #f59e0b; color: #fff; }
+    .table-status-pill.table-status-reservada { background: #3b82f6; color: #fff; }
+    .table-status-pill:not(button) { cursor: default; }
+    .table-card-capacity {
+        font-size: 0.875rem;
+        color: var(--g500, #6b7f7a);
+        margin-bottom: 1rem;
+    }
+    .table-card-capacity i { margin-right: 0.25rem; opacity: 0.9; }
+    .table-card-extra {
+        font-size: 0.75rem;
+        color: var(--g500);
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .table-badge-info, .table-card-time { display: inline-flex; align-items: center; gap: 0.25rem; }
+
+    /* Botones de acción: apilados, ancho completo */
     .table-actions {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
         width: 100%;
-        margin-top: 1rem;
+        margin-top: 0.25rem;
     }
-    
     .table-actions .btn {
         width: 100%;
-        min-height: 48px;
-        padding: 0.875rem 1.25rem;
-        font-size: 0.9375rem;
-        font-weight: 700;
-        border-radius: 14px;
+        min-height: 44px;
+        padding: 0.65rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.625rem;
+        gap: 0.5rem;
         border: none !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    
     .table-actions .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     }
-    
-    .table-actions .btn:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
-    
-    .table-actions .btn i {
-        font-size: 1.25rem;
-    }
-    
-    /* Colores específicos para cada acción */
+    .table-actions .btn i { font-size: 1rem; }
+
     .btn-reservar {
-        background: linear-gradient(135deg, #17a2b8, #138496) !important;
+        background: #17a2b8 !important;
         color: white !important;
     }
-    
     .btn-ocupar {
-        background: linear-gradient(135deg, #28a745, #218838) !important;
+        background: #22c55e !important;
         color: white !important;
     }
-    
     .btn-pedido {
-        background: linear-gradient(135deg, #007bff, #0056b3) !important;
+        background: #2563eb !important;
         color: white !important;
     }
-    
     .btn-ver-pedidos {
-        background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+        background: #eab308 !important;
         color: #000 !important;
-        font-weight: 800 !important;
     }
-    
     .btn-cerrar {
-        background: linear-gradient(135deg, #dc3545, #c82333) !important;
+        background: #dc2626 !important;
         color: white !important;
     }
-    
     .btn-editar {
-        background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+        background: #4b5563 !important;
         color: white !important;
     }
-    
     .btn-cambiar-estado {
-        background: linear-gradient(135deg, #6610f2, #520dc2) !important;
+        background: #7c3aed !important;
         color: white !important;
     }
     
@@ -117,94 +169,28 @@
             padding: 0.625rem 1rem;
         }
         
-        /* Tarjetas de mesas más grandes y táctiles */
+        .tables-grid {
+            grid-template-columns: 1fr;
+        }
         .table-card {
-            margin-bottom: 1rem !important;
-            border-radius: 16px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-            transition: all 0.2s ease;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
         }
-        
         .table-card:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+            transform: scale(0.99);
         }
-        
         .table-card-body {
             padding: 1.25rem !important;
         }
-        
-        .table-card-title {
-            font-size: 1.25rem !important;
-            font-weight: 700 !important;
-            margin-bottom: 0.75rem !important;
-        }
-        
-        .table-status-badge {
-            font-size: 0.875rem !important;
-            padding: 0.5rem 0.75rem !important;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Botones más grandes y táctiles (mínimo 48x48px) */
-        .table-card .btn {
+        .table-actions .btn {
             min-height: 48px;
-            padding: 0.875rem 1.25rem !important;
-            font-size: 0.9375rem !important;
-            font-weight: 700 !important;
-            border-radius: 14px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.625rem;
-            flex: 1;
-            min-width: 0;
-            border: none !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: all 0.2s ease;
+            padding: 0.75rem 1rem;
         }
-        
-        .table-card .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        
-        .table-card .btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        }
-        
-        .table-card .btn i {
-            font-size: 1.25rem;
-        }
-        
-        /* Información de mesa más clara */
-        .table-info {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.02);
-            border-radius: 10px;
-        }
-        
-        .table-info p {
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-        
-        .table-info p:last-child {
-            margin-bottom: 0;
-        }
-        
-        /* Sector header más compacto */
         .sector-header {
             padding: 1rem !important;
         }
-        
-        .sector-header h5 {
-            font-size: 1.125rem !important;
+        .sector-header .ch-t {
+            font-size: 1rem !important;
         }
         
         /* Modales fullscreen en móvil */
@@ -421,50 +407,39 @@
             @endif
         </div>
     </div>
-    <div class="card-body">
-        <div class="row">
+    <div class="cb">
+        <div class="tables-grid">
             @forelse($sector->tables as $table)
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3 table-item" 
+            <div class="table-item" 
                  data-table-number="{{ strtolower($table->number) }}"
                  data-sector-name="{{ strtolower($sector->name) }}">
-                <div class="card h-100 table-card border-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : 'secondary') }}">
-                    <div class="card-body table-card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title table-card-title mb-0">{{ $table->number }}</h5>
+                <div class="table-card h-100">
+                    <div class="table-card-body">
+                        <div class="table-card-header">
+                            <span class="table-card-number">{{ $table->number }}</span>
                             @can('update', $table)
                             <button type="button" 
-                                    class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : ($table->status === 'RESERVADA' ? 'info' : 'secondary')) }} border-0 table-status-badge"
-                                    style="cursor: pointer;"
+                                    class="table-status-pill table-status-{{ strtolower($table->status) }}"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
                                 {{ $table->status }}
                             </button>
                             @else
-                            <span class="badge bg-{{ $table->status === 'LIBRE' ? 'success' : ($table->status === 'OCUPADA' ? 'warning' : ($table->status === 'RESERVADA' ? 'info' : 'secondary')) }} table-status-badge">
-                                {{ $table->status }}
-                            </span>
+                            <span class="table-status-pill table-status-{{ strtolower($table->status) }}">{{ $table->status }}</span>
                             @endcan
                         </div>
-                        
-                        <div class="table-info">
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-people"></i> <strong>Capacidad:</strong> {{ $table->capacity }} personas
-                            </p>
-                            @if($table->status === 'OCUPADA' && $table->currentSession)
-                                @if($table->currentSession->waiter)
-                                <p class="mb-1">
-                                    <span class="badge bg-info">
-                                        <i class="bi bi-person-badge"></i> Mozo: {{ $table->currentSession->waiter->name }}
-                                    </span>
-                                </p>
-                                @endif
-                                @if($table->currentSession->started_at)
-                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">
-                                    <i class="bi bi-clock"></i> Abierta: {{ $table->currentSession->started_at->format('H:i') }}
-                                </p>
-                                @endif
+                        <div class="table-card-capacity">
+                            <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
+                        </div>
+                        @if($table->status === 'OCUPADA' && $table->currentSession)
+                        <div class="table-card-extra">
+                            @if($table->currentSession->waiter)
+                            <span class="table-badge-info"><i class="bi bi-person-badge"></i> {{ $table->currentSession->waiter->name }}</span>
+                            @endif
+                            @if($table->currentSession->started_at)
+                            <span class="table-card-time"><i class="bi bi-clock"></i> {{ $table->currentSession->started_at->format('H:i') }}</span>
                             @endif
                         </div>
-                        
+                        @endif
                         <div class="table-actions">
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
@@ -518,8 +493,8 @@
                 </div>
             </div>
             @empty
-            <div class="col-12">
-                <p class="text-muted text-center py-4">No hay mesas en este sector</p>
+            <div class="tables-grid-empty">
+                <p class="text-muted mb-0">No hay mesas en este sector</p>
             </div>
             @endforelse
         </div>
