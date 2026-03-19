@@ -151,7 +151,7 @@
 
 /* BADGES */
 .badge,.stat-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
-.bg-green,.badge-green{background:var(--green-100);color:var(--green-800)}
+.bg-green,.badge-green{background:#218a46;color:var(--green-800)}
 .bg-amber,.badge-amber{background:var(--amber-100);color:var(--amber-800)}
 .bg-teal,.badge-teal{background:var(--t100);color:var(--t600)}
 .bg-red,.badge-red{background:var(--red-100);color:var(--red-800)}
