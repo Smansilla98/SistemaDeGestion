@@ -90,6 +90,60 @@
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-ic,.btn-icon{padding:6px}
 
+/* Colores de acción más fáciles de ubicar */
+.conurbania-app .btn-primary{
+  background:#1f9fb5 !important;
+  border-color:#1f9fb5 !important;
+  color:#fff !important;
+}
+.conurbania-app .btn-primary:hover{
+  background:#1a8ca0 !important;
+  border-color:#1a8ca0 !important;
+}
+.conurbania-app .btn-success{
+  background:#20c05f !important;
+  border-color:#20c05f !important;
+  color:#fff !important;
+}
+.conurbania-app .btn-success:hover{
+  background:#1aa652 !important;
+  border-color:#1aa652 !important;
+}
+.conurbania-app .btn-secondary{
+  background:#5a6678 !important;
+  border-color:#5a6678 !important;
+  color:#fff !important;
+}
+.conurbania-app .btn-secondary:hover{
+  background:#4d5768 !important;
+  border-color:#4d5768 !important;
+}
+.conurbania-app .btn-danger{
+  background:#d9534f !important;
+  border-color:#d9534f !important;
+  color:#fff !important;
+}
+.conurbania-app .btn-danger:hover{
+  background:#c64743 !important;
+  border-color:#c64743 !important;
+}
+
+/* Header estándar tipo Pedidos */
+.conurbania-app .row.mb-4 > .col-12.d-flex.justify-content-between.align-items-center,
+.conurbania-app .row.mb-4 > .col-12.tables-header.d-flex.justify-content-between.align-items-center{
+  background:linear-gradient(135deg,var(--t900) 0%,var(--t700) 100%);
+  border:1px solid rgba(29,158,117,.35);
+  border-radius:14px;
+  padding:18px 20px;
+}
+.conurbania-app .row.mb-4 > .col-12.d-flex.justify-content-between.align-items-center h1,
+.conurbania-app .row.mb-4 > .col-12.tables-header.d-flex.justify-content-between.align-items-center h1{
+  margin:0 !important;
+  color:#fff !important;
+  font-size:2.2rem !important;
+  font-weight:700 !important;
+}
+
 /* CARDS */
 .card{background:white;border:1px solid var(--g100);border-radius:var(--rlg);overflow:hidden;min-width:0}
 .ch,.card-header{padding:16px 20px 14px;border-bottom:1px solid var(--g100);display:flex;align-items:center;gap:8px}

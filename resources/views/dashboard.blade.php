@@ -3,13 +3,14 @@
 @section('title', 'Página Principal')
 
 @section('content')
-<div class="ph">
-    <div class="ph-inner">
-        <div class="ph-title">
-            <i class="bi bi-grid-3x3-gap"></i>
-            Página Principal
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
+                <i class="bi bi-grid-3x3-gap"></i> Página Principal
+            </h1>
+            <div class="text-white-50">Resumen del día — {{ now()->translatedFormat('l d \d\e F, Y') }}</div>
         </div>
-        <div class="ph-sub">Resumen del día — {{ now()->translatedFormat('l d \d\e F, Y') }}</div>
     </div>
 </div>
 

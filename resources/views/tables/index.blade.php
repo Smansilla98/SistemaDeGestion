@@ -364,22 +364,21 @@
 @endpush
 
 @section('content')
-<div class="ph" style="background: #24696b;">
-    <div class="ph-inner">
-        <div class="ph-title">
-            <i class="bi bi-grid-3x3-gap"></i>
-            Gestión de Mesas
+<div class="row mb-4">
+    <div class="col-12 tables-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-table"></i> Gestión de Mesas</h1>
         </div>
-    </div>
-    <div class="ph-actions">
-        @can('create', App\Models\Table::class)
-        <button type="button" class="btn btn-p" data-bs-toggle="modal" data-bs-target="#createTableModal">
-            <i class="bi bi-plus"></i> Nueva Mesa
-        </button>
-        @endcan
-        <a href="{{ route('tables.layout') }}" class="btn btn-s">
-            <i class="bi bi-people"></i> Layout
-        </a>
+        <div class="tables-header-actions">
+            @can('create', App\Models\Table::class)
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTableModal">
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Nueva Mesa</span>
+            </button>
+            @endcan
+            <a href="{{ route('tables.layout') }}" class="btn btn-secondary">
+                <i class="bi bi-diagram-3"></i> <span class="d-none d-sm-inline">Layout</span>
+            </a>
+        </div>
     </div>
 </div>
 
