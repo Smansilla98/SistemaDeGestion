@@ -131,8 +131,6 @@
 /* Header estándar tipo Pedidos */
 .conurbania-app .row.mb-4 > .col-12.d-flex.justify-content-between.align-items-center,
 .conurbania-app .row.mb-4 > .col-12.tables-header.d-flex.justify-content-between.align-items-center{
-  background:linear-gradient(135deg,var(--t900) 0%,var(--t700) 100%);
-  border:1px solid rgba(29,158,117,.35);
   border-radius:14px;
   padding:18px 20px;
 }
