@@ -43,6 +43,7 @@ class OrderController extends Controller
                 $existingItem = $groupedItems[$existingItemIndex];
                 $existingItem['quantity'] += $item->quantity;
                 $existingItem['subtotal'] += $item->subtotal;
+                $existingItem['order_item_ids'][] = $item->id;
                 // Mantener el precio unitario del primer item (no promediar)
                 // Si hay observaciones diferentes, combinarlas
                 if ($item->observations && $existingItem['observations'] !== $item->observations) {
@@ -59,6 +60,7 @@ class OrderController extends Controller
                     'subtotal' => $item->subtotal,
                     'modifiers' => $item->modifiers,
                     'observations' => $item->observations,
+                    'order_item_ids' => [$item->id],
                 ]);
             }
         }
@@ -249,7 +251,100 @@ class OrderController extends Controller
         // Agrupar items por producto
         $groupedItems = $this->groupOrderItems($order->items);
 
-        return view('orders.show', compact('order', 'groupedItems'));
+        $products = Product::where('restaurant_id', $order->restaurant_id)
+            ->where('is_active', true)
+            ->with('category')
+            ->orderBy('category.name')
+            ->orderBy('name')
+            ->get();
+
+        return view('orders.show', compact('order', 'groupedItems', 'products'));
+    }
+
+    /**
+     * Elimina un grupo de items (subitems) agrupados por producto en la vista.
+     */
+    public function removeItemGroup(Request $request, Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        $validated = $request->validate([
+            'old_item_ids' => 'required|string',
+        ]);
+
+        $ids = array_values(array_filter(array_map('intval', preg_split('/[,\s]+/', (string) $validated['old_item_ids']))));
+
+        if (empty($ids)) {
+            return redirect()->route('orders.show', $order)->with('error', 'No se encontró ningún item válido para eliminar.');
+        }
+
+        $foundIds = OrderItem::where('order_id', $order->id)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->all();
+
+        if (empty($foundIds)) {
+            return redirect()->route('orders.show', $order)->with('error', 'Los items no pertenecen a este pedido.');
+        }
+
+        $this->orderService->removeOrderItems($order, $foundIds);
+
+        return redirect()->route('orders.show', $order)->with('success', 'Item(s) eliminado(s) correctamente.');
+    }
+
+    /**
+     * Reemplaza un grupo de items (misma cantidad) por otro producto.
+     */
+    public function replaceItemGroup(Request $request, Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        $validated = $request->validate([
+            'old_item_ids' => 'required|string',
+            'new_product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'observations' => 'nullable|string|max:1000',
+        ]);
+
+        $ids = array_values(array_filter(array_map('intval', preg_split('/[,\s]+/', (string) $validated['old_item_ids']))));
+        if (empty($ids)) {
+            return redirect()->route('orders.show', $order)->with('error', 'No se encontró ningún item válido para reemplazar.');
+        }
+
+        $foundItems = OrderItem::where('order_id', $order->id)
+            ->whereIn('id', $ids)
+            ->get();
+
+        if ($foundItems->isEmpty()) {
+            return redirect()->route('orders.show', $order)->with('error', 'Los items no pertenecen a este pedido.');
+        }
+
+        // Validación adicional: el producto debe pertenecer al mismo restaurante
+        $product = Product::findOrFail($validated['new_product_id']);
+        if ($product->restaurant_id !== $order->restaurant_id) {
+            return redirect()->route('orders.show', $order)->with('error', 'El producto seleccionado no pertenece a este restaurante.');
+        }
+
+        try {
+            DB::transaction(function () use ($order, $foundItems, $product, $validated) {
+                // 1) Eliminar items antiguos (resta stock inversa)
+                $this->orderService->removeOrderItems($order, $foundItems->pluck('id')->all());
+
+                // 2) Agregar el producto nuevo con la cantidad elegida
+                $itemData = [
+                    'product_id' => $product->id,
+                    'quantity' => (int) $validated['quantity'],
+                    'observations' => $validated['observations'] ?? null,
+                    // Nota: no enviamos modificadores para mantenerlo simple; si querés, se puede extender.
+                ];
+
+                $this->orderService->addItem($order, $itemData);
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('orders.show', $order)->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('orders.show', $order)->with('success', 'Item(s) reemplazado(s) correctamente.');
     }
 
     /**

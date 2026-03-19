@@ -171,6 +171,47 @@ class StockService
     }
 
     /**
+     * Reponer stock cuando se elimina/reemplaza un item de un pedido.
+     * Invierte la lógica de deductStockForSale (receta vs has_stock).
+     */
+    public function restoreStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null): void
+    {
+        $product = Product::with('ingredients')->findOrFail($productId);
+
+        if ($product->hasRecipe()) {
+            foreach ($product->ingredients as $ingredient) {
+                $toAdd = (int) ($ingredient->pivot->quantity * $quantity);
+                if ($toAdd <= 0) continue;
+
+                $this->recordMovement([
+                    'restaurant_id' => $restaurantId,
+                    'product_id' => $ingredient->id,
+                    'user_id' => auth()->id(),
+                    'type' => 'ENTRADA',
+                    'quantity' => $toAdd,
+                    'reason' => 'Reversión venta (item eliminado/reemplazado)',
+                    'reference' => $orderId ? "order_{$orderId}" : null,
+                ]);
+            }
+            return;
+        }
+
+        if (!$product->has_stock) {
+            return;
+        }
+
+        $this->recordMovement([
+            'restaurant_id' => $restaurantId,
+            'product_id' => $productId,
+            'user_id' => auth()->id(),
+            'type' => 'ENTRADA',
+            'quantity' => $quantity,
+            'reason' => 'Reversión venta (item eliminado/reemplazado)',
+            'reference' => $orderId ? "order_{$orderId}" : null,
+        ]);
+    }
+
+    /**
      * Verificar stock mínimo y generar alertas
      */
     public function checkLowStock(int $restaurantId): array

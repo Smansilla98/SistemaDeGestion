@@ -6,6 +6,7 @@ use App\Http\Controllers\Table\TableController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Kitchen\KitchenController;
 use App\Http\Controllers\CashRegister\CashRegisterController;
+use App\Http\Controllers\InteractiveTutorialController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,15 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\TutorialController::class, 'index'])->name('index');
         Route::post('/', [\App\Http\Controllers\TutorialController::class, 'store'])->name('store')->middleware('role:ADMIN,GERENTE');
         Route::delete('/{filename}', [\App\Http\Controllers\TutorialController::class, 'destroy'])->name('destroy')->middleware('role:ADMIN,GERENTE')->where('filename', '[^/]+');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tutoriales Interactivos (overlay + tooltips)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('tutorials')->name('tutorials.')->group(function () {
+        Route::get('/interactive/steps', [InteractiveTutorialController::class, 'steps'])->name('interactive.steps');
     });
 
     /*
@@ -109,6 +119,9 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
         Route::post('/{order}/items', [OrderController::class, 'addItem'])->name('add-item');
+        // Acciones sobre items agrupados (para "cambiar/eliminar subitems" en vista de show)
+        Route::post('/{order}/items/group/remove', [OrderController::class, 'removeItemGroup'])->name('items-group.remove');
+        Route::post('/{order}/items/group/replace', [OrderController::class, 'replaceItemGroup'])->name('items-group.replace');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('update-status');
         Route::put('/items/{item}/status', [OrderController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');

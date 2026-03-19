@@ -239,6 +239,33 @@ class OrderService
     }
 
     /**
+     * Elimina items de un pedido y repone stock (invirtiendo lo que se hizo en addItem).
+     *
+     * Se asume que los $orderItemIds pertenecen al $order.
+     */
+    public function removeOrderItems(Order $order, array $orderItemIds): void
+    {
+        DB::transaction(function () use ($order, $orderItemIds) {
+            $items = OrderItem::where('order_id', $order->id)
+                ->whereIn('id', $orderItemIds)
+                ->get();
+
+            foreach ($items as $item) {
+                $this->stockService->restoreStockForSale(
+                    $order->restaurant_id,
+                    $item->product_id,
+                    (int) $item->quantity,
+                    $order->id
+                );
+
+                $item->delete();
+            }
+
+            $order->calculateTotal();
+        });
+    }
+
+    /**
      * Cerrar pedido
      * @param bool $freeTable Si es true, libera la mesa. Si es false, solo cierra el pedido.
      */
