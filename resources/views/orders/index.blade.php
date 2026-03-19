@@ -41,11 +41,12 @@
                            class="form-control" 
                            placeholder="Buscar por número, cliente, mesa..." 
                            value="{{ request('search') }}"
-                           id="searchInput">
+                           id="searchInput"
+                           data-tutorial="orders-search">
                 </div>
             </div>
             <div class="col-md-2">
-                <select name="status" class="form-select">
+                <select name="status" class="form-select" data-tutorial="orders-status-filter">
                     <option value="">Todos los estados</option>
                     <option value="ABIERTO" {{ request('status') === 'ABIERTO' ? 'selected' : '' }}>Abierto</option>
                     <option value="ENVIADO" {{ request('status') === 'ENVIADO' ? 'selected' : '' }}>Enviado</option>
@@ -69,7 +70,7 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" data-tutorial="orders-table">
                 <thead>
                     <tr>
                         <th>Número</th>
@@ -110,7 +111,7 @@
                         <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver">
+                                <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver" data-tutorial="orders-action-view">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 @can('delete', $order)

@@ -33,6 +33,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
+    <meta name="route-name" content="{{ \Illuminate\Support\Facades\Route::currentRouteName() }}">
+    <meta name="user-role" content="{{ auth()->check() ? auth()->user()->role : '' }}">
     <title>@yield('title', 'Sistema de Gestión de Restaurante')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1369,6 +1371,198 @@
                 }
             });
         });
+    </script>
+    <script>
+        // ─────────────────────────────────────────────────────────────────────
+        // Tutorial interactivo (overlay + tooltips), dinámico por route.
+        // ─────────────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+            const routeMeta = document.querySelector('meta[name="route-name"]');
+            if (!routeMeta) return;
+
+            const routeName = routeMeta.getAttribute('content');
+            if (!routeName) return;
+
+            const params = new URLSearchParams(window.location.search);
+            const forceStart = params.get('tutorial') === '1';
+            const disable = params.get('tutorial') === '0';
+            if (disable) return;
+
+            const storageBase = `interactiveTutorial:${routeName}`;
+            const completedKey = `${storageBase}:completed`;
+            const stepKey = `${storageBase}:step`;
+
+            const completed = localStorage.getItem(completedKey) === '1';
+            const progressStep = parseInt(localStorage.getItem(stepKey) || '0', 10);
+
+            // Si ya lo completó y no pedimos forzar, no mostramos nada.
+            if (!forceStart && completed) return;
+
+            fetch(`/tutorials/interactive/steps?route=${encodeURIComponent(routeName)}`)
+                .then(r => r.ok ? r.json() : Promise.reject(r))
+                .then(payload => {
+                    const steps = payload && payload.steps ? payload.steps : [];
+                    if (!steps.length) return;
+                    const startIndex = forceStart ? 0 : Math.min(progressStep, steps.length - 1);
+                    runInteractiveTutorial(steps, startIndex, storageBase);
+                })
+                .catch(() => {});
+        });
+
+        function runInteractiveTutorial(steps, startIndex, storageBase) {
+            const completedKey = `${storageBase}:completed`;
+            const stepKey = `${storageBase}:step`;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'it-overlay';
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'it-tooltip';
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(tooltip);
+
+            const state = { i: startIndex, targetEl: null };
+
+            function setProgress(i, completed) {
+                localStorage.setItem(stepKey, String(i));
+                localStorage.setItem(completedKey, completed ? '1' : '0');
+            }
+
+            function clamp(v, min, max) {
+                return Math.max(min, Math.min(max, v));
+            }
+
+            function positionTooltip(rect, placement) {
+                const padding = 12;
+                const ttRect = tooltip.getBoundingClientRect();
+                const ttW = ttRect.width || 320;
+                const ttH = ttRect.height || 140;
+
+                let top = rect.top;
+                let left = rect.left;
+
+                if (placement === 'bottom') {
+                    top = rect.bottom + 12;
+                    left = rect.left + (rect.width - ttW) / 2;
+                } else if (placement === 'top') {
+                    top = rect.top - ttH - 12;
+                    left = rect.left + (rect.width - ttW) / 2;
+                } else if (placement === 'right') {
+                    top = rect.top + (rect.height - ttH) / 2;
+                    left = rect.right + 12;
+                } else if (placement === 'left') {
+                    top = rect.top + (rect.height - ttH) / 2;
+                    left = rect.left - ttW - 12;
+                } else {
+                    // default bottom
+                    top = rect.bottom + 12;
+                    left = rect.left + (rect.width - ttW) / 2;
+                }
+
+                left = clamp(left, padding, window.innerWidth - ttW - padding);
+                top = clamp(top, padding, window.innerHeight - ttH - padding);
+
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+            }
+
+            function highlight(el) {
+                document.querySelectorAll('.it-highlight').forEach(x => x.classList.remove('it-highlight'));
+                if (el) el.classList.add('it-highlight');
+            }
+
+            function findTarget(selector) {
+                try {
+                    return document.querySelector(selector);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function renderStep(i) {
+                if (i < 0 || i >= steps.length) return;
+
+                const step = steps[i];
+                const target = findTarget(step.target);
+
+                if (!target) {
+                    // Si no existe el target (por permisos/responsive), saltamos.
+                    setTimeout(() => {
+                        state.i++;
+                        if (state.i >= steps.length) {
+                            setProgress(steps.length - 1, true);
+                            teardown();
+                            return;
+                        }
+                        renderStep(state.i);
+                    }, 250);
+                    return;
+                }
+
+                state.targetEl = target;
+                highlight(target);
+                const rect = target.getBoundingClientRect();
+
+                tooltip.innerHTML = `
+                    <h3>${step.title || ''}</h3>
+                    <p>${step.text || ''}</p>
+                    <div class="it-actions">
+                        <button type="button" class="it-btn it-btn-secondary" data-dir="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>Anterior</button>
+                        <div style="flex:1"></div>
+                        <button type="button" class="it-btn it-btn-next" data-dir="next">${(step.next === null || step.next === undefined) ? 'Finalizar' : 'Siguiente'}</button>
+                    </div>
+                `;
+
+                // Reposicionar luego de renderizar contenido
+                requestAnimationFrame(() => positionTooltip(rect, step.placement || 'bottom'));
+                setProgress(i, false);
+            }
+
+            function teardown() {
+                document.querySelectorAll('.it-highlight').forEach(x => x.classList.remove('it-highlight'));
+                overlay.remove();
+                tooltip.remove();
+            }
+
+            overlay.addEventListener('click', function () {
+                // Click sobre overlay = cerrar (guarda progreso y permite reanudar)
+                setProgress(state.i, false);
+                teardown();
+            });
+
+            tooltip.addEventListener('click', function (e) {
+                const btn = e.target.closest('button[data-dir]');
+                if (!btn) return;
+                const dir = btn.getAttribute('data-dir');
+
+                if (dir === 'prev') {
+                    highlight(null);
+                    state.i = Math.max(0, state.i - 1);
+                    renderStep(state.i);
+                    return;
+                }
+
+                // next
+                const step = steps[state.i];
+                const next = step.next === null || step.next === undefined ? null : step.next;
+                if (next === null) {
+                    setProgress(state.i, true);
+                    teardown();
+                    return;
+                }
+                highlight(null);
+                state.i = next;
+                renderStep(state.i);
+            });
+
+            renderStep(state.i);
+
+            // Recalcular posición al redimensionar
+            window.addEventListener('resize', function () {
+                if (state.targetEl) positionTooltip(state.targetEl.getBoundingClientRect(), (steps[state.i] && steps[state.i].placement) ? steps[state.i].placement : 'bottom');
+            });
+        }
     </script>
     @stack('scripts')
 </body>

@@ -41,6 +41,7 @@
                                 <th>Cantidad</th>
                                 <th>Precio Unit.</th>
                                 <th>Subtotal</th>
+                                <th style="width:180px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,6 +66,35 @@
                                 <td>{{ $item['quantity'] }}</td>
                                 <td>${{ number_format($item['unit_price'], 2) }}</td>
                                 <td><strong>${{ number_format($item['subtotal'], 2) }}</strong></td>
+                                <td>
+                                    @php
+                                        $oldIds = implode(',', $item['order_item_ids'] ?? []);
+                                        $qty = (int) ($item['quantity'] ?? 1);
+                                        $obs = $item['observations'] ?? '';
+                                    @endphp
+
+                                    @can('update', $order)
+                                        <form action="{{ route('orders.items-group.remove', $order) }}" method="POST" onsubmit="return confirm('¿Eliminar este subitem y reponer stock?');">
+                                            @csrf
+                                            <input type="hidden" name="old_item_ids" value="{{ $oldIds }}">
+                                            <button type="submit" class="btn btn-danger btn-sm w-100">
+                                                Eliminar
+                                            </button>
+                                        </form>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary btn-sm w-100 mt-2"
+                                            data-old-ids="{{ $oldIds }}"
+                                            data-qty="{{ $qty }}"
+                                            data-obs="{{ $obs }}"
+                                            @disabled(!($order->status === 'ABIERTO' || $order->status === 'EN_PREPARACION'))
+                                            onclick="openReplaceItemModalFromBtn(this)"
+                                        >
+                                            Cambiar
+                                        </button>
+                                    @endcan
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -72,16 +102,19 @@
                             <tr>
                                 <th colspan="3">Subtotal</th>
                                 <th>${{ number_format($order->subtotal, 2) }}</th>
+                                <th></th>
                             </tr>
                             @if($order->discount > 0)
                             <tr>
                                 <th colspan="3">Descuento</th>
                                 <th>-${{ number_format($order->discount, 2) }}</th>
+                                <th></th>
                             </tr>
                             @endif
                             <tr>
                                 <th colspan="3">Total</th>
                                 <th>${{ number_format($order->total, 2) }}</th>
+                                <th></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -195,6 +228,43 @@
     </div>
 </div>
 
+<!-- Modal: Cambiar item por otro producto -->
+<div class="modal fade" id="replaceItemModal" tabindex="-1" aria-labelledby="replaceItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form action="{{ route('orders.items-group.replace', $order) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="replaceItemModalLabel">Cambiar subitem</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="old_item_ids" id="replaceOldItemIds">
+                    <input type="hidden" name="observations" id="replaceObservations">
+
+                    <div class="mb-3">
+                        <label class="form-label">Producto nuevo</label>
+                        <select name="new_product_id" id="replaceNewProductId" class="form-select" required>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}">{{ $product->name }}{{ $product->category ? ' - '.$product->category->name : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" name="quantity" id="replaceQuantity" class="form-control" min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Reemplazar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 // Mostrar alerta de error si hay un error de stock
@@ -250,6 +320,29 @@
 @if(session('kitchen_ticket_url'))
     window.open('{{ session('kitchen_ticket_url') }}', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
 @endif
+</script>
+
+<script>
+    function openReplaceItemModal(oldIds, qty, obs) {
+        const modalEl = document.getElementById('replaceItemModal');
+        if (!modalEl) return;
+
+        const oldIdsInput = document.getElementById('replaceOldItemIds');
+        const qtyInput = document.getElementById('replaceQuantity');
+        const obsInput = document.getElementById('replaceObservations');
+
+        oldIdsInput.value = oldIds || '';
+        qtyInput.value = qty || 1;
+        obsInput.value = obs || '';
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function openReplaceItemModalFromBtn(btn) {
+        if (!btn) return;
+        openReplaceItemModal(btn.dataset.oldIds || '', parseInt(btn.dataset.qty || '1', 10), btn.dataset.obs || '');
+    }
 </script>
 @endpush
 @endsection

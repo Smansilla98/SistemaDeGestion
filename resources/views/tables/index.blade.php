@@ -388,7 +388,7 @@
     <div class="cb">
         <div class="sb-bar">
             <i class="bi bi-search"></i>
-            <input type="text" id="tableSearch" placeholder="Buscar mesa por número o nombre...">
+            <input type="text" id="tableSearch" data-tutorial="tables-search" placeholder="Buscar mesa por número o nombre...">
         </div>
     </div>
 </div>
@@ -409,7 +409,7 @@
             <div class="table-item" 
                  data-table-number="{{ strtolower($table->number) }}"
                  data-sector-name="{{ strtolower($sector->name) }}">
-                <div class="table-card h-100">
+                <div class="table-card h-100" data-tutorial="tables-table-card">
                     <div class="table-card-body">
                         <div class="table-card-header">
                             <span class="table-card-number">{{ $table->number }}</span>
@@ -437,12 +437,13 @@
                         <div class="table-actions">
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
-                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar">
+                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar" data-tutorial="tables-action-reservar">
                                 <span>Reservar</span>
                             </a>
                             @can('update', $table)
                             <button type="button" 
                                     class="btn btn-ocupar"
+                                    data-tutorial="tables-action-ocupar"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
                                 <span>Marcar Ocupada</span>
                             </button>
