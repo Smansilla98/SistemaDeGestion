@@ -55,16 +55,15 @@
         border: none;
         cursor: pointer;
     }
-    .table-status-pill.table-status-libre { background: #22c55e; color: #fff; }
-    .table-status-pill.table-status-ocupada { background: #f59e0b; color: #fff; }
-    .table-status-pill.table-status-reservada { background: #3b82f6; color: #fff; }
+    .table-status-pill.table-status-libre { background: var(--t100, #d4f2e8); color: var(--t700, #155240); }
+    .table-status-pill.table-status-ocupada { background: #e8f0ef; color: var(--g700, #2d3d39); }
+    .table-status-pill.table-status-reservada { background: var(--t50, #edf9f4); color: var(--t600, #1d7a5c); }
     .table-status-pill:not(button) { cursor: default; }
     .table-card-capacity {
         font-size: 0.875rem;
         color: var(--g500, #6b7f7a);
         margin-bottom: 1rem;
     }
-    .table-card-capacity i { margin-right: 0.25rem; opacity: 0.9; }
     .table-card-extra {
         font-size: 0.75rem;
         color: var(--g500);
@@ -101,34 +100,32 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     }
-    .table-actions .btn i { font-size: 1rem; }
-
     .btn-reservar {
-        background: #17a2b8 !important;
+        background: var(--t500, #1d9e75) !important;
         color: white !important;
     }
     .btn-ocupar {
-        background: #22c55e !important;
+        background: var(--t600, #1d7a5c) !important;
         color: white !important;
     }
     .btn-pedido {
-        background: #2563eb !important;
+        background: var(--t700, #155240) !important;
         color: white !important;
     }
     .btn-ver-pedidos {
-        background: #eab308 !important;
-        color: #000 !important;
+        background: var(--t100, #d4f2e8) !important;
+        color: var(--t700, #155240) !important;
     }
     .btn-cerrar {
-        background: #dc2626 !important;
+        background: var(--g500, #6b7f7a) !important;
         color: white !important;
     }
     .btn-editar {
-        background: #4b5563 !important;
+        background: var(--g600, #4a5e59) !important;
         color: white !important;
     }
     .btn-cambiar-estado {
-        background: #7c3aed !important;
+        background: var(--g700, #2d3d39) !important;
         color: white !important;
     }
     
@@ -427,16 +424,14 @@
                             <span class="table-status-pill table-status-{{ strtolower($table->status) }}">{{ $table->status }}</span>
                             @endcan
                         </div>
-                        <div class="table-card-capacity">
-                            <i class="bi bi-people"></i> Capacidad: {{ $table->capacity }} personas
-                        </div>
+                        <div class="table-card-capacity">Capacidad: {{ $table->capacity }} personas</div>
                         @if($table->status === 'OCUPADA' && $table->currentSession)
                         <div class="table-card-extra">
                             @if($table->currentSession->waiter)
-                            <span class="table-badge-info"><i class="bi bi-person-badge"></i> {{ $table->currentSession->waiter->name }}</span>
+                            <span class="table-badge-info">{{ $table->currentSession->waiter->name }}</span>
                             @endif
                             @if($table->currentSession->started_at)
-                            <span class="table-card-time"><i class="bi bi-clock"></i> {{ $table->currentSession->started_at->format('H:i') }}</span>
+                            <span class="table-card-time">{{ $table->currentSession->started_at->format('H:i') }}</span>
                             @endif
                         </div>
                         @endif
@@ -444,13 +439,13 @@
                             @if($table->status === 'LIBRE')
                             {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
                             <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar">
-                                <i class="bi bi-calendar-check"></i> <span>Reservar</span>
+                                <span>Reservar</span>
                             </a>
                             @can('update', $table)
                             <button type="button" 
                                     class="btn btn-ocupar"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-check-circle"></i> <span>Marcar Ocupada</span>
+                                <span>Marcar Ocupada</span>
                             </button>
                             @endcan
                             @elseif($table->status === 'OCUPADA')
@@ -459,17 +454,17 @@
                             <button type="button"
                                     class="btn btn-pedido"
                                     onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
-                                <i class="bi bi-plus-circle"></i> <span>Nuevo Pedido</span>
+                                <span>Nuevo Pedido</span>
                             </button>
                             @endif
                             <a href="{{ route('tables.orders', $table) }}" class="btn btn-ver-pedidos">
-                                <i class="bi bi-receipt"></i> <span>Ver Pedidos</span>
+                                <span>Ver Pedidos</span>
                             </a>
                             @can('update', $table)
                             <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline w-100" id="closeTableForm{{ $table->id }}">
                                 @csrf
                                 <button type="button" class="btn btn-cerrar w-100" onclick="confirmCloseTable({{ $table->id }})">
-                                    <i class="bi bi-x-circle"></i> <span>Cerrar Mesa</span>
+                                    <span>Cerrar Mesa</span>
                                 </button>
                             </form>
                             @endcan
@@ -479,13 +474,13 @@
                             <button type="button" 
                                     class="btn btn-cambiar-estado"
                                     onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <i class="bi bi-arrow-repeat"></i> <span>Cambiar Estado</span>
+                                <span>Cambiar Estado</span>
                             </button>
                             @endcan
                             @endif
                             @can('update', $table)
                             <a href="{{ route('tables.edit', $table) }}" class="btn btn-editar">
-                                <i class="bi bi-pencil"></i> <span>Editar</span>
+                                <span>Editar</span>
                             </a>
                             @endcan
                         </div>
