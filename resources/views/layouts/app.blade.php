@@ -885,16 +885,7 @@
     <aside class="sidebar" id="novaSidebar">
         <div class="sb-logo">
             <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-                @php $logo = $settings['logo'] ?? null; @endphp
-                @if($logo && Storage::disk('public')->exists($logo))
-                    <img src="{{ Storage::url($logo) }}" alt="{{ $restaurant->name ?? 'Logo' }}" style="max-height: 32px; filter: brightness(0) invert(1);">
-                    <div><div class="sb-lname">{{ $restaurant->name ?? 'Conurbania' }}</div><div class="sb-lsub">Sistema de gestión</div></div>
-                @else
-                    <div class="sb-lmark sb-lmark-icon">
-                        <i class="bi bi-play-circle-fill"></i>
-                    </div>
-                    <div><div class="sb-lname">Conurbania</div><div class="sb-lsub">Sistema de gestión</div></div>
-                @endif
+                <img src="{{ asset('logo.png') }}" alt="Conurbania" style="max-height: 42px; width: auto; display: block;">
             </a>
         </div>
 
@@ -948,10 +939,10 @@
             </a>
             @endif
             @if($canKitchen)
-            <a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
+            <!--<a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
                 <i class="bi bi-egg-fried sb-ico"></i>
                 <span>Cocina</span>
-            </a>
+            </a>-->
             @endif
             @if($canCashRegister)
             <a href="{{ route('cash-register.index') }}" class="sb-link {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
@@ -1001,10 +992,10 @@
             </a>
             @endif
             @if($canPrinters)
-            <a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
+            <!--<a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
                 <i class="bi bi-printer sb-ico"></i>
                 <span>Impresoras</span>
-            </a>
+            </a>-->
             @endif
             @endif
 
@@ -1051,16 +1042,16 @@
             </a>
             @endif
             @if($canTutorials)
-            <a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
+            <!--<a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark sb-ico"></i>
                 <span>Tutoriales</span>
-            </a>
+            </a>-->
             @endif
             @if($navUser && $navUser->role === 'ADMIN')
-            <a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+            <!--<a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
                 <i class="bi bi-shield-lock sb-ico"></i>
                 <span>Permisos</span>
-            </a>
+            </a>-->
             @endif
             @endif
             @endif
