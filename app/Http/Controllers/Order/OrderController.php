@@ -254,9 +254,12 @@ class OrderController extends Controller
         $products = Product::where('restaurant_id', $order->restaurant_id)
             ->where('is_active', true)
             ->with('category')
-            ->orderBy('category.name')
-            ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy(function ($p) {
+                $c = $p->category?->name ?? '';
+                return $c . '|' . $p->name;
+            })
+            ->values();
 
         return view('orders.show', compact('order', 'groupedItems', 'products'));
     }
