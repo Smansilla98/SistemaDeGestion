@@ -114,6 +114,7 @@
                 'payment_method' => $p->payment_method,
                 'order_id' => $p->order_id,
                 'order' => $p->order,
+                'cash_movement_id' => null,
             ]);
             $movementsRows = $session->cashMovements->map(fn($m) => (object)[
                 'created_at' => $m->created_at,
@@ -123,6 +124,7 @@
                 'payment_method' => null,
                 'order_id' => null,
                 'order' => null,
+                'cash_movement_id' => $m->id,
             ]);
             $allRows = $paymentsRows->concat($movementsRows)->sortBy('created_at');
             $totalVentas = $session->payments->sum('amount');
@@ -170,6 +172,9 @@
                                     <th>Tipo</th>
                                     <th>Descripción</th>
                                     <th class="text-end">Monto</th>
+                                    @if(auth()->user()->role === 'ADMIN')
+                                    <th class="text-center text-nowrap">Acciones</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -197,6 +202,27 @@
                                         @endif
                                     </td>
                                     <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
+                                    @if(auth()->user()->role === 'ADMIN')
+                                    <td class="text-center">
+                                        @if(!empty($row->cash_movement_id))
+                                        <form action="{{ route('cash-register.destroy-movement', $row->cash_movement_id) }}"
+                                              method="POST"
+                                              class="d-inline"
+                                              id="deleteMovementFormSales{{ $row->cash_movement_id }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger js-delete-movement-sales"
+                                                    data-movement-id="{{ $row->cash_movement_id }}"
+                                                    title="Eliminar: {{ \Illuminate\Support\Str::limit($row->description, 80) }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        @else
+                                        <span class="text-muted small">—</span>
+                                        @endif
+                                    </td>
+                                    @endif
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -220,6 +246,32 @@
 @if(isset($cashSessions) && $cashSessions->count() > 0)
 @push('scripts')
 <script>
+function confirmDeleteMovementSales(movementId) {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar movimiento de caja?',
+        html: '<p>Se eliminará este ingreso o egreso manual de la sesión.</p>' +
+            '<p class="text-danger small mt-2 mb-0"><strong>Esta acción no se puede deshacer.</strong></p>',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, allowEscapeKey: false, didOpen: function() { Swal.showLoading(); } });
+            document.getElementById('deleteMovementFormSales' + movementId).submit();
+        }
+    });
+}
+document.body.addEventListener('click', function(e) {
+    var btn = e.target.closest('.js-delete-movement-sales');
+    if (!btn) return;
+    e.preventDefault();
+    var id = btn.getAttribute('data-movement-id');
+    if (id) confirmDeleteMovementSales(parseInt(id, 10));
+});
 document.querySelectorAll('[data-bs-toggle="collapse"][data-bs-target^="#session-detail-"]').forEach(function(header) {
     var targetId = header.getAttribute('data-bs-target');
     var target = document.querySelector(targetId);

@@ -297,23 +297,15 @@ class CashRegisterController extends Controller
     }
 
     /**
-     * Eliminar movimiento de caja
-     * Solo ADMIN puede eliminar movimientos, y solo si la sesión está abierta
+     * Eliminar movimiento de caja (ingreso/egreso manual).
+     * Solo rol ADMIN; sesión abierta o cerrada (corrección desde reportes).
      */
     public function destroyMovement(CashMovement $movement)
     {
-        // Solo ADMIN puede eliminar movimientos
         if (auth()->user()->role !== 'ADMIN') {
             abort(403, 'Solo los administradores pueden eliminar movimientos de caja');
         }
 
-        // Verificar que la sesión esté abierta
-        $session = $movement->cashRegisterSession;
-        if ($session->status !== 'ABIERTA') {
-            return back()->with('error', 'Solo se pueden eliminar movimientos de sesiones abiertas');
-        }
-
-        // Verificar que pertenezca al restaurante del usuario
         if ($movement->restaurant_id !== auth()->user()->restaurant_id) {
             abort(403, 'No tienes acceso a este movimiento');
         }

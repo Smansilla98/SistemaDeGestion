@@ -211,7 +211,7 @@
                                 <th>Descripción</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
-                                @if(auth()->user()->role === 'ADMIN' && $session->status === 'ABIERTA')
+                                @if(auth()->user()->role === 'ADMIN')
                                 <th>Acciones</th>
                                 @endif
                             </tr>
@@ -227,7 +227,7 @@
                                 <td>{{ $movement->description }}</td>
                                 <td>${{ number_format($movement->amount, 2) }}</td>
                                 <td>{{ $movement->created_at->format('H:i') }}</td>
-                                @if(auth()->user()->role === 'ADMIN' && $session->status === 'ABIERTA')
+                                @if(auth()->user()->role === 'ADMIN')
                                 <td>
                                     <form action="{{ route('cash-register.destroy-movement', $movement) }}" 
                                           method="POST" 
@@ -438,7 +438,7 @@ function confirmDeleteMovement(movementId, description) {
             <p>¿Estás seguro de eliminar el movimiento:</p>
             <p><strong>${description}</strong>?</p>
             <div class="alert alert-warning mt-3">
-                <small><i class="bi bi-info-circle"></i> Solo se pueden eliminar movimientos de sesiones abiertas.</small>
+                <small><i class="bi bi-info-circle"></i> Solo administradores. Si la sesión ya está cerrada, el cierre registrado no se recalcula automáticamente.</small>
             </div>
             <p class="text-danger small mt-2"><strong>Esta acción no se puede deshacer.</strong></p>
         `,
