@@ -42,6 +42,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
+    <link rel="icon" type="image/png" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" type="image/png" href="{{ asset('icons/icon-192.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     @if($primaryFont !== $secondaryFont)
