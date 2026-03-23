@@ -13,12 +13,13 @@
         </h1>
         <p class="text-white">
             Cliente: <strong>{{ $order->customer_name }}</strong> | 
-            Estado: <span class="badge bg-{{ 
-                $order->status === 'CERRADO' ? 'success' : 
-                ($order->status === 'ENTREGADO' ? 'success' :
-                ($order->status === 'LISTO' ? 'info' : 
-                ($order->status === 'ABIERTO' ? 'secondary' : 'warning'))) 
-            }}" id="order-status-badge">{{ $order->status }}</span> |
+            @php
+                $displayStatus = $order->status === 'CERRADO'
+                    ? 'Se cierra el pedido'
+                    : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
+                $badgeClass = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+            @endphp
+            Estado: <span class="badge bg-{{ $badgeClass }}" id="order-status-badge">{{ $displayStatus }}</span> |
             Creado por: {{ $order->user->name }} | 
             Fecha: {{ $order->created_at->format('d/m/Y H:i') }}
         </p>
@@ -195,12 +196,13 @@
                 <p><strong>Número:</strong> {{ $order->number }}</p>
                 <p><strong>Cliente:</strong> {{ $order->customer_name }}</p>
                 <p><strong>Estado:</strong> 
-                    <span class="badge bg-{{ 
-                        $order->status === 'CERRADO' ? 'success' : 
-                        ($order->status === 'ENTREGADO' ? 'success' :
-                        ($order->status === 'LISTO' ? 'info' : 
-                        ($order->status === 'ABIERTO' ? 'secondary' : 'warning'))) 
-                    }}" id="order-status-badge-info">{{ $order->status }}</span>
+                    @php
+                        $displayStatusInfo = $order->status === 'CERRADO'
+                            ? 'Se cierra el pedido'
+                            : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
+                        $badgeClassInfo = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+                    @endphp
+                    <span class="badge bg-{{ $badgeClassInfo }}" id="order-status-badge-info">{{ $displayStatusInfo }}</span>
                 </p>
                 <p><strong>Creado por:</strong> {{ $order->user->name }}</p>
                 <p><strong>Fecha creación:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
@@ -263,56 +265,13 @@
             </div>
             <div class="card-body">
                 @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
-                    @if($order->status === 'ABIERTO')
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="EN_PREPARACION">
-                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
-                                <i class="bi bi-gear"></i> Marcar en Preparación
-                            </button>
-                        </form>
-                    @elseif($order->status === 'ENVIADO')
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="EN_PREPARACION">
-                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
-                                <i class="bi bi-gear"></i> Marcar en Preparación
-                            </button>
-                        </form>
+                    @if(!in_array($order->status, ['ENTREGADO', 'CERRADO', 'CANCELADO'], true))
                         <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="ENTREGADO">
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
-                                <i class="bi bi-check-circle"></i> Marcar como Entregado
-                            </button>
-                        </form>
-                    @elseif($order->status === 'EN_PREPARACION')
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="LISTO">
-                            <button type="submit" class="btn btn-info w-100" onclick="return confirm('¿Marcar pedido como LISTO?')">
-                                <i class="bi bi-check2-circle"></i> Marcar como Listo
-                            </button>
-                        </form>
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="ENTREGADO">
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
-                                <i class="bi bi-check-circle"></i> Marcar como Entregado
-                            </button>
-                        </form>
-                    @elseif($order->status === 'LISTO')
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="ENTREGADO">
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
-                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Se entrega el producto?')">
+                                <i class="bi bi-check-circle"></i> Se entrega el producto
                             </button>
                         </form>
                     @endif

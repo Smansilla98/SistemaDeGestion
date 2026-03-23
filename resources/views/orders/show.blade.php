@@ -16,7 +16,13 @@
                 Consumidor: <span class="badge bg-info">{{ $order->customer_name }}</span> | 
             @endif
             Mozo: {{ $order->user->name }} | 
-            Estado: <span class="badge bg-{{ $order->status === 'CERRADO' ? 'success' : 'warning' }}">{{ $order->status }}</span>
+            @php
+                $displayStatus = $order->status === 'CERRADO'
+                    ? 'Se cierra la mesa'
+                    : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
+                $badgeClass = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+            @endphp
+            Estado: <span class="badge bg-{{ $badgeClass }}">{{ $displayStatus }}</span>
         </p>
     </div>
 </div>
@@ -141,22 +147,13 @@
             </div>
             <div class="card-body">
                 @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
-                    @if($order->status === 'ABIERTO')
-                        <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="EN_PREPARACION">
-                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
-                                <i class="bi bi-gear"></i> Marcar en Preparación
-                            </button>
-                        </form>
-                    @elseif($order->status === 'EN_PREPARACION')
+                    @if(!in_array($order->status, ['ENTREGADO', 'CERRADO', 'CANCELADO'], true))
                         <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="ENTREGADO">
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
-                                <i class="bi bi-check-circle"></i> Marcar como Entregado
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Se entrega el producto?')">
+                                <i class="bi bi-check-circle"></i> Se entrega el producto
                             </button>
                         </form>
                     @endif
@@ -167,7 +164,7 @@
                 <form action="{{ route('orders.close', $order) }}" method="POST" class="mb-2">
                     @csrf
                     <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-check-circle"></i> Cerrar Pedido
+                        <i class="bi bi-check-circle"></i> Se cierra la mesa
                     </button>
                 </form>
                 @endcan

@@ -80,7 +80,20 @@ class OrderController extends Controller
 
         // Filtros
         if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
+            $statusFilter = $request->status;
+            $statusMap = [
+                // "Se toma el pedido" (incluye intermedios para que el usuario no vea más estados)
+                'ABIERTO' => ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'],
+                'ENTREGADO' => ['ENTREGADO'],
+                'CERRADO' => ['CERRADO'],
+            ];
+
+            if (isset($statusMap[$statusFilter])) {
+                $query->whereIn('status', $statusMap[$statusFilter]);
+            } else {
+                // fallback por compatibilidad
+                $query->where('status', $statusFilter);
+            }
         }
 
         if ($request->has('table_id') && $request->table_id !== '') {
@@ -465,43 +478,30 @@ class OrderController extends Controller
 
     /**
      * Cambiar estado del pedido (simplificado: solo mozo puede cambiar)
-     * Flujo: ABIERTO -> EN_PREPARACION -> ENTREGADO
+     * Flujo simplificado: ABIERTO -> ENTREGADO
      */
     public function updateStatus(Request $request, Order $order)
     {
         Gate::authorize('update', $order);
 
         $validated = $request->validate([
-            'status' => 'required|in:EN_PREPARACION,ENTREGADO,LISTO'
+            'status' => 'required|in:ENTREGADO'
         ]);
 
         $newStatus = $validated['status'];
         $currentStatus = $order->status;
 
         // Validar transiciones permitidas
-        $allowedTransitions = [
-            'ABIERTO' => ['EN_PREPARACION'],
-            'ENVIADO' => ['EN_PREPARACION', 'ENTREGADO'],
-            'EN_PREPARACION' => ['ENTREGADO', 'LISTO'],
-            'LISTO' => ['ENTREGADO'],
-        ];
-
-        if (!isset($allowedTransitions[$currentStatus]) || !in_array($newStatus, $allowedTransitions[$currentStatus])) {
+        $allowedFrom = ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'];
+        if (!in_array($currentStatus, $allowedFrom, true)) {
             return back()->with('error', "No se puede cambiar el estado de {$currentStatus} a {$newStatus}");
         }
 
         // Actualizar estado
         $order->status = $newStatus;
-        
-        if ($newStatus === 'EN_PREPARACION' && !$order->sent_at) {
-            $order->sent_at = now();
-        }
-        
-        if ($newStatus === 'ENTREGADO') {
-            // MÓDULO 2: Notificar que el pedido fue entregado
-            // La notificación se mostrará en la vista mediante JavaScript
-            $order->load(['table']);
-        }
+
+        // Cargar mesa si existe para el mensaje/JS de entregado.
+        $order->load(['table']);
         
         $order->save();
 

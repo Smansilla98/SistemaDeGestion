@@ -67,13 +67,13 @@
                                 <td><strong>{{ $order->number }}</strong></td>
                                 <td>{{ $order->user->name }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 
-                                        $order->status === 'CERRADO' ? 'success' : 
-                                        ($order->status === 'LISTO' ? 'info' : 
-                                        ($order->status === 'ABIERTO' ? 'secondary' : 'warning')) 
-                                    }}">
-                                        {{ $order->status }}
-                                    </span>
+                                    @php
+                                        $displayStatus = $order->status === 'CERRADO'
+                                            ? 'Se cierra la mesa'
+                                            : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
+                                        $badgeClass = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+                                    @endphp
+                                    <span class="badge bg-{{ $badgeClass }}">{{ $displayStatus }}</span>
                                 </td>
                                 <td>{{ $order->items->count() }}</td>
                                 <td>${{ number_format($order->subtotal, 2) }}</td>
@@ -94,22 +94,13 @@
                                         </a>
                                         
                                         @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
-                                            @if($order->status === 'ABIERTO')
-                                                <form action="{{ route('orders.update-status', $order) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <input type="hidden" name="status" value="EN_PREPARACION">
-                                                    <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('¿Marcar pedido como EN PREPARACIÓN?')">
-                                                        <i class="bi bi-gear"></i> En Preparación
-                                                    </button>
-                                                </form>
-                                            @elseif($order->status === 'EN_PREPARACION')
+                                            @if(!in_array($order->status, ['ENTREGADO', 'CERRADO', 'CANCELADO'], true))
                                                 <form action="{{ route('orders.update-status', $order) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PUT')
                                                     <input type="hidden" name="status" value="ENTREGADO">
-                                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Marcar pedido como ENTREGADO?')">
-                                                        <i class="bi bi-check-circle"></i> Entregado
+                                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Se entrega el producto?')">
+                                                        <i class="bi bi-check-circle"></i> Se entrega el producto
                                                     </button>
                                                 </form>
                                             @endif
