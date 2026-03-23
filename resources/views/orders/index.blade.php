@@ -48,11 +48,9 @@
             <div class="col-md-2">
                 <select name="status" class="form-select" data-tutorial="orders-status-filter">
                     <option value="">Todos los estados</option>
-                    <option value="ABIERTO" {{ request('status') === 'ABIERTO' ? 'selected' : '' }}>Abierto</option>
-                    <option value="ENVIADO" {{ request('status') === 'ENVIADO' ? 'selected' : '' }}>Enviado</option>
-                    <option value="EN_PREPARACION" {{ request('status') === 'EN_PREPARACION' ? 'selected' : '' }}>En Preparación</option>
-                    <option value="LISTO" {{ request('status') === 'LISTO' ? 'selected' : '' }}>Listo</option>
-                    <option value="CERRADO" {{ request('status') === 'CERRADO' ? 'selected' : '' }}>Cerrado</option>
+                    <option value="ABIERTO" {{ request('status') === 'ABIERTO' ? 'selected' : '' }}>Se toma el pedido</option>
+                    <option value="ENTREGADO" {{ request('status') === 'ENTREGADO' ? 'selected' : '' }}>Se entrega el producto</option>
+                    <option value="CERRADO" {{ request('status') === 'CERRADO' ? 'selected' : '' }}>Se cierra la mesa</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -98,13 +96,13 @@
                         </td>
                         <td>{{ $order->user->name }}</td>
                         <td>
-                            <span class="badge bg-{{ 
-                                $order->status === 'CERRADO' ? 'success' : 
-                                ($order->status === 'LISTO' ? 'info' : 
-                                ($order->status === 'ABIERTO' ? 'secondary' : 'warning')) 
-                            }}">
-                                {{ $order->status }}
-                            </span>
+                            @php
+                                $displayStatus = $order->status === 'CERRADO'
+                                    ? 'Se cierra la mesa'
+                                    : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
+                                $badgeClass = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+                            @endphp
+                            <span class="badge bg-{{ $badgeClass }}">{{ $displayStatus }}</span>
                         </td>
                         <td>{{ $order->items->count() }}</td>
                         <td><strong>${{ number_format($order->total, 2) }}</strong></td>

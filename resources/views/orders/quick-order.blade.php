@@ -743,18 +743,17 @@ function confirmDeleteQuickOrder(orderId, orderNumber) {
 
 // Función para obtener el badge de estado
 function getStatusBadge(status) {
-    const badges = {
-        'CERRADO': 'success',
-        'LISTO': 'info',
-        'ABIERTO': 'secondary',
-        'ENVIADO': 'warning',
-        'EN_PREPARACION': 'warning',
-        'ENTREGADO': 'success',
-        'CANCELADO': 'danger'
-    };
-    
-    const color = badges[status] || 'secondary';
-    return `<span class="badge bg-${color}">${status}</span>`;
+    // Vista simplificada: colapsamos todos los estados intermedios a "Se toma el pedido"
+    if (status === 'CERRADO') {
+        return `<span class="badge bg-success">Se cierra el pedido</span>`;
+    }
+    if (status === 'ENTREGADO') {
+        return `<span class="badge bg-success">Se entrega el producto</span>`;
+    }
+    if (status === 'CANCELADO') {
+        return `<span class="badge bg-danger">Cancelado</span>`;
+    }
+    return `<span class="badge bg-secondary">Se toma el pedido</span>`;
 }
 
 // Inicializar carga de pedidos
