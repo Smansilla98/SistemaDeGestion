@@ -1,9 +1,13 @@
 # Laravel en Railway: nginx escucha $PORT y hace proxy a PHP-FPM (un solo contenedor).
-FROM php:8.2-fpm-bookworm
+# PHP 8.3: lock (zipstream-php) exige ^8.3; gd: PhpSpreadsheet / maatwebsite/excel.
+FROM php:8.3-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libzip-dev libpng-dev libonig-dev nginx \
-    && docker-php-ext-install pdo_mysql zip opcache mbstring bcmath \
+    git unzip nginx \
+    libzip-dev libonig-dev \
+    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql zip opcache mbstring bcmath gd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
