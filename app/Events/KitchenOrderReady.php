@@ -5,7 +5,6 @@ namespace App\Events;
 use App\Models\Order;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -31,7 +30,7 @@ class KitchenOrderReady implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('restaurant.' . $this->order->restaurant_id),
+            new PrivateChannel('restaurant.'.$this->order->restaurant_id),
             new Channel('kitchen'),
         ];
     }
@@ -62,4 +61,3 @@ class KitchenOrderReady implements ShouldBroadcast
         ];
     }
 }
-

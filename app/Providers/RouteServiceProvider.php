@@ -30,6 +30,14 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('auth-jwt', function (Request $request) {
+            return Limit::perMinute(15)->by($request->ip());
+        });
+
+        RateLimiter::for('jwt-api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
