@@ -337,6 +337,10 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
             Route::post('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'show'])->name('show');
         });
+
+        Route::prefix('caja')->name('caja.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Mobile\MobileCajaController::class, 'resumen'])->name('resumen');
+        });
     });
 
     /*

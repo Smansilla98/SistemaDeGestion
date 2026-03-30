@@ -21,7 +21,7 @@
             </a>
         </div>
         <div class="col-6">
-            <a href="{{ route('tables.layout') }}" class="text-decoration-none">
+            <a href="{{ route('m.pedidos.index') }}" class="text-decoration-none">
                 <div class="card bg-dark border-0 text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 90px;">
                         <i class="bi bi-grid-3x3-gap mb-2" style="font-size: 1.6rem;"></i>
