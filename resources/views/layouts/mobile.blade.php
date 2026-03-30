@@ -109,17 +109,18 @@
             'ADMIN' => [
                 ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
                 ['label' => 'Pedidos', 'icon' => 'bi-clipboard-check', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'tables.layout', 'pattern' => 'tables.*'],
+                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
                 ['label' => 'Stock', 'icon' => 'bi-boxes', 'route' => 'stock.index', 'pattern' => 'stock.*'],
+                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
                 ['label' => 'Reportes', 'icon' => 'bi-graph-up', 'route' => 'reports.index', 'pattern' => 'reports.*'],
             ],
             'MOZO' => [
-                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'tables.layout', 'pattern' => 'tables.*'],
-                ['label' => 'Nuevo', 'icon' => 'bi-plus-circle', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
+                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
+                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
                 ['label' => 'Pedidos', 'icon' => 'bi-clipboard-check', 'route' => 'orders.index', 'pattern' => 'orders.*'],
             ],
             'CAJERO' => [
-                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'cash-register.index', 'pattern' => 'cash-register.*'],
+                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
                 ['label' => 'Pedidos', 'icon' => 'bi-clipboard-check', 'route' => 'orders.index', 'pattern' => 'orders.*'],
                 ['label' => 'Reportes', 'icon' => 'bi-graph-up', 'route' => 'reports.index', 'pattern' => 'reports.*'],
             ],
