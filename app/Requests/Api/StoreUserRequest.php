@@ -25,7 +25,7 @@ class StoreUserRequest extends FormRequest
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => ['required', Rule::in(User::getRoles())],
+            'role' => ['required', Rule::in(User::getAssignableRoles($this->user()))],
             'is_active' => 'sometimes|boolean',
         ];
     }

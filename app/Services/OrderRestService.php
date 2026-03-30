@@ -126,7 +126,7 @@ final class OrderRestService
         }
 
         $user = auth()->user();
-        $isAdmin = $user && in_array($user->role, ['ADMIN', 'GERENTE'], true);
+        $isAdmin = $user && $user->canManageOrdersLikeAdmin();
 
         if (! $isAdmin) {
             if (! in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'], true)) {

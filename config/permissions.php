@@ -39,6 +39,7 @@ return [
     | true = permitido, false = no permitido.
     */
     'role_defaults' => [
+        'SUPERADMIN' => true,
         'ADMIN' => true, // todos los permisos (se resuelve por módulo)
         'GERENTE' => [
             'dashboard.view' => true,

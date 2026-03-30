@@ -9,11 +9,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CashRegisterSession;
 use App\Models\Order;
 use App\Models\Payment;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -87,6 +87,26 @@ class ReportController extends Controller
     }
 
     /**
+     * Eliminar una sesión de caja completa (movimientos en cascada; pagos quedan sin sesión).
+     * Solo rol SUPERADMIN.
+     */
+    public function destroyCashSession(Request $request, CashRegisterSession $session)
+    {
+        $restaurantId = auth()->user()->restaurant_id;
+        if ($session->restaurant_id !== $restaurantId) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($session) {
+            $session->delete();
+        });
+
+        return redirect()
+            ->route('reports.sales', $request->only(['date_from', 'date_to']))
+            ->with('success', 'Sesión de caja eliminada. Los pagos de ventas siguen vinculados a los pedidos; ya no aparecen asociados a esta sesión.');
+    }
+
+    /**
      * Exportar reporte de ventas a Excel
      */
     public function exportSales(Request $request)
@@ -94,7 +114,7 @@ class ReportController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
         $startDate = $request->input('date_from', Carbon::today()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('date_to', Carbon::today()->format('Y-m-d'));
-        $filename = 'ventas_' . $startDate . '_' . $endDate . '.xlsx';
+        $filename = 'ventas_'.$startDate.'_'.$endDate.'.xlsx';
 
         return Excel::download(
             new SalesExport($startDate, $endDate, $restaurantId),
@@ -127,7 +147,8 @@ class ReportController extends Controller
             ->sum('amount');
 
         $pdf = Pdf::loadView('reports.sales-pdf', compact('salesByDay', 'salesByMethod', 'totalSales', 'dateFrom', 'dateTo'));
-        return $pdf->download('reporte-ventas-' . $dateFrom . '-' . $dateTo . '.pdf');
+
+        return $pdf->download('reporte-ventas-'.$dateFrom.'-'.$dateTo.'.pdf');
     }
 
     /**
@@ -137,7 +158,7 @@ class ReportController extends Controller
     {
         $restaurantId = auth()->user()->restaurant_id;
         $type = $request->input('type', 'PRODUCT');
-        $filename = 'productos_' . date('Y-m-d') . '.xlsx';
+        $filename = 'productos_'.date('Y-m-d').'.xlsx';
 
         return Excel::download(
             new ProductsExport($restaurantId, $type),
@@ -154,7 +175,7 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from', Carbon::today()->subDays(30)->format('Y-m-d'));
         $dateTo = $request->input('date_to', Carbon::today()->format('Y-m-d'));
         $status = $request->input('status');
-        $filename = 'pedidos_' . $dateFrom . '_' . $dateTo . '.xlsx';
+        $filename = 'pedidos_'.$dateFrom.'_'.$dateTo.'.xlsx';
 
         return Excel::download(
             new OrdersExport($restaurantId, $dateFrom, $dateTo, $status),
@@ -221,4 +242,3 @@ class ReportController extends Controller
         return view('reports.staff', compact('salesByStaff', 'dateFrom', 'dateTo'));
     }
 }
-

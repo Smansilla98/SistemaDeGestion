@@ -2,30 +2,30 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use App\Models\Order;
-use App\Models\Table;
-use App\Models\Product;
-use App\Models\Stock;
 use App\Models\CashRegister;
 use App\Models\Category;
-use App\Models\Printer;
-use App\Models\Sector;
 use App\Models\Event;
 use App\Models\FixedExpense;
+use App\Models\Order;
+use App\Models\Printer;
+use App\Models\Product;
 use App\Models\RecurringActivity;
-use App\Policies\OrderPolicy;
-use App\Policies\TablePolicy;
-use App\Policies\ProductPolicy;
-use App\Policies\StockPolicy;
+use App\Models\Sector;
+use App\Models\Stock;
+use App\Models\Table;
 use App\Policies\CashRegisterPolicy;
 use App\Policies\CategoryPolicy;
-use App\Policies\PrinterPolicy;
-use App\Policies\SectorPolicy;
 use App\Policies\EventPolicy;
 use App\Policies\FixedExpensePolicy;
+use App\Policies\OrderPolicy;
+use App\Policies\PrinterPolicy;
+use App\Policies\ProductPolicy;
 use App\Policies\RecurringActivityPolicy;
+use App\Policies\SectorPolicy;
+use App\Policies\StockPolicy;
+use App\Policies\TablePolicy;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -59,19 +59,19 @@ class AuthServiceProvider extends ServiceProvider
 
         // Gates adicionales para acciones específicas
         Gate::define('manage-restaurant', function ($user) {
-            return $user->role === 'ADMIN';
+            return $user->isAdminLevel();
         });
 
         Gate::define('view-reports', function ($user) {
-            return in_array($user->role, ['ADMIN', 'CAJERO']);
+            return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO'], true);
         });
 
         Gate::define('manage-users', function ($user) {
-            return in_array($user->role, ['ADMIN', 'GERENTE']);
+            return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE'], true);
         });
 
         Gate::define('manage-configuration', function ($user) {
-            return in_array($user->role, ['ADMIN', 'GERENTE']);
+            return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE'], true);
         });
     }
 }

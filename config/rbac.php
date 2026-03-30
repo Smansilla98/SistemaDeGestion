@@ -15,6 +15,7 @@ return [
         'users.write',
     ],
     'role_permissions' => [
+        'SUPERADMIN' => ['*'],
         'ADMIN' => ['*'],
         'GERENTE' => ['*'],
         'CAJERO' => [

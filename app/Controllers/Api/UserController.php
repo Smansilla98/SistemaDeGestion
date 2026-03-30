@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Pagination\PaginationQueryDto;
+use App\Models\User;
 use App\Requests\Api\StoreUserRequest;
 use App\Requests\Api\UpdateUserRequest;
 use App\Services\UserService;
@@ -31,7 +32,9 @@ final class UserController extends Controller
             $request->query('per_page') !== null ? (int) $request->query('per_page') : null,
         );
 
-        return ApiResponse::paginated($users->paginateForRestaurant($restaurantId, $pagination));
+        $hideSuperadmin = User::shouldHideSuperadminFrom($request->user());
+
+        return ApiResponse::paginated($users->paginateForRestaurant($restaurantId, $pagination, $hideSuperadmin));
     }
 
     public function show(Request $request, int $id, UserService $users): JsonResponse
@@ -42,7 +45,7 @@ final class UserController extends Controller
         }
 
         try {
-            $row = $users->getById($id, $restaurantId);
+            $row = $users->getById($id, $restaurantId, User::shouldHideSuperadminFrom($request->user()));
         } catch (InvalidArgumentException) {
             return ApiResponse::error('No encontrado', 404, 'NOT_FOUND');
         }
@@ -74,7 +77,7 @@ final class UserController extends Controller
         }
 
         try {
-            $row = $users->update($id, $restaurantId, $request->validated());
+            $row = $users->update($id, $restaurantId, $request->validated(), $request->user()->isSuperAdmin());
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 404, 'NOT_FOUND');
         } catch (\Throwable $e) {
@@ -92,9 +95,11 @@ final class UserController extends Controller
         }
 
         try {
-            $users->delete($id, $restaurantId, (int) $request->user()->id);
+            $users->delete($id, $restaurantId, (int) $request->user()->id, $request->user()->isSuperAdmin());
         } catch (InvalidArgumentException $e) {
-            return ApiResponse::error($e->getMessage(), 422, 'DELETE_ERROR');
+            $notFound = str_contains(strtolower($e->getMessage()), 'no encontrado');
+
+            return ApiResponse::error($e->getMessage(), $notFound ? 404 : 422, $notFound ? 'NOT_FOUND' : 'DELETE_ERROR');
         }
 
         return ApiResponse::success(['deleted' => true], 200, 'Eliminado');

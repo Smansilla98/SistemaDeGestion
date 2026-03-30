@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Stock;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class StockPolicy
@@ -15,7 +15,7 @@ class StockPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**
@@ -23,7 +23,7 @@ class StockPolicy
      */
     public function view(User $user, Stock $stock): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO'])
             && $user->restaurant_id === $stock->restaurant_id;
     }
 
@@ -32,7 +32,7 @@ class StockPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
     }
 
     /**
@@ -40,7 +40,7 @@ class StockPolicy
      */
     public function update(User $user, Stock $stock): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE'])
             && $user->restaurant_id === $stock->restaurant_id;
     }
 
@@ -49,8 +49,7 @@ class StockPolicy
      */
     public function delete(User $user, Stock $stock): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE'])
             && $user->restaurant_id === $stock->restaurant_id;
     }
 }
-

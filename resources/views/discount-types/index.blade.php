@@ -9,7 +9,7 @@
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-percent"></i> Tipos de Descuentos</h1>
             <p class="text-muted">Gestiona los tipos de descuentos disponibles</p>
         </div>
-        @if(auth()->user()->role === 'ADMIN')
+        @if(auth()->user()->isAdminLevel())
         <a href="{{ route('discount-types.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nuevo Descuento
         </a>
@@ -65,7 +65,7 @@
                         </td>
                         <td>
                             <div class="btn-group" role="group">
-                                @if(auth()->user()->role === 'ADMIN')
+                                @if(auth()->user()->isAdminLevel())
                                 <a href="{{ route('discount-types.edit', $discountType) }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil"></i> Editar
                                 </a>
@@ -85,7 +85,7 @@
                         <td colspan="5" class="text-center text-muted py-5">
                             <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                             <p class="mt-3">No hay tipos de descuentos registrados</p>
-                            @if(auth()->user()->role === 'ADMIN')
+                            @if(auth()->user()->isAdminLevel())
                             <a href="{{ route('discount-types.create') }}" class="btn btn-primary mt-2">
                                 <i class="bi bi-plus-circle"></i> Crear Primer Descuento
                             </a>

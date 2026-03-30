@@ -3,6 +3,12 @@
 @section('title', 'Reporte de Ventas')
 
 @section('content')
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+@endif
 <div class="row mb-4">
     <div class="col-12">
         <a href="{{ route('reports.index') }}" class="btn btn-secondary mb-2">
@@ -138,18 +144,33 @@
                  data-bs-target="#session-detail-{{ $session->id }}"
                  aria-expanded="false"
                  aria-controls="session-detail-{{ $session->id }}">
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <i class="bi bi-chevron-down session-chevron text-muted" style="transition: transform 0.2s ease;"></i>
                     <strong>{{ $session->cashRegister->name ?? 'Caja' }}</strong>
                     <span class="text-muted">· Abierta por {{ $session->user->name ?? 'N/A' }}</span>
                     <span class="badge bg-{{ $session->status === 'ABIERTA' ? 'success' : 'secondary' }}">{{ $session->status }}</span>
                 </div>
-                <div class="small d-flex align-items-center gap-2">
+                <div class="small d-flex align-items-center gap-2 flex-wrap">
                     <span class="text-muted">{{ $session->opened_at->format('d/m/Y H:i') }}</span>
                     @if($session->closed_at)
                         <span>— Cierre: {{ $session->closed_at->format('d/m/Y H:i') }}</span>
                     @else
                         <span class="text-success">Sesión abierta</span>
+                    @endif
+                    @if(auth()->user()->isSuperAdmin())
+                    <form action="{{ route('reports.sales.destroy-cash-session', $session) }}"
+                          method="POST"
+                          class="d-inline ms-1 js-delete-cash-session-form"
+                          data-session-label="{{ e(($session->cashRegister->name ?? 'Caja').' · '.$session->opened_at->format('d/m/Y H:i')) }}">
+                        @csrf
+                        @method('DELETE')
+                        @foreach(request()->only(['date_from', 'date_to']) as $k => $v)
+                            <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                        @endforeach
+                        <button type="button" class="btn btn-sm btn-outline-danger js-delete-cash-session-btn" title="Eliminar sesión de caja (solo superadmin)">
+                            <i class="bi bi-trash"></i> Eliminar sesión
+                        </button>
+                    </form>
                     @endif
                 </div>
             </div>
@@ -172,7 +193,7 @@
                                     <th>Tipo</th>
                                     <th>Descripción</th>
                                     <th class="text-end">Monto</th>
-                                    @if(auth()->user()->role === 'ADMIN')
+                                    @if(auth()->user()->isAdminLevel())
                                     <th class="text-center text-nowrap">Acciones</th>
                                     @endif
                                 </tr>
@@ -202,7 +223,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end fw-bold">${{ number_format($row->amount, 2) }}</td>
-                                    @if(auth()->user()->role === 'ADMIN')
+                                    @if(auth()->user()->isAdminLevel())
                                     <td class="text-center">
                                         @if(!empty($row->cash_movement_id))
                                         <form action="{{ route('cash-register.destroy-movement', $row->cash_movement_id) }}"
@@ -271,6 +292,32 @@ document.body.addEventListener('click', function(e) {
     e.preventDefault();
     var id = btn.getAttribute('data-movement-id');
     if (id) confirmDeleteMovementSales(parseInt(id, 10));
+});
+document.querySelectorAll('.js-delete-cash-session-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var form = btn.closest('.js-delete-cash-session-form');
+        var label = form ? form.getAttribute('data-session-label') : '';
+        Swal.fire({
+            icon: 'warning',
+            title: '¿Eliminar sesión de caja?',
+            html: '<p>Se eliminará la sesión <strong>' + (label || '') + '</strong> y sus movimientos manuales.</p>' +
+                '<p class="small text-muted mb-0">Los pagos de ventas se conservan en los pedidos pero ya no quedarán vinculados a esta sesión.</p>' +
+                '<p class="text-danger small mt-2 mb-0"><strong>Irreversible.</strong></p>',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar sesión',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then(function(result) {
+            if (result.isConfirmed && form) {
+                Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: function() { Swal.showLoading(); } });
+                form.submit();
+            }
+        });
+    });
 });
 document.querySelectorAll('[data-bs-toggle="collapse"][data-bs-target^="#session-detail-"]').forEach(function(header) {
     var targetId = header.getAttribute('data-bs-target');

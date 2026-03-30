@@ -11,7 +11,7 @@
             </h1>
             <p class="text-white mb-0 opacity-75 small">Visualiza, agrega y elimina manuales y guías en formato PDF.</p>
         </div>
-        @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE']))
+        @if(auth()->check() && auth()->user()->canManageUsers())
         <button type="button" class="btn btn-primary flex-shrink-0" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
             <i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">Agregar tutorial</span><span class="d-inline d-sm-none">Agregar</span>
         </button>
@@ -32,7 +32,7 @@
 </div>
 @endif
 
-@if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE']))
+@if(auth()->check() && auth()->user()->canManageUsers())
 <!-- Modal Agregar tutorial -->
 <div class="modal fade" id="addTutorialModal" tabindex="-1" aria-labelledby="addTutorialModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -99,7 +99,7 @@
                             <i class="bi bi-display"></i> Ver aquí
                         </button>
                     </div>
-                    @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE']))
+                    @if(auth()->check() && auth()->user()->canManageUsers())
                     <form action="{{ route('tutorials.destroy', ['filename' => $pdf['name']]) }}" method="POST" class="mt-2" onsubmit="return confirm('¿Eliminar este tutorial?');">
                         @csrf
                         @method('DELETE')
@@ -138,7 +138,7 @@
         <i class="bi bi-folder2-open text-muted" style="font-size: 4rem;"></i>
         <h5 class="mt-3">No hay tutoriales disponibles</h5>
         <p class="text-muted mb-0">
-            @if(auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'GERENTE']))
+            @if(auth()->check() && auth()->user()->canManageUsers())
             Usá el botón <strong>Agregar tutorial</strong> para subir un PDF.
             @else
             Los tutoriales en PDF aparecerán aquí cuando un administrador los agregue.

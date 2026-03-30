@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class PermissionController extends Controller
@@ -20,18 +19,21 @@ class PermissionController extends Controller
     public function index(Request $request)
     {
         $tab = $request->get('tab', 'roles');
-        if (!in_array($tab, ['roles', 'users'], true)) {
+        if (! in_array($tab, ['roles', 'users'], true)) {
             $tab = 'roles';
         }
 
         $modules = $this->permissionService->getModules();
         $actionLabels = $this->permissionService->getActionLabels();
-        $roles = User::getRoles();
-        $matrixByRole = $this->permissionService->matrixByRole();
+        $roles = User::getAssignableRoles(auth()->user());
+        $matrixByRole = $this->permissionService->matrixByRole($roles);
 
         // Usuarios del mismo restaurante (para pestaña Por usuario)
-        $users = User::where('restaurant_id', auth()->user()->restaurant_id)
-            ->orderBy('name')
+        $usersQuery = User::where('restaurant_id', auth()->user()->restaurant_id);
+        if (User::shouldHideSuperadminFrom(auth()->user())) {
+            $usersQuery->where('role', '!=', User::ROLE_SUPERADMIN);
+        }
+        $users = $usersQuery->orderBy('name')
             ->get(['id', 'name', 'username', 'role', 'is_active']);
 
         return view('permissions.index', compact(
@@ -50,7 +52,7 @@ class PermissionController extends Controller
     public function updateRole(Request $request)
     {
         $request->validate([
-            'role' => ['required', 'string', Rule::in(User::getRoles())],
+            'role' => ['required', 'string', Rule::in(User::getAssignableRoles(auth()->user()))],
             'permissions' => 'required|array',
             'permissions.*' => 'boolean',
         ]);
@@ -86,6 +88,10 @@ class PermissionController extends Controller
             abort(403, 'No puedes editar permisos de usuarios de otro restaurante.');
         }
 
+        if ($user->isSuperAdmin() && User::shouldHideSuperadminFrom(auth()->user())) {
+            abort(404);
+        }
+
         $permissions = $request->input('permissions', []);
         $effectiveMatrix = $this->permissionService->matrixForUser($user);
         $roleMatrix = [];
@@ -114,6 +120,11 @@ class PermissionController extends Controller
         if ($user->restaurant_id !== auth()->user()->restaurant_id) {
             abort(403);
         }
+
+        if ($user->isSuperAdmin() && User::shouldHideSuperadminFrom(auth()->user())) {
+            abort(404);
+        }
+
         return response()->json([
             'matrix' => $this->permissionService->matrixForUser($user),
             'overrides' => $this->permissionService->userOverrides($user),

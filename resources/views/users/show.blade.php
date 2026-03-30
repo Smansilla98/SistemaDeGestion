@@ -32,6 +32,7 @@
                 
                 @php
                     $roleColors = [
+                        'SUPERADMIN' => 'dark',
                         'ADMIN' => 'danger',
                         'GERENTE' => 'info',
                         'SUPERVISOR' => 'warning',

@@ -1037,21 +1037,21 @@
             @endif
             @endif
 
-            @if($canConfiguration || $canTutorials || ($navUser && $navUser->role === 'ADMIN'))
+            @if($canConfiguration || $canTutorials || ($navUser && $navUser->isAdminLevel()))
             <div class="sb-div"></div>
             @if($canConfiguration)
-            <a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
+            <!--<a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear sb-ico"></i>
                 <span>Configuración</span>
             </a>
-            @endif
+            @endif-->
             @if($canTutorials)
             <!--<a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark sb-ico"></i>
                 <span>Tutoriales</span>
             </a>-->
             @endif
-            @if($navUser && $navUser->role === 'ADMIN')
+            @if($navUser && $navUser->isAdminLevel())
             <!--<a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
                 <i class="bi bi-shield-lock sb-ico"></i>
                 <span>Permisos</span>
@@ -1063,7 +1063,7 @@
 
         @auth
         @php
-            $roleLabels = ['ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor'];
+            $roleLabels = ['SUPERADMIN' => 'Superadmin', 'ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor', 'ENCARGADO' => 'Encargado'];
             $sidebarRoleLabel = $roleLabels[auth()->user()->role ?? ''] ?? auth()->user()->role;
         @endphp
         <div class="sb-footer">

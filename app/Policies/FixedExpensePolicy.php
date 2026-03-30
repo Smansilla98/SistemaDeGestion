@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\FixedExpense;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class FixedExpensePolicy
 {
@@ -13,7 +12,7 @@ class FixedExpensePolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -21,7 +20,7 @@ class FixedExpensePolicy
      */
     public function view(User $user, FixedExpense $fixedExpense): bool
     {
-        return $user->restaurant_id === $fixedExpense->restaurant_id && in_array($user->role, ['ADMIN', 'CAJERO']);
+        return $user->restaurant_id === $fixedExpense->restaurant_id && in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -29,7 +28,7 @@ class FixedExpensePolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -37,7 +36,7 @@ class FixedExpensePolicy
      */
     public function update(User $user, FixedExpense $fixedExpense): bool
     {
-        return $user->restaurant_id === $fixedExpense->restaurant_id && $user->role === 'ADMIN';
+        return $user->restaurant_id === $fixedExpense->restaurant_id && $user->isAdminLevel();
     }
 
     /**
@@ -45,7 +44,6 @@ class FixedExpensePolicy
      */
     public function delete(User $user, FixedExpense $fixedExpense): bool
     {
-        return $user->restaurant_id === $fixedExpense->restaurant_id && $user->role === 'ADMIN';
+        return $user->restaurant_id === $fixedExpense->restaurant_id && $user->isAdminLevel();
     }
 }
-

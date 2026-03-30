@@ -14,7 +14,7 @@ class ReportPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -22,7 +22,7 @@ class ReportPolicy
      */
     public function viewSales(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -30,7 +30,7 @@ class ReportPolicy
      */
     public function viewProducts(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -38,7 +38,6 @@ class ReportPolicy
      */
     public function viewStaff(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 }
-

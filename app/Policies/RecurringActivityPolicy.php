@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\RecurringActivity;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class RecurringActivityPolicy
 {
@@ -13,7 +12,7 @@ class RecurringActivityPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -21,7 +20,7 @@ class RecurringActivityPolicy
      */
     public function view(User $user, RecurringActivity $recurringActivity): bool
     {
-        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -29,7 +28,7 @@ class RecurringActivityPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO']);
     }
 
     /**
@@ -37,7 +36,7 @@ class RecurringActivityPolicy
      */
     public function update(User $user, RecurringActivity $recurringActivity): bool
     {
-        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO']);
+        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO']);
     }
 
     /**
@@ -45,7 +44,6 @@ class RecurringActivityPolicy
      */
     public function delete(User $user, RecurringActivity $recurringActivity): bool
     {
-        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['ADMIN', 'GERENTE']);
+        return $user->restaurant_id === $recurringActivity->restaurant_id && in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
     }
 }
-

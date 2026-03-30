@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Logger;
 use App\DTO\Pagination\PaginationQueryDto;
+use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -30,10 +31,11 @@ final class UserService
         return $this->users->findAllByRestaurant($restaurantId);
     }
 
-    public function paginateForRestaurant(int $restaurantId, PaginationQueryDto $pagination): LengthAwarePaginator
+    public function paginateForRestaurant(int $restaurantId, PaginationQueryDto $pagination, bool $hideSuperadminFromActor = false): LengthAwarePaginator
     {
-        $total = $this->users->countByRestaurant($restaurantId);
-        $items = $this->users->findPageByRestaurant($restaurantId, $pagination->page, $pagination->perPage);
+        $exclude = $hideSuperadminFromActor;
+        $total = $this->users->countByRestaurant($restaurantId, $exclude);
+        $items = $this->users->findPageByRestaurant($restaurantId, $pagination->page, $pagination->perPage, $exclude);
 
         return new LengthAwarePaginator(
             $items,
@@ -50,10 +52,14 @@ final class UserService
     /**
      * @return array<string, mixed>
      */
-    public function getById(int $id, int $restaurantId): array
+    public function getById(int $id, int $restaurantId, bool $hideSuperadminFromActor = false): array
     {
         $row = $this->users->findByIdForRestaurant($id, $restaurantId);
         if ($row === null) {
+            throw new InvalidArgumentException('Usuario no encontrado');
+        }
+
+        if ($hideSuperadminFromActor && ($row['role'] ?? '') === User::ROLE_SUPERADMIN) {
             throw new InvalidArgumentException('Usuario no encontrado');
         }
 
@@ -94,9 +100,14 @@ final class UserService
     /**
      * @param  array<string, mixed>  $input
      */
-    public function update(int $id, int $restaurantId, array $input): array
+    public function update(int $id, int $restaurantId, array $input, bool $actorIsSuperAdmin = false): array
     {
-        if ($this->users->findByIdForRestaurant($id, $restaurantId) === null) {
+        $existing = $this->users->findByIdForRestaurant($id, $restaurantId);
+        if ($existing === null) {
+            throw new InvalidArgumentException('Usuario no encontrado');
+        }
+
+        if (! $actorIsSuperAdmin && ($existing['role'] ?? '') === User::ROLE_SUPERADMIN) {
             throw new InvalidArgumentException('Usuario no encontrado');
         }
 
@@ -122,16 +133,21 @@ final class UserService
             $this->users->update($id, $restaurantId, $data);
         }
 
-        return $this->getById($id, $restaurantId);
+        return $this->getById($id, $restaurantId, ! $actorIsSuperAdmin);
     }
 
-    public function delete(int $id, int $restaurantId, int $actorId): void
+    public function delete(int $id, int $restaurantId, int $actorId, bool $actorIsSuperAdmin = false): void
     {
         if ($id === $actorId) {
             throw new InvalidArgumentException('No podés eliminar tu propio usuario');
         }
 
-        if ($this->users->findByIdForRestaurant($id, $restaurantId) === null) {
+        $row = $this->users->findByIdForRestaurant($id, $restaurantId);
+        if ($row === null) {
+            throw new InvalidArgumentException('Usuario no encontrado');
+        }
+
+        if (! $actorIsSuperAdmin && ($row['role'] ?? '') === User::ROLE_SUPERADMIN) {
             throw new InvalidArgumentException('Usuario no encontrado');
         }
 

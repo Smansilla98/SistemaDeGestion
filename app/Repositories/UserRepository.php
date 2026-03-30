@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Models\User;
 use PDO;
 
 /**
@@ -35,12 +36,16 @@ class UserRepository
         return $stmt->fetchAll();
     }
 
-    public function countByRestaurant(int $restaurantId): int
+    public function countByRestaurant(int $restaurantId, bool $excludeSuperadmin = false): int
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT COUNT(*) FROM users WHERE restaurant_id = :rid'
-        );
-        $stmt->execute(['rid' => $restaurantId]);
+        $sql = 'SELECT COUNT(*) FROM users WHERE restaurant_id = :rid';
+        $params = ['rid' => $restaurantId];
+        if ($excludeSuperadmin) {
+            $sql .= ' AND role != :not_role';
+            $params['not_role'] = User::ROLE_SUPERADMIN;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
     }
@@ -48,14 +53,20 @@ class UserRepository
     /**
      * @return list<array<string, mixed>>
      */
-    public function findPageByRestaurant(int $restaurantId, int $page, int $perPage): array
+    public function findPageByRestaurant(int $restaurantId, int $page, int $perPage, bool $excludeSuperadmin = false): array
     {
         $offset = max(0, ($page - 1) * $perPage);
-        $stmt = $this->pdo->prepare(
-            'SELECT id, restaurant_id, name, username, email, role, is_active, last_login_at, created_at, updated_at
-             FROM users WHERE restaurant_id = :rid ORDER BY name ASC LIMIT :lim OFFSET :off'
-        );
+        $sql = 'SELECT id, restaurant_id, name, username, email, role, is_active, last_login_at, created_at, updated_at
+             FROM users WHERE restaurant_id = :rid';
+        if ($excludeSuperadmin) {
+            $sql .= ' AND role != :not_role';
+        }
+        $sql .= ' ORDER BY name ASC LIMIT :lim OFFSET :off';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':rid', $restaurantId, PDO::PARAM_INT);
+        if ($excludeSuperadmin) {
+            $stmt->bindValue(':not_role', User::ROLE_SUPERADMIN, PDO::PARAM_STR);
+        }
         $stmt->bindValue(':lim', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
         $stmt->execute();

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class CategoryPolicy
@@ -15,7 +15,7 @@ class CategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO', 'MOZO']);
     }
 
     /**
@@ -23,7 +23,7 @@ class CategoryPolicy
      */
     public function view(User $user, Category $category): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO', 'MOZO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO', 'MOZO'])
             && $user->restaurant_id === $category->restaurant_id;
     }
 
@@ -32,7 +32,7 @@ class CategoryPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -40,7 +40,7 @@ class CategoryPolicy
      */
     public function update(User $user, Category $category): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO'])
             && $user->restaurant_id === $category->restaurant_id;
     }
 
@@ -49,8 +49,7 @@ class CategoryPolicy
      */
     public function delete(User $user, Category $category): bool
     {
-        return $user->role === 'ADMIN' 
+        return $user->isAdminLevel()
             && $user->restaurant_id === $category->restaurant_id;
     }
 }
-

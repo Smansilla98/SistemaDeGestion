@@ -8,7 +8,7 @@
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-cash-coin"></i> Módulo de Caja</h1>
         </div>
-        @if(auth()->user()->role === 'ADMIN')
+        @if(auth()->user()->isAdminLevel())
         <a href="{{ route('cash-register.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nueva Caja
         </a>
@@ -37,7 +37,7 @@
 </div>
 @endif
 
-@if(auth()->user()->role === 'ADMIN')
+@if(auth()->user()->isAdminLevel())
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">

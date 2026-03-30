@@ -354,6 +354,10 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/{printer}/test', [\App\Http\Controllers\PrinterController::class, 'test'])->name('test');
     });
 
+    Route::delete('/reports/sales/cash-sessions/{session}', [\App\Http\Controllers\Report\ReportController::class, 'destroyCashSession'])
+        ->name('reports.sales.destroy-cash-session')
+        ->middleware('role:SUPERADMIN');
+
     Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/sales', [\App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');
