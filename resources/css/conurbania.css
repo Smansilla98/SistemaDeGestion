@@ -309,3 +309,100 @@
   .ph,.page-header{padding:18px 20px 16px}
   .ph-title,.page-title{font-size:20px}
 }
+
+/* ========== Móvil: topbar, títulos y filtros tipo reporte ========== */
+.conurbania-app .tb-user-label{
+  max-width:min(160px,28vw);
+  font-size:13px;
+}
+.conurbania-app .page .page-hero-title{
+  font-weight:700;
+  line-height:1.2;
+  word-break:break-word;
+  max-width:100%;
+}
+/* Iconos grandes en hub de reportes */
+.conurbania-app .report-hub-ico{
+  font-size:clamp(2rem,9vw,3rem);
+  line-height:1;
+}
+@media (min-width:768px){
+  .conurbania-app .page .page-hero-title{
+    font-size:2.25rem;
+  }
+}
+@media (max-width:767.98px){
+  .conurbania-app .page{
+    overflow-x:hidden;
+    min-width:0;
+  }
+  .conurbania-app .topbar{
+    padding-left:10px;
+    padding-right:10px;
+    gap:8px;
+    flex-wrap:nowrap;
+  }
+  .conurbania-app .tb-title{
+    min-width:0;
+    flex:1 1 auto;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:min(42vw,200px);
+    font-size:12px !important;
+  }
+  .conurbania-app .tb-badge{
+    flex-shrink:0;
+    max-width:5rem;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:10px;
+    padding:2px 8px;
+  }
+  .conurbania-app .tb-user{
+    min-width:0;
+    padding:5px 8px;
+  }
+  .conurbania-app .tb-user-label{
+    display:none !important;
+  }
+  .conurbania-app .tb-user-chevron{
+    display:none !important;
+  }
+  /* Inline font-size de h1 en vistas .page */
+  .conurbania-app .page h1.text-white{
+    font-size:clamp(1.1rem,5.2vw,1.85rem) !important;
+    font-weight:700 !important;
+    line-height:1.25 !important;
+    word-break:break-word;
+    hyphens:auto;
+  }
+  .conurbania-app .page .page-hero-title{
+    font-size:clamp(1.1rem,5.2vw,1.85rem) !important;
+  }
+  .conurbania-app .row.mb-4 > .col-12.d-flex.justify-content-between.align-items-center h1.text-white,
+  .conurbania-app .row.mb-4 > .col-12.tables-header.d-flex.justify-content-between.align-items-center h1.text-white{
+    font-size:clamp(1.1rem,5.2vw,1.85rem) !important;
+  }
+  .conurbania-app .page .card .card-body h2,
+  .conurbania-app .page .card .card-body h5{
+    font-size:clamp(1rem,3.8vw,1.35rem);
+  }
+  .conurbania-app .card-header.report-filters-header{
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+  .conurbania-app .export-actions-btns{
+    margin-inline-start:0 !important;
+  }
+  .conurbania-app .export-actions-btns .btn{
+    min-height:40px;
+  }
+}
+@media (max-width:380px){
+  .conurbania-app .tb-title{
+    max-width:36vw;
+    font-size:11px !important;
+  }
+}

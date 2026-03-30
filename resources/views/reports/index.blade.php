@@ -5,7 +5,7 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12">
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-graph-up"></i> Reportes</h1>
+        <h1 class="text-white mb-2 page-hero-title"><i class="bi bi-graph-up"></i> Reportes</h1>
     </div>
 </div>
 
@@ -13,7 +13,7 @@
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-body text-center">
-                <i class="bi bi-currency-dollar" style="font-size: 3rem; color: #0d6efd;"></i>
+                <i class="bi bi-currency-dollar report-hub-ico text-primary"></i>
                 <h5 class="card-title mt-3">Ventas</h5>
                 <p class="card-text text-muted">Reporte de ventas diarias y por método de pago</p>
                 <a href="{{ route('reports.sales') }}" class="btn btn-primary">
@@ -26,7 +26,7 @@
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-body text-center">
-                <i class="bi bi-box-seam" style="font-size: 3rem; color: #198754;"></i>
+                <i class="bi bi-box-seam report-hub-ico text-success"></i>
                 <h5 class="card-title mt-3">Productos</h5>
                 <p class="card-text text-muted">Productos más vendidos y estadísticas</p>
                 <a href="{{ route('reports.products') }}" class="btn btn-success">
@@ -39,7 +39,7 @@
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-body text-center">
-                <i class="bi bi-people" style="font-size: 3rem; color: #ffc107;"></i>
+                <i class="bi bi-people report-hub-ico text-warning"></i>
                 <h5 class="card-title mt-3">Personal</h5>
                 <p class="card-text text-muted">Ventas por mozo y rendimiento del personal</p>
                 <a href="{{ route('reports.staff') }}" class="btn btn-warning">
