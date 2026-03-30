@@ -40,9 +40,10 @@
                 <h5 class="mb-0"><i class="bi bi-people"></i> Permisos por rol</h5>
                 <div class="d-flex align-items-center gap-2">
                     <label class="mb-0 me-2 text-nowrap">Rol:</label>
+                    @php $permDefaultRole = in_array('ADMIN', $roles, true) ? 'ADMIN' : ($roles[0] ?? 'ADMIN'); @endphp
                     <select class="form-select form-select-sm w-auto" id="roleSelect" style="min-width: 180px;">
                         @foreach($roles as $r)
-                            <option value="{{ $r }}" {{ $r === 'ADMIN' ? 'selected' : '' }}>{{ $r }}</option>
+                            <option value="{{ $r }}" {{ $r === $permDefaultRole ? 'selected' : '' }}>{{ $r }}</option>
                         @endforeach
                     </select>
                 </div>

@@ -266,7 +266,7 @@
 <script>
 let quickOrderItems = [];
 let quickOrderItemCounter = 0;
-const currentUserIsAdmin = @json(in_array(auth()->user()->role, ['ADMIN', 'GERENTE']));
+const currentUserIsAdmin = @json(auth()->user()->canManageOrdersLikeAdmin());
 
 // Búsqueda de productos
 document.getElementById('quickOrderProductSearch')?.addEventListener('input', function() {

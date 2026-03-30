@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Printer;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class PrinterPolicy
@@ -15,7 +15,7 @@ class PrinterPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO']);
     }
 
     /**
@@ -23,7 +23,7 @@ class PrinterPolicy
      */
     public function view(User $user, Printer $printer): bool
     {
-        return in_array($user->role, ['ADMIN', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO'])
             && $user->restaurant_id === $printer->restaurant_id;
     }
 
@@ -32,7 +32,7 @@ class PrinterPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -40,7 +40,7 @@ class PrinterPolicy
      */
     public function update(User $user, Printer $printer): bool
     {
-        return $user->role === 'ADMIN' 
+        return $user->isAdminLevel()
             && $user->restaurant_id === $printer->restaurant_id;
     }
 
@@ -49,8 +49,7 @@ class PrinterPolicy
      */
     public function delete(User $user, Printer $printer): bool
     {
-        return $user->role === 'ADMIN' 
+        return $user->isAdminLevel()
             && $user->restaurant_id === $printer->restaurant_id;
     }
 }
-

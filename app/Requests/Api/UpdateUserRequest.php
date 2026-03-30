@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             'username' => ['sometimes', 'string', 'max:255', Rule::unique('users', 'username')->ignore($userId)],
             'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => 'nullable|string|min:8',
-            'role' => ['sometimes', Rule::in(User::getRoles())],
+            'role' => ['sometimes', Rule::in(User::getAssignableRoles($this->user()))],
             'is_active' => 'sometimes|boolean',
         ];
     }

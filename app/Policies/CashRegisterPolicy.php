@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\CashRegister;
 use App\Models\CashRegisterSession;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class CashRegisterPolicy
@@ -16,7 +16,7 @@ class CashRegisterPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**
@@ -24,7 +24,7 @@ class CashRegisterPolicy
      */
     public function view(User $user, CashRegister $cashRegister): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO'])
             && $user->restaurant_id === $cashRegister->restaurant_id;
     }
 
@@ -33,7 +33,7 @@ class CashRegisterPolicy
      */
     public function openSession(User $user, CashRegister $cashRegister): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO'])
             && $user->restaurant_id === $cashRegister->restaurant_id;
     }
 
@@ -42,7 +42,7 @@ class CashRegisterPolicy
      */
     public function closeSession(User $user, CashRegisterSession $session): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']) 
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO'])
             && $user->restaurant_id === $session->cashRegister->restaurant_id;
     }
 
@@ -51,7 +51,7 @@ class CashRegisterPolicy
      */
     public function processPayment(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO']);
     }
 
     /**
@@ -59,7 +59,7 @@ class CashRegisterPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -67,7 +67,7 @@ class CashRegisterPolicy
      */
     public function update(User $user, CashRegister $cashRegister): bool
     {
-        return $user->role === 'ADMIN' 
+        return $user->isAdminLevel()
             && $user->restaurant_id === $cashRegister->restaurant_id;
     }
 
@@ -76,7 +76,7 @@ class CashRegisterPolicy
      */
     public function delete(User $user, CashRegister $cashRegister): bool
     {
-        if ($user->role !== 'ADMIN' || $user->restaurant_id !== $cashRegister->restaurant_id) {
+        if (! $user->isAdminLevel() || $user->restaurant_id !== $cashRegister->restaurant_id) {
             return false;
         }
 
@@ -84,4 +84,3 @@ class CashRegisterPolicy
         return $cashRegister->sessions()->count() === 0;
     }
 }
-

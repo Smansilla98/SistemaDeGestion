@@ -19,12 +19,20 @@ class User extends Authenticatable
      * @var list<string>
      */
     // Roles de usuario
+    const ROLE_SUPERADMIN = 'SUPERADMIN';
+
     const ROLE_ADMIN = 'ADMIN';
+
     const ROLE_GERENTE = 'GERENTE';  // Entre ADMIN y SUPERVISOR: mismo que admin excepto Cocina, Descuentos, Sectores, Categorías, Impresoras, Finanzas y reportes
+
     const ROLE_CAJERO = 'CAJERO';
+
     const ROLE_MOZO = 'MOZO';
+
     const ROLE_COCINA = 'COCINA';
+
     const ROLE_SUPERVISOR = 'SUPERVISOR';
+
     const ROLE_ENCARGADO = 'ENCARGADO';
 
     protected $fillable = [
@@ -117,6 +125,7 @@ class User extends Authenticatable
     public static function getRoles(): array
     {
         return [
+            self::ROLE_SUPERADMIN,
             self::ROLE_ADMIN,
             self::ROLE_GERENTE,
             self::ROLE_CAJERO,
@@ -125,6 +134,43 @@ class User extends Authenticatable
             self::ROLE_SUPERVISOR,
             self::ROLE_ENCARGADO,
         ];
+    }
+
+    /**
+     * Roles que se pueden asignar desde usuarios normales (sin SUPERADMIN).
+     *
+     * @return list<string>
+     */
+    public static function getAssignableRoles(?self $actor = null): array
+    {
+        $all = self::getRoles();
+        if ($actor !== null && $actor->isSuperAdmin()) {
+            return $all;
+        }
+
+        return array_values(array_diff($all, [self::ROLE_SUPERADMIN]));
+    }
+
+    /**
+     * Si el actor no es superadmin, oculta por completo la existencia del rol SUPERADMIN
+     * (listados, matrices de permisos, etc.).
+     */
+    public static function shouldHideSuperadminFrom(self $actor): bool
+    {
+        return ! $actor->isSuperAdmin();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPERADMIN;
+    }
+
+    /**
+     * Mismo nivel que ADMIN en políticas y rutas (no confundir con isAdmin()).
+     */
+    public function isAdminLevel(): bool
+    {
+        return $this->role === self::ROLE_SUPERADMIN || $this->role === self::ROLE_ADMIN;
     }
 
     /**
@@ -157,6 +203,22 @@ class User extends Authenticatable
     public function isCajero(): bool
     {
         return $this->role === self::ROLE_CAJERO;
+    }
+
+    /**
+     * Puede gestionar usuarios del restaurante (lista, crear, editar, eliminar).
+     */
+    public function canManageUsers(): bool
+    {
+        return in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ADMIN, self::ROLE_GERENTE], true);
+    }
+
+    /**
+     * Pedidos / caja: mismas excepciones que admin y gerente (p. ej. edición ampliada).
+     */
+    public function canManageOrdersLikeAdmin(): bool
+    {
+        return in_array($this->role, [self::ROLE_SUPERADMIN, self::ROLE_ADMIN, self::ROLE_GERENTE], true);
     }
 
     /**
@@ -198,7 +260,7 @@ class User extends Authenticatable
     {
         return Table::whereHas('currentSession', function ($query) {
             $query->where('waiter_id', $this->id)
-                  ->where('status', TableSession::STATUS_OPEN);
+                ->where('status', TableSession::STATUS_OPEN);
         })->with(['currentSession', 'sector'])->get();
     }
 
@@ -210,12 +272,12 @@ class User extends Authenticatable
         if (is_null($value)) {
             return null;
         }
-        
+
         // Si ya es un objeto Carbon, devolverlo
         if ($value instanceof \Carbon\Carbon) {
             return $value;
         }
-        
+
         // Si es string, convertirlo a Carbon
         if (is_string($value)) {
             try {
@@ -224,7 +286,7 @@ class User extends Authenticatable
                 return null;
             }
         }
-        
+
         return $value;
     }
 }

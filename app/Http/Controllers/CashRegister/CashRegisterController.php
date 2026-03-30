@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\CashRegister;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashMovement;
 use App\Models\CashRegister;
 use App\Models\CashRegisterSession;
-use App\Models\CashMovement;
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\Category;
 use App\Services\CashRegisterService;
 use App\Services\OrderService;
 use App\Services\PrintService;
@@ -36,11 +36,11 @@ class CashRegisterController extends Controller
 
         // Si es ADMIN, mostrar todas las cajas (activas e inactivas)
         $cashRegistersQuery = CashRegister::where('restaurant_id', $restaurantId);
-        
-        if (auth()->user()->role !== 'ADMIN') {
+
+        if (! auth()->user()->isAdminLevel()) {
             $cashRegistersQuery->where('is_active', true);
         }
-        
+
         $cashRegisters = $cashRegistersQuery->withCount('sessions')
             ->orderBy('name')
             ->get();
@@ -58,7 +58,7 @@ class CashRegisterController extends Controller
      */
     public function create()
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden crear cajas');
         }
 
@@ -70,7 +70,7 @@ class CashRegisterController extends Controller
      */
     public function store(Request $request)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden crear cajas');
         }
 
@@ -93,7 +93,7 @@ class CashRegisterController extends Controller
      */
     public function edit(CashRegister $cashRegister)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden editar cajas');
         }
 
@@ -109,7 +109,7 @@ class CashRegisterController extends Controller
      */
     public function update(Request $request, CashRegister $cashRegister)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden editar cajas');
         }
 
@@ -135,7 +135,7 @@ class CashRegisterController extends Controller
      */
     public function destroy(CashRegister $cashRegister)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden eliminar cajas');
         }
 
@@ -184,12 +184,12 @@ class CashRegisterController extends Controller
     public function session(CashRegisterSession $session)
     {
         $session->load([
-            'cashRegister', 
-            'user', 
-            'payments.order.table', 
+            'cashRegister',
+            'user',
+            'payments.order.table',
             'payments.order.user',
             'payments.user',
-            'cashMovements'
+            'cashMovements',
         ]);
 
         // Calcular totales
@@ -289,9 +289,11 @@ class CashRegisterController extends Controller
                 'reference' => $validated['reference'] ?? null,
             ]);
             $tipo = $validated['type'] === 'EGRESO' ? 'Salida' : 'Ingreso';
-            return back()->with('success', $tipo . ' de caja registrada correctamente');
+
+            return back()->with('success', $tipo.' de caja registrada correctamente');
         } catch (\Exception $e) {
-            Log::warning('Error al registrar movimiento de caja: ' . $e->getMessage());
+            Log::warning('Error al registrar movimiento de caja: '.$e->getMessage());
+
             return back()->with('error', $e->getMessage());
         }
     }
@@ -302,7 +304,7 @@ class CashRegisterController extends Controller
      */
     public function destroyMovement(CashMovement $movement)
     {
-        if (auth()->user()->role !== 'ADMIN') {
+        if (! auth()->user()->isAdminLevel()) {
             abort(403, 'Solo los administradores pueden eliminar movimientos de caja');
         }
 
@@ -312,9 +314,10 @@ class CashRegisterController extends Controller
 
         try {
             $movement->delete();
+
             return back()->with('success', 'Movimiento eliminado exitosamente');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al eliminar el movimiento: ' . $e->getMessage());
+            return back()->with('error', 'Error al eliminar el movimiento: '.$e->getMessage());
         }
     }
 
@@ -324,13 +327,13 @@ class CashRegisterController extends Controller
     public function quickOrder()
     {
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener sesión de caja activa
         $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
             ->where('status', 'ABIERTA')
             ->first();
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return redirect()->route('cash-register.index')
                 ->with('error', 'Debes tener una sesión de caja abierta para realizar pedidos rápidos');
         }
@@ -346,7 +349,7 @@ class CashRegisterController extends Controller
         // Agrupar por categoría
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
-            ->with(['products' => function($query) use ($restaurantId) {
+            ->with(['products' => function ($query) use ($restaurantId) {
                 $query->where('restaurant_id', $restaurantId)
                     ->where('type', 'PRODUCT')
                     ->where('is_active', true);
@@ -385,7 +388,7 @@ class CashRegisterController extends Controller
                 if ($cashRegisterSession->status !== 'ABIERTA') {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La sesión de caja no está abierta'
+                        'message' => 'La sesión de caja no está abierta',
                     ], 422);
                 }
 
@@ -424,9 +427,10 @@ class CashRegisterController extends Controller
                 if ($totalPaid < $order->total - 0.01) {
                     // Revertir pedido si el pago es insuficiente
                     $order->update(['status' => 'CANCELADO']);
+
                     return response()->json([
                         'success' => false,
-                        'message' => "El total pagado ($${totalPaid}) es menor al total a pagar ($${order->total}). Faltan $" . number_format($order->total - $totalPaid, 2)
+                        'message' => "El total pagado ($${totalPaid}) es menor al total a pagar ($${order->total}). Faltan $".number_format($order->total - $totalPaid, 2),
                     ], 422);
                 }
 
@@ -457,7 +461,7 @@ class CashRegisterController extends Controller
                 if ($request->boolean('print_ticket')) {
                     try {
                         $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
-                        if (!$printer) {
+                        if (! $printer) {
                             $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
                                 ->where('is_active', true)
                                 ->first();
@@ -467,13 +471,13 @@ class CashRegisterController extends Controller
                             $printMessage = ' Ticket impreso.';
                         }
                     } catch (\Exception $printError) {
-                        Log::warning('Error al imprimir ticket de pedido rápido: ' . $printError->getMessage());
+                        Log::warning('Error al imprimir ticket de pedido rápido: '.$printError->getMessage());
                     }
                 }
 
                 $successMessage = 'Pedido rápido procesado exitosamente.';
                 if ($change > 0.01) {
-                    $successMessage .= " Cambio: $" . number_format($change, 2) . ".";
+                    $successMessage .= ' Cambio: $'.number_format($change, 2).'.';
                 }
                 $successMessage .= $printMessage;
 
@@ -493,17 +497,16 @@ class CashRegisterController extends Controller
                     ->with('success', $successMessage);
             });
         } catch (\Exception $e) {
-            Log::error('Error al procesar pedido rápido: ' . $e->getMessage());
-            
+            Log::error('Error al procesar pedido rápido: '.$e->getMessage());
+
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el pedido: ' . $e->getMessage()
+                    'message' => 'Error al procesar el pedido: '.$e->getMessage(),
                 ], 500);
             }
 
-            return back()->with('error', 'Error al procesar el pedido: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Error al procesar el pedido: '.$e->getMessage())->withInput();
         }
     }
 }
-

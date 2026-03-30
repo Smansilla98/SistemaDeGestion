@@ -211,7 +211,7 @@
                                 <th>Descripción</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
-                                @if(auth()->user()->role === 'ADMIN')
+                                @if(auth()->user()->isAdminLevel())
                                 <th>Acciones</th>
                                 @endif
                             </tr>
@@ -227,7 +227,7 @@
                                 <td>{{ $movement->description }}</td>
                                 <td>${{ number_format($movement->amount, 2) }}</td>
                                 <td>{{ $movement->created_at->format('H:i') }}</td>
-                                @if(auth()->user()->role === 'ADMIN')
+                                @if(auth()->user()->isAdminLevel())
                                 <td>
                                     <form action="{{ route('cash-register.destroy-movement', $movement) }}" 
                                           method="POST" 

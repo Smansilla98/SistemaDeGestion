@@ -12,7 +12,7 @@ class SectorPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -24,7 +24,7 @@ class SectorPolicy
             return false;
         }
 
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -32,7 +32,7 @@ class SectorPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -44,7 +44,7 @@ class SectorPolicy
             return false;
         }
 
-        return $user->role === 'ADMIN';
+        return $user->isAdminLevel();
     }
 
     /**
@@ -57,7 +57,6 @@ class SectorPolicy
         }
 
         // Solo admin puede eliminar, y solo si no tiene mesas
-        return $user->role === 'ADMIN' && $sector->tables()->count() === 0;
+        return $user->isAdminLevel() && $sector->tables()->count() === 0;
     }
 }
-

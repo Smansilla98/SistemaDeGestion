@@ -12,7 +12,7 @@ class TablePolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -24,7 +24,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -32,7 +32,7 @@ class TablePolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['ADMIN', 'GERENTE']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
     }
 
     /**
@@ -44,7 +44,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['ADMIN', 'GERENTE', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO']);
     }
 
     /**
@@ -56,7 +56,6 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['ADMIN', 'GERENTE']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
     }
 }
-

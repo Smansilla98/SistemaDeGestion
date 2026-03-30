@@ -3,19 +3,18 @@
 namespace App\Http\Controllers\Order;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Table;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\Payment;
 use App\Models\CashRegisterSession;
 use App\Models\DiscountType;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\Table;
 use App\Services\OrderService;
 use App\Services\PrintService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
@@ -31,13 +30,13 @@ class OrderController extends Controller
     protected function groupOrderItems($items)
     {
         $groupedItems = collect();
-        
+
         foreach ($items as $item) {
             // Buscar si ya existe un item con el mismo product_id
             $existingItemIndex = $groupedItems->search(function ($i) use ($item) {
                 return $i['product_id'] === $item->product_id;
             });
-            
+
             if ($existingItemIndex !== false) {
                 // Si existe, sumar cantidad y subtotal
                 $existingItem = $groupedItems[$existingItemIndex];
@@ -47,7 +46,7 @@ class OrderController extends Controller
                 // Mantener el precio unitario del primer item (no promediar)
                 // Si hay observaciones diferentes, combinarlas
                 if ($item->observations && $existingItem['observations'] !== $item->observations) {
-                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'] . '; ' : '') . $item->observations;
+                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'].'; ' : '').$item->observations;
                 }
                 $groupedItems[$existingItemIndex] = $existingItem;
             } else {
@@ -64,7 +63,7 @@ class OrderController extends Controller
                 ]);
             }
         }
-        
+
         return $groupedItems;
     }
 
@@ -104,13 +103,13 @@ class OrderController extends Controller
         if ($request->filled('search')) {
             $searchTerm = trim($request->search);
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('number', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('customer_name', 'LIKE', '%' . $searchTerm . '%')
+                $q->where('number', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('customer_name', 'LIKE', '%'.$searchTerm.'%')
                     ->orWhereHas('table', function ($tableQuery) use ($searchTerm) {
-                        $tableQuery->where('number', 'LIKE', '%' . $searchTerm . '%');
+                        $tableQuery->where('number', 'LIKE', '%'.$searchTerm.'%');
                     })
                     ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
-                        $userQuery->where('name', 'LIKE', '%' . $searchTerm . '%');
+                        $userQuery->where('name', 'LIKE', '%'.$searchTerm.'%');
                     });
                 // Si el término es numérico, coincidir también por la parte numérica del pedido (ej: "048" con "ORD-2026-048" o "48")
                 if (preg_match('/^\d+$/', $searchTerm)) {
@@ -140,12 +139,12 @@ class OrderController extends Controller
         // Si se especifica una mesa, verificar que esté OCUPADA
         if ($tableId) {
             $selectedTable = Table::findOrFail($tableId);
-            
+
             // Verificar que la mesa pertenezca al restaurante del usuario
             if ($selectedTable->restaurant_id !== $restaurantId) {
                 abort(403, 'No tienes acceso a esta mesa');
             }
-            
+
             // Verificar que la mesa esté OCUPADA para poder tomar pedidos
             if ($selectedTable->status !== 'OCUPADA') {
                 return redirect()->route('tables.index')
@@ -190,6 +189,7 @@ class OrderController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
+
             return back()->with('error', $msg)->withInput();
         }
 
@@ -213,6 +213,7 @@ class OrderController extends Controller
                         if ($wantsJson) {
                             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
                         }
+
                         return back()->with('error', $e->getMessage())->withInput();
                     }
                     throw $e;
@@ -228,7 +229,7 @@ class OrderController extends Controller
                     $this->printService->printKitchenTicket($order, $printer);
                 }
             } catch (\Exception $e) {
-                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
             }
 
             if ($wantsJson) {
@@ -248,6 +249,7 @@ class OrderController extends Controller
             if ($wantsJson) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
@@ -270,7 +272,8 @@ class OrderController extends Controller
             ->get()
             ->sortBy(function ($p) {
                 $c = $p->category?->name ?? '';
-                return $c . '|' . $p->name;
+
+                return $c.'|'.$p->name;
             })
             ->values();
 
@@ -375,9 +378,10 @@ class OrderController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se pueden agregar items a un pedido cerrado o cancelado'
+                    'message' => 'No se pueden agregar items a un pedido cerrado o cancelado',
                 ], 422);
             }
+
             return back()->with('error', 'No se pueden agregar items a un pedido cerrado o cancelado');
         }
 
@@ -407,21 +411,22 @@ class OrderController extends Controller
                 if ($request->expectsJson() || $request->wantsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => $e->getMessage()
+                        'message' => $e->getMessage(),
                     ], 422);
                 }
+
                 return back()
                     ->with('error', $e->getMessage())
                     ->withInput();
             }
-            
+
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 422);
             }
-            
+
             // Re-lanzar otras excepciones
             throw $e;
         }
@@ -467,7 +472,7 @@ class OrderController extends Controller
             'user',
             'items.product.category',
             'items.modifiers',
-            'payments'
+            'payments',
         ]);
 
         // Agrupar items por producto
@@ -485,7 +490,7 @@ class OrderController extends Controller
         Gate::authorize('update', $order);
 
         $validated = $request->validate([
-            'status' => 'required|in:ENTREGADO'
+            'status' => 'required|in:ENTREGADO',
         ]);
 
         $newStatus = $validated['status'];
@@ -493,7 +498,7 @@ class OrderController extends Controller
 
         // Validar transiciones permitidas
         $allowedFrom = ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'];
-        if (!in_array($currentStatus, $allowedFrom, true)) {
+        if (! in_array($currentStatus, $allowedFrom, true)) {
             return back()->with('error', "No se puede cambiar el estado de {$currentStatus} a {$newStatus}");
         }
 
@@ -502,24 +507,24 @@ class OrderController extends Controller
 
         // Cargar mesa si existe para el mensaje/JS de entregado.
         $order->load(['table']);
-        
+
         $order->save();
 
         // MÓDULO 2: Mensaje especial para pedidos entregados
         if ($newStatus === 'ENTREGADO') {
             if ($order->table) {
                 return back()->with('success', "✅ Pedido #{$order->number} entregado en Mesa {$order->table->number}")
-                             ->with('order_delivered', [
-                                 'order_number' => $order->number,
-                                 'table_number' => $order->table->number
-                             ]);
+                    ->with('order_delivered', [
+                        'order_number' => $order->number,
+                        'table_number' => $order->table->number,
+                    ]);
             } else {
                 // Pedido rápido sin mesa
                 return back()->with('success', "✅ Pedido #{$order->number} entregado")
-                             ->with('order_delivered', [
-                                 'order_number' => $order->number,
-                                 'customer_name' => $order->customer_name ?? 'Cliente'
-                             ]);
+                    ->with('order_delivered', [
+                        'order_number' => $order->number,
+                        'customer_name' => $order->customer_name ?? 'Cliente',
+                    ]);
             }
         }
 
@@ -535,10 +540,10 @@ class OrderController extends Controller
     {
         Gate::authorize('delete', $order);
 
-        $isAdmin = in_array(auth()->user()->role, ['ADMIN', 'GERENTE']);
+        $isAdmin = auth()->user()->canManageOrdersLikeAdmin();
 
-        if (!$isAdmin) {
-            if (!in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
+        if (! $isAdmin) {
+            if (! in_array($order->status, ['ABIERTO', 'EN_PREPARACION', 'CANCELADO'])) {
                 return back()->with('error', 'Solo se pueden eliminar pedidos en estado ABIERTO, EN PREPARACIÓN o CANCELADO');
             }
             if ($order->payments()->count() > 0) {
@@ -547,7 +552,7 @@ class OrderController extends Controller
         }
 
         try {
-            $wasQuickOrder = !$order->table_id;
+            $wasQuickOrder = ! $order->table_id;
 
             // Eliminar items primero (si hay restricciones de foreign key)
             $order->items()->delete();
@@ -563,7 +568,7 @@ class OrderController extends Controller
             return redirect()->route('orders.index')
                 ->with('success', 'Pedido eliminado exitosamente');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al eliminar el pedido: ' . $e->getMessage());
+            return back()->with('error', 'Error al eliminar el pedido: '.$e->getMessage());
         }
     }
 
@@ -573,9 +578,9 @@ class OrderController extends Controller
     public function quickOrder()
     {
         Gate::authorize('create', Order::class);
-        
+
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener sesión de caja activa
         $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
             ->where('status', 'ABIERTA')
@@ -598,7 +603,7 @@ class OrderController extends Controller
             ->with('category')
             ->orderBy('name')
             ->get()
-            ->groupBy(function($product) {
+            ->groupBy(function ($product) {
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });
 
@@ -611,9 +616,9 @@ class OrderController extends Controller
     public function quickOrdersApi()
     {
         Gate::authorize('create', Order::class);
-        
+
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener pedidos rápidos activos (sin mesa, no cerrados)
         $activeQuickOrders = Order::where('restaurant_id', $restaurantId)
             ->whereNull('table_id')
@@ -623,7 +628,7 @@ class OrderController extends Controller
             ->with(['user', 'items'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function($order) {
+            ->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'number' => $order->number,
@@ -638,7 +643,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'orders' => $activeQuickOrders
+            'orders' => $activeQuickOrders,
         ]);
     }
 
@@ -673,7 +678,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'customers' => $customers
+            'customers' => $customers,
         ]);
     }
 
@@ -688,7 +693,7 @@ class OrderController extends Controller
         if ($order->table_id !== null || $order->subsector_item_id !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'Este no es un pedido rápido'
+                'message' => 'Este no es un pedido rápido',
             ], 404);
         }
 
@@ -714,7 +719,7 @@ class OrderController extends Controller
                         'modifiers' => $item->modifiers->pluck('id')->toArray(),
                     ];
                 }),
-            ]
+            ],
         ]);
     }
 
@@ -726,16 +731,16 @@ class OrderController extends Controller
         Gate::authorize('create', Order::class);
 
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Verificar sesión de caja activa
         $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
             ->where('status', 'ABIERTA')
             ->first();
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debes tener una sesión de caja abierta para realizar pedidos rápidos'
+                'message' => 'Debes tener una sesión de caja abierta para realizar pedidos rápidos',
             ], 422);
         }
 
@@ -749,7 +754,7 @@ class OrderController extends Controller
             'items.*.observations' => 'nullable|string|max:500',
         ]);
 
-        $customerName = !empty(trim((string) ($validated['customer_name'] ?? '')))
+        $customerName = ! empty(trim((string) ($validated['customer_name'] ?? '')))
             ? trim($validated['customer_name'])
             : 'Pedido en la barra';
 
@@ -781,7 +786,7 @@ class OrderController extends Controller
                     $this->orderService->sendToKitchen($order);
                     $printMessage = ' Pedido enviado a cocina.';
                 } catch (\Exception $e) {
-                    Log::warning('Error al enviar pedido rápido a cocina: ' . $e->getMessage());
+                    Log::warning('Error al enviar pedido rápido a cocina: '.$e->getMessage());
                     $printMessage = ' Pedido creado. Error al enviar a cocina.';
                 }
             }
@@ -794,7 +799,7 @@ class OrderController extends Controller
                     $printMessage .= ' Ticket enviado a la impresora.';
                 }
             } catch (\Exception $e) {
-                Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
             }
 
             // Para órdenes rápidas: imprimir automáticamente desde /orders/{id}/print/item/{itemId}/ticket/auto
@@ -802,17 +807,18 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido rápido creado exitosamente.' . $printMessage,
+                'message' => 'Pedido rápido creado exitosamente.'.$printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'kitchen_ticket_url' => $itemTicketUrls ? $itemTicketUrls[0] : route('orders.print.kitchen.auto', $order),
                 'item_ticket_urls' => $itemTicketUrls,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al crear pedido rápido: ' . $e->getMessage());
+            Log::error('Error al crear pedido rápido: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage()
+                'message' => 'Error al crear el pedido: '.$e->getMessage(),
             ], 422);
         }
     }
@@ -833,7 +839,7 @@ class OrderController extends Controller
 
         // Agrupar items por producto para mostrar en tabla
         $groupedItems = $this->groupOrderItems($order->items);
-        
+
         // Items individuales para gestión de estados (sin agrupar)
         $individualItems = $order->items;
 
@@ -845,7 +851,7 @@ class OrderController extends Controller
             ->with('category')
             ->orderBy('name')
             ->get()
-            ->groupBy(function($product) {
+            ->groupBy(function ($product) {
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });
 
@@ -875,7 +881,7 @@ class OrderController extends Controller
             ->where('status', 'ABIERTA')
             ->first();
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return redirect()->route('orders.quick')
                 ->with('error', 'Debes tener una sesión de caja abierta para cerrar pedidos');
         }
@@ -908,7 +914,7 @@ class OrderController extends Controller
         if ($order->status === Order::STATUS_CERRADO) {
             return response()->json([
                 'success' => false,
-                'message' => 'Este pedido ya está cerrado'
+                'message' => 'Este pedido ya está cerrado',
             ], 422);
         }
 
@@ -918,10 +924,10 @@ class OrderController extends Controller
             ->where('status', 'ABIERTA')
             ->first();
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debes tener una sesión de caja abierta para procesar pagos'
+                'message' => 'Debes tener una sesión de caja abierta para procesar pagos',
             ], 422);
         }
 
@@ -938,14 +944,14 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         }
 
         try {
             return DB::transaction(function () use ($order, $validated, $activeSession, $restaurantId, $request) {
                 // Aplicar descuento si se seleccionó un tipo
-                if (!empty($validated['discount_type_id'])) {
+                if (! empty($validated['discount_type_id'])) {
                     $discountType = DiscountType::find($validated['discount_type_id']);
                     if ($discountType && $discountType->restaurant_id === $restaurantId) {
                         $order->discount = $discountType->calculateDiscount($order->subtotal);
@@ -962,7 +968,7 @@ class OrderController extends Controller
                 if ($totalPaid < $totalAmount - 0.01) {
                     return response()->json([
                         'success' => false,
-                        'message' => "El total pagado ($" . number_format($totalPaid, 2) . ") es menor al total a pagar ($" . number_format($totalAmount, 2) . "). Faltan $" . number_format($totalAmount - $totalPaid, 2)
+                        'message' => 'El total pagado ($'.number_format($totalPaid, 2).') es menor al total a pagar ($'.number_format($totalAmount, 2).'). Faltan $'.number_format($totalAmount - $totalPaid, 2),
                     ], 422);
                 }
 
@@ -979,7 +985,7 @@ class OrderController extends Controller
                         'payment_method' => $paymentData['payment_method'],
                         'amount' => $paymentData['amount'],
                         'operation_number' => $paymentData['operation_number'] ?? null,
-                        'notes' => $paymentData['notes'] ?? 'Pedido rápido - ' . $order->customer_name,
+                        'notes' => $paymentData['notes'] ?? 'Pedido rápido - '.$order->customer_name,
                     ]);
                 }
 
@@ -989,14 +995,14 @@ class OrderController extends Controller
                 // Mensaje de éxito
                 $successMessage = 'Pago procesado exitosamente. Pedido cerrado.';
                 if ($change > 0.01) {
-                    $successMessage .= " Cambio: $" . number_format($change, 2) . ".";
+                    $successMessage .= ' Cambio: $'.number_format($change, 2).'.';
                 }
 
                 // Imprimir ticket si hay impresora
                 $printUrl = null;
                 try {
                     $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
-                    if (!$printer) {
+                    if (! $printer) {
                         $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
                             ->where('is_active', true)
                             ->first();
@@ -1006,7 +1012,7 @@ class OrderController extends Controller
                         $printUrl = route('orders.print.ticket', $order);
                     }
                 } catch (\Exception $printError) {
-                    Log::warning('Error al imprimir ticket de pedido rápido: ' . $printError->getMessage());
+                    Log::warning('Error al imprimir ticket de pedido rápido: '.$printError->getMessage());
                 }
 
                 if ($request->expectsJson() || $request->wantsJson()) {
@@ -1026,10 +1032,11 @@ class OrderController extends Controller
                     ->with('success', $successMessage);
             });
         } catch (\Exception $e) {
-            Log::error('Error al procesar pago de pedido rápido: ' . $e->getMessage());
+            Log::error('Error al procesar pago de pedido rápido: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al procesar el pago: ' . $e->getMessage()
+                'message' => 'Error al procesar el pago: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1042,7 +1049,7 @@ class OrderController extends Controller
         Gate::authorize('create', Order::class);
 
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         $validated = $request->validate([
             'cash_register_session_id' => 'required|exists:cash_register_sessions,id',
             'customer_name' => 'required|string|min:2|max:255',
@@ -1055,7 +1062,7 @@ class OrderController extends Controller
                     if ($product && $product->restaurant_id !== $restaurantId) {
                         $fail('El producto seleccionado no pertenece a este restaurante.');
                     }
-                    if ($product && !$product->is_active) {
+                    if ($product && ! $product->is_active) {
                         $fail('El producto seleccionado no está activo.');
                     }
                 },
@@ -1086,7 +1093,7 @@ class OrderController extends Controller
                 if ($cashRegisterSession->status !== 'ABIERTA') {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La sesión de caja no está abierta'
+                        'message' => 'La sesión de caja no está abierta',
                     ], 422);
                 }
 
@@ -1101,7 +1108,7 @@ class OrderController extends Controller
                     if ($product->restaurant_id !== $restaurantId) {
                         throw new \Exception("El producto '{$product->name}' no pertenece a este restaurante");
                     }
-                    if (!$product->is_active) {
+                    if (! $product->is_active) {
                         throw new \Exception("El producto '{$product->name}' no está activo");
                     }
                     // Validar stock (producto con has_stock o receta con insumos)
@@ -1141,7 +1148,7 @@ class OrderController extends Controller
                         ]);
                         // Si falla al agregar un item, cancelar el pedido y lanzar error
                         $order->update(['status' => Order::STATUS_CANCELADO]);
-                        throw new \Exception("Error al agregar item al pedido: " . $e->getMessage());
+                        throw new \Exception('Error al agregar item al pedido: '.$e->getMessage());
                     }
                 }
 
@@ -1179,13 +1186,14 @@ class OrderController extends Controller
                 $totalPaid = collect($validated['payments'])->sum(function ($payment) {
                     return (float) $payment['amount'];
                 });
-                
+
                 // Validar que el total pagado sea válido
                 if ($totalPaid <= 0) {
                     $order->update(['status' => Order::STATUS_CANCELADO]);
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'El total pagado debe ser mayor a 0.'
+                        'message' => 'El total pagado debe ser mayor a 0.',
                     ], 422);
                 }
 
@@ -1195,9 +1203,10 @@ class OrderController extends Controller
                 if ($totalPaid < $order->total - 0.01) {
                     // Revertir pedido si el pago es insuficiente
                     $order->update(['status' => Order::STATUS_CANCELADO]);
+
                     return response()->json([
                         'success' => false,
-                        'message' => "El total pagado ($" . number_format($totalPaid, 2) . ") es menor al total a pagar ($" . number_format($order->total, 2) . "). Faltan $" . number_format($order->total - $totalPaid, 2)
+                        'message' => 'El total pagado ($'.number_format($totalPaid, 2).') es menor al total a pagar ($'.number_format($order->total, 2).'). Faltan $'.number_format($order->total - $totalPaid, 2),
                     ], 422);
                 }
 
@@ -1226,7 +1235,7 @@ class OrderController extends Controller
                             'payment_index' => $index,
                             'error' => $e->getMessage(),
                         ]);
-                        throw new \Exception("Error al registrar pago: " . $e->getMessage());
+                        throw new \Exception('Error al registrar pago: '.$e->getMessage());
                     }
                 }
 
@@ -1245,12 +1254,12 @@ class OrderController extends Controller
                         $printMessage = ' Ticket enviado a la impresora.';
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                    Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
                 }
 
                 $successMessage = 'Pedido rápido procesado exitosamente.';
                 if ($change > 0.01) {
-                    $successMessage .= " Cambio: $" . number_format($change, 2) . ".";
+                    $successMessage .= ' Cambio: $'.number_format($change, 2).'.';
                 }
                 $successMessage .= $printMessage;
 
@@ -1278,15 +1287,15 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el pedido: ' . $e->getMessage()
+                    'message' => 'Error al procesar el pedido: '.$e->getMessage(),
                 ], 500);
             }
 
-            return back()->with('error', 'Error al procesar el pedido: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Error al procesar el pedido: '.$e->getMessage())->withInput();
         }
     }
 
@@ -1309,7 +1318,7 @@ class OrderController extends Controller
             $allItemsDelivered = $order->items()
                 ->where('status', '!=', 'ENTREGADO')
                 ->count() === 0;
-            
+
             $hasItemsInPreparation = $order->items()
                 ->whereIn('status', ['EN_PREPARACION', 'LISTO'])
                 ->count() > 0;
@@ -1317,7 +1326,7 @@ class OrderController extends Controller
             // Si todos los items están entregados, marcar el pedido como ENTREGADO
             if ($allItemsDelivered && $order->status !== 'CERRADO') {
                 $order->update(['status' => 'ENTREGADO']);
-            } 
+            }
             // Si hay items en preparación y el pedido está ABIERTO o ENVIADO, cambiar a EN_PREPARACION
             elseif ($hasItemsInPreparation && in_array($order->status, ['ABIERTO', 'ENVIADO'])) {
                 $order->update(['status' => 'EN_PREPARACION']);
@@ -1327,7 +1336,7 @@ class OrderController extends Controller
                 $allItemsReadyOrDelivered = $order->items()
                     ->whereNotIn('status', ['LISTO', 'ENTREGADO'])
                     ->count() === 0;
-                if ($allItemsReadyOrDelivered && !$allItemsDelivered) {
+                if ($allItemsReadyOrDelivered && ! $allItemsDelivered) {
                     $order->update(['status' => 'LISTO']);
                 }
             }
@@ -1336,7 +1345,7 @@ class OrderController extends Controller
                 // Calcular estadísticas
                 $totalItems = $order->items->count();
                 $completedItems = $order->items()->where('status', 'ENTREGADO')->count();
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Estado del item actualizado correctamente',
@@ -1345,8 +1354,8 @@ class OrderController extends Controller
                     'stats' => [
                         'total' => $totalItems,
                         'completed' => $completedItems,
-                        'pending' => $totalItems - $completedItems
-                    ]
+                        'pending' => $totalItems - $completedItems,
+                    ],
                 ]);
             }
 
@@ -1355,13 +1364,11 @@ class OrderController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al actualizar el estado: ' . $e->getMessage()
+                    'message' => 'Error al actualizar el estado: '.$e->getMessage(),
                 ], 500);
             }
 
-            return back()->with('error', 'Error al actualizar el estado: ' . $e->getMessage());
+            return back()->with('error', 'Error al actualizar el estado: '.$e->getMessage());
         }
     }
 }
-
-

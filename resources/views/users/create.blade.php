@@ -66,12 +66,14 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                     <small class="text-muted">
-                        <strong>ADMIN:</strong> Acceso completo | 
-                        <strong>SUPERVISOR:</strong> Supervisión y gestión | 
-                        <strong>ENCARGADO:</strong> Gestión operativa | 
-                        <strong>MOZO:</strong> Atención de mesas | 
-                        <strong>COCINA:</strong> Preparación de pedidos | 
-                        <strong>CAJERO:</strong> Gestión de pagos
+                        <strong>SUPERADMIN:</strong> Acceso total y acciones críticas (p. ej. borrar sesiones de caja en reportes); solo otro superadmin puede asignar este rol. |
+                        <strong>ADMIN:</strong> Acceso completo operativo |
+                        <strong>GERENTE:</strong> Gestión ampliada |
+                        <strong>SUPERVISOR:</strong> Supervisión |
+                        <strong>ENCARGADO:</strong> Gestión operativa |
+                        <strong>MOZO:</strong> Mesas |
+                        <strong>COCINA:</strong> Pedidos |
+                        <strong>CAJERO:</strong> Caja y pagos
                     </small>
                 </div>
 

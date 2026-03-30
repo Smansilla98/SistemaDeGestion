@@ -13,7 +13,7 @@ class PermissionService
      */
     public function allowed(?User $user, string $permissionKey): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -25,8 +25,8 @@ class PermissionService
             return $userPerm->allowed;
         }
 
-        // ADMIN tiene todo permitido por defecto
-        if ($user->role === User::ROLE_ADMIN) {
+        // SUPERADMIN y ADMIN: todo permitido por defecto
+        if ($user->role === User::ROLE_SUPERADMIN || $user->role === User::ROLE_ADMIN) {
             return true;
         }
 
@@ -39,7 +39,7 @@ class PermissionService
         }
 
         // Default del config para el rol
-        $defaults = config('permissions.role_defaults.' . $user->role, []);
+        $defaults = config('permissions.role_defaults.'.$user->role, []);
         if (is_array($defaults) && array_key_exists($permissionKey, $defaults)) {
             return (bool) $defaults[$permissionKey];
         }
@@ -49,11 +49,12 @@ class PermissionService
 
     /**
      * Matriz de permisos por rol: [ permission_key => [ 'ADMIN' => true, 'GERENTE' => false, ... ] ]
+     *
+     * @param  list<string>|null  $roles  si null, todos los roles del modelo User
      */
-    public function matrixByRole(): array
+    public function matrixByRole(?array $roles = null): array
     {
-        $modules = config('permissions.modules', []);
-        $roles = User::getRoles();
+        $roles = $roles ?? User::getRoles();
         $keys = $this->allPermissionKeys();
 
         $matrix = [];
@@ -72,14 +73,15 @@ class PermissionService
      */
     public function allowedForRole(string $role, string $permissionKey): bool
     {
-        if ($role === User::ROLE_ADMIN) {
+        if ($role === User::ROLE_SUPERADMIN || $role === User::ROLE_ADMIN) {
             return true;
         }
         $row = RolePermission::where('role', $role)->where('permission_key', $permissionKey)->first();
         if ($row !== null) {
             return $row->allowed;
         }
-        $defaults = config('permissions.role_defaults.' . $role, []);
+        $defaults = config('permissions.role_defaults.'.$role, []);
+
         return (bool) ($defaults[$permissionKey] ?? false);
     }
 
@@ -94,6 +96,7 @@ class PermissionService
         foreach ($keys as $key) {
             $result[$key] = $this->allowed($user, $key);
         }
+
         return $result;
     }
 
@@ -145,9 +148,10 @@ class PermissionService
         $keys = [];
         foreach (config('permissions.modules', []) as $module) {
             foreach ($module['actions'] as $action) {
-                $keys[] = $module['key'] . '.' . $action;
+                $keys[] = $module['key'].'.'.$action;
             }
         }
+
         return $keys;
     }
 
