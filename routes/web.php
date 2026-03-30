@@ -1,12 +1,62 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+/*
+| Documentación OpenAPI + UI Swagger (público; en producción restringir por IP o auth si aplica)
+| specUrl relativo: mismo origen que la página (evita CORS si APP_URL ≠ host público).
+| Si la UI está en otro dominio, define OPENAPI_CORS_ORIGINS en .env (ver config/openapi.php).
+*/
+Route::get('/docs', function () {
+    return view('docs.swagger', [
+        'specUrl' => '/docs/openapi.yaml',
+    ]);
+})->name('docs.swagger');
+
+Route::get('/docs/openapi.yaml', function (Request $request) {
+    $path = base_path('docs/openapi.yaml');
+    abort_unless(is_file($path), 404);
+
+    $response = response()->file($path, [
+        'Content-Type' => 'application/yaml; charset=UTF-8',
+    ]);
+
+    $origin = (string) $request->header('Origin', '');
+    $allowed = config('openapi.cors_origins', []);
+
+    if ($origin !== '' && $allowed !== [] && in_array($origin, $allowed, true)) {
+        $response->headers->set('Access-Control-Allow-Origin', $origin);
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        $response->headers->set('Access-Control-Max-Age', '86400');
+        $response->headers->set('Vary', 'Origin');
+    }
+
+    return $response;
+})->name('docs.openapi');
+
+Route::options('/docs/openapi.yaml', function (Request $request) {
+    $origin = (string) $request->header('Origin', '');
+    $allowed = config('openapi.cors_origins', []);
+
+    if ($origin === '' || $allowed === [] || ! in_array($origin, $allowed, true)) {
+        return response('', 204);
+    }
+
+    return response('', 204)->withHeaders([
+        'Access-Control-Allow-Origin' => $origin,
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Max-Age' => '86400',
+        'Vary' => 'Origin',
+    ]);
+})->name('docs.openapi.options');
+
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Table\TableController;
-use App\Http\Controllers\Order\OrderController;
-use App\Http\Controllers\Kitchen\KitchenController;
 use App\Http\Controllers\CashRegister\CashRegisterController;
 use App\Http\Controllers\InteractiveTutorialController;
+use App\Http\Controllers\Kitchen\KitchenController;
+use App\Http\Controllers\Order\OrderController;
+use App\Http\Controllers\Table\TableController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,12 +77,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 */
 
 Route::middleware(['auth', 'detect.mobile'])->group(function () {
-    
+
     // Dashboard
     Route::get('/', function () {
         return redirect()->route('dashboard');
     });
-    
+
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // Notificaciones (campana y listado)
@@ -99,7 +149,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/create/{tableId?}', [OrderController::class, 'create'])->name('create');
         Route::post('/', [OrderController::class, 'store'])->name('store');
-        
+
         // Pedido rápido (consumo inmediato sin mesa) - DEBE IR ANTES de /{order}
         // Pedidos rápidos
         Route::prefix('quick')->name('quick.')->group(function () {
@@ -112,11 +162,11 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
             Route::get('/{order}/close', [OrderController::class, 'closeQuickOrder'])->name('close');
             Route::post('/{order}/process-payment', [OrderController::class, 'processQuickPayment'])->name('process-payment');
         });
-        
+
         // Mantener ruta antigua para compatibilidad
         Route::get('/quick-order', [OrderController::class, 'quickOrder'])->name('quick-order');
         Route::post('/quick-order', [OrderController::class, 'processQuickOrder'])->name('process-quick-order');
-        
+
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
         Route::post('/{order}/items', [OrderController::class, 'addItem'])->name('add-item');
         // Acciones sobre items agrupados (para "cambiar/eliminar subitems" en vista de show)
@@ -128,7 +178,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
         Route::get('/{order}/summary', [OrderController::class, 'summary'])->name('summary');
         Route::delete('/{order}', [OrderController::class, 'destroy'])->name('destroy');
-        
+
         // Rutas de impresión
         Route::prefix('{order}/print')->name('print.')->group(function () {
             Route::get('/kitchen', [\App\Http\Controllers\Order\OrderPrintController::class, 'kitchenTicket'])->name('kitchen');
@@ -152,7 +202,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/orders/{order}/ready', [KitchenController::class, 'markOrderReady'])->name('mark-ready');
         Route::put('/orders/{order}/status', [KitchenController::class, 'updateOrderStatus'])->name('update-order-status');
     });
-    
+
     /*
     |--------------------------------------------------------------------------
     | API para Notificaciones (MÓDULO 3)
@@ -205,7 +255,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/sessions/{session}/movements', [CashRegisterController::class, 'storeMovement'])->name('session.store-movement');
         Route::post('/orders/{order}/payment', [CashRegisterController::class, 'processPayment'])->name('process-payment');
         Route::delete('/movements/{movement}', [CashRegisterController::class, 'destroyMovement'])->name('destroy-movement');
-        
+
         // CRUD de cajas (solo ADMIN)
         Route::middleware('role:ADMIN')->group(function () {
             Route::get('/create', [CashRegisterController::class, 'create'])->name('create');
@@ -244,7 +294,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/{sector}/edit', [\App\Http\Controllers\Sector\SectorController::class, 'edit'])->name('edit');
         Route::put('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'update'])->name('update');
         Route::delete('/{sector}', [\App\Http\Controllers\Sector\SectorController::class, 'destroy'])->name('destroy');
-        
+
         // Rutas para items de subsectores
         Route::post('/{sector}/items', [\App\Http\Controllers\Sector\SectorController::class, 'storeItem'])->name('items.store');
         Route::delete('/{sector}/items/{item}', [\App\Http\Controllers\Sector\SectorController::class, 'destroyItem'])->name('items.destroy');
