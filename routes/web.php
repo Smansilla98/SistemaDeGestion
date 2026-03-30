@@ -1,22 +1,55 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
 | Documentación OpenAPI + UI Swagger (público; en producción restringir por IP o auth si aplica)
+| specUrl relativo: mismo origen que la página (evita CORS si APP_URL ≠ host público).
+| Si la UI está en otro dominio, define OPENAPI_CORS_ORIGINS en .env (ver config/openapi.php).
 */
-Route::view('/docs', 'docs.swagger', [
-    'specUrl' => url('/docs/openapi.yaml'),
-])->name('docs.swagger');
+Route::get('/docs', function () {
+    return view('docs.swagger', [
+        'specUrl' => '/docs/openapi.yaml',
+    ]);
+})->name('docs.swagger');
 
-Route::get('/docs/openapi.yaml', function () {
+Route::get('/docs/openapi.yaml', function (Request $request) {
     $path = base_path('docs/openapi.yaml');
     abort_unless(is_file($path), 404);
 
-    return response()->file($path, [
-        'Content-Type' => 'application/yaml',
+    $response = response()->file($path, [
+        'Content-Type' => 'application/yaml; charset=UTF-8',
     ]);
+
+    $origin = (string) $request->header('Origin', '');
+    $allowed = config('openapi.cors_origins', []);
+
+    if ($origin !== '' && $allowed !== [] && in_array($origin, $allowed, true)) {
+        $response->headers->set('Access-Control-Allow-Origin', $origin);
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        $response->headers->set('Access-Control-Max-Age', '86400');
+        $response->headers->set('Vary', 'Origin');
+    }
+
+    return $response;
 })->name('docs.openapi');
+
+Route::options('/docs/openapi.yaml', function (Request $request) {
+    $origin = (string) $request->header('Origin', '');
+    $allowed = config('openapi.cors_origins', []);
+
+    if ($origin === '' || $allowed === [] || ! in_array($origin, $allowed, true)) {
+        return response('', 204);
+    }
+
+    return response('', 204)->withHeaders([
+        'Access-Control-Allow-Origin' => $origin,
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Max-Age' => '86400',
+        'Vary' => 'Origin',
+    ]);
+})->name('docs.openapi.options');
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CashRegister\CashRegisterController;
