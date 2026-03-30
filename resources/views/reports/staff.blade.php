@@ -8,23 +8,22 @@
         <a href="{{ route('reports.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-people"></i> Ventas por Mozo</h1>
+        <h1 class="text-white mb-2 page-hero-title"><i class="bi bi-people"></i> Ventas por Mozo</h1>
     </div>
 </div>
 
 <div class="card mb-4">
-    <div class="card-header">
-        <form method="GET" action="{{ route('reports.staff') }}" class="row g-3">
-            <div class="col-md-4">
+    <div class="card-header report-filters-header">
+        <form method="GET" action="{{ route('reports.staff') }}" class="row g-3 w-100 mb-0">
+            <div class="col-12 col-md-4">
                 <label class="form-label">Fecha Desde</label>
                 <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label class="form-label">Fecha Hasta</label>
                 <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
             </div>
-            <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
+            <div class="col-12 col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </form>

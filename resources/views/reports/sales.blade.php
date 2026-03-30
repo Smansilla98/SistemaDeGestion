@@ -14,35 +14,34 @@
         <a href="{{ route('reports.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-currency-dollar"></i> Reporte de Ventas</h1>
+        <h1 class="text-white mb-2 page-hero-title"><i class="bi bi-currency-dollar"></i> Reporte de Ventas</h1>
     </div>
 </div>
 
 <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <form method="GET" action="{{ route('reports.sales') }}" class="row g-3 flex-grow-1">
-            <div class="col-md-4">
+    <div class="card-header d-flex flex-column flex-xl-row justify-content-between align-items-stretch align-items-xl-center gap-3 report-filters-header">
+        <form method="GET" action="{{ route('reports.sales') }}" class="row g-3 flex-grow-1 w-100 mb-0">
+            <div class="col-12 col-md-4">
                 <label class="form-label">Fecha Desde</label>
                 <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label class="form-label">Fecha Hasta</label>
                 <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
             </div>
-            <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
+            <div class="col-12 col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </form>
-        <div class="d-flex flex-wrap gap-2 ms-3">
-            <a href="{{ route('reports.sales.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-success">
-                <i class="bi bi-file-earmark-excel"></i> Ventas Excel
+        <div class="d-flex flex-wrap gap-2 w-100 justify-content-xl-end export-actions-btns">
+            <a href="{{ route('reports.sales.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-success flex-grow-1 flex-xl-grow-0">
+                <i class="bi bi-file-earmark-excel"></i> <span class="d-none d-sm-inline">Ventas </span>Excel
             </a>
-            <a href="{{ route('reports.sales.export-pdf', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-danger">
-                <i class="bi bi-file-earmark-pdf"></i> Ventas PDF
+            <a href="{{ route('reports.sales.export-pdf', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-danger flex-grow-1 flex-xl-grow-0">
+                <i class="bi bi-file-earmark-pdf"></i> <span class="d-none d-sm-inline">Ventas </span>PDF
             </a>
-            <a href="{{ route('reports.orders.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-file-earmark-spreadsheet"></i> Pedidos Excel
+            <a href="{{ route('reports.orders.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-sm btn-outline-primary flex-grow-1 flex-xl-grow-0">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Pedidos
             </a>
         </div>
     </div>

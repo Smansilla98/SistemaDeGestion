@@ -1105,11 +1105,11 @@
             </a>
             @endif
             <span class="tb-badge">{{ strtoupper(auth()->user()->role) }}</span>
-            <div class="dropdown">
+            <div class="dropdown flex-shrink-0">
                 <a href="#" class="tb-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="tb-uav">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
-                    {{ auth()->user()->name }}
-                    <i class="bi bi-chevron-down small"></i>
+                    <span class="tb-user-label text-truncate">{{ auth()->user()->name }}</span>
+                    <i class="bi bi-chevron-down small tb-user-chevron"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
                     <li><span class="dropdown-item-text small text-muted">Rol: {{ auth()->user()->role }}</span></li>
