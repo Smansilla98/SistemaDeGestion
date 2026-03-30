@@ -946,22 +946,6 @@ function addModalItem(productId, name, price, currentStock, stockMinimum) {
             return;
         }
         
-        if (currentStock <= stockMinimum && stockMinimum > 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Stock Bajo',
-                html: `El producto "${name}" tiene stock bajo.<br><strong>Disponible: ${currentStock}</strong><br>Mínimo recomendado: ${stockMinimum}`,
-                confirmButtonColor: '#ffc107',
-                confirmButtonText: 'Continuar',
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    addItemToModal(productId, name, price, existing);
-                }
-            });
-            return;
-        }
     }
     
     addItemToModal(productId, name, price, modalItems.find(i => i.product_id === productId));
