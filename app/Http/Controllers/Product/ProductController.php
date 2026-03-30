@@ -15,6 +15,11 @@ class ProductController extends Controller
     use Auditable;
 
     /**
+     * Interfaz web de productos. La API REST CRUD vive en App\Controllers\Api\ProductController
+     * y delega en App\Services\ProductService + App\Repositories\ProductRepository (PDO).
+     */
+
+    /**
      * Mostrar lista de productos
      * Mejora: Filtrado por sector y categoría, búsqueda mejorada, ordenamiento
      */

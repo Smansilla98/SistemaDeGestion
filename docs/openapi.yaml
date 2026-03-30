@@ -1,0 +1,416 @@
+openapi: 3.0.3
+info:
+  title: Restaurante — API Backend
+  description: |
+    API REST del sistema de gestión de restaurante (portfolio).
+    Autenticación principal: **JWT** (`Authorization: Bearer <token>`).
+    Respuestas JSON homogéneas: `success`, `data`, `message`, `meta` (paginación), `errors` (validación).
+    Rate limits: `auth-jwt` 15/min por IP en login/register; `jwt-api` 120/min por usuario o IP.
+  version: "1.0.0"
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000/api
+    description: Desarrollo (php artisan serve)
+  - url: http://localhost:8080/api
+    description: Docker (nginx del compose del proyecto)
+
+tags:
+  - name: Auth
+    description: JWT — login, registro y perfil
+  - name: Products
+  - name: Orders
+  - name: Clients
+  - name: Users
+  - name: Legacy v1
+    description: Rutas Sanctum legadas (compatibilidad)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token obtenido en POST /auth/login o /auth/register
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        code: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    UserPublic:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        username: { type: string }
+        email: { type: string }
+        role: { type: string }
+        restaurant_id: { type: integer, nullable: true }
+        is_active: { type: boolean }
+
+    AuthResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            access_token: { type: string }
+            token_type: { type: string, example: Bearer }
+            expires_in: { type: integer, description: segundos }
+            user:
+              $ref: '#/components/schemas/UserPublic'
+
+    PaginatedMeta:
+      type: object
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+        from: { type: integer, nullable: true }
+        to: { type: integer, nullable: true }
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión (JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registro (rol MOZO por defecto, primer restaurante activo)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, username, password, password_confirmation]
+              properties:
+                name: { type: string }
+                username: { type: string }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string }
+      responses:
+        '201':
+          description: Usuario creado y token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validación o usuario duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Usuario autenticado (JWT)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    $ref: '#/components/schemas/UserPublic'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Listar productos (paginado)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 15, maximum: 100 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [PRODUCT, INSUMO] }
+        - in: query
+          name: category_id
+          schema: { type: integer }
+        - in: query
+          name: is_active
+          schema: { type: boolean }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { type: object }
+                  meta:
+                    $ref: '#/components/schemas/PaginatedMeta'
+    post:
+      tags: [Products]
+      summary: Crear producto
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Creado
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Detalle producto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    put:
+      tags: [Products]
+      summary: Actualizar producto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    delete:
+      tags: [Products]
+      summary: Eliminar producto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Listar pedidos (paginado)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: table_id
+          schema: { type: integer }
+    post:
+      tags: [Orders]
+      summary: Crear pedido
+      security:
+        - bearerAuth: []
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    put:
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    delete:
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /clients:
+    get:
+      tags: [Clients]
+      summary: Listar clientes CRM (paginado)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer }
+    post:
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+
+  /clients/{id}:
+    get:
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    put:
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    delete:
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar usuarios del restaurante (ADMIN/GERENTE, paginado)
+      security:
+        - bearerAuth: []
+    post:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    put:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+    delete:
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /v1/tables:
+    get:
+      tags: [Legacy v1]
+      summary: Mesas (Sanctum)
+      security:
+        - bearerAuth: []
+      description: Requiere token Sanctum, no JWT.
+
+  /v1/orders:
+    get:
+      tags: [Legacy v1]
+      security:
+        - bearerAuth: []
+
+  /v1/products:
+    get:
+      tags: [Legacy v1]
+      security:
+        - bearerAuth: []

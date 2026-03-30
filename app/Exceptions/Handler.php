@@ -2,14 +2,15 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use App\Core\ApiResponse;
 use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Throwable;
-use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
@@ -47,6 +48,15 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        if ($exception instanceof ApiException) {
+            return ApiResponse::error(
+                $exception->getMessage(),
+                $exception->getStatusCode(),
+                $exception->getErrorCode(),
+                $exception->getErrors()
+            );
+        }
+
         // Manejar errores de validación PRIMERO (antes de otros errores)
         if ($exception instanceof ValidationException) {
             return $this->handleValidationException($request, $exception);
@@ -73,12 +83,16 @@ class Handler extends ExceptionHandler
         }
 
         // Para AJAX/API requests, devolver JSON
-        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
-            return response()->json([
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            $msg = $this->getUserFriendlyMessage($exception);
+            $debug = config('app.debug') ? $exception->getMessage() : null;
+
+            return response()->json(array_filter([
                 'success' => false,
-                'message' => $this->getUserFriendlyMessage($exception),
-                'error' => config('app.debug') ? $exception->getMessage() : 'Error interno del servidor'
-            ], $this->getStatusCode($exception));
+                'message' => $msg,
+                'code' => 'SERVER_ERROR',
+                'error' => $debug,
+            ]), $this->getStatusCode($exception));
         }
 
         return parent::render($request, $exception);
@@ -90,12 +104,13 @@ class Handler extends ExceptionHandler
     protected function handleValidationException($request, ValidationException $exception)
     {
         // Para peticiones AJAX/JSON, siempre devolver JSON
-        if ($request->expectsJson() || $request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación. Por favor, revisa los datos ingresados.',
-                'errors' => $exception->errors()
-            ], 422);
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return ApiResponse::error(
+                'Error de validación.',
+                422,
+                'VALIDATION_ERROR',
+                $exception->errors()
+            );
         }
 
         // Para peticiones normales, usar el comportamiento por defecto
@@ -113,16 +128,13 @@ class Handler extends ExceptionHandler
             $message = $exception->getMessage();
         }
 
-        if ($request->expectsJson() || $request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => $message
-            ], 500);
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
+            return ApiResponse::error($message, 500, 'DATABASE_ERROR');
         }
 
         return response()->view('errors.500', [
             'message' => $message,
-            'exception' => $exception
+            'exception' => $exception,
         ], 500);
     }
 
@@ -131,11 +143,8 @@ class Handler extends ExceptionHandler
      */
     protected function handleNotFound($request, NotFoundHttpException $exception)
     {
-        if ($request->expectsJson() || $request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Recurso no encontrado'
-            ], 404);
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
+            return ApiResponse::error('Recurso no encontrado', 404, 'NOT_FOUND');
         }
 
         return response()->view('errors.404', [], 404);
@@ -146,11 +155,8 @@ class Handler extends ExceptionHandler
      */
     protected function handleAccessDenied($request, AccessDeniedHttpException $exception)
     {
-        if ($request->expectsJson() || $request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para realizar esta acción'
-            ], 403);
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
+            return ApiResponse::error('No tienes permiso para realizar esta acción', 403, 'FORBIDDEN');
         }
 
         return response()->view('errors.403', [], 403);
@@ -164,16 +170,13 @@ class Handler extends ExceptionHandler
         $statusCode = $exception->getStatusCode();
         $message = $exception->getMessage() ?: 'Error en la solicitud';
 
-        if ($request->expectsJson() || $request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => $message
-            ], $statusCode);
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
+            return ApiResponse::error($message, $statusCode, 'HTTP_ERROR');
         }
 
         return response()->view('errors.generic', [
             'statusCode' => $statusCode,
-            'message' => $message
+            'message' => $message,
         ], $statusCode);
     }
 

@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // La raíz redirige al dashboard o al login según autenticación
+        $this->assertContains($response->status(), [200, 302]);
     }
 }

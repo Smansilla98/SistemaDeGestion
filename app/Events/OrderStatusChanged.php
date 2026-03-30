@@ -5,7 +5,6 @@ namespace App\Events;
 use App\Models\Order;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -16,7 +15,9 @@ class OrderStatusChanged implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $order;
+
     public $oldStatus;
+
     public $newStatus;
 
     /**
@@ -35,7 +36,7 @@ class OrderStatusChanged implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('restaurant.' . $this->order->restaurant_id),
+            new PrivateChannel('restaurant.'.$this->order->restaurant_id),
             new Channel('orders'),
         ];
     }
@@ -69,4 +70,3 @@ class OrderStatusChanged implements ShouldBroadcast
         ];
     }
 }
-
