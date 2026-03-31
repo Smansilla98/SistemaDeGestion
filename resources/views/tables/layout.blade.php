@@ -46,7 +46,7 @@
             // Obtener subsectores con sus items
             $subsectors = $selectedSector->subsectors ?? collect();
         @endphp
-        <div id="layoutCanvas" style="position: relative; width: 100%; min-height: 600px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; overflow: hidden;">
+        <div id="layoutCanvas" style="position: relative; width: 100%; min-height: 600px; border-radius: 18px; overflow: hidden;">
             @foreach($subsectors as $subsector)
                 @php
                     $subsectorConfig = is_array($subsector->layout_config) ? $subsector->layout_config : [];
@@ -128,25 +128,14 @@
                  data-initial-y="{{ $table->position_y ?? 50 }}"
                  style="position: absolute; 
                         left: {{ $table->position_x ?? 50 }}px; 
-                        top: {{ $table->position_y ?? 50 }}px;
-                        width: 80px;
-                        height: 80px;
-                        background: {{ $table->status === 'LIBRE' ? '#28a745' : ($table->status === 'OCUPADA' ? '#ffc107' : '#6c757d') }};
-                        border: 2px solid #000;
-                        border-radius: 8px;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        cursor: move;
-                        color: white;
-                        font-weight: bold;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                        z-index: 10;
-                        user-select: none;">
-                <div style="font-size: 12px;">{{ $table->number }}</div>
-                <div style="font-size: 10px;">{{ $table->capacity }}p</div>
-                <div style="font-size: 9px; margin-top: 2px;" class="table-status-text">{{ $table->status }}</div>
+                        top: {{ $table->position_y ?? 50 }}px;">
+                <div class="table-chip table-status-{{ strtolower($table->status) }}">
+                    <div class="table-chip-number">{{ $table->number }}</div>
+                    <div class="table-chip-meta">
+                        <span>{{ $table->capacity }}p</span>
+                        <span class="table-status-text">{{ $table->status }}</span>
+                    </div>
+                </div>
             </div>
             @endforeach
         </div>
@@ -210,6 +199,69 @@
 
 @push('styles')
 <style>
+#layoutCanvas {
+    background-color: #f3f4f6;
+    background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+    background-size: 48px 48px;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
+    position: relative;
+}
+
+.table-chip {
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: move;
+    color: #0f172a;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+    background: #e5e7eb;
+    border: 2px solid rgba(15, 23, 42, 0.15);
+}
+
+.table-chip-number {
+    font-size: 1.35rem;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.table-chip-meta {
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.table-status-libre .table-chip {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #022c22;
+}
+
+.table-status-ocupada .table-chip {
+    background: linear-gradient(135deg, #fed7aa, #fb923c);
+    color: #451a03;
+}
+
+.table-status-reservada .table-chip {
+    background: linear-gradient(135deg, #a5b4fc, #6366f1);
+    color: #020617;
+}
+
+.table-status-cerrada .table-chip,
+.table-status-closed .table-chip {
+    background: linear-gradient(135deg, #cbd5f5, #9ca3af);
+    color: #020617;
+}
+
 .table-item {
     transition: transform 0.1s;
 }
@@ -302,6 +354,8 @@ function toggleEditMode() {
 }
 
 function initDragAndDrop() {
+    const gridSize = 48;
+
     interact('.table-item').draggable({
         listeners: {
             start(event) {
@@ -325,6 +379,13 @@ function initDragAndDrop() {
             interact.modifiers.restrictRect({
                 restriction: 'parent',
                 endOnly: true
+            }),
+            interact.modifiers.snap({
+                targets: [
+                    interact.snappers.grid({ x: gridSize, y: gridSize })
+                ],
+                range: gridSize / 2,
+                relativePoints: [ { x: 0, y: 0 } ]
             })
         ],
         inertia: false
@@ -354,6 +415,13 @@ function initDragAndDrop() {
             interact.modifiers.restrictRect({
                 restriction: 'parent',
                 endOnly: true
+            }),
+            interact.modifiers.snap({
+                targets: [
+                    interact.snappers.grid({ x: gridSize, y: gridSize })
+                ],
+                range: gridSize / 2,
+                relativePoints: [ { x: 0, y: 0 } ]
             })
         ],
         inertia: false
@@ -383,6 +451,13 @@ function initDragAndDrop() {
             interact.modifiers.restrictRect({
                 restriction: 'parent',
                 endOnly: true
+            }),
+            interact.modifiers.snap({
+                targets: [
+                    interact.snappers.grid({ x: gridSize, y: gridSize })
+                ],
+                range: gridSize / 2,
+                relativePoints: [ { x: 0, y: 0 } ]
             })
         ],
         inertia: false
@@ -578,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initDragAndDrop();
     }
     
-    // Hacer las mesas clickeables para cambiar estado (clic derecho o doble clic)
+    // Hacer las mesas clickeables para cambiar estado / tomar pedido
     tables.forEach(item => {
         // Clic derecho para cambiar estado
         item.addEventListener('contextmenu', function(e) {
@@ -599,6 +674,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 const capacity = this.getAttribute('data-table-capacity');
                 openChangeStatusModal(tableId, currentStatus, capacity);
             }
+        });
+
+        // Click simple en modo visualización: ir a tomar pedido para esa mesa
+        item.addEventListener('click', function(e) {
+            if (editMode || this.classList.contains('dragging')) {
+                return;
+            }
+            // Evitar conflicto con doble clic
+            if (e.detail > 1) {
+                return;
+            }
+
+            const tableId = this.getAttribute('data-table-id');
+            if (!tableId) return;
+
+            const baseUrl = '{{ url('/orders/create') }}';
+            window.location.href = baseUrl + '/' + tableId;
         });
     });
 });
