@@ -211,7 +211,7 @@
                                 <th>Descripción</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
-                                @if(auth()->user()->isAdminLevel())
+                                @if(auth()->user()->isAdminLevel() || $session->status === 'ABIERTA')
                                 <th>Acciones</th>
                                 @endif
                             </tr>
@@ -227,7 +227,11 @@
                                 <td>{{ $movement->description }}</td>
                                 <td>${{ number_format($movement->amount, 2) }}</td>
                                 <td>{{ $movement->created_at->format('H:i') }}</td>
-                                @if(auth()->user()->isAdminLevel())
+                                @php
+                                    $canDeleteMovement = auth()->user()->isAdminLevel()
+                                        || ($session->status === 'ABIERTA' && (int) $movement->user_id === (int) auth()->id());
+                                @endphp
+                                @if($canDeleteMovement)
                                 <td>
                                     <form action="{{ route('cash-register.destroy-movement', $movement) }}" 
                                           method="POST" 
