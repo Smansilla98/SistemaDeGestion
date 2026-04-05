@@ -907,6 +907,8 @@
                 $canCategories = $perm && $perm->allowed($navUser, 'categories.view');
                 $canProducts = $perm && $perm->allowed($navUser, 'products.view');
                 $canStock = $perm && $perm->allowed($navUser, 'stock.view');
+                $canStockMozoIns = $perm && $perm->allowed($navUser, 'stock_mozo.create')
+                    && (! $canStock || ($navUser->role ?? '') === \App\Models\User::ROLE_MOZO);
                 $canUsers = $perm && $perm->allowed($navUser, 'users.view');
                 $canPrinters = $perm && $perm->allowed($navUser, 'printers.view');
                 $canEvents = $perm && $perm->allowed($navUser, 'events.view');
@@ -962,7 +964,7 @@
             @endif
             @endif
 
-            @if($canSectors || $canCategories || $canProducts || $canStock || $canUsers || $canPrinters)
+            @if($canSectors || $canCategories || $canProducts || $canStock || $canStockMozoIns || $canUsers || $canPrinters)
             <div class="sb-div"></div>
             <div class="sb-label">Restaurante</div>
             @if($canSectors)
@@ -983,8 +985,14 @@
                 <span>Productos</span>
             </a>
             @endif
+            @if($canStockMozoIns)
+            <a href="{{ route('stock.mozo-insumos.create') }}" class="sb-link {{ request()->routeIs('stock.mozo-insumos.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam sb-ico"></i>
+                <span>Insumos</span>
+            </a>
+            @endif
             @if($canStock)
-            <a href="{{ route('stock.index') }}" class="sb-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+            <a href="{{ route('stock.index') }}" class="sb-link {{ request()->routeIs('stock.index') || request()->routeIs('stock.movements') || request()->routeIs('stock.create-movement') || request()->routeIs('stock.store-movement') ? 'active' : '' }}">
                 <i class="bi bi-bag sb-ico"></i>
                 <span>Stock</span>
             </a>
