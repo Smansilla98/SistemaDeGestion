@@ -13,9 +13,11 @@
                 <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-list-ul"></i> Movimientos de Stock</h1>
                 <p class="text-white">Historial de movimientos de inventario</p>
             </div>
+            @unless(auth()->user()->isMozo())
             <a href="{{ route('stock.create-movement') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Registrar Movimiento
             </a>
+            @endunless
         </div>
     </div>
 </div>

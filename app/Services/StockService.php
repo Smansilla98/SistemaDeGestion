@@ -214,12 +214,15 @@ class StockService
     /**
      * Verificar stock mínimo y generar alertas
      */
-    public function checkLowStock(int $restaurantId): array
+    public function checkLowStock(int $restaurantId, bool $onlySellableProducts = false): array
     {
-        $products = Product::where('restaurant_id', $restaurantId)
+        $productsQuery = Product::where('restaurant_id', $restaurantId)
             ->where('has_stock', true)
-            ->where('is_active', true)
-            ->get();
+            ->where('is_active', true);
+        if ($onlySellableProducts) {
+            $productsQuery->products();
+        }
+        $products = $productsQuery->get();
 
         $alerts = [];
 

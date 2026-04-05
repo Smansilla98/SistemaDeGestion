@@ -15,7 +15,7 @@ class StockPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO', 'MOZO']);
     }
 
     /**
@@ -23,7 +23,7 @@ class StockPolicy
      */
     public function view(User $user, Stock $stock): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO'])
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'CAJERO', 'MOZO'])
             && $user->restaurant_id === $stock->restaurant_id;
     }
 
