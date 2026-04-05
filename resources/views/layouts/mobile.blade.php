@@ -118,7 +118,7 @@
                 ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
                 ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
                 ['label' => 'Pedidos', 'icon' => 'bi-clipboard-check', 'route' => 'orders.index', 'pattern' => 'orders.*'],
-                ['label' => 'Insumos', 'icon' => 'bi-box-seam', 'route' => 'stock.mozo-insumos.create', 'pattern' => 'stock.mozo-insumos.*'],
+                ['label' => 'Stock', 'icon' => 'bi-boxes', 'route' => 'stock.index', 'pattern' => 'stock.*'],
             ],
             'CAJERO' => [
                 ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
@@ -136,8 +136,8 @@
         ];
         $navItems = $navConfig[$role ?? ''] ?? $navConfig['default'];
         if ($user && ($role ?? '') === 'MOZO') {
-            if (! app(\App\Services\PermissionService::class)->allowed($user, 'stock_mozo.create')) {
-                $navItems = array_values(array_filter($navItems, fn ($i) => ($i['route'] ?? '') !== 'stock.mozo-insumos.create'));
+            if (! app(\App\Services\PermissionService::class)->allowed($user, 'stock.view')) {
+                $navItems = array_values(array_filter($navItems, fn ($i) => ($i['route'] ?? '') !== 'stock.index'));
             }
         }
     @endphp

@@ -114,7 +114,9 @@
                         <select class="form-select" id="movementType" name="type" required>
                             <option value="ENTRADA">Entrada</option>
                             <option value="SALIDA">Salida</option>
+                            @if(auth()->user()->role !== \App\Models\User::ROLE_MOZO)
                             <option value="AJUSTE">Ajuste</option>
+                            @endif
                         </select>
                     </div>
 

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Services\PermissionService;
 use App\Services\StockService;
 use App\Traits\Auditable;
@@ -19,7 +20,7 @@ class StockController extends Controller
     public function __construct(
         private StockService $stockService
     ) {
-        $this->middleware('role:ADMIN,GERENTE,CAJERO')->except(['mozoInsumoCreate', 'mozoInsumoStore']);
+        $this->middleware('role:ADMIN,GERENTE,CAJERO,MOZO')->except(['mozoInsumoCreate', 'mozoInsumoStore']);
         $this->middleware('role:MOZO,ADMIN,GERENTE,SUPERADMIN')->only(['mozoInsumoCreate', 'mozoInsumoStore']);
     }
 
@@ -104,6 +105,10 @@ class StockController extends Controller
             ->where('has_stock', true)
             ->with(['category']);
 
+        if (auth()->user()->role === User::ROLE_MOZO) {
+            $query->products();
+        }
+
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
@@ -119,8 +124,10 @@ class StockController extends Controller
             $product->is_low_stock = $product->current_stock <= $product->stock_minimum;
         }
 
-        // Alertas de stock bajo
-        $lowStockAlerts = $this->stockService->checkLowStock($restaurantId);
+        $lowStockAlerts = $this->stockService->checkLowStock(
+            $restaurantId,
+            auth()->user()->role === User::ROLE_MOZO
+        );
 
         return view('stock.index', compact('products', 'lowStockAlerts'));
     }
@@ -147,12 +154,20 @@ class StockController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
+        if (auth()->user()->role === User::ROLE_MOZO) {
+            $query->whereHas('product', function ($q) {
+                $q->where('type', 'PRODUCT');
+            });
+        }
+
         $movements = $query->orderBy('created_at', 'desc')->paginate(50);
 
-        $products = Product::where('restaurant_id', $restaurantId)
-            ->where('has_stock', true)
-            ->orderBy('name')
-            ->get();
+        $productsQuery = Product::where('restaurant_id', $restaurantId)
+            ->where('has_stock', true);
+        if (auth()->user()->role === User::ROLE_MOZO) {
+            $productsQuery->products();
+        }
+        $products = $productsQuery->orderBy('name')->get();
 
         return view('stock.movements', compact('movements', 'products'));
     }
@@ -162,14 +177,19 @@ class StockController extends Controller
      */
     public function createMovement()
     {
+        if (auth()->user()->role === User::ROLE_MOZO) {
+            return redirect()->route('stock.index')
+                ->with('info', 'Registrá movimientos con el botón «Movimiento» en cada producto.');
+        }
+
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         $products = Product::where('restaurant_id', $restaurantId)
             ->where('has_stock', true)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
-            
+
         $suppliers = Supplier::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('name')
@@ -193,8 +213,33 @@ class StockController extends Controller
                 'reference' => 'nullable|string|max:255',
             ]);
 
-            // Validaciones específicas para ENTRADA (compra)
-            if ($validated['type'] === 'ENTRADA') {
+            $product = Product::findOrFail($validated['product_id']);
+            if ($product->restaurant_id !== auth()->user()->restaurant_id) {
+                abort(403);
+            }
+            if (auth()->user()->role === User::ROLE_MOZO) {
+                if (! $product->isProduct()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'product_id' => ['Los mozos solo pueden mover stock de productos a la venta (no insumos).'],
+                    ]);
+                }
+                if ($validated['type'] === 'AJUSTE') {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'type' => ['Los mozos solo pueden registrar entradas o salidas.'],
+                    ]);
+                }
+            }
+
+            // ENTRADA con datos de compra (pantalla completa) vs entrada simple (modal / mozo)
+            $wantsPurchaseFlow = $validated['type'] === 'ENTRADA'
+                && (
+                    $request->filled('supplier_id')
+                    || $request->filled('new_supplier_name')
+                    || $request->filled('unit_cost')
+                    || $request->filled('purchase_date')
+                );
+
+            if ($validated['type'] === 'ENTRADA' && $wantsPurchaseFlow) {
                 $purchaseValidation = $request->validate([
                     'supplier_id' => 'required_without:new_supplier_name|nullable|exists:suppliers,id',
                     'new_supplier_name' => 'required_without:supplier_id|nullable|string|max:255',
