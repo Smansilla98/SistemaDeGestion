@@ -324,6 +324,11 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/movements', [\App\Http\Controllers\Stock\StockController::class, 'storeMovement'])->name('store-movement');
     });
 
+    Route::prefix('stock')->name('stock.')->middleware('role:MOZO,ADMIN,GERENTE,SUPERADMIN')->group(function () {
+        Route::get('/mozo/ingreso-insumos', [\App\Http\Controllers\Stock\StockController::class, 'mozoInsumoCreate'])->name('mozo-insumos.create');
+        Route::post('/mozo/ingreso-insumos', [\App\Http\Controllers\Stock\StockController::class, 'mozoInsumoStore'])->name('mozo-insumos.store');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Rutas Mobile (/m)

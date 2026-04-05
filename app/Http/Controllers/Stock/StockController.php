@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Services\PermissionService;
 use App\Services\StockService;
 use App\Traits\Auditable;
 use Illuminate\Http\Request;
@@ -18,7 +19,78 @@ class StockController extends Controller
     public function __construct(
         private StockService $stockService
     ) {
-        $this->middleware('role:ADMIN,CAJERO');
+        $this->middleware('role:ADMIN,GERENTE,CAJERO')->except(['mozoInsumoCreate', 'mozoInsumoStore']);
+        $this->middleware('role:MOZO,ADMIN,GERENTE,SUPERADMIN')->only(['mozoInsumoCreate', 'mozoInsumoStore']);
+    }
+
+    /**
+     * Formulario simple: mozos registran entrada de stock solo para insumos (sin datos de compra).
+     */
+    public function mozoInsumoCreate()
+    {
+        if (! app(PermissionService::class)->allowed(auth()->user(), 'stock_mozo.create')) {
+            abort(403, 'No tienes permiso para registrar ingreso de insumos');
+        }
+
+        $restaurantId = auth()->user()->restaurant_id;
+        $products = Product::where('restaurant_id', $restaurantId)
+            ->insumos()
+            ->where('is_active', true)
+            ->where('has_stock', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('stock.mozo-insumos', compact('products'));
+    }
+
+    /**
+     * Guardar entrada de insumo (mozo): solo tipo INSUMO del mismo restaurante.
+     */
+    public function mozoInsumoStore(Request $request)
+    {
+        if (! app(PermissionService::class)->allowed(auth()->user(), 'stock_mozo.create')) {
+            abort(403, 'No tienes permiso para registrar ingreso de insumos');
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $product = Product::findOrFail($validated['product_id']);
+        if ($product->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403);
+        }
+        if (! $product->isInsumo()) {
+            return back()->withInput()->with('error', 'Solo podés registrar ingresos de insumos.');
+        }
+        if (! $product->has_stock) {
+            return back()->withInput()->with('error', 'Este insumo no tiene control de stock activado.');
+        }
+
+        try {
+            $movement = $this->stockService->recordMovement([
+                'restaurant_id' => auth()->user()->restaurant_id,
+                'product_id' => $product->id,
+                'user_id' => auth()->id(),
+                'type' => 'ENTRADA',
+                'quantity' => $validated['quantity'],
+                'reason' => $validated['reason'] ?? 'Ingreso de insumo (mozo)',
+            ]);
+
+            $this->audit('STOCK_MOVEMENT_CREATED', StockMovement::class, $movement->id, [
+                'type' => 'ENTRADA',
+                'product_id' => $product->id,
+                'quantity' => $validated['quantity'],
+                'channel' => 'mozo_insumo',
+            ]);
+
+            return redirect()->route('stock.mozo-insumos.create')
+                ->with('success', 'Ingreso registrado: '.$product->name.' (+'.(int) $validated['quantity'].').');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'No se pudo registrar el ingreso: '.$e->getMessage());
+        }
     }
 
     /**

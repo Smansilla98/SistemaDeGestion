@@ -16,6 +16,7 @@ return [
         ['key' => 'categories', 'label' => 'Categorías', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'products', 'label' => 'Productos', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'stock', 'label' => 'Stock', 'actions' => ['view', 'create', 'update', 'delete']],
+        ['key' => 'stock_mozo', 'label' => 'Ingreso de insumos (mozos)', 'actions' => ['create']],
         ['key' => 'users', 'label' => 'Usuarios', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'printers', 'label' => 'Impresoras', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'events', 'label' => 'Eventos', 'actions' => ['view', 'create', 'update', 'delete']],
@@ -42,6 +43,7 @@ return [
         'SUPERADMIN' => true,
         'ADMIN' => true, // todos los permisos (se resuelve por módulo)
         'GERENTE' => [
+            'stock_mozo.create' => false,
             'dashboard.view' => true,
             'tables.view' => true, 'tables.create' => true, 'tables.update' => true, 'tables.delete' => true,
             'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => true,
@@ -62,6 +64,7 @@ return [
             'tutorials.view' => true, 'tutorials.create' => true, 'tutorials.update' => true, 'tutorials.delete' => true,
         ],
         'CAJERO' => [
+            'stock_mozo.create' => false,
             'dashboard.view' => true,
             'tables.view' => false, 'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => false,
             'kitchen.view' => false, 'cash-register.view' => true, 'cash-register.create' => false, 'cash-register.update' => true, 'cash-register.delete' => false,
@@ -78,7 +81,7 @@ return [
             'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => false,
             'kitchen.view' => false, 'cash-register.view' => false, 'discount-types.view' => false,
             'sectors.view' => false, 'categories.view' => false,
-            'products.view' => true, 'stock.view' => false, 'users.view' => false, 'printers.view' => false,
+            'products.view' => true, 'stock.view' => false, 'stock_mozo.create' => true, 'users.view' => false, 'printers.view' => false,
             'events.view' => true, 'recurring-activities.view' => true,
             'fixed-expenses.view' => false, 'reports.view' => false, 'configuration.view' => false, 'tutorials.view' => true,
         ],

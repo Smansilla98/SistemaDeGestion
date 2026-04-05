@@ -107,8 +107,54 @@
 
         @if(isset($cashSessions) && $cashSessions->count() > 0)
         <hr class="my-4">
+        <h5 class="mb-2"><i class="bi bi-cash-coin"></i> Caja — resumen simple</h5>
+        <p class="text-muted small mb-3">Totales por sesión en el período. Para el detalle línea a línea usá <strong>Ver detalle</strong>.</p>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Caja</th>
+                        <th>Responsable</th>
+                        <th class="text-nowrap">Apertura</th>
+                        <th>Estado</th>
+                        <th class="text-end">Ventas</th>
+                        <th class="text-end">Ingresos</th>
+                        <th class="text-end">Egresos</th>
+                        <th class="text-end">Neto mov.</th>
+                        <th class="text-nowrap"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($cashSessions as $session)
+                    @php
+                        $sumV = $session->payments->sum('amount');
+                        $sumI = $session->cashMovements->where('type', 'INGRESO')->sum('amount');
+                        $sumE = $session->cashMovements->where('type', 'EGRESO')->sum('amount');
+                        $netMov = $sumV + $sumI - $sumE;
+                    @endphp
+                    <tr>
+                        <td class="fw-medium">{{ $session->cashRegister->name ?? 'Caja' }}</td>
+                        <td class="small text-muted">{{ $session->user->name ?? '—' }}</td>
+                        <td class="small">{{ $session->opened_at->format('d/m/Y H:i') }}</td>
+                        <td><span class="badge bg-{{ $session->status === 'ABIERTA' ? 'success' : 'secondary' }}">{{ $session->status }}</span></td>
+                        <td class="text-end font-monospace">${{ number_format($sumV, 2) }}</td>
+                        <td class="text-end font-monospace text-success">${{ number_format($sumI, 2) }}</td>
+                        <td class="text-end font-monospace text-danger">${{ number_format($sumE, 2) }}</td>
+                        <td class="text-end font-monospace fw-semibold">${{ number_format($netMov, 2) }}</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#session-detail-{{ $session->id }}" aria-expanded="false">
+                                Ver detalle
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small mb-4"><strong>Neto mov.:</strong> ventas + ingresos manuales − egresos (no incluye monto inicial de apertura).</p>
+
         <h5 class="mb-3"><i class="bi bi-cash-stack"></i> Detalle de movimientos por caja</h5>
-        <p class="text-muted small">Sesiones con actividad en el período. Ventas (pagos) e ingresos/egresos de cada caja.</p>
+        <p class="text-muted small">Mismo listado que arriba, con cada pago y movimiento manual.</p>
         @foreach($cashSessions as $session)
         @php
             $paymentsRows = $session->payments->map(fn($p) => (object)[
