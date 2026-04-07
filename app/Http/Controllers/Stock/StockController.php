@@ -20,7 +20,7 @@ class StockController extends Controller
     public function __construct(
         private StockService $stockService
     ) {
-        $this->middleware('role:ADMIN,GERENTE,CAJERO,MOZO')->except(['mozoInsumoCreate', 'mozoInsumoStore']);
+        $this->middleware('role:ADMIN,GERENTE,ENCARGADO,CAJERO,MOZO')->except(['mozoInsumoCreate', 'mozoInsumoStore']);
         $this->middleware('role:MOZO,ADMIN,GERENTE,SUPERADMIN')->only(['mozoInsumoCreate', 'mozoInsumoStore']);
     }
 

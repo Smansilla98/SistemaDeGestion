@@ -12,7 +12,7 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'COCINA', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'COCINA', 'CAJERO']);
     }
 
     /**
@@ -25,7 +25,7 @@ class OrderPolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'COCINA', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'COCINA', 'CAJERO']);
     }
 
     /**
@@ -33,7 +33,7 @@ class OrderPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'ENCARGADO', 'MOZO']);
     }
 
     /**

@@ -12,7 +12,7 @@ class TablePolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -24,7 +24,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO']);
     }
 
     /**
@@ -44,7 +44,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO']);
     }
 
     /**

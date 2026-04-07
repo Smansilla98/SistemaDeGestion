@@ -36,10 +36,10 @@ class TableController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
         $user = auth()->user();
 
-        // Si es MOZO, solo ver mesas asignadas a él o libres
+        // Si es MOZO o ENCARGADO, solo ver mesas asignadas a él o libres
         $tablesQuery = Table::where('restaurant_id', $restaurantId);
         
-        if ($user->role === 'MOZO') {
+        if (in_array($user->role, ['MOZO', 'ENCARGADO'], true)) {
             $tablesQuery->where(function ($q) use ($user) {
                 $q->where('status', 'LIBRE')
                   ->orWhereHas('currentSession', function ($sq) use ($user) {
@@ -57,8 +57,8 @@ class TableController extends Controller
             }])
             ->get();
 
-        // Filtrar mesas por sector según el query del mozo
-        if ($user->role === 'MOZO') {
+        // Filtrar mesas por sector según el query del mozo/encargado
+        if (in_array($user->role, ['MOZO', 'ENCARGADO'], true)) {
             $allowedTableIds = $tablesQuery->pluck('id')->toArray();
             foreach ($sectors as $sector) {
                 $sector->setRelation('tables', $sector->tables->filter(function ($table) use ($allowedTableIds) {
@@ -72,9 +72,9 @@ class TableController extends Controller
             $sector->setRelation('tables', Table::sortByNumericGroup($sector->tables));
         }
 
-        // Obtener mozos disponibles para asignación
+        // Usuarios disponibles para asignación en mesa (sin SUPERADMIN)
         $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
-            ->where('role', 'MOZO')
+            ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -96,8 +96,8 @@ class TableController extends Controller
      */
     public function storeOrder(Request $request, Table $table)
     {
-        // Solo ADMIN / MOZO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
+        // Solo ADMIN / GERENTE / MOZO / ENCARGADO
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -272,9 +272,9 @@ class TableController extends Controller
             }]);
         }
 
-        // Obtener mozos para el modal de cambio de estado
+        // Usuarios disponibles para asignación en mesa (sin SUPERADMIN)
         $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
-            ->where('role', 'MOZO')
+            ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -295,8 +295,8 @@ class TableController extends Controller
      */
     public function storeOrderFromSubsectorItem(Request $request, \App\Models\SubsectorItem $item)
     {
-        // Solo ADMIN / MOZO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
+        // Solo ADMIN / GERENTE / MOZO / ENCARGADO
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -510,8 +510,8 @@ class TableController extends Controller
      */
     public function updateLayout(Request $request)
     {
-        // Verificar permisos: solo ADMIN y MOZO pueden actualizar layouts
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO'])) {
+        // Verificar permisos: solo ADMIN/GERENTE/MOZO/ENCARGADO pueden actualizar layouts
+        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para actualizar el layout');
         }
 
@@ -616,10 +616,10 @@ class TableController extends Controller
                         ->with('error', 'Debes asignar un mozo al abrir la mesa.');
                 }
                 
-                // Verificar que el waiter_id sea un MOZO del mismo restaurante
+                // Verificar que el waiter_id sea un usuario asignable (sin SUPERADMIN) del mismo restaurante
                 $waiter = \App\Models\User::where('id', $validated['waiter_id'])
                     ->where('restaurant_id', $table->restaurant_id)
-                    ->where('role', 'MOZO')
+                    ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
                     ->where('is_active', true)
                     ->first();
                 

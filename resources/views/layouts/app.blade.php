@@ -945,10 +945,12 @@
             </a>
             @endif
             @if($canKitchen)
-            <!--<a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
+            {{--
+            <a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
                 <i class="bi bi-egg-fried sb-ico"></i>
                 <span>Cocina</span>
-            </a>-->
+            </a>
+            --}}
             @endif
             @if($canCashRegister)
             <a href="{{ route('cash-register.index') }}" class="sb-link {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
@@ -1004,10 +1006,12 @@
             </a>
             @endif
             @if($canPrinters)
-            <!--<a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
+            {{--
+            <a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
                 <i class="bi bi-printer sb-ico"></i>
                 <span>Impresoras</span>
-            </a>-->
+            </a>
+            --}}
             @endif
             @endif
 
@@ -1048,22 +1052,28 @@
             @if($canConfiguration || $canTutorials || ($navUser && $navUser->isAdminLevel()))
             <div class="sb-div"></div>
             @if($canConfiguration)
-            <!--<a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
+            {{--
+            <a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear sb-ico"></i>
                 <span>Configuración</span>
             </a>
-            @endif-->
+            --}}
+            @endif
             @if($canTutorials)
-            <!--<a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
+            {{--
+            <a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark sb-ico"></i>
                 <span>Tutoriales</span>
-            </a>-->
+            </a>
+            --}}
             @endif
             @if($navUser && $navUser->isAdminLevel())
-            <!--<a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+            {{--
+            <a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
                 <i class="bi bi-shield-lock sb-ico"></i>
                 <span>Permisos</span>
-            </a>-->
+            </a>
+            --}}
             @endif
             @endif
             @endif
