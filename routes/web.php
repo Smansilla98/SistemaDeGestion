@@ -317,7 +317,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Control de Stock
     |--------------------------------------------------------------------------
     */
-    Route::prefix('stock')->name('stock.')->middleware('role:ADMIN,GERENTE,CAJERO,MOZO')->group(function () {
+    Route::prefix('stock')->name('stock.')->middleware('role:ADMIN,GERENTE,ENCARGADO,CAJERO,MOZO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Stock\StockController::class, 'index'])->name('index');
         Route::get('/movements', [\App\Http\Controllers\Stock\StockController::class, 'movements'])->name('movements');
         Route::get('/movements/create', [\App\Http\Controllers\Stock\StockController::class, 'createMovement'])->name('create-movement');
