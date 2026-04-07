@@ -24,7 +24,7 @@ class CashRegisterController extends Controller
         private OrderService $orderService,
         private PrintService $printService
     ) {
-        $this->middleware('role:CAJERO,ADMIN');
+        $this->middleware('role:CAJERO,ADMIN,GERENTE,ENCARGADO,MOZO');
     }
 
     /**
