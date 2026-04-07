@@ -93,7 +93,7 @@
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
                                         
-                                        @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                                        @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO']))
                                             @if(!in_array($order->status, ['ENTREGADO', 'CERRADO', 'CANCELADO'], true))
                                                 <form action="{{ route('orders.update-status', $order) }}" method="POST" class="d-inline">
                                                     @csrf
