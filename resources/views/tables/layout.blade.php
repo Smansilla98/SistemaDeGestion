@@ -147,7 +147,7 @@
 </div>
 @endif
 
-@if($selectedSector && in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+@if($selectedSector && in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
 <!-- Modal Cambiar Estado de Mesa -->
 <div class="modal fade" id="changeStatusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -697,7 +697,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Función para abrir modal de cambio de estado
 function openChangeStatusModal(tableId, currentStatus, capacity) {
-    const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+    const modalElement = document.getElementById('changeStatusModal');
+    if (!modalElement) {
+        console.error('No se encontró el modal #changeStatusModal en el DOM.');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Acción no disponible',
+                text: 'No tenés acceso para cambiar el estado de la mesa.',
+                confirmButtonColor: '#1e8081',
+            });
+        }
+        return;
+    }
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const form = document.getElementById('changeStatusForm');
     const statusSelect = document.getElementById('status');
     const waiterContainer = document.getElementById('waiterContainer');

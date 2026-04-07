@@ -14,7 +14,7 @@
                 <i class="bi bi-plus-circle"></i> Nuevo Pedido
             </a>
             @endcan
-            @if(in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'CAJERO']))
+            @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'CAJERO']))
             @php
                 $activeSession = \App\Models\CashRegisterSession::where('restaurant_id', auth()->user()->restaurant_id)
                     ->where('status', 'ABIERTA')

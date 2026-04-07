@@ -450,7 +450,7 @@
                             @endcan
                             @elseif($table->status === 'OCUPADA')
                             {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
-                            @if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+                            @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
                             <button type="button"
                                     class="btn btn-pedido"
                                     onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
@@ -547,7 +547,7 @@
 </div>
 @endcan
 
-@if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+@if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
 <!-- Modal Cambiar Estado de Mesa -->
 <div class="modal fade" id="changeStatusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -597,7 +597,7 @@
 </div>
 @endif
 
-@if(in_array(auth()->user()->role, ['ADMIN', 'MOZO']))
+@if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
 <!-- Modal Nuevo Pedido (desde Mesas) -->
 <div class="modal fade" id="newOrderModal" tabindex="-1">
     <div class="modal-dialog modal-fullscreen-md-down modal-xl modal-dialog-scrollable">
@@ -725,7 +725,20 @@
 
 <script>
 function openChangeStatusModal(tableId, currentStatus, capacity) {
-    const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+    const modalElement = document.getElementById('changeStatusModal');
+    if (!modalElement) {
+        console.error('No se encontró el modal #changeStatusModal en el DOM.');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Acción no disponible',
+                text: 'No tenés acceso para cambiar el estado de la mesa.',
+                confirmButtonColor: '#1e8081',
+            });
+        }
+        return;
+    }
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const form = document.getElementById('changeStatusForm');
     const statusSelect = document.getElementById('status');
     const guestsInput = document.getElementById('guests_count');
@@ -854,7 +867,6 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
     }, 50);
     
     // También verificar cuando el modal se muestra completamente
-    const modalElement = document.getElementById('changeStatusModal');
     const handleShown = function() {
         const currentValue = newStatusSelectRef.value;
         updateFieldsForStatus(currentValue);
