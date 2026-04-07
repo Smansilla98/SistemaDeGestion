@@ -75,6 +75,7 @@ class TableController extends Controller
         // Usuarios disponibles para asignación en mesa (sin SUPERADMIN)
         $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
             ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
+            ->where('name', '!=', 'prueba')
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -275,6 +276,7 @@ class TableController extends Controller
         // Usuarios disponibles para asignación en mesa (sin SUPERADMIN)
         $waiters = \App\Models\User::where('restaurant_id', $restaurantId)
             ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
+            ->where('name', '!=', 'prueba')
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
