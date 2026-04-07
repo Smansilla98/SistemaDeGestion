@@ -247,7 +247,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     | Módulo de Caja
     |--------------------------------------------------------------------------
     */
-    Route::prefix('cash-register')->name('cash-register.')->middleware('role:CAJERO,ADMIN,GERENTE')->group(function () {
+    Route::prefix('cash-register')->name('cash-register.')->middleware('role:CAJERO,ADMIN,GERENTE,ENCARGADO,MOZO')->group(function () {
         Route::get('/', [CashRegisterController::class, 'index'])->name('index');
         Route::post('/sessions', [CashRegisterController::class, 'openSession'])->name('open-session');
         Route::get('/sessions/{session}', [CashRegisterController::class, 'session'])->name('session');
