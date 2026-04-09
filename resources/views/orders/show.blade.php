@@ -146,7 +146,7 @@
                 <h5 class="mb-0">Acciones</h5>
             </div>
             <div class="card-body">
-                @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO']))
+                @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'ENCARGADO', 'MOZO']))
                     @if(!in_array($order->status, ['ENTREGADO', 'CERRADO', 'CANCELADO'], true))
                         <form action="{{ route('orders.update-status', $order) }}" method="POST" class="mb-2">
                             @csrf
