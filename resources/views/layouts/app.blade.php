@@ -898,7 +898,8 @@
                 $perm = auth()->check() ? app(\App\Services\PermissionService::class) : null;
                 $navUser = auth()->user();
                 $canDashboard = $perm && $perm->allowed($navUser, 'dashboard.view');
-                $canTables = $perm && $perm->allowed($navUser, 'tables.view');
+                $canTables = ($perm && $perm->allowed($navUser, 'tables.view'))
+                    || (($navUser->role ?? null) === \App\Models\User::ROLE_ENCARGADO);
                 $canOrders = $perm && $perm->allowed($navUser, 'orders.view');
                 $canKitchen = $perm && $perm->allowed($navUser, 'kitchen.view');
                 $canCashRegister = $perm && $perm->allowed($navUser, 'cash-register.view');
