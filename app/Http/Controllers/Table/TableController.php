@@ -36,10 +36,10 @@ class TableController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
         $user = auth()->user();
 
-        // Si es MOZO o ENCARGADO, solo ver mesas asignadas a él o libres
+        // Si es MOZO, solo ver mesas asignadas a él o libres
         $tablesQuery = Table::where('restaurant_id', $restaurantId);
         
-        if (in_array($user->role, ['MOZO', 'ENCARGADO'], true)) {
+        if (($user->role ?? null) === 'MOZO') {
             $tablesQuery->where(function ($q) use ($user) {
                 $q->where('status', 'LIBRE')
                   ->orWhereHas('currentSession', function ($sq) use ($user) {
@@ -57,8 +57,8 @@ class TableController extends Controller
             }])
             ->get();
 
-        // Filtrar mesas por sector según el query del mozo/encargado
-        if (in_array($user->role, ['MOZO', 'ENCARGADO'], true)) {
+        // Filtrar mesas por sector según el query del mozo
+        if (($user->role ?? null) === 'MOZO') {
             $allowedTableIds = $tablesQuery->pluck('id')->toArray();
             foreach ($sectors as $sector) {
                 $sector->setRelation('tables', $sector->tables->filter(function ($table) use ($allowedTableIds) {
