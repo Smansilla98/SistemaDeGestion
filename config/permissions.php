@@ -108,7 +108,8 @@ return [
         ],
         'ENCARGADO' => [
             'dashboard.view' => true,
-            'tables.view' => true, 'orders.view' => true, 'kitchen.view' => false, 'cash-register.view' => true,
+            'tables.view' => true, 'tables.create' => true, 'tables.update' => true, 'tables.delete' => true,
+            'orders.view' => true, 'kitchen.view' => false, 'cash-register.view' => true,
             'discount-types.view' => false, 'sectors.view' => false, 'categories.view' => false,
             'products.view' => true,
             'stock.view' => true, 'stock.create' => true,
