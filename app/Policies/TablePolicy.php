@@ -32,7 +32,7 @@ class TablePolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO']);
     }
 
     /**
@@ -56,6 +56,6 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO']);
     }
 }
