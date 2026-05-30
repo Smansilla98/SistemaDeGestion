@@ -301,20 +301,34 @@ class OrderService
      */
     private function generateOrderNumber(int $restaurantId): string
     {
-        $prefix = 'ORD-' . date('Y') . '-';
-        $lastOrder = Order::where('restaurant_id', $restaurantId)
-            ->where('number', 'like', $prefix . '%')
-            ->orderBy('number', 'desc')
-            ->first();
+        $year = (int) date('Y');
 
-        if ($lastOrder) {
-            $lastNumber = (int) str_replace($prefix, '', $lastOrder->number);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
+        return DB::transaction(function () use ($restaurantId, $year) {
+            // Intentamos bloquear la fila del contador para evitar race conditions
+            $counter = DB::table('order_counters')
+                ->where('restaurant_id', $restaurantId)
+                ->where('year', $year)
+                ->lockForUpdate()
+                ->first();
 
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+            if (!$counter) {
+                $seq = 1;
+                DB::table('order_counters')->insert([
+                    'restaurant_id' => $restaurantId,
+                    'year' => $year,
+                    'last_seq' => $seq,
+                ]);
+            } else {
+                $seq = $counter->last_seq + 1;
+                DB::table('order_counters')
+                    ->where('restaurant_id', $restaurantId)
+                    ->where('year', $year)
+                    ->update(['last_seq' => $seq]);
+            }
+
+            $prefix = 'ORD-' . $year . '-';
+            return $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+        });
     }
 }
 
