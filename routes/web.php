@@ -367,6 +367,15 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         ->name('reports.sales.destroy-cash-session')
         ->middleware('role:SUPERADMIN');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Monitor de uso de módulos (solo SUPERADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('module-usage')->name('module-usage.')->middleware('role:SUPERADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'index'])->name('index');
+    });
+
     Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/sales', [\App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');

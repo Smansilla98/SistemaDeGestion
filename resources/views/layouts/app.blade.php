@@ -1076,6 +1076,12 @@
             </a>
             --}}
             @endif
+            @if($navUser && $navUser->isSuperAdmin())
+            <a href="{{ route('module-usage.index') }}" class="sb-link {{ request()->routeIs('module-usage.*') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2 sb-ico"></i>
+                <span>Monitor de módulos</span>
+            </a>
+            @endif
             @endif
             @endif
         </nav>
