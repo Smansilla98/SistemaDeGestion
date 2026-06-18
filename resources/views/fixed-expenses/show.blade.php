@@ -8,7 +8,7 @@
         <a href="{{ route('fixed-expenses.index') }}" class="btn btn-secondary mb-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
+        <h1 class="text-white mb-2 page-hero-title">
             <i class="bi bi-cash-stack"></i> {{ $fixedExpense->name }}
         </h1>
     </div>
@@ -18,43 +18,47 @@
     <div class="col-md-8">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Información General</h5>
+                <h5 class="mb-0">Información y trazabilidad</h5>
             </div>
             <div class="card-body">
-                <dl class="row">
+                <dl class="row mb-0">
                     <dt class="col-sm-4">Tipo:</dt>
                     <dd class="col-sm-8">
                         <span class="badge bg-{{ $fixedExpense->type === 'GASTO' ? 'danger' : 'success' }}">
-                            {{ $fixedExpense->type === 'GASTO' ? 'Gasto' : 'Ingreso' }}
+                            {{ $fixedExpense->type === 'GASTO' ? 'Gasto fijo' : 'Ingreso fijo' }}
                         </span>
                     </dd>
 
                     <dt class="col-sm-4">Categoría:</dt>
                     <dd class="col-sm-8">{{ $fixedExpense->getCategoryLabel() }}</dd>
 
-                    <dt class="col-sm-4">Monto:</dt>
+                    <dt class="col-sm-4">Monto por ocurrencia:</dt>
                     <dd class="col-sm-8"><strong>${{ number_format($fixedExpense->amount, 2) }}</strong></dd>
 
                     <dt class="col-sm-4">Frecuencia:</dt>
+                    <dd class="col-sm-8">{{ $fixedExpense->getFrequencyLabel() }}</dd>
+
+                    <dt class="col-sm-4">Equivalente mensual:</dt>
                     <dd class="col-sm-8">
-                        @php
-                            $freqLabels = [
-                                'MENSUAL' => 'Mensual',
-                                'QUINCENAL' => 'Quincenal',
-                                'SEMANAL' => 'Semanal',
-                                'DIARIO' => 'Diario',
-                                'ANUAL' => 'Anual',
-                            ];
-                        @endphp
-                        {{ $freqLabels[$fixedExpense->frequency] ?? $fixedExpense->frequency }}
+                        <strong class="text-{{ $fixedExpense->type === 'GASTO' ? 'danger' : 'success' }}">
+                            ${{ number_format($fixedExpense->getMonthlyEquivalent(), 2) }}
+                        </strong>
+                        <small class="text-muted"> (referencia para planificación)</small>
                     </dd>
 
-                    <dt class="col-sm-4">Fecha de Inicio:</dt>
-                    <dd class="col-sm-8">{{ $fixedExpense->start_date->format('d/m/Y') }}</dd>
-
-                    <dt class="col-sm-4">Fecha de Fin:</dt>
+                    <dt class="col-sm-4">Día de cobro/pago:</dt>
                     <dd class="col-sm-8">
-                        {{ $fixedExpense->end_date ? $fixedExpense->end_date->format('d/m/Y') : 'Indefinido' }}
+                        {{ $fixedExpense->getDueDayLabel() ?? 'Sin definir' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Vigencia:</dt>
+                    <dd class="col-sm-8">
+                        Desde {{ $fixedExpense->start_date->format('d/m/Y') }}
+                        @if($fixedExpense->end_date)
+                            — Hasta {{ $fixedExpense->end_date->format('d/m/Y') }}
+                        @else
+                            — <span class="text-muted">Indefinida</span>
+                        @endif
                     </dd>
 
                     <dt class="col-sm-4">Estado:</dt>
@@ -82,13 +86,38 @@
     </div>
 
     <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Este mes</h5>
+            </div>
+            <div class="card-body text-center">
+                @php
+                    $currentMonthAmount = $fixedExpense->getProjectedAmountForPeriod(
+                        now()->startOfMonth(),
+                        now()->endOfMonth()
+                    );
+                    $dueThisMonth = $fixedExpense->getDueDateForMonth(now()->startOfMonth());
+                @endphp
+                <h3 class="text-{{ $fixedExpense->type === 'GASTO' ? 'danger' : 'success' }} mb-1">
+                    ${{ number_format($currentMonthAmount, 2) }}
+                </h3>
+                <p class="text-muted mb-0">
+                    @if($dueThisMonth)
+                        Cobro/pago estimado: {{ $dueThisMonth->format('d/m/Y') }}
+                    @else
+                        Sin día de cobro definido
+                    @endif
+                </p>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Proyección (Próximos 12 Meses)</h5>
+                <h5 class="mb-0">Proyección (12 meses)</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-sm">
+                    <table class="table table-sm mb-0">
                         <thead>
                             <tr>
                                 <th>Mes</th>
@@ -108,8 +137,8 @@
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="table-info">
-                                <th>Total:</th>
+                            <tr class="table-light">
+                                <th>Total anual</th>
                                 <th class="text-end">
                                     ${{ number_format(collect($projections)->sum('amount'), 2) }}
                                 </th>
@@ -122,4 +151,3 @@
     </div>
 </div>
 @endsection
-
