@@ -7,6 +7,7 @@ use App\Models\FixedExpense;
 use App\Services\FixedExpenseService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class FixedExpenseController extends Controller
