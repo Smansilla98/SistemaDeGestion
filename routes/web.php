@@ -304,6 +304,9 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Product\ProductController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Product\ProductController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Product\ProductController::class, 'store'])->name('store');
+        // Matriz de precios (antes de /{product} para no colisionar)
+        Route::get('/bulk-pricing', [\App\Http\Controllers\Product\ProductController::class, 'bulkPricing'])->name('bulk-pricing');
+        Route::put('/bulk-pricing', [\App\Http\Controllers\Product\ProductController::class, 'bulkPricingUpdate'])->name('bulk-pricing.update');
         Route::get('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'show'])->name('show');
         Route::get('/{product}/edit', [\App\Http\Controllers\Product\ProductController::class, 'edit'])->name('edit');
         Route::put('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'update'])->name('update');

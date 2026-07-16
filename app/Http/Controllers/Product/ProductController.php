@@ -288,6 +288,102 @@ class ProductController extends Controller
     }
 
     /**
+     * Matriz de edición masiva de precios (solo productos vendibles).
+     */
+    public function bulkPricing(Request $request)
+    {
+        // Misma capacidad que create/update (ADMIN/GERENTE/SUPERADMIN)
+        Gate::authorize('create', Product::class);
+
+        $restaurantId = auth()->user()->restaurant_id;
+
+        $query = Product::where('restaurant_id', $restaurantId)
+            ->where('type', 'PRODUCT')
+            ->with('category')
+            ->orderBy('name');
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->boolean('only_without_cost')) {
+            $query->whereNull('cost_price');
+        }
+
+        $products = $query->get();
+
+        $categories = Category::where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->orderBy('display_order')
+            ->get();
+
+        return view('products.bulk-pricing', compact('products', 'categories'));
+    }
+
+    /**
+     * Guardar precios de varios productos a la vez.
+     */
+    public function bulkPricingUpdate(Request $request)
+    {
+        Gate::authorize('create', Product::class);
+
+        $restaurantId = auth()->user()->restaurant_id;
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer|exists:products,id',
+            'items.*.cost_price' => 'nullable|numeric|min:0.01',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.profit_margin' => 'nullable|numeric|min:0|max:100000',
+            'items.*.pricing_source' => 'nullable|in:sale,margin',
+        ]);
+
+        $updated = 0;
+
+        foreach ($validated['items'] as $item) {
+            $product = Product::where('restaurant_id', $restaurantId)
+                ->where('type', 'PRODUCT')
+                ->where('id', $item['id'])
+                ->first();
+
+            if ($product === null) {
+                continue;
+            }
+
+            Gate::authorize('update', $product);
+
+            $payload = [
+                'cost_price' => $item['cost_price'] ?? null,
+                'price' => $item['price'],
+                'profit_margin' => $item['profit_margin'] ?? null,
+            ];
+
+            if (($item['pricing_source'] ?? 'sale') === 'margin') {
+                $payload = $this->pricing->apply($payload, $product->getAttributes());
+            }
+
+            unset($payload['profit_margin']);
+
+            $oldAttributes = $product->getAttributes();
+            $product->update($payload);
+            $this->auditUpdate($product, $oldAttributes, $payload);
+            $updated++;
+        }
+
+        return redirect()
+            ->route('products.bulk-pricing', $request->only(['category_id', 'search', 'only_without_cost']))
+            ->with('success', "Se actualizaron {$updated} productos.");
+    }
+
+    /**
      * Actualizar producto
      */
     public function update(Request $request, Product $product)
