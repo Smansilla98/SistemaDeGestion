@@ -1,0 +1,47 @@
+/* Loading / spinner consistente */
+.cx-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cx-spinner__dot {
+  width: 1rem;
+  height: 1rem;
+  border: 0.15em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: cx-spin 0.65s linear infinite;
+}
+
+.cx-spinner--sm .cx-spinner__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.cx-spinner--lg .cx-spinner__dot {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.cx-spinner__label {
+  font-size: 13px;
+  color: inherit;
+}
+
+.cx-skeleton {
+  background: linear-gradient(90deg, var(--g100) 25%, var(--g50) 50%, var(--g100) 75%);
+  background-size: 200% 100%;
+  animation: cx-shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--rmd, 8px);
+}
+
+@keyframes cx-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cx-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

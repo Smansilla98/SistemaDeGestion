@@ -10,9 +10,7 @@
         </div>
         <div class="btn-group">
             @can('create', App\Models\Order::class)
-            <a href="{{ route('orders.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Pedido
-            </a>
+            <x-button href="{{ route('orders.create') }}" icon="bi-plus-circle">Nuevo Pedido</x-button>
             @endcan
             @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'CAJERO']))
             @php
@@ -21,9 +19,7 @@
                     ->first();
             @endphp
             @if($activeSession)
-            <a href="{{ route('orders.quick-order') }}" class="btn btn-success">
-                <i class="bi bi-lightning-charge"></i> Pedido Rápido
-            </a>
+            <x-button href="{{ route('orders.quick-order') }}" variant="success" icon="bi-lightning-charge">Pedido Rápido</x-button>
             @endif
             @endif
         </div>
@@ -100,17 +96,17 @@
                                 $displayStatus = $order->status === 'CERRADO'
                                     ? 'Se cierra la mesa'
                                     : ($order->status === 'ENTREGADO' ? 'Se entrega el producto' : 'Se toma el pedido');
-                                $badgeClass = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'success' : 'secondary';
+                                $badgeTone = in_array($order->status, ['CERRADO', 'ENTREGADO'], true) ? 'green' : 'gray';
                             @endphp
-                            <span class="badge bg-{{ $badgeClass }}">{{ $displayStatus }}</span>
+                            <x-badge :tone="$badgeTone">{{ $displayStatus }}</x-badge>
                         </td>
                         <td>{{ $order->items->count() }}</td>
                         <td><strong>${{ number_format($order->total, 2) }}</strong></td>
                         <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver" data-tutorial="orders-action-view">
-                                    <i class="bi bi-eye"></i>
+                                <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver" aria-label="Ver pedido {{ $order->number }}" data-tutorial="orders-action-view">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
                                 @can('delete', $order)
                                 <form action="{{ route('orders.destroy', $order) }}" method="POST" class="d-inline" id="deleteOrderForm{{ $order->id }}">
@@ -119,8 +115,9 @@
                                     <button type="button" 
                                             class="btn btn-outline-danger" 
                                             onclick="confirmDeleteOrder({{ $order->id }}, '{{ $order->number }}')"
-                                            title="Eliminar">
-                                        <i class="bi bi-trash"></i>
+                                            title="Eliminar"
+                                            aria-label="Eliminar pedido {{ $order->number }}">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
                                 @endcan

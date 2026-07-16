@@ -1,0 +1,17 @@
+/* Layout web — base (reset, body, fonts) — extraído de layouts/app.blade.php */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-primary) !important;
+    background: #f4f7f6 !important;
+    color: var(--mosaic-text-primary) !important;
+    overflow-x: hidden;
+}
+
+.font-secondary {
+    font-family: var(--font-secondary);
+}

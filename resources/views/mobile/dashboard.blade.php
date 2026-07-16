@@ -1,36 +1,70 @@
 @extends('layouts.mobile')
 
-@section('title', 'Dashboard Mobile')
+@section('title', 'Inicio')
 
 @section('content')
-<div class="container-fluid">
-    <div class="mb-3">
-        <h2 class="h4 mb-1">Hola, {{ $user->name }}</h2>
-        <p class="text-muted mb-0 small">Rol: {{ $rol }}</p>
-    </div>
+@php
+    $canKitchen = auth()->check() && app(\App\Services\PermissionService::class)->allowed(auth()->user(), 'kitchen.view');
+@endphp
 
-    <div class="row g-3">
-        <div class="col-6">
-            <a href="{{ route('m.pedidos.index') }}" class="text-decoration-none">
-                <div class="card bg-dark border-0 text-white h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 90px;">
-                        <i class="bi bi-clipboard-check mb-2" style="font-size: 1.6rem;"></i>
-                        <span class="fw-semibold">Pedidos</span>
-                    </div>
-                </div>
-            </a>
+<div class="m-stats">
+    <a href="{{ route('m.pedidos.index') }}" class="m-stat">
+        <div class="m-stat-top">
+            <i class="bi bi-grid-3x3-gap m-stat-ico" aria-hidden="true"></i>
+            <span class="m-pill m-pill--ok">{{ $stats['mesas_libres'] }} libres</span>
         </div>
-        <div class="col-6">
-            <a href="{{ route('m.pedidos.index') }}" class="text-decoration-none">
-                <div class="card bg-dark border-0 text-white h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 90px;">
-                        <i class="bi bi-grid-3x3-gap mb-2" style="font-size: 1.6rem;"></i>
-                        <span class="fw-semibold">Mesas</span>
-                    </div>
-                </div>
-            </a>
+        <div class="m-stat-value">{{ $stats['mesas_libres'] }}<span> / {{ $stats['total_tables'] }}</span></div>
+        <div class="m-stat-label">Mesas libres</div>
+    </a>
+
+    <a href="{{ route('m.pedidos.index') }}" class="m-stat">
+        <div class="m-stat-top">
+            <i class="bi bi-receipt m-stat-ico" aria-hidden="true"></i>
+            @if($stats['pedidos_pendientes'] > 0)
+                <span class="m-pill m-pill--warn">en curso</span>
+            @endif
         </div>
-    </div>
+        <div class="m-stat-value">{{ $stats['pedidos_pendientes'] }}</div>
+        <div class="m-stat-label">Pedidos pendientes</div>
+    </a>
+
+    <a href="{{ Route::has('m.caja.resumen') ? route('m.caja.resumen') : route('cash-register.index') }}" class="m-stat m-stat--wide">
+        <div class="m-stat-top">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-cash-coin m-stat-ico" aria-hidden="true"></i>
+                <span class="m-stat-label mb-0">Ventas de sesión</span>
+            </div>
+            <i class="bi bi-eye m-stat-ico" aria-hidden="true"></i>
+        </div>
+        <div class="m-stat-value" style="font-size: 22px;">
+            ${{ number_format($stats['ventas_sesion'] ?? 0, 0, ',', '.') }}
+        </div>
+    </a>
+</div>
+
+@if(($stats['low_stock_products'] ?? 0) > 0)
+    <a href="{{ route('stock.index') }}" class="m-alert">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        <span>{{ $stats['low_stock_products'] }} productos con stock bajo</span>
+    </a>
+@endif
+
+<div class="m-section-label">Accesos rápidos</div>
+<div class="m-quick">
+    <a href="{{ route('m.pedidos.index') }}" class="m-quick-item">
+        <i class="bi bi-clipboard-plus" aria-hidden="true"></i>
+        <span>Tomar pedido</span>
+    </a>
+    @if($canKitchen)
+        <a href="{{ route('kitchen.index') }}" class="m-quick-item">
+            <i class="bi bi-egg-fried" aria-hidden="true"></i>
+            <span>Ver cocina</span>
+        </a>
+    @else
+        <a href="{{ route('orders.index') }}" class="m-quick-item">
+            <i class="bi bi-list-check" aria-hidden="true"></i>
+            <span>Ver pedidos</span>
+        </a>
+    @endif
 </div>
 @endsection
-

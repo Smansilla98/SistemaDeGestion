@@ -69,15 +69,15 @@
                         <td>{{ $product->stock_minimum }}</td>
                         <td>
                             @if($product->is_low_stock)
-                            <span class="badge bg-warning">Stock Bajo</span>
+                            <x-badge tone="amber">Stock Bajo</x-badge>
                             @else
-                            <span class="badge bg-success">Normal</span>
+                            <x-badge tone="green">Normal</x-badge>
                             @endif
                         </td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openMovementModal({{ $product->id }}, '{{ addslashes($product->name) }}')">
-                                <i class="bi bi-plus-circle"></i> Movimiento
-                            </button>
+                            <x-button size="sm" type="button" icon="bi-plus-circle" onclick="openMovementModal({{ $product->id }}, '{{ addslashes($product->name) }}')">
+                                Movimiento
+                            </x-button>
                         </td>
                     </tr>
                     @empty

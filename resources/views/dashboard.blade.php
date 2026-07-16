@@ -16,48 +16,33 @@
 
 <div class="page">
     <div class="sg">
-        <a href="{{ route('tables.index') }}" class="sc">
-            <div class="si"><i class="bi bi-table"></i></div>
-            <div class="sl">Mesas disponibles</div>
-            <div class="sv">{{ $stats['mesas_libres'] }} <span>de {{ $stats['total_tables'] }}</span></div>
-            <span class="badge bg-green">
-                <i class="bi bi-circle-fill" style="font-size: 6px;"></i>
-                {{ $stats['mesas_ocupadas'] }} ocupadas
-            </span>
-        </a>
-        <a href="{{ route('orders.index') }}" class="sc">
-            <div class="si"><i class="bi bi-receipt"></i></div>
-            <div class="sl">Pedidos pendientes</div>
-            <div class="sv">{{ $stats['pedidos_pendientes'] }}</div>
-            <span class="badge bg-teal">
-                <i class="bi bi-circle" style="font-size: 6px;"></i>
-                En proceso
-            </span>
-        </a>
-        <a href="{{ route('cash-register.index') }}" class="sc">
-            <div class="si"><i class="bi bi-currency-dollar"></i></div>
+        <x-card href="{{ route('tables.index') }}" icon="bi-table" label="Mesas disponibles" :value="$stats['mesas_libres']" :subvalue="'de '.$stats['total_tables']">
+            <x-badge tone="green" :dot="true">{{ $stats['mesas_ocupadas'] }} ocupadas</x-badge>
+        </x-card>
+
+        <x-card href="{{ route('orders.index') }}" icon="bi-receipt" label="Pedidos pendientes" :value="$stats['pedidos_pendientes']">
+            <x-badge tone="teal">En proceso</x-badge>
+        </x-card>
+
+        <x-card href="{{ route('cash-register.index') }}" icon="bi-currency-dollar">
             <div class="sl flex ia jb g2">
                 <span>Ventas de sesión</span>
-                <button type="button" class="btn btn-g btn-sm p-0 min-w-auto" style="font-size: 0.9rem;" onclick="event.preventDefault(); event.stopPropagation(); toggleVentasSesion();" title="Mostrar/ocultar monto">
-                    <i class="bi bi-eye" id="ventasSesionToggleIcon"></i>
+                <button type="button" class="btn btn-g btn-sm p-0 min-w-auto" style="font-size: 0.9rem;" onclick="event.preventDefault(); event.stopPropagation(); toggleVentasSesion();" aria-label="Mostrar u ocultar monto de ventas" title="Mostrar/ocultar monto">
+                    <i class="bi bi-eye" id="ventasSesionToggleIcon" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="sv" id="ventasSesionValue">${{ number_format($stats['ventas_sesion'] ?? 0, 0) }}</div>
-            <span class="badge bg-green">
-                <i class="bi bi-circle-fill" style="font-size: 6px;"></i>
+            <x-badge tone="green" :dot="true">
                 {{ ($stats['tiene_sesion_abierta'] ?? false) ? 'Sesión abierta' : 'Sin sesión' }}
-            </span>
-        </a>
+            </x-badge>
+        </x-card>
     </div>
 
     @if(isset($stats['low_stock_products']) && $stats['low_stock_products'] > 0)
     <div class="sg mt4">
-        <div class="sc">
-            <div class="si"><i class="bi bi-exclamation-triangle"></i></div>
-            <div class="sl">Productos bajo stock</div>
-            <div class="sv">{{ $stats['low_stock_products'] }}</div>
-            <span class="badge bg-red">Requieren atención</span>
-        </div>
+        <x-card icon="bi-exclamation-triangle" label="Productos bajo stock" :value="$stats['low_stock_products']">
+            <x-badge tone="red">Requieren atención</x-badge>
+        </x-card>
     </div>
     @endif
 
