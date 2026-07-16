@@ -123,11 +123,11 @@ class ProductRepository
     {
         $sql = <<<'SQL'
             INSERT INTO products (
-                restaurant_id, category_id, name, description, price, image,
+                restaurant_id, category_id, name, description, price, cost_price, image,
                 has_stock, stock_minimum, is_active, type, unit, unit_cost, supplier_id,
                 created_at, updated_at
             ) VALUES (
-                :restaurant_id, :category_id, :name, :description, :price, :image,
+                :restaurant_id, :category_id, :name, :description, :price, :cost_price, :image,
                 :has_stock, :stock_minimum, :is_active, :type, :unit, :unit_cost, :supplier_id,
                 NOW(), NOW()
             )
@@ -140,6 +140,7 @@ class ProductRepository
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'price' => $data['price'] ?? 0,
+            'cost_price' => $data['cost_price'] ?? null,
             'image' => $data['image'] ?? null,
             'has_stock' => ! empty($data['has_stock']) ? 1 : 0,
             'stock_minimum' => (int) ($data['stock_minimum'] ?? 0),
@@ -161,7 +162,7 @@ class ProductRepository
     public function update(int $id, int $restaurantId, array $data): bool
     {
         $allowed = [
-            'category_id', 'name', 'description', 'price', 'image',
+            'category_id', 'name', 'description', 'price', 'cost_price', 'image',
             'has_stock', 'stock_minimum', 'is_active', 'type', 'unit', 'unit_cost', 'supplier_id',
         ];
         $sets = [];

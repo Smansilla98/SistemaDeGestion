@@ -18,6 +18,7 @@ class Product extends Model
         'name',
         'description',
         'price',
+        'cost_price',
         'image',
         'has_stock',
         'stock_minimum',
@@ -30,6 +31,7 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'unit_cost' => 'decimal:2',
         'has_stock' => 'boolean',
         'stock_minimum' => 'integer',
@@ -149,6 +151,19 @@ class Product extends Model
     public function isInsumo(): bool
     {
         return $this->type === 'INSUMO';
+    }
+
+    /**
+     * Porcentaje de ganancia sobre costo.
+     *
+     * Ejemplo: costo 1, venta 2 = 100%.
+     */
+    public function getProfitMarginAttribute(): ?float
+    {
+        return app(\App\Services\ProductPricingService::class)->profitMargin(
+            $this->cost_price !== null ? (float) $this->cost_price : null,
+            $this->price !== null ? (float) $this->price : null
+        );
     }
 
     /**
