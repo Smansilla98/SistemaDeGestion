@@ -9,10 +9,15 @@ use App\Models\Sector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Traits\Auditable;
+use App\Services\ProductPricingService;
 
 class ProductController extends Controller
 {
     use Auditable;
+
+    public function __construct(
+        private ProductPricingService $pricing
+    ) {}
 
     /**
      * Interfaz web de productos. La API REST CRUD vive en App\Controllers\Api\ProductController
@@ -153,6 +158,9 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0', // Precio solo para productos vendibles
+            'cost_price' => 'nullable|required_with:profit_margin|numeric|min:0.01',
+            'profit_margin' => 'nullable|numeric|min:0|max:100000',
+            'pricing_source' => 'nullable|in:sale,margin',
             'has_stock' => 'required|boolean',
             'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
             'is_active' => 'required|boolean',
@@ -167,6 +175,13 @@ class ProductController extends Controller
         // Si es insumo, el precio puede ser 0 o null
         if ($validated['type'] === 'INSUMO') {
             $validated['price'] = $validated['price'] ?? 0;
+            $validated['cost_price'] = null;
+            unset($validated['profit_margin']);
+        } else {
+            if (($validated['pricing_source'] ?? 'sale') === 'margin') {
+                $validated = $this->pricing->apply($validated);
+            }
+            unset($validated['profit_margin'], $validated['pricing_source']);
         }
 
         $product = Product::create($validated);
@@ -291,6 +306,9 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0',
+            'cost_price' => 'nullable|required_with:profit_margin|numeric|min:0.01',
+            'profit_margin' => 'nullable|numeric|min:0|max:100000',
+            'pricing_source' => 'nullable|in:sale,margin',
             'has_stock' => 'required|boolean',
             'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
             'is_active' => 'required|boolean',
@@ -305,6 +323,13 @@ class ProductController extends Controller
         // Si es insumo, el precio puede ser 0 o null
         if ($validated['type'] === 'INSUMO') {
             $validated['price'] = $validated['price'] ?? 0;
+            $validated['cost_price'] = null;
+            unset($validated['profit_margin']);
+        } else {
+            if (($validated['pricing_source'] ?? 'sale') === 'margin') {
+                $validated = $this->pricing->apply($validated, $product->getAttributes());
+            }
+            unset($validated['profit_margin'], $validated['pricing_source']);
         }
 
         $oldAttributes = $product->getAttributes();

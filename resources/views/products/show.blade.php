@@ -23,8 +23,29 @@
                     <dt class="col-sm-3">Categoría:</dt>
                     <dd class="col-sm-9">{{ $product->category->name }}</dd>
 
-                    <dt class="col-sm-3">Precio:</dt>
+                    <dt class="col-sm-3">Valor de venta:</dt>
                     <dd class="col-sm-9"><strong>${{ number_format($product->price, 2) }}</strong></dd>
+
+                    @if($product->isProduct())
+                    <dt class="col-sm-3">Costo:</dt>
+                    <dd class="col-sm-9">
+                        {{ $product->cost_price !== null ? '$'.number_format($product->cost_price, 2) : 'Sin cargar' }}
+                    </dd>
+
+                    <dt class="col-sm-3">Ganancia:</dt>
+                    <dd class="col-sm-9">
+                        @if($product->profit_margin !== null)
+                            <x-badge :tone="$product->profit_margin >= 0 ? 'green' : 'red'">
+                                {{ number_format($product->profit_margin, 2) }}%
+                            </x-badge>
+                            <span class="text-muted ms-2">
+                                ${{ number_format((float) $product->price - (float) $product->cost_price, 2) }} por unidad
+                            </span>
+                        @else
+                            <span class="text-muted">Cargá el costo para calcularla.</span>
+                        @endif
+                    </dd>
+                    @endif
 
                     @if($product->description)
                     <dt class="col-sm-3">Descripción:</dt>

@@ -2,6 +2,7 @@ import './bootstrap';
 import * as ThermalPrinter from './thermalPrinter.js';
 import './drag-drop.js';
 import './notifications.js';
+import './product-pricing.js';
 
 // Impresora térmica USB (comandas): disponible como window.ThermalPrinter
 window.ThermalPrinter = ThermalPrinter;

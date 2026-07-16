@@ -24,7 +24,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return ['Nombre', 'Categoría', 'Precio', 'Tipo', 'Activo', 'Stock', 'Mínimo'];
+        return ['Nombre', 'Categoría', 'Costo', 'Valor de venta', 'Ganancia %', 'Tipo', 'Activo', 'Stock', 'Mínimo'];
     }
 
     public function map($product): array
@@ -33,7 +33,9 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
         return [
             $product->name,
             $product->category?->name ?? '-',
+            $product->cost_price,
             $product->price,
+            $product->profit_margin,
             $product->type ?? 'PRODUCT',
             $product->is_active ? 'Sí' : 'No',
             $product->has_stock ? $stockQty : '-',

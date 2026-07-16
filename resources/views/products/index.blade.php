@@ -57,7 +57,9 @@
                         <th>Nombre</th>
                         @if($selectedType === 'PRODUCT')
                         <th>Categoría</th>
-                        <th>Precio</th>
+                        <th>Costo</th>
+                        <th>Valor de venta</th>
+                        <th>Ganancia</th>
                         @else
                         <th>Unidad</th>
                         <th>Costo Unitario</th>
@@ -79,7 +81,23 @@
                         </td>
                         @if($product->type === 'PRODUCT')
                         <td>{{ $product->category->name ?? '-' }}</td>
+                        <td>
+                            @if($product->cost_price !== null)
+                                ${{ number_format($product->cost_price, 2) }}
+                            @else
+                                <span class="text-muted">Sin cargar</span>
+                            @endif
+                        </td>
                         <td><strong>${{ number_format($product->price, 2) }}</strong></td>
+                        <td>
+                            @if($product->profit_margin !== null)
+                                <x-badge tone="{{ $product->profit_margin >= 0 ? 'green' : 'red' }}">
+                                    {{ number_format($product->profit_margin, 2) }}%
+                                </x-badge>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         @else
                         <td>{{ $product->unit ?? '-' }}</td>
                         <td><strong>${{ number_format($product->unit_cost ?? 0, 2) }}</strong></td>
@@ -145,7 +163,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $selectedType === 'PRODUCT' ? '6' : '7' }}" class="text-center text-muted">
+                        <td colspan="{{ $selectedType === 'PRODUCT' ? '8' : '7' }}" class="text-center text-muted">
                             No hay {{ $selectedType === 'INSUMO' ? 'insumos' : 'productos' }}
                         </td>
                     </tr>

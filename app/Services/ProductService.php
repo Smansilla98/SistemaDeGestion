@@ -112,7 +112,7 @@ final class ProductService
     private function normalizePayload(int $restaurantId, array $input, bool $partial = false): array
     {
         $keys = [
-            'category_id', 'name', 'description', 'price', 'image',
+            'category_id', 'name', 'description', 'price', 'cost_price', 'image',
             'has_stock', 'stock_minimum', 'is_active', 'type', 'unit', 'unit_cost', 'supplier_id',
         ];
 
@@ -130,6 +130,7 @@ final class ProductService
                 'name' => '',
                 'description' => null,
                 'price' => 0,
+                'cost_price' => null,
                 'image' => null,
                 'has_stock' => false,
                 'stock_minimum' => 0,
