@@ -1,0 +1,213 @@
+/* Layout web — cards, buttons, alerts, tables, forms — extraído de layouts/app.blade.php */
+/* Global Mosaic Cards */
+.card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+    border-bottom: 2px solid var(--mosaic-border);
+    padding: 1.5rem;
+    font-weight: 700;
+    border-radius: 20px 20px 0 0;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Buttons Mosaic Style */
+.btn {
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary,
+button.btn-primary,
+a.btn-primary {
+    background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+    color: white !important;
+    border-color: var(--conurbania-primary) !important;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover {
+    background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary)) !important;
+    color: white !important;
+}
+
+.btn-success,
+button.btn-success,
+a.btn-success {
+    background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+    color: white !important;
+    border-color: var(--conurbania-primary) !important;
+}
+
+.btn-warning,
+button.btn-warning,
+a.btn-warning {
+    background: linear-gradient(135deg, var(--conurbania-medium), var(--conurbania-secondary)) !important;
+    color: white !important;
+}
+
+.btn-info,
+button.btn-info,
+a.btn-info {
+    background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)) !important;
+    color: white !important;
+    border-color: var(--conurbania-primary) !important;
+}
+
+.btn-danger,
+button.btn-danger,
+a.btn-danger {
+    background: linear-gradient(135deg, var(--conurbania-danger), var(--conurbania-danger-end)) !important;
+    color: white !important;
+    border-color: var(--conurbania-danger) !important;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--conurbania-primary);
+    color: var(--conurbania-primary);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
+    color: white;
+    border-color: transparent;
+}
+
+/* Alerts Mosaic Style */
+.alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    padding: 1.25rem 1.5rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.15), rgba(25, 135, 84, 0.1));
+    background-color: rgba(212, 237, 218, 0.9) !important;
+    color: #0f5132;
+    border-left: 4px solid #198754;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+}
+
+.alert-success h5,
+.alert-success strong {
+    color: #0f5132;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.1));
+    background-color: rgba(248, 215, 218, 0.95) !important;
+    color: #842029;
+    border-left: 4px solid #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.alert-danger h5,
+.alert-danger strong {
+    color: #842029;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 193, 7, 0.15));
+    background-color: rgba(255, 243, 205, 0.95) !important;
+    color: #664d03;
+    border-left: 4px solid #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.4);
+}
+
+.alert-warning h5,
+.alert-warning strong {
+    color: #664d03;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.1));
+    background-color: rgba(207, 226, 255, 0.9) !important;
+    color: #084298;
+    border-left: 4px solid #0d6efd;
+    border: 1px solid rgba(13, 110, 253, 0.3);
+}
+
+.alert-info h5,
+.alert-info strong {
+    color: #084298;
+}
+
+/* Tables Mosaic Style */
+.table {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+    color: var(--mosaic-text-primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 1rem;
+    border: none;
+}
+
+.table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--mosaic-border);
+    color: var(--mosaic-text-primary);
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+/* Badges Mosaic Style */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* Forms Mosaic Style */
+.form-control,
+.form-select {
+    border-radius: 12px;
+    border: 2px solid var(--mosaic-border);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--conurbania-primary);
+    box-shadow: 0 0 0 3px var(--conurbania-primary-10);
+}

@@ -13,12 +13,8 @@
         </div>
         @can('create', App\Models\Product::class)
         <div class="btn-group">
-            <a href="{{ route('products.create', ['type' => 'PRODUCT']) }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo Producto
-            </a>
-            <a href="{{ route('products.create', ['type' => 'INSUMO']) }}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Nuevo Insumo
-            </a>
+            <x-button href="{{ route('products.create', ['type' => 'PRODUCT']) }}" icon="bi-plus-circle">Nuevo Producto</x-button>
+            <x-button href="{{ route('products.create', ['type' => 'INSUMO']) }}" variant="success" icon="bi-plus-circle">Nuevo Insumo</x-button>
         </div>
         @endcan
     </div>

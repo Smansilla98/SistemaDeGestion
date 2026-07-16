@@ -1,0 +1,61 @@
+/* Layout web — overlay, scrollbar, modals — extraído de layouts/app.blade.php */
+/* Overlay para móvil */
+.nova-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 999;
+}
+
+.nova-overlay.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Scrollbar personalizado */
+.nova-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.nova-sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nova-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
+    border-radius: 4px;
+}
+
+.nova-sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--conurbania-secondary), var(--conurbania-primary));
+}
+
+/* Modal Mosaic Style */
+.modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
+    border-bottom: 2px solid var(--mosaic-border);
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 2px solid var(--mosaic-border);
+    border-radius: 0 0 20px 20px;
+    padding: 1.5rem;
+}

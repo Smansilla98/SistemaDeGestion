@@ -1,0 +1,278 @@
+/* Layout web — sidebar / nav (nova-*) — extraído de layouts/app.blade.php */
+/* Sidebar Mosaic Style */
+.nova-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    background: var(--mosaic-sidebar-bg) !important;
+    color: white;
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.nova-sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+@media (max-width: 768px) {
+    .nova-sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+    .nova-sidebar.show {
+        transform: translateX(0);
+    }
+}
+
+.nova-sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.nova-sidebar-header .logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nova-sidebar-header .logo .sidebar-brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #22c55e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.nova-sidebar-header .logo .sidebar-brand-text { display: flex; flex-direction: column; gap: 0; }
+.nova-sidebar-header .logo .sidebar-brand-name { font-size: 1.1rem; line-height: 1.2; }
+.nova-sidebar-header .logo .sidebar-brand-sub { font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.02em; margin-top: 1px; }
+
+.nova-sidebar-header .logo img {
+    height: 40px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+}
+
+.nova-sidebar-header .logo span {
+    display: none;
+}
+
+.nova-nav-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.7);
+    padding: 1rem 1.25rem 0.5rem;
+    text-transform: uppercase;
+}
+
+.nova-nav-item .nav-item-badge {
+    margin-left: auto;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.nova-nav-item .nav-item-badge.nav-badge-green { background: #22c55e; color: white; }
+.nova-nav-item .nav-item-badge.nav-badge-orange { background: #f97316; color: white; }
+
+.nova-sidebar-nav {
+    padding: 1.5rem 0 5rem;
+}
+
+.nova-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 4px solid transparent;
+    margin: 0.25rem 0.75rem;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.nova-nav-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nova-nav-item:hover::before {
+    left: 100%;
+}
+
+.nova-nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: var(--conurbania-primary);
+    transform: translateX(5px);
+}
+
+.nova-nav-item.active {
+    background: linear-gradient(135deg, var(--conurbania-primary-30), var(--conurbania-secondary-30));
+    color: white;
+    border-left-color: var(--conurbania-primary);
+    font-weight: 600;
+    box-shadow: 0 4px 15px var(--conurbania-primary-30);
+}
+
+.nova-nav-item i {
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.nova-nav-item:hover i,
+.nova-nav-item.active i {
+    transform: scale(1.2);
+}
+
+/* Nav Group Styles */
+.nova-nav-group {
+    margin: 0.5rem 0.75rem;
+}
+
+.nova-nav-group-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nova-nav-group-header:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.nova-nav-group-header i:last-child {
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.nova-nav-group-header.active i:last-child {
+    transform: rotate(180deg);
+}
+
+.nova-nav-group-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding-left: 1rem;
+}
+
+.nova-nav-group-items.show {
+    max-height: 500px;
+}
+
+.nova-nav-subitem {
+    margin-left: 1.5rem;
+    padding-left: 2rem;
+    font-size: 0.95rem;
+}
+
+.nova-sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.nova-user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.nova-user-menu:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.nova-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.nova-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nova-user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nova-user-role {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.nova-user-exit {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+}
+.nova-user-exit:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
