@@ -12,7 +12,8 @@
             </h1>
         </div>
         @can('create', App\Models\Product::class)
-        <div class="btn-group">
+        <div class="btn-group flex-wrap">
+            <x-button href="{{ route('products.bulk-pricing') }}" variant="outline" icon="bi-grid-3x3">Editar precios</x-button>
             <x-button href="{{ route('products.create', ['type' => 'PRODUCT']) }}" icon="bi-plus-circle">Nuevo Producto</x-button>
             <x-button href="{{ route('products.create', ['type' => 'INSUMO']) }}" variant="success" icon="bi-plus-circle">Nuevo Insumo</x-button>
         </div>

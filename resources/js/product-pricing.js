@@ -2,6 +2,7 @@ const roundMoney = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 const roundPercent = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 const parseNumber = (input) => {
+    if (!input) return null;
     const value = Number.parseFloat(input.value);
 
     return Number.isFinite(value) ? value : null;
@@ -20,15 +21,37 @@ const initializeProductPricing = (container) => {
     const marginInput = container.querySelector('[data-profit-margin]');
     const sourceInput = container.querySelector('[data-pricing-source]');
     const summary = container.querySelector('[data-pricing-summary]');
+    const gainCell = container.querySelector('[data-pricing-gain]');
 
-    if (!costInput || !saleInput || !marginInput || !sourceInput || !summary) {
+    if (!costInput || !saleInput || !marginInput) {
         return;
     }
+
+    const setSource = (value) => {
+        if (sourceInput) {
+            sourceInput.value = value;
+        }
+    };
 
     const renderSummary = () => {
         const cost = parseNumber(costInput);
         const sale = parseNumber(saleInput);
         const margin = parseNumber(marginInput);
+
+        if (gainCell) {
+            if (cost !== null && sale !== null) {
+                const gain = sale - cost;
+                gainCell.textContent = formatCurrency(gain);
+                gainCell.className = gain >= 0 ? 'text-success fw-semibold' : 'text-danger fw-semibold';
+            } else {
+                gainCell.textContent = '—';
+                gainCell.className = 'text-muted';
+            }
+        }
+
+        if (!summary) {
+            return;
+        }
 
         if (cost === null || cost <= 0) {
             summary.textContent = 'Ingresá un costo mayor a cero para calcular la ganancia.';
@@ -51,7 +74,7 @@ const initializeProductPricing = (container) => {
     const calculateMargin = () => {
         const cost = parseNumber(costInput);
         const sale = parseNumber(saleInput);
-        sourceInput.value = 'sale';
+        setSource('sale');
 
         if (cost === null || cost <= 0 || sale === null) {
             marginInput.value = '';
@@ -61,12 +84,13 @@ const initializeProductPricing = (container) => {
 
         marginInput.value = roundPercent(((sale - cost) / cost) * 100);
         renderSummary();
+        container.classList.add('is-dirty');
     };
 
     const calculateSale = () => {
         const cost = parseNumber(costInput);
         const margin = parseNumber(marginInput);
-        sourceInput.value = 'margin';
+        setSource('margin');
 
         if (cost === null || cost <= 0 || margin === null) {
             renderSummary();
@@ -75,6 +99,7 @@ const initializeProductPricing = (container) => {
 
         saleInput.value = roundMoney(cost * (1 + (margin / 100))).toFixed(2);
         renderSummary();
+        container.classList.add('is-dirty');
     };
 
     costInput.addEventListener('input', calculateMargin);
@@ -90,4 +115,30 @@ const initializeProductPricing = (container) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-product-pricing]').forEach(initializeProductPricing);
+
+    // Aplicar ganancia % a todas las filas visibles de la matriz
+    const bulkMargin = document.getElementById('bulkApplyMargin');
+    const bulkBtn = document.getElementById('bulkApplyMarginBtn');
+    if (bulkMargin && bulkBtn) {
+        bulkBtn.addEventListener('click', () => {
+            const margin = Number.parseFloat(bulkMargin.value);
+            if (!Number.isFinite(margin) || margin < 0) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Valor inválido', 'Ingresá un porcentaje de ganancia válido.');
+                }
+                return;
+            }
+
+            document.querySelectorAll('[data-product-pricing]').forEach((row) => {
+                const costInput = row.querySelector('[data-cost-price]');
+                const marginInput = row.querySelector('[data-profit-margin]');
+                const cost = Number.parseFloat(costInput?.value);
+                if (!Number.isFinite(cost) || cost <= 0 || !marginInput) {
+                    return;
+                }
+                marginInput.value = margin;
+                marginInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+    }
 });
