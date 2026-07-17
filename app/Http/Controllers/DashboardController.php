@@ -3,18 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Table;
 use App\Models\Product;
-use App\Models\User;
 use App\Models\Payment;
-use App\Models\TableSession;
-use App\Models\CashRegisterSession;
-use Illuminate\Http\Request;
+use App\Models\Table;
+use App\Services\DashboardStatsService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private DashboardStatsService $dashboardStats
+    ) {}
+
     /**
      * Mostrar dashboard principal
      */
@@ -23,49 +24,16 @@ class DashboardController extends Controller
         $restaurantId = auth()->user()->restaurant_id;
         $today = Carbon::today();
 
-        // Estadísticas SIN caché para datos en tiempo real
-        $occupiedTables = Table::where('restaurant_id', $restaurantId)
-            ->where('status', 'OCUPADA')
+        $stats = $this->dashboardStats->operational($restaurantId);
+
+        $stats['ventas_hoy'] = Order::where('restaurant_id', $restaurantId)
+            ->where('status', 'CERRADO')
+            ->whereDate('created_at', $today)
+            ->sum('total');
+
+        $stats['today_orders'] = Order::where('restaurant_id', $restaurantId)
+            ->whereDate('created_at', $today)
             ->count();
-        
-        $totalTables = Table::where('restaurant_id', $restaurantId)->count();
-
-        // Ventas de la sesión de caja abierta actual (si hay)
-        $activeSession = CashRegisterSession::where('restaurant_id', $restaurantId)
-            ->where('status', CashRegisterSession::STATUS_ABIERTA)
-            ->first();
-        $ventasSesion = $activeSession
-            ? (float) Payment::where('cash_register_session_id', $activeSession->id)->sum('amount')
-            : 0;
-
-        $stats = [
-            'ventas_hoy' => Order::where('restaurant_id', $restaurantId)
-                ->where('status', 'CERRADO')
-                ->whereDate('created_at', $today)
-                ->sum('total'),
-            'ventas_sesion' => $ventasSesion,
-            'tiene_sesion_abierta' => (bool) $activeSession,
-            'today_orders' => Order::where('restaurant_id', $restaurantId)
-                ->whereDate('created_at', $today)
-                ->count(),
-            
-            'pedidos_pendientes' => Order::where('restaurant_id', $restaurantId)
-                ->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])
-                ->count(),
-            
-            'mesas_ocupadas' => $occupiedTables,
-            
-            'mesas_libres' => $totalTables - $occupiedTables,
-            
-            'total_tables' => $totalTables,
-            
-            'low_stock_products' => DB::table('stocks')
-                ->join('products', 'stocks.product_id', '=', 'products.id')
-                ->where('stocks.restaurant_id', $restaurantId)
-                ->whereColumn('stocks.quantity', '<=', 'products.stock_minimum')
-                ->where('stocks.quantity', '>', 0)
-                ->count(),
-        ];
 
         // Pedidos recientes (sin cache para datos en tiempo real)
         $recentOrders = Order::where('restaurant_id', $restaurantId)
@@ -141,10 +109,10 @@ class DashboardController extends Controller
             ->get();
 
         return view('dashboard', compact(
-            'stats', 
-            'recentOrders', 
-            'topProducts', 
-            'lowStockProducts', 
+            'stats',
+            'recentOrders',
+            'topProducts',
+            'lowStockProducts',
             'outOfStockProducts',
             'salesByWaiter',
             'activeTables',
