@@ -48,6 +48,14 @@ class ProductPolicy
     }
 
     /**
+     * Determinar si el usuario puede ver y editar costo/margen y la matriz de precios.
+     */
+    public function managePricing(User $user): bool
+    {
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN']);
+    }
+
+    /**
      * Determinar si el usuario puede eliminar el producto
      */
     public function delete(User $user, Product $product): bool

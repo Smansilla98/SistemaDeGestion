@@ -152,37 +152,10 @@ class ProductController extends Controller
             'is_active' => $request->boolean('is_active'),
         ]);
 
-        $validated = $request->validate([
-            'type' => 'required|in:PRODUCT,INSUMO',
-            'category_id' => 'required_if:type,PRODUCT|nullable|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0', // Precio solo para productos vendibles
-            'cost_price' => 'nullable|required_with:profit_margin|numeric|min:0.01',
-            'profit_margin' => 'nullable|numeric|min:0|max:100000',
-            'pricing_source' => 'nullable|in:sale,margin',
-            'has_stock' => 'required|boolean',
-            'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
-            'is_active' => 'required|boolean',
-            // Campos específicos para insumos
-            'unit' => 'required_if:type,INSUMO|nullable|string|max:50',
-            'unit_cost' => 'required_if:type,INSUMO|nullable|numeric|min:0',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-        ]);
+        $validated = $request->validate($this->productValidationRules());
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        
-        // Si es insumo, el precio puede ser 0 o null
-        if ($validated['type'] === 'INSUMO') {
-            $validated['price'] = $validated['price'] ?? 0;
-            $validated['cost_price'] = null;
-            unset($validated['profit_margin']);
-        } else {
-            if (($validated['pricing_source'] ?? 'sale') === 'margin') {
-                $validated = $this->pricing->apply($validated);
-            }
-            unset($validated['profit_margin'], $validated['pricing_source']);
-        }
+        $validated = $this->applyPricingPermissions($validated);
 
         $product = Product::create($validated);
         
@@ -292,8 +265,7 @@ class ProductController extends Controller
      */
     public function bulkPricing(Request $request)
     {
-        // Misma capacidad que create/update (ADMIN/GERENTE/SUPERADMIN)
-        Gate::authorize('create', Product::class);
+        Gate::authorize('managePricing', Product::class);
 
         $restaurantId = auth()->user()->restaurant_id;
 
@@ -333,7 +305,7 @@ class ProductController extends Controller
      */
     public function bulkPricingUpdate(Request $request)
     {
-        Gate::authorize('create', Product::class);
+        Gate::authorize('managePricing', Product::class);
 
         $restaurantId = auth()->user()->restaurant_id;
 
@@ -396,37 +368,10 @@ class ProductController extends Controller
             'is_active' => $request->boolean('is_active'),
         ]);
 
-        $validated = $request->validate([
-            'type' => 'required|in:PRODUCT,INSUMO',
-            'category_id' => 'required_if:type,PRODUCT|nullable|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0',
-            'cost_price' => 'nullable|required_with:profit_margin|numeric|min:0.01',
-            'profit_margin' => 'nullable|numeric|min:0|max:100000',
-            'pricing_source' => 'nullable|in:sale,margin',
-            'has_stock' => 'required|boolean',
-            'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
-            'is_active' => 'required|boolean',
-            // Campos específicos para insumos
-            'unit' => 'required_if:type,INSUMO|nullable|string|max:50',
-            'unit_cost' => 'required_if:type,INSUMO|nullable|numeric|min:0',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-        ]);
+        $validated = $request->validate($this->productValidationRules());
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        
-        // Si es insumo, el precio puede ser 0 o null
-        if ($validated['type'] === 'INSUMO') {
-            $validated['price'] = $validated['price'] ?? 0;
-            $validated['cost_price'] = null;
-            unset($validated['profit_margin']);
-        } else {
-            if (($validated['pricing_source'] ?? 'sale') === 'margin') {
-                $validated = $this->pricing->apply($validated, $product->getAttributes());
-            }
-            unset($validated['profit_margin'], $validated['pricing_source']);
-        }
+        $validated = $this->applyPricingPermissions($validated, $product);
 
         $oldAttributes = $product->getAttributes();
         $product->update($validated);
@@ -461,6 +406,62 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', 'Producto eliminado exitosamente');
+    }
+
+    /**
+     * Reglas de validación comunes para crear/actualizar productos.
+     */
+    private function productValidationRules(): array
+    {
+        $rules = [
+            'type' => 'required|in:PRODUCT,INSUMO',
+            'category_id' => 'required_if:type,PRODUCT|nullable|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required_if:type,PRODUCT|nullable|numeric|min:0',
+            'has_stock' => 'required|boolean',
+            'stock_minimum' => 'required_if:has_stock,true|nullable|integer|min:0',
+            'is_active' => 'required|boolean',
+            'unit' => 'required_if:type,INSUMO|nullable|string|max:50',
+            'unit_cost' => 'required_if:type,INSUMO|nullable|numeric|min:0',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+        ];
+
+        if (Gate::allows('managePricing', Product::class)) {
+            $rules['cost_price'] = 'nullable|required_with:profit_margin|numeric|min:0.01';
+            $rules['profit_margin'] = 'nullable|numeric|min:0|max:100000';
+            $rules['pricing_source'] = 'nullable|in:sale,margin';
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Aplica permisos de costo/margen y normaliza los datos de precio.
+     */
+    private function applyPricingPermissions(array $validated, ?Product $product = null): array
+    {
+        if (($validated['type'] ?? $product?->type) === 'INSUMO') {
+            $validated['price'] = $validated['price'] ?? 0;
+            $validated['cost_price'] = null;
+
+            return $validated;
+        }
+
+        if (! Gate::allows('managePricing', Product::class)) {
+            $validated['cost_price'] = $product?->cost_price;
+            unset($validated['profit_margin'], $validated['pricing_source']);
+
+            return $validated;
+        }
+
+        if (($validated['pricing_source'] ?? 'sale') === 'margin') {
+            $validated = $this->pricing->apply($validated, $product?->getAttributes() ?? []);
+        }
+
+        unset($validated['profit_margin'], $validated['pricing_source']);
+
+        return $validated;
     }
 }
 
