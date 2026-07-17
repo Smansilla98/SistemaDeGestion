@@ -1,0 +1,62 @@
+/* Branding genérico (APP_LOGO vacío) y logo configurado */
+.brand-logo-fallback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.brand-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.brand-logo-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.brand-logo-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.brand-logo-fallback--auth {
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.brand-logo-fallback--auth .brand-logo-mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--conurbania-primary, #1e8081), var(--conurbania-secondary, #22565e));
+    font-size: 1.75rem;
+    margin: 0 auto;
+}
+
+.brand-logo-fallback--auth .brand-logo-name {
+    display: none;
+}
+
+.auth-logo .brand-logo-img {
+    max-height: 64px;
+    margin: 0 auto;
+}
