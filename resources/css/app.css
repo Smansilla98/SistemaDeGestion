@@ -9,6 +9,7 @@
 @import 'components/layout-responsive.css';
 @import 'components/spinner.css';
 @import 'components/mobile.css';
+@import 'components/mobile-dashboard.css';
 @import 'components/branding.css';
 
 :root {
