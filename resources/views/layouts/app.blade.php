@@ -96,7 +96,7 @@
     <aside class="sidebar" id="novaSidebar">
         <div class="sb-logo">
             <a href="{{ route('dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-                <img src="{{ asset('logo.png') }}" alt="Conurbania" style="max-height: 42px; width: auto; display: block;">
+                <x-brand-logo :settings="$settings ?? null" variant="sidebar" />
             </a>
         </div>
 

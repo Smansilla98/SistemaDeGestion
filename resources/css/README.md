@@ -32,6 +32,16 @@ Preferí **tokens** (`var(--t500)`, clases `.bg-green`, `.badge-amber`) sobre ut
 | `<x-button>` | botones inconsistentes |
 | `<x-modal>` | formularios en SweetAlert2 |
 | `<x-spinner>` | loadings por vista |
+| `<x-brand-logo>` | logo de marca / fallback genérico |
+
+## Branding
+
+| Variable | Uso |
+|----------|-----|
+| `APP_BRAND_NAME` | Nombre visible (sidebar, login). Default: `APP_NAME` |
+| `APP_LOGO` | Ruta relativa a `public/` (ej. `logo.png`). Vacío = ícono + nombre genérico |
+
+Prioridad del logo: settings del restaurante → `APP_LOGO` → fallback genérico.
 
 ## Mobile
 
