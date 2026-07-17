@@ -13,7 +13,9 @@
         </div>
         @can('create', App\Models\Product::class)
         <div class="btn-group flex-wrap">
+            @can('managePricing', App\Models\Product::class)
             <x-button href="{{ route('products.bulk-pricing') }}" variant="outline" icon="bi-grid-3x3">Editar precios</x-button>
+            @endcan
             <x-button href="{{ route('products.create', ['type' => 'PRODUCT']) }}" icon="bi-plus-circle">Nuevo Producto</x-button>
             <x-button href="{{ route('products.create', ['type' => 'INSUMO']) }}" variant="success" icon="bi-plus-circle">Nuevo Insumo</x-button>
         </div>
@@ -58,9 +60,13 @@
                         <th>Nombre</th>
                         @if($selectedType === 'PRODUCT')
                         <th>Categoría</th>
+                        @can('managePricing', App\Models\Product::class)
                         <th>Costo</th>
+                        @endcan
                         <th>Valor de venta</th>
+                        @can('managePricing', App\Models\Product::class)
                         <th>Ganancia</th>
+                        @endcan
                         @else
                         <th>Unidad</th>
                         <th>Costo Unitario</th>
@@ -82,6 +88,7 @@
                         </td>
                         @if($product->type === 'PRODUCT')
                         <td>{{ $product->category->name ?? '-' }}</td>
+                        @can('managePricing', App\Models\Product::class)
                         <td>
                             @if($product->cost_price !== null)
                                 ${{ number_format($product->cost_price, 2) }}
@@ -89,7 +96,9 @@
                                 <span class="text-muted">Sin cargar</span>
                             @endif
                         </td>
+                        @endcan
                         <td><strong>${{ number_format($product->price, 2) }}</strong></td>
+                        @can('managePricing', App\Models\Product::class)
                         <td>
                             @if($product->profit_margin !== null)
                                 <x-badge tone="{{ $product->profit_margin >= 0 ? 'green' : 'red' }}">
@@ -99,6 +108,7 @@
                                 <span class="text-muted">—</span>
                             @endif
                         </td>
+                        @endcan
                         @else
                         <td>{{ $product->unit ?? '-' }}</td>
                         <td><strong>${{ number_format($product->unit_cost ?? 0, 2) }}</strong></td>
@@ -164,7 +174,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $selectedType === 'PRODUCT' ? '8' : '7' }}" class="text-center text-muted">
+                        <td colspan="{{ $selectedType === 'PRODUCT' ? (auth()->user()->can('managePricing', App\Models\Product::class) ? 8 : 6) : 7 }}" class="text-center text-muted">
                             No hay {{ $selectedType === 'INSUMO' ? 'insumos' : 'productos' }}
                         </td>
                     </tr>

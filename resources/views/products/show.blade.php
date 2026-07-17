@@ -27,6 +27,7 @@
                     <dd class="col-sm-9"><strong>${{ number_format($product->price, 2) }}</strong></dd>
 
                     @if($product->isProduct())
+                    @can('managePricing', App\Models\Product::class)
                     <dt class="col-sm-3">Costo:</dt>
                     <dd class="col-sm-9">
                         {{ $product->cost_price !== null ? '$'.number_format($product->cost_price, 2) : 'Sin cargar' }}
@@ -45,6 +46,7 @@
                             <span class="text-muted">Cargá el costo para calcularla.</span>
                         @endif
                     </dd>
+                    @endcan
                     @endif
 
                     @if($product->description)
