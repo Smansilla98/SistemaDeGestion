@@ -32,7 +32,7 @@
         </a>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-scroll rtbl-sticky-2">
             <table class="table table-hover">
                 <thead>
                     <tr>

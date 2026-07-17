@@ -97,4 +97,22 @@
         z-index: 1;
         box-shadow: 1px 0 0 var(--g200, #d1ddd9);
     }
+
+    /* Cuando la columna útil a fijar no es la primera (ej. reportes/products: Producto) */
+    .rtbl-scroll.rtbl-sticky-2 th:first-child,
+    .rtbl-scroll.rtbl-sticky-2 td:first-child {
+        position: static;
+        box-shadow: none;
+        background: transparent;
+        z-index: auto;
+    }
+
+    .rtbl-scroll.rtbl-sticky-2 th:nth-child(2),
+    .rtbl-scroll.rtbl-sticky-2 td:nth-child(2) {
+        position: sticky;
+        left: 0;
+        background: var(--surface-2, #fff);
+        z-index: 1;
+        box-shadow: 1px 0 0 var(--g200, #d1ddd9);
+    }
 }
