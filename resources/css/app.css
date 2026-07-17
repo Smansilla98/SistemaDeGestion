@@ -10,6 +10,7 @@
 @import 'components/spinner.css';
 @import 'components/mobile.css';
 @import 'components/mobile-dashboard.css';
+@import 'components/responsive-table.css';
 @import 'components/branding.css';
 
 :root {
