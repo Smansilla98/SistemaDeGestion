@@ -45,7 +45,7 @@
                 <h5 class="mb-0"><i class="bi bi-list-ul"></i> Gestión de Cajas</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <div class="table-responsive rtbl-cards">
                     <table class="table table-hover">
                         <thead>
                             <tr>
@@ -58,18 +58,18 @@
                         <tbody>
                             @forelse($cashRegisters as $cashRegister)
                             <tr>
-                                <td><strong>{{ $cashRegister->name }}</strong></td>
-                                <td>
+                                <td data-label="Nombre"><strong>{{ $cashRegister->name }}</strong></td>
+                                <td data-label="Sesiones">
                                     <span class="badge bg-info">{{ $cashRegister->sessions_count }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Estado">
                                     @if($cashRegister->is_active)
                                     <span class="badge bg-success">Activa</span>
                                     @else
                                     <span class="badge bg-secondary">Inactiva</span>
                                     @endif
                                 </td>
-                                <td>
+                                <td data-label="" class="rtbl-actions">
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ route('cash-register.edit', $cashRegister) }}" class="btn btn-outline-secondary" title="Editar">
                                             <i class="bi bi-pencil"></i>

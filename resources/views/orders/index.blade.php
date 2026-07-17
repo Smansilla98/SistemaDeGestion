@@ -63,7 +63,7 @@
         </form>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover" data-tutorial="orders-table">
                 <thead>
                     <tr>
@@ -80,8 +80,8 @@
                 <tbody>
                     @forelse($orders as $order)
                     <tr>
-                        <td><strong>{{ $order->number }}</strong></td>
-                        <td>
+                        <td data-label="Número"><strong>{{ $order->number }}</strong></td>
+                        <td data-label="Mesa / Consumidor">
                             @if($order->table)
                                 {{ $order->table->number }}
                             @elseif($order->customer_name)
@@ -90,8 +90,8 @@
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>{{ $order->user->name }}</td>
-                        <td>
+                        <td data-label="Mozo">{{ $order->user->name }}</td>
+                        <td data-label="Estado">
                             @php
                                 $displayStatus = $order->status === 'CERRADO'
                                     ? 'Se cierra la mesa'
@@ -100,10 +100,10 @@
                             @endphp
                             <x-badge :tone="$badgeTone">{{ $displayStatus }}</x-badge>
                         </td>
-                        <td>{{ $order->items->count() }}</td>
-                        <td><strong>${{ number_format($order->total, 2) }}</strong></td>
-                        <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                        <td>
+                        <td data-label="Items">{{ $order->items->count() }}</td>
+                        <td data-label="Total"><strong>${{ number_format($order->total, 2) }}</strong></td>
+                        <td data-label="Fecha">{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{{ route('orders.show', $order) }}" class="btn btn-outline-primary" title="Ver" aria-label="Ver pedido {{ $order->number }}" data-tutorial="orders-action-view">
                                     <i class="bi bi-eye" aria-hidden="true"></i>
