@@ -26,7 +26,7 @@
 
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -43,8 +43,8 @@
                 <tbody>
                     @forelse($printers as $printer)
                     <tr>
-                        <td><strong>{{ $printer->name }}</strong></td>
-                        <td>
+                        <td data-label="Nombre"><strong>{{ $printer->name }}</strong></td>
+                        <td data-label="Tipo">
                             <span class="badge bg-info">
                                 @if($printer->type === 'kitchen') Cocina
                                 @elseif($printer->type === 'bar') Barra
@@ -53,8 +53,8 @@
                                 @endif
                             </span>
                         </td>
-                        <td>{{ ucfirst($printer->connection_type) }}</td>
-                        <td>
+                        <td data-label="Conexión">{{ ucfirst($printer->connection_type) }}</td>
+                        <td data-label="Dirección/Ruta">
                             @if($printer->connection_type === 'network')
                             {{ $printer->ip_address }}:{{ $printer->port }}
                             @elseif($printer->connection_type === 'file')
@@ -63,22 +63,22 @@
                             USB
                             @endif
                         </td>
-                        <td>{{ $printer->paper_width }}mm</td>
-                        <td>
+                        <td data-label="Ancho Papel">{{ $printer->paper_width }}mm</td>
+                        <td data-label="Auto Imprimir">
                             @if($printer->auto_print)
                             <span class="badge bg-success">Sí</span>
                             @else
                             <span class="badge bg-secondary">No</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             @if($printer->is_active)
                             <span class="badge bg-success">Activa</span>
                             @else
                             <span class="badge bg-secondary">Inactiva</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group" role="group">
                                 @can('update', $printer)
                                 <a href="{{ route('printers.edit', $printer) }}" class="btn btn-sm btn-outline-secondary">
