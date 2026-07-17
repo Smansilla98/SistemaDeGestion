@@ -1,0 +1,186 @@
+/* mobile-dashboard-v2.css
+   Tokens: --t*, --g*, --amber-*, --red-*, --r* (conurbania.css). */
+
+.mob-dash {
+    padding: 0 2px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.md-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.md-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--g50);
+    border-radius: var(--rlg);
+    padding: 12px;
+    min-height: 56px;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+}
+
+.md-card i {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.md-card--teal {
+    background: var(--t50);
+    color: var(--t900);
+}
+
+.md-card--teal i {
+    color: var(--t600);
+}
+
+.md-card--amber {
+    background: var(--amber-100);
+    color: var(--amber-800);
+}
+
+.md-card--amber i {
+    color: var(--amber-500);
+}
+
+.md-label {
+    font-size: 12px;
+    color: var(--g600);
+    margin-bottom: 2px;
+}
+
+.md-card--teal .md-label,
+.md-card--amber .md-label {
+    color: inherit;
+    opacity: .75;
+}
+
+.md-value {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.md-value small {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: .75;
+}
+
+.md-value--lg {
+    font-size: 24px;
+}
+
+.md-card--wide {
+    width: 100%;
+}
+
+.md-wide-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.md-eye {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    opacity: .75;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rmd);
+    cursor: pointer;
+}
+
+.md-eye:focus-visible {
+    outline: 2px solid var(--t400);
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+.md-sub {
+    font-size: 12px;
+    margin-top: 4px;
+    opacity: .75;
+}
+
+.md-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--red-100);
+    color: var(--red-800);
+    border-radius: var(--rlg);
+    padding: 12px;
+    text-decoration: none;
+}
+
+.md-alert i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.md-alert-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.md-alert-sub {
+    display: block;
+    font-size: 12px;
+    opacity: .85;
+}
+
+.md-section-label {
+    font-size: 12px;
+    color: var(--g500);
+    margin: 6px 0 2px;
+}
+
+.md-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.md-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 14px;
+    border-radius: var(--rmd);
+    background: var(--g50);
+    color: var(--g900);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.md-action-btn i {
+    font-size: 18px;
+    color: var(--t600);
+}
+
+.md-action-btn:active {
+    background: var(--g100);
+}
+
+/* Tap targets mínimos para la bottom nav en layouts/mobile.blade.php */
+.mobile-bottom-nav .nav-item,
+.m-bottom-nav a {
+    min-width: 44px;
+    min-height: 44px;
+}
