@@ -8,12 +8,10 @@
 <body>
     <div class="ticket">
         <div class="border-asterisk">********************************</div>
-        <div class="header">
-            <div class="logo-container">
-                <img src="{{ public_path('logo.png') }}" alt="Logo" onerror="this.style.display='none';">
+            <div class="header">
+                @include('partials.print-logo')
+                <h1>Detalle de la Mesa</h1>
             </div>
-            <h1>Detalle de la Mesa</h1>
-        </div>
         <div class="border-asterisk">********************************</div>
         <div class="dashed-line"></div>
         <div class="order-info">

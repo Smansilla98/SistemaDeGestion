@@ -1,4 +1,6 @@
-APP_NAME="Sistema de Gestión de Restaurante"
+APP_NAME="Conurbania"
+APP_BRAND_NAME=Conurbania
+APP_LOGO=logo.png
 APP_ENV=production
 APP_KEY=base64:BCJ4ibU3Q0uUyglsfIgY4iLbz/VEIr5hy1xugHLolus=
 APP_DEBUG=false

@@ -28,7 +28,6 @@
         $accentRgba10 = hexToRgba($colors['accent'], 0.1);
         $primaryFont = str_replace(' ', '+', $fonts['primary']);
         $secondaryFont = str_replace(' ', '+', $fonts['secondary']);
-        $logo = $settings['logo'] ?? null;
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -284,14 +283,9 @@
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <div class="auth-logo">
-                                @if($logo && Storage::disk('public')->exists($logo))
-                                    <img src="{{ Storage::url($logo) }}" alt="Logo">
-                                @else
-                                    <img src="{{ asset('logo.png') }}" alt="Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                    <i class="bi bi-cup-hot" style="display: none;"></i>
-                                @endif
+                                <x-brand-logo :settings="$settings ?? null" variant="auth" max-height="64px" />
                             </div>
-                            <h2 class="auth-title">Sistema de Gestión</h2>
+                            <h2 class="auth-title">{{ \App\Support\Branding::name() }}</h2>
                             <p class="auth-subtitle">@yield('subtitle', 'Inicia sesión para continuar')</p>
                         </div>
 
