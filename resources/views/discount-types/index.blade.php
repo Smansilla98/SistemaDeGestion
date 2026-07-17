@@ -33,7 +33,7 @@
 
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -47,23 +47,23 @@
                 <tbody>
                     @forelse($discountTypes as $discountType)
                     <tr>
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $discountType->name }}</strong>
                         </td>
-                        <td>
+                        <td data-label="Porcentaje">
                             <span class="badge bg-primary" style="font-size: 1rem;">{{ number_format($discountType->percentage, 2) }}%</span>
                         </td>
-                        <td>
+                        <td data-label="Descripción">
                             {{ $discountType->description ?? '-' }}
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             @if($discountType->is_active)
                             <span class="badge bg-success">Activo</span>
                             @else
                             <span class="badge bg-secondary">Inactivo</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group" role="group">
                                 @if(auth()->user()->isAdminLevel())
                                 <a href="{{ route('discount-types.edit', $discountType) }}" class="btn btn-sm btn-outline-secondary">

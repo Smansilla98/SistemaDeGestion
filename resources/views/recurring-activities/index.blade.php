@@ -48,7 +48,7 @@
         </form>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -65,34 +65,34 @@
                 <tbody>
                     @forelse($activities as $activity)
                     <tr>
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $activity->name }}</strong>
                             @if($activity->description)
                             <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($activity->description, 50) }}</small>
                             @endif
                         </td>
-                        <td>{{ $activity->getDayLabel() }}</td>
-                        <td>
+                        <td data-label="Día">{{ $activity->getDayLabel() }}</td>
+                        <td data-label="Horario">
                             {{ substr($activity->start_time, 0, 5) }}hs
                             @if($activity->end_time)
                             - {{ substr($activity->end_time, 0, 5) }}hs
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Asistencia Esperada">
                             @if($activity->expected_attendance)
                             {{ $activity->expected_attendance }} personas
                             @else
                             <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Ingreso Esperado">
                             @if($activity->expected_revenue)
                             <strong>${{ number_format($activity->expected_revenue, 2) }}</strong>
                             @else
                             <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Período">
                             <small>
                                 @if($activity->start_date)
                                 Desde: {{ $activity->start_date->format('d/m/Y') }}<br>
@@ -104,12 +104,12 @@
                                 @endif
                             </small>
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             <span class="badge bg-{{ $activity->is_active ? 'success' : 'secondary' }}">
                                 {{ $activity->is_active ? 'Activa' : 'Inactiva' }}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('recurring-activities.show', $activity) }}" class="btn btn-outline-primary">
                                     <i class="bi bi-eye"></i>
