@@ -13,7 +13,23 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Sistema de Gestión'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Branding
+    |--------------------------------------------------------------------------
+    |
+    | Logo y nombre visibles en sidebar, login e impresiones.
+    | APP_LOGO es una ruta relativa a public/ (ej. logo.png o brand/cliente.png).
+    | Si está vacío, se muestra un logo genérico (ícono + nombre).
+    |
+    */
+
+    'brand' => [
+        'name' => env('APP_BRAND_NAME', env('APP_NAME', 'Sistema de Gestión')),
+        'logo' => env('APP_LOGO'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
