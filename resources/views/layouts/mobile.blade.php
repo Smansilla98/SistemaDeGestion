@@ -98,54 +98,86 @@
     </main>
 
     @php
-        $navConfig = [
-            'ADMIN' => [
-                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
-                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
+        $currentRoute = \Illuminate\Support\Facades\Route::currentRouteName();
+        $cajaRoute = \Illuminate\Support\Facades\Route::has('m.caja.resumen')
+            ? 'm.caja.resumen'
+            : 'cash-register.index';
+
+        $bottomNav = [
+            [
+                'label' => 'Inicio',
+                'icon' => 'bi-house-door',
+                'route' => 'm.dashboard',
+                'active' => $currentRoute === 'm.dashboard',
             ],
-            'SUPERADMIN' => [
-                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
-                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
+            [
+                'label' => 'Mesas',
+                'icon' => 'bi-grid-3x3-gap',
+                'route' => 'tables.index',
+                'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'tables.'),
             ],
-            'MOZO' => [
-                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
-                ['label' => 'Mesas', 'icon' => 'bi-grid-3x3-gap', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'orders.index', 'pattern' => 'orders.*'],
-                ['label' => 'Stock', 'icon' => 'bi-boxes', 'route' => 'stock.index', 'pattern' => 'stock.*'],
+            [
+                'label' => 'Pedidos',
+                'icon' => 'bi-receipt',
+                'route' => 'm.pedidos.index',
+                'active' => is_string($currentRoute) && (
+                    str_starts_with($currentRoute, 'm.pedidos.')
+                    || str_starts_with($currentRoute, 'orders.')
+                ),
             ],
-            'CAJERO' => [
-                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
-                ['label' => 'Caja', 'icon' => 'bi-cash-coin', 'route' => 'm.caja.resumen', 'pattern' => 'm.caja.*'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'orders.index', 'pattern' => 'orders.*'],
-                ['label' => 'Reportes', 'icon' => 'bi-graph-up', 'route' => 'reports.index', 'pattern' => 'reports.*'],
+            [
+                'label' => 'Caja',
+                'icon' => 'bi-cash-coin',
+                'route' => $cajaRoute,
+                'active' => is_string($currentRoute) && (
+                    str_starts_with($currentRoute, 'm.caja.')
+                    || str_starts_with($currentRoute, 'cash-register.')
+                ),
             ],
-            'COCINA' => [
-                ['label' => 'Cocina', 'icon' => 'bi-egg-fried', 'route' => 'kitchen.index', 'pattern' => 'kitchen.*'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'orders.index', 'pattern' => 'orders.*'],
-            ],
-            'default' => [
-                ['label' => 'Inicio', 'icon' => 'bi-house-door', 'route' => 'm.dashboard', 'pattern' => 'm.dashboard'],
-                ['label' => 'Pedidos', 'icon' => 'bi-receipt', 'route' => 'm.pedidos.index', 'pattern' => 'm.pedidos.*'],
+            [
+                'label' => 'Más',
+                'icon' => 'bi-three-dots',
+                'route' => 'notifications.index',
+                'active' => is_string($currentRoute) && (
+                    str_starts_with($currentRoute, 'notifications.')
+                    || str_starts_with($currentRoute, 'stock.')
+                    || str_starts_with($currentRoute, 'kitchen.')
+                ),
             ],
         ];
-        $navItems = $navConfig[$role ?? ''] ?? $navConfig['default'];
-        if ($user && ($role ?? '') === 'MOZO') {
-            if (! app(\App\Services\PermissionService::class)->allowed($user, 'stock.view')) {
-                $navItems = array_values(array_filter($navItems, fn ($i) => ($i['route'] ?? '') !== 'stock.index'));
-            }
+
+        // Cocina: priorizar su flujo y no empujar a caja/mesas si no aplica.
+        if (($role ?? '') === 'COCINA') {
+            $bottomNav = [
+                [
+                    'label' => 'Cocina',
+                    'icon' => 'bi-egg-fried',
+                    'route' => 'kitchen.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'kitchen.'),
+                ],
+                [
+                    'label' => 'Pedidos',
+                    'icon' => 'bi-receipt',
+                    'route' => 'orders.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'orders.'),
+                ],
+                [
+                    'label' => 'Inicio',
+                    'icon' => 'bi-house-door',
+                    'route' => 'm.dashboard',
+                    'active' => $currentRoute === 'm.dashboard',
+                ],
+            ];
         }
     @endphp
 
-    <nav class="m-bottom-nav" aria-label="Navegación principal">
-        @foreach($navItems as $item)
-            @php
-                $isActive = isset($item['pattern']) && request()->routeIs($item['pattern']);
-            @endphp
-            <a href="{{ route($item['route']) }}" class="{{ $isActive ? 'active' : '' }}" @if($isActive) aria-current="page" @endif>
+    <nav class="m-bottom-nav mobile-bottom-nav" aria-label="Navegación principal">
+        @foreach($bottomNav as $item)
+            <a
+                href="{{ route($item['route']) }}"
+                class="nav-item {{ !empty($item['active']) ? 'active' : '' }}"
+                @if(!empty($item['active'])) aria-current="page" @endif
+            >
                 <i class="bi {{ $item['icon'] }}" aria-hidden="true"></i>
                 <span>{{ $item['label'] }}</span>
             </a>
