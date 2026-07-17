@@ -28,7 +28,7 @@
         <div class="m-stat-label">Pedidos pendientes</div>
     </a>
 
-    <a href="{{ Route::has('m.caja.resumen') ? route('m.caja.resumen') : route('cash-register.index') }}" class="m-stat m-stat--wide">
+    <a href="{{ \Illuminate\Support\Facades\Route::has('m.caja.resumen') ? route('m.caja.resumen') : route('cash-register.index') }}" class="m-stat m-stat--wide">
         <div class="m-stat-top">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-cash-coin m-stat-ico" aria-hidden="true"></i>
