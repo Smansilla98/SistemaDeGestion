@@ -33,7 +33,7 @@
 
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -47,23 +47,23 @@
                 <tbody>
                     @forelse($categories as $category)
                     <tr>
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $category->name }}</strong>
                         </td>
-                        <td>
+                        <td data-label="Descripción">
                             {{ $category->description ?? '-' }}
                         </td>
-                        <td>
+                        <td data-label="Productos">
                             <span class="badge bg-info">{{ $category->products_count }}</span>
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             @if($category->is_active)
                             <span class="badge bg-success">Activa</span>
                             @else
                             <span class="badge bg-secondary">Inactiva</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group" role="group">
                                 <a href="{{ route('categories.show', $category) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i>

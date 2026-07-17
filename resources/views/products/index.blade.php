@@ -53,7 +53,7 @@
         </form>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -80,16 +80,16 @@
                 <tbody>
                     @forelse($products as $product)
                     <tr>
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $product->name }}</strong>
                             @if($product->description)
                             <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($product->description, 50) }}</small>
                             @endif
                         </td>
                         @if($product->type === 'PRODUCT')
-                        <td>{{ $product->category->name ?? '-' }}</td>
+                        <td data-label="Categoría">{{ $product->category->name ?? '-' }}</td>
                         @can('managePricing', App\Models\Product::class)
-                        <td>
+                        <td data-label="Costo">
                             @if($product->cost_price !== null)
                                 ${{ number_format($product->cost_price, 2) }}
                             @else
@@ -97,9 +97,9 @@
                             @endif
                         </td>
                         @endcan
-                        <td><strong>${{ number_format($product->price, 2) }}</strong></td>
+                        <td data-label="Valor de venta"><strong>${{ number_format($product->price, 2) }}</strong></td>
                         @can('managePricing', App\Models\Product::class)
-                        <td>
+                        <td data-label="Ganancia">
                             @if($product->profit_margin !== null)
                                 <x-badge tone="{{ $product->profit_margin >= 0 ? 'green' : 'red' }}">
                                     {{ number_format($product->profit_margin, 2) }}%
@@ -110,18 +110,18 @@
                         </td>
                         @endcan
                         @else
-                        <td>{{ $product->unit ?? '-' }}</td>
-                        <td><strong>${{ number_format($product->unit_cost ?? 0, 2) }}</strong></td>
-                        <td>{{ $product->supplier->name ?? '-' }}</td>
+                        <td data-label="Unidad">{{ $product->unit ?? '-' }}</td>
+                        <td data-label="Costo Unitario"><strong>${{ number_format($product->unit_cost ?? 0, 2) }}</strong></td>
+                        <td data-label="Proveedor">{{ $product->supplier->name ?? '-' }}</td>
                         @endif
-                        <td>
+                        <td data-label="Stock">
                             @if($product->has_stock)
                                 @php
                                     $currentStock = $product->getCurrentStock(auth()->user()->restaurant_id);
                                     $isLowStock = $currentStock <= $product->stock_minimum;
                                     $isOutOfStock = $currentStock <= 0;
                                 @endphp
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-2 justify-content-end flex-wrap">
                                     <span class="badge bg-{{ $isOutOfStock ? 'danger' : ($isLowStock ? 'warning' : 'success') }} fs-6">
                                         {{ $currentStock }}
                                     </span>
@@ -142,12 +142,12 @@
                                 <span class="text-muted">Sin control de stock</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             <span class="badge bg-{{ $product->is_active ? 'success' : 'secondary' }}">
                                 {{ $product->is_active ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary">
                                     <i class="bi bi-eye"></i>

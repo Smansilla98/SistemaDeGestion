@@ -1,0 +1,100 @@
+/* Tablas responsivas mobile — cards (<768px) y scroll sticky para reportes */
+
+@media (max-width: 768px) {
+    .table-responsive.rtbl-cards {
+        overflow-x: visible;
+    }
+
+    .rtbl-cards table {
+        border: none;
+    }
+
+    .rtbl-cards thead {
+        display: none;
+    }
+
+    .rtbl-cards tbody,
+    .rtbl-cards tr {
+        display: block;
+        width: 100%;
+    }
+
+    .rtbl-cards tr {
+        background: var(--g50, #f4f7f6);
+        border-radius: var(--rlg, 12px);
+        margin-bottom: 10px;
+        padding: 10px 12px;
+    }
+
+    .rtbl-cards td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: none;
+        padding: 6px 0;
+        text-align: right;
+    }
+
+    .rtbl-cards td::before {
+        content: attr(data-label);
+        font-size: 12px;
+        color: var(--g500, #6b7f7a);
+        text-align: left;
+        flex-shrink: 0;
+    }
+
+    .rtbl-cards td:empty,
+    .rtbl-cards td[data-label=""]:not(.rtbl-actions) {
+        display: none;
+    }
+
+    .rtbl-cards td.rtbl-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 10px;
+        margin-top: 4px;
+        border-top: 0.5px solid var(--g200, #d1ddd9);
+    }
+
+    .rtbl-cards td.rtbl-actions::before {
+        content: none;
+    }
+
+    .rtbl-cards td.rtbl-actions .btn {
+        min-height: 36px;
+        min-width: 36px;
+    }
+
+    /* Fila vacía (colspan) */
+    .rtbl-cards td[colspan] {
+        display: block;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .rtbl-cards td[colspan]::before {
+        content: none;
+    }
+}
+
+/* Reportes densos: mantener tabla + scroll horizontal, con mejor affordance */
+@media (max-width: 768px) {
+    .table-responsive.rtbl-scroll {
+        position: relative;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .rtbl-scroll table {
+        font-size: 13px;
+    }
+
+    .rtbl-scroll th:first-child,
+    .rtbl-scroll td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--surface-2, #fff);
+        z-index: 1;
+        box-shadow: 1px 0 0 var(--g200, #d1ddd9);
+    }
+}
