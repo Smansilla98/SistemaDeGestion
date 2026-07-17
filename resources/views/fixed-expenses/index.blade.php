@@ -100,7 +100,7 @@
             </div>
             <div class="card-body p-0">
                 @if($incomeBreakdown->isNotEmpty())
-                <div class="table-responsive">
+                <div class="table-responsive rtbl-cards">
                     <table class="table table-sm table-hover mb-0">
                         <thead>
                             <tr>
@@ -114,21 +114,21 @@
                         <tbody>
                             @foreach($incomeBreakdown as $row)
                             <tr>
-                                <td>
+                                <td data-label="Concepto">
                                     <a href="{{ route('fixed-expenses.show', $row['item']) }}" class="text-decoration-none">
                                         <strong>{{ $row['item']->name }}</strong>
                                     </a>
                                 </td>
-                                <td><span class="badge bg-light text-dark">{{ $row['item']->getCategoryLabel() }}</span></td>
-                                <td>
+                                <td data-label="Categoría"><span class="badge bg-light text-dark">{{ $row['item']->getCategoryLabel() }}</span></td>
+                                <td data-label="Cobro">
                                     @if($row['due_date'])
                                         <small>{{ $row['due_date']->format('d/m') }}</small>
                                     @else
                                         <small class="text-muted">—</small>
                                     @endif
                                 </td>
-                                <td class="text-end text-success"><strong>${{ number_format($row['amount'], 2) }}</strong></td>
-                                <td class="text-end text-muted">${{ number_format($row['monthly_equivalent'], 2) }}</td>
+                                <td data-label="Mes" class="text-end text-success"><strong>${{ number_format($row['amount'], 2) }}</strong></td>
+                                <td data-label="Ref. mensual" class="text-end text-muted">${{ number_format($row['monthly_equivalent'], 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -155,7 +155,7 @@
             </div>
             <div class="card-body p-0">
                 @if($expenseBreakdown->isNotEmpty())
-                <div class="table-responsive">
+                <div class="table-responsive rtbl-cards">
                     <table class="table table-sm table-hover mb-0">
                         <thead>
                             <tr>
@@ -169,21 +169,21 @@
                         <tbody>
                             @foreach($expenseBreakdown as $row)
                             <tr>
-                                <td>
+                                <td data-label="Concepto">
                                     <a href="{{ route('fixed-expenses.show', $row['item']) }}" class="text-decoration-none">
                                         <strong>{{ $row['item']->name }}</strong>
                                     </a>
                                 </td>
-                                <td><span class="badge bg-light text-dark">{{ $row['item']->getCategoryLabel() }}</span></td>
-                                <td>
+                                <td data-label="Categoría"><span class="badge bg-light text-dark">{{ $row['item']->getCategoryLabel() }}</span></td>
+                                <td data-label="Vence">
                                     @if($row['due_date'])
                                         <small>{{ $row['due_date']->format('d/m') }}</small>
                                     @else
                                         <small class="text-muted">—</small>
                                     @endif
                                 </td>
-                                <td class="text-end text-danger"><strong>${{ number_format($row['amount'], 2) }}</strong></td>
-                                <td class="text-end text-muted">${{ number_format($row['monthly_equivalent'], 2) }}</td>
+                                <td data-label="Mes" class="text-end text-danger"><strong>${{ number_format($row['amount'], 2) }}</strong></td>
+                                <td data-label="Ref. mensual" class="text-end text-muted">${{ number_format($row['monthly_equivalent'], 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -244,7 +244,7 @@
         <h5 class="mb-0"><i class="bi bi-table"></i> Todos los registros</h5>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
@@ -263,39 +263,39 @@
                 <tbody>
                     @forelse($expenses as $expense)
                     <tr class="{{ ! $expense->is_active ? 'table-secondary' : '' }}">
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $expense->name }}</strong>
                             @if($expense->description)
                             <br><small class="text-muted">{{ \Illuminate\Support\Str::limit($expense->description, 40) }}</small>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Tipo">
                             <span class="badge bg-{{ $expense->type === 'GASTO' ? 'danger' : 'success' }}">
                                 {{ $expense->type === 'GASTO' ? 'Gasto' : 'Ingreso' }}
                             </span>
                         </td>
-                        <td>{{ $expense->getCategoryLabel() }}</td>
-                        <td class="text-end">${{ number_format($expense->amount, 2) }}</td>
-                        <td>{{ $expense->getFrequencyLabel() }}</td>
-                        <td class="text-end">
+                        <td data-label="Categoría">{{ $expense->getCategoryLabel() }}</td>
+                        <td data-label="Por ocurrencia" class="text-end">${{ number_format($expense->amount, 2) }}</td>
+                        <td data-label="Frecuencia">{{ $expense->getFrequencyLabel() }}</td>
+                        <td data-label="En {{ $month->locale('es')->translatedFormat('M Y') }}" class="text-end">
                             <strong class="text-{{ $expense->type === 'GASTO' ? 'danger' : 'success' }}">
                                 ${{ number_format($expense->monthly_projected, 2) }}
                             </strong>
                         </td>
-                        <td class="text-end text-muted">${{ number_format($expense->monthly_equivalent, 2) }}</td>
-                        <td>
+                        <td data-label="Ref. mensual" class="text-end text-muted">${{ number_format($expense->monthly_equivalent, 2) }}</td>
+                        <td data-label="Cobro/Pago">
                             @if($expense->due_day)
                                 <small>Día {{ $expense->due_day }}</small>
                             @else
                                 <small class="text-muted">—</small>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             <span class="badge bg-{{ $expense->is_active ? 'success' : 'secondary' }}">
                                 {{ $expense->is_active ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('fixed-expenses.show', $expense) }}" class="btn btn-outline-primary" title="Ver">
                                     <i class="bi bi-eye"></i>

@@ -49,7 +49,7 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive rtbl-cards">
                     <table class="table table-hover table-striped align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -64,8 +64,8 @@
                             @php $idx = 1; @endphp
                             @foreach($modules as $module)
                                 <tr>
-                                    <td>{{ $idx++ }}</td>
-                                    <td><strong>{{ $module['label'] }}</strong></td>
+                                    <td data-label="#">{{ $idx++ }}</td>
+                                    <td data-label="Módulo"><strong>{{ $module['label'] }}</strong></td>
                                     @foreach($actionLabels as $actionKey => $label)
                                         @php
                                             $permissionKey = $module['key'] . '.' . $actionKey;
@@ -75,7 +75,7 @@
                                                 $roleValues[$r] = $matrixByRole[$permissionKey][$r] ?? false;
                                             }
                                         @endphp
-                                        <td class="text-center">
+                                        <td data-label="{{ $label }}" class="text-center">
                                             @if($show)
                                                 @foreach($roles as $r)
                                                     <div class="form-check form-switch d-inline-block justify-content-center role-cell" data-role="{{ $r }}">
