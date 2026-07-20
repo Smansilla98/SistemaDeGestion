@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\CashRegisterSession;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\StockMovement;
 use App\Models\Table;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
 {
     /**
-     * Stats operativos compartidos entre dashboard web y mobile.
+     * Stats operativos compartidos entre dashboard web y mobile (mozo/cajero).
      *
      * @return array{
      *     mesas_libres: int,
@@ -66,6 +68,68 @@ class DashboardStatsService
                 ->whereColumn('stocks.quantity', '<=', 'products.stock_minimum')
                 ->where('stocks.quantity', '>', 0)
                 ->count(),
+        ];
+    }
+
+    /**
+     * Stats de control para ADMIN/GERENTE/SUPERADMIN en mobile.
+     *
+     * @return array{
+     *     low_stock_products: int,
+     *     stock_ok_products: int,
+     *     open_cash_sessions: int,
+     *     open_cash_session_labels: array<int, string>,
+     *     recent_stock_movements: Collection
+     * }
+     */
+    public function management(?int $restaurantId): array
+    {
+        $empty = [
+            'low_stock_products' => 0,
+            'stock_ok_products' => 0,
+            'open_cash_sessions' => 0,
+            'open_cash_session_labels' => [],
+            'recent_stock_movements' => collect(),
+        ];
+
+        if (! $restaurantId) {
+            return $empty;
+        }
+
+        $lowStock = (int) DB::table('stocks')
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->where('stocks.restaurant_id', $restaurantId)
+            ->whereColumn('stocks.quantity', '<=', 'products.stock_minimum')
+            ->where('stocks.quantity', '>', 0)
+            ->count();
+
+        $stockTracked = (int) DB::table('stocks')
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->where('stocks.restaurant_id', $restaurantId)
+            ->where('products.has_stock', true)
+            ->where('products.is_active', true)
+            ->count();
+
+        $openSessions = CashRegisterSession::where('restaurant_id', $restaurantId)
+            ->where('status', CashRegisterSession::STATUS_ABIERTA)
+            ->with(['cashRegister', 'user'])
+            ->get();
+
+        $recentMovements = StockMovement::where('restaurant_id', $restaurantId)
+            ->with(['product', 'user'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        return [
+            'low_stock_products' => $lowStock,
+            'stock_ok_products' => max(0, $stockTracked - $lowStock),
+            'open_cash_sessions' => $openSessions->count(),
+            'open_cash_session_labels' => $openSessions
+                ->map(fn (CashRegisterSession $s) => $s->cashRegister->name ?? 'Caja')
+                ->values()
+                ->all(),
+            'recent_stock_movements' => $recentMovements,
         ];
     }
 }
