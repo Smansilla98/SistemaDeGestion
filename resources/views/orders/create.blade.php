@@ -63,17 +63,10 @@
                 <form action="{{ route('orders.store') }}" method="POST" id="orderForm">
                     @csrf
                     
-                    <div class="mb-3">
-                        <label for="table_id" class="form-label">Mesa</label>
-                        <select class="form-select" id="table_id" name="table_id" required>
-                            <option value="">Seleccionar mesa</option>
-                            @foreach($tables as $table)
-                            <option value="{{ $table->id }}" {{ $selectedTable && $selectedTable->id === $table->id ? 'selected' : '' }}>
-                                {{ $table->number }} - {{ $table->status }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @include('orders.partials.table-selector', [
+                        'tables' => $tables,
+                        'selectedTable' => $selectedTable ?? null,
+                    ])
 
                     <div class="mb-3">
                         <label for="observations" class="form-label">Observaciones</label>
