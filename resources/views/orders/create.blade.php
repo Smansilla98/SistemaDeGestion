@@ -282,13 +282,33 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             throw new Error(data.message || 'No se pudo crear el pedido');
         }
         // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
+        var printBlocked = false;
         if (data.kitchen_ticket_url && printWin && !printWin.closed) {
             printWin.location.href = data.kitchen_ticket_url;
             setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
         } else if (data.kitchen_ticket_url) {
             var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-            if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
+            if (!w || w.closed) {
+                printBlocked = true;
+            } else {
+                setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
+            }
+        } else if (printWin === null || (printWin && printWin.closed)) {
+            printBlocked = !!data.kitchen_ticket_url;
         }
+
+        if (printBlocked && data.kitchen_ticket_url) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Pedido creado',
+                html: 'El pedido se creó, pero el navegador bloqueó la ventana de impresión.<br><br>' +
+                    '<a href="' + data.kitchen_ticket_url + '" target="_blank" rel="noopener" class="btn btn-sm btn-primary">' +
+                    '<i class="bi bi-printer"></i> Abrir ticket de cocina</a>',
+                confirmButtonColor: '#1e8081',
+                confirmButtonText: 'Continuar'
+            });
+        }
+
         window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
     } catch (err) {
         try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {}
