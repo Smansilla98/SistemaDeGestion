@@ -168,6 +168,42 @@
                     'active' => $currentRoute === 'm.dashboard',
                 ],
             ];
+        } elseif (in_array($role ?? '', ['ADMIN', 'GERENTE', 'SUPERADMIN'], true)) {
+            $bottomNav = [
+                [
+                    'label' => 'Inicio',
+                    'icon' => 'bi-house-door',
+                    'route' => 'm.dashboard',
+                    'active' => $currentRoute === 'm.dashboard',
+                ],
+                [
+                    'label' => 'Stock',
+                    'icon' => 'bi-box-seam',
+                    'route' => 'stock.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'stock.'),
+                ],
+                [
+                    'label' => 'Productos',
+                    'icon' => 'bi-card-list',
+                    'route' => 'products.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'products.'),
+                ],
+                [
+                    'label' => 'Cajas',
+                    'icon' => 'bi-cash-coin',
+                    'route' => 'cash-register.index',
+                    'active' => is_string($currentRoute) && (
+                        str_starts_with($currentRoute, 'cash-register.')
+                        || str_starts_with($currentRoute, 'm.caja.')
+                    ),
+                ],
+                [
+                    'label' => 'Más',
+                    'icon' => 'bi-three-dots',
+                    'route' => 'notifications.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'notifications.'),
+                ],
+            ];
         }
     @endphp
 
