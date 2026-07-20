@@ -19,10 +19,12 @@ class MobileDashboardController extends Controller
         $role = $user?->role;
         $restaurantId = $user?->restaurant_id;
 
-        $isManagement = in_array($role, ['ADMIN', 'GERENTE', 'SUPERADMIN'], true);
+        $isAdmin = $role === 'ADMIN';
+        $isSupervisor = in_array($role, ['GERENTE', 'SUPERADMIN'], true);
+        $needsManagement = $isAdmin || $isSupervisor;
 
         $stats = $this->dashboardStats->operational($restaurantId);
-        $management = $isManagement
+        $management = $needsManagement
             ? $this->dashboardStats->management($restaurantId)
             : null;
 
@@ -31,7 +33,8 @@ class MobileDashboardController extends Controller
             'rol' => $role,
             'stats' => $stats,
             'management' => $management,
-            'isManagement' => $isManagement,
+            'isAdmin' => $isAdmin,
+            'isSupervisor' => $isSupervisor,
             'restaurant' => $user?->relationLoaded('restaurant')
                 ? $user->restaurant
                 : ($user ? Restaurant::find($user->restaurant_id) : null),
