@@ -138,9 +138,21 @@ function removeItem(itemId) {
 function updateQuantity(itemId, quantity) {
     const item = orderItems.find(i => i.id === itemId);
     if (item) {
-        item.quantity = parseInt(quantity) || 1;
+        item.quantity = Math.max(1, parseInt(quantity, 10) || 1);
         updateItemsList();
     }
+}
+
+function bumpQuantity(itemId, delta) {
+    const item = orderItems.find(i => i.id === itemId);
+    if (!item) return;
+    const next = (parseInt(item.quantity, 10) || 1) + delta;
+    if (next <= 0) {
+        removeItem(itemId);
+        return;
+    }
+    item.quantity = next;
+    updateItemsList();
 }
 
 function updateItemsList() {
@@ -172,15 +184,21 @@ function updateItemsList() {
                         <strong>${item.name}</strong><br>
                         <small class="text-muted">$${item.price.toFixed(2)} c/u</small>
                     </div>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})">
-                        <i class="bi bi-trash"></i>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})" aria-label="Quitar ${item.name}">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
                     </button>
                 </div>
-                <div class="mt-2">
-                    <label class="small">Cantidad:</label>
-                    <input type="number" class="form-control form-control-sm" 
-                           value="${item.quantity}" min="1" 
-                           onchange="updateQuantity(${item.id}, this.value)">
+                <div class="mt-2 d-flex align-items-center justify-content-between">
+                    <span class="small text-muted">Cantidad</span>
+                    <div class="order-qty-stepper">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bumpQuantity(${item.id}, -1)" aria-label="Restar">
+                            <i class="bi bi-dash" aria-hidden="true"></i>
+                        </button>
+                        <span class="qty-value" aria-live="polite">${item.quantity}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bumpQuantity(${item.id}, 1)" aria-label="Sumar">
+                            <i class="bi bi-plus" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mt-2 text-end">
                     <strong>Subtotal: $${itemTotal.toFixed(2)}</strong>
