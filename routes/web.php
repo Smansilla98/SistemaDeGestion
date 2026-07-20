@@ -400,6 +400,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/create', [\App\Http\Controllers\User\UserController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\User\UserController::class, 'store'])->name('store');
         Route::get('/{user}', [\App\Http\Controllers\User\UserController::class, 'show'])->name('show');
+        Route::post('/{user}/reset-password', [\App\Http\Controllers\User\UserController::class, 'resetTemporaryPassword'])->name('reset-password');
         Route::get('/{user}/edit', [\App\Http\Controllers\User\UserController::class, 'edit'])->name('edit');
         Route::put('/{user}', [\App\Http\Controllers\User\UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [\App\Http\Controllers\User\UserController::class, 'destroy'])->name('destroy');
