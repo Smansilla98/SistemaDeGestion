@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\StockMovement;
 use App\Models\Table;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -72,14 +73,18 @@ class DashboardStatsService
     }
 
     /**
-     * Stats de control para ADMIN/GERENTE/SUPERADMIN en mobile.
+     * Stats de control para ADMIN / GERENTE / SUPERADMIN en mobile.
      *
      * @return array{
      *     low_stock_products: int,
      *     stock_ok_products: int,
      *     open_cash_sessions: int,
      *     open_cash_session_labels: array<int, string>,
-     *     recent_stock_movements: Collection
+     *     recent_stock_movements: Collection,
+     *     ventas_hoy: float,
+     *     ventas_sesion: float,
+     *     tiene_sesion_abierta: bool,
+     *     pedidos_pendientes: int
      * }
      */
     public function management(?int $restaurantId): array
@@ -90,18 +95,19 @@ class DashboardStatsService
             'open_cash_sessions' => 0,
             'open_cash_session_labels' => [],
             'recent_stock_movements' => collect(),
+            'ventas_hoy' => 0.0,
+            'ventas_sesion' => 0.0,
+            'tiene_sesion_abierta' => false,
+            'pedidos_pendientes' => 0,
         ];
 
         if (! $restaurantId) {
             return $empty;
         }
 
-        $lowStock = (int) DB::table('stocks')
-            ->join('products', 'stocks.product_id', '=', 'products.id')
-            ->where('stocks.restaurant_id', $restaurantId)
-            ->whereColumn('stocks.quantity', '<=', 'products.stock_minimum')
-            ->where('stocks.quantity', '>', 0)
-            ->count();
+        $ops = $this->operational($restaurantId);
+
+        $lowStock = $ops['low_stock_products'];
 
         $stockTracked = (int) DB::table('stocks')
             ->join('products', 'stocks.product_id', '=', 'products.id')
@@ -121,6 +127,12 @@ class DashboardStatsService
             ->limit(5)
             ->get();
 
+        // Misma lógica que el dashboard web / reportes del día
+        $ventasHoy = (float) Order::where('restaurant_id', $restaurantId)
+            ->where('status', 'CERRADO')
+            ->whereDate('created_at', Carbon::today())
+            ->sum('total');
+
         return [
             'low_stock_products' => $lowStock,
             'stock_ok_products' => max(0, $stockTracked - $lowStock),
@@ -130,6 +142,10 @@ class DashboardStatsService
                 ->values()
                 ->all(),
             'recent_stock_movements' => $recentMovements,
+            'ventas_hoy' => $ventasHoy,
+            'ventas_sesion' => $ops['ventas_sesion'],
+            'tiene_sesion_abierta' => $ops['tiene_sesion_abierta'],
+            'pedidos_pendientes' => $ops['pedidos_pendientes'],
         ];
     }
 }
