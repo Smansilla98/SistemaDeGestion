@@ -168,7 +168,8 @@
                     'active' => $currentRoute === 'm.dashboard',
                 ],
             ];
-        } elseif (in_array($role ?? '', ['ADMIN', 'GERENTE', 'SUPERADMIN'], true)) {
+        } elseif (($role ?? '') === 'ADMIN') {
+            // ADMIN: control total — accesos directos a ABM
             $bottomNav = [
                 [
                     'label' => 'Inicio',
@@ -177,16 +178,53 @@
                     'active' => $currentRoute === 'm.dashboard',
                 ],
                 [
+                    'label' => 'Productos',
+                    'icon' => 'bi-card-list',
+                    'route' => 'products.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'products.'),
+                ],
+                [
                     'label' => 'Stock',
                     'icon' => 'bi-box-seam',
                     'route' => 'stock.index',
                     'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'stock.'),
                 ],
                 [
-                    'label' => 'Productos',
-                    'icon' => 'bi-card-list',
-                    'route' => 'products.index',
-                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'products.'),
+                    'label' => 'Cajas',
+                    'icon' => 'bi-cash-coin',
+                    'route' => 'cash-register.index',
+                    'active' => is_string($currentRoute) && (
+                        str_starts_with($currentRoute, 'cash-register.')
+                        || str_starts_with($currentRoute, 'm.caja.')
+                    ),
+                ],
+                [
+                    'label' => 'Más',
+                    'icon' => 'bi-three-dots',
+                    'route' => 'notifications.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'notifications.'),
+                ],
+            ];
+        } elseif (in_array($role ?? '', ['GERENTE', 'SUPERADMIN'], true)) {
+            // GERENTE/SUPERADMIN: supervisión — panorama, sin foco en ABM
+            $bottomNav = [
+                [
+                    'label' => 'Inicio',
+                    'icon' => 'bi-house-door',
+                    'route' => 'm.dashboard',
+                    'active' => $currentRoute === 'm.dashboard',
+                ],
+                [
+                    'label' => 'Reportes',
+                    'icon' => 'bi-graph-up',
+                    'route' => 'reports.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'reports.'),
+                ],
+                [
+                    'label' => 'Stock',
+                    'icon' => 'bi-box-seam',
+                    'route' => 'stock.index',
+                    'active' => is_string($currentRoute) && str_starts_with($currentRoute, 'stock.'),
                 ],
                 [
                     'label' => 'Cajas',

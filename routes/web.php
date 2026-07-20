@@ -379,7 +379,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'index'])->name('index');
     });
 
-    Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,CAJERO')->group(function () {
+    Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,GERENTE,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/sales', [\App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');
         Route::get('/sales/export', [\App\Http\Controllers\Report\ReportController::class, 'exportSales'])->name('sales.export');
