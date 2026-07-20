@@ -13,43 +13,14 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0">Seleccionar Productos</h5>
-                    <div class="input-group" style="max-width: 400px;">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" 
-                               class="form-control" 
-                               id="productSearch" 
-                               placeholder="🔍 Buscar producto..." 
-                               autocomplete="off">
-                    </div>
-                </div>
-            </div>
             <div class="card-body">
-                @foreach($products as $categoryName => $categoryProducts)
-                <div class="mb-4 category-section" data-category-name="{{ strtolower($categoryName) }}">
-                    <h5 class="border-bottom pb-2">{{ $categoryName }}</h5>
-                    <div class="row">
-                        @foreach($categoryProducts as $product)
-                        <div class="col-md-4 mb-3 product-item" 
-                             data-product-name="{{ strtolower($product->name) }}"
-                             data-category-name="{{ strtolower($categoryName) }}">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ $product->name }}</h6>
-                                    <p class="card-text text-muted small">{{ $product->description }}</p>
-                                    <p class="card-text"><strong>${{ number_format($product->price, 2) }}</strong></p>
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="addProduct({{ $product->id }}, '{{ $product->name }}', {{ $product->price }})">
-                                        <i class="bi bi-plus"></i> Agregar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endforeach
+                @include('orders.partials.product-picker', [
+                    'products' => $products,
+                    'searchId' => 'productSearch',
+                    'addFn' => 'addProduct',
+                    'colClass' => 'col-md-4 mb-3',
+                    'sectionClass' => 'category-section',
+                ])
             </div>
         </div>
     </div>
@@ -94,37 +65,55 @@
 </div>
 
 <script>
-// Búsqueda de productos
-document.getElementById('productSearch')?.addEventListener('input', function() {
-    filterProducts(this.value.toLowerCase().trim());
-});
+// Selector de mesa (chip fijo o mapa visual)
+(function initOrderTablePicker() {
+    const root = document.querySelector('[data-order-table-picker]');
+    if (!root) return;
 
-function filterProducts(searchTerm) {
-    const categorySections = document.querySelectorAll('.category-section');
-    
-    categorySections.forEach(section => {
-        let hasVisibleProducts = false;
-        const productItems = section.querySelectorAll('.product-item');
-        
-        productItems.forEach(item => {
-            const productName = item.dataset.productName || '';
-            const categoryName = item.dataset.categoryName || '';
-            
-            if (!searchTerm || 
-                productName.includes(searchTerm) || 
-                categoryName.includes(searchTerm)) {
-                item.style.display = 'block';
-                hasVisibleProducts = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        // Mostrar/ocultar la sección de categoría según si tiene productos visibles
-        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    const chipBlock = root.querySelector('[data-table-chip]');
+    const mapBlock = root.querySelector('[data-table-map]');
+    const changeBtn = root.querySelector('[data-change-table]');
+
+    function getActiveTableInput() {
+        return document.getElementById('table_id') || document.getElementById('table_id_map');
+    }
+
+    function selectTable(btn) {
+        root.querySelectorAll('[data-pick-table]').forEach(el => el.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+        const input = getActiveTableInput();
+        if (input) {
+            input.value = btn.dataset.tableId;
+            input.disabled = false;
+            input.name = 'table_id';
+            input.id = 'table_id';
+        }
+    }
+
+    root.querySelectorAll('[data-pick-table]').forEach(btn => {
+        btn.addEventListener('click', () => selectTable(btn));
     });
-}
 
+    changeBtn?.addEventListener('click', () => {
+        if (!chipBlock || !mapBlock) return;
+        chipBlock.classList.add('d-none');
+        const hidden = chipBlock.querySelector('#table_id');
+        if (hidden) {
+            hidden.removeAttribute('name');
+            hidden.disabled = true;
+            hidden.id = 'table_id_chip';
+        }
+        mapBlock.classList.remove('d-none');
+        const mapInput = mapBlock.querySelector('#table_id_map');
+        if (mapInput) {
+            mapInput.disabled = false;
+            mapInput.name = 'table_id';
+            mapInput.id = 'table_id';
+        }
+    });
+})();
+
+// Búsqueda de productos (product-picker partial)
 let orderItems = [];
 let itemCounter = 0;
 

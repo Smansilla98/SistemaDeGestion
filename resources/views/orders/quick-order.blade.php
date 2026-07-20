@@ -103,60 +103,14 @@
                                     </div>
                                 </div>
                                 <div class="card-body quick-order-products-scroll">
-                                    <div id="quickOrderProductsAccordion">
-                                @foreach($products as $categoryName => $categoryProducts)
-                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
-                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
-                                            <h6 class="mb-0 text-white" style="font-weight: 700;">
-                                                <i class="bi bi-tag-fill"></i> {{ $categoryName }}
-                                            </h6>
-                                            <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
-                                        </div>
-                                        <div class="row g-2">
-                                            @foreach($categoryProducts as $product)
-                                                @php
-                                                    $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
-                                                    $isOutOfStock = $currentStock !== null && $currentStock <= 0;
-                                                    $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
-                                                @endphp
-                                                <div class="col-12 col-md-6 mb-2 product-item" 
-                                                     data-name="{{ strtolower($product->name) }}" 
-                                                     data-category-name="{{ strtolower($categoryName) }}"
-                                                     data-product-id="{{ $product->id }}">
-                                                    <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
-                                                        <div class="me-2 flex-grow-1">
-                                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                                <strong class="fs-6">{{ $product->name }}</strong>
-                                                                @if($isOutOfStock)
-                                                                    <span class="badge bg-danger" title="Sin stock disponible">
-                                                                        <i class="bi bi-x-circle-fill"></i> Sin Stock
-                                                                    </span>
-                                                                @elseif($isLowStock)
-                                                                    <span class="badge bg-warning" title="Stock bajo">
-                                                                        <i class="bi bi-exclamation-triangle-fill"></i> Stock: {{ $currentStock }}
-                                                                    </span>
-                                                                @endif
-                                                            </div>
-                                                            <div class="text-muted small mb-1">{{ $categoryName }}</div>
-                                                            <div class="fw-bold text-primary">${{ number_format($product->price, 2) }}</div>
-                                                        </div>
-                                                        <div class="d-flex flex-column align-items-end gap-1">
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-primary add-product-btn" 
-                                                                    data-product-id="{{ $product->id }}"
-                                                                    data-product-name="{{ $product->name }}"
-                                                                    data-product-price="{{ $product->price }}"
-                                                                    {{ $isOutOfStock ? 'disabled' : '' }}>
-                                                                <i class="bi bi-plus-circle"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
-                                    </div>
+                                    @include('orders.partials.product-picker', [
+                                        'products' => $products,
+                                        'searchId' => 'quickOrderProductSearch',
+                                        'addFn' => 'quickOrderAddProduct',
+                                        'colClass' => 'col-12 col-md-6 mb-2',
+                                        'sectionClass' => 'category-section-modal',
+                                        'showSearch' => false,
+                                    ])
                                 </div>
                             </div>
                         </div>
@@ -268,55 +222,25 @@ let quickOrderItems = [];
 let quickOrderItemCounter = 0;
 const currentUserIsAdmin = @json(auth()->user()->canManageOrdersLikeAdmin());
 
-// Búsqueda de productos
-document.getElementById('quickOrderProductSearch')?.addEventListener('input', function() {
-    filterQuickOrderProducts(this.value.toLowerCase().trim());
-});
+// Búsqueda de productos (product-picker partial usa #quickOrderProductSearch)
 
-function filterQuickOrderProducts(term) {
-    document.querySelectorAll('#quickOrderProductsAccordion .category-section-modal').forEach(section => {
-        let hasVisibleProducts = false;
-        
-        section.querySelectorAll('.product-item').forEach(item => {
-            const name = item.dataset.name || '';
-            const categoryName = item.dataset.categoryName || '';
-            
-            if (!term || name.includes(term) || categoryName.includes(term)) {
-                item.style.display = 'block';
-                hasVisibleProducts = true;
-            } else {
-                item.style.display = 'none';
-            }
+function quickOrderAddProduct(productId, productName, productPrice) {
+    const existingItem = quickOrderItems.find(item => item.product_id === productId);
+
+    if (existingItem) {
+        existingItem.quantity++;
+    } else {
+        quickOrderItems.push({
+            product_id: productId,
+            name: productName,
+            price: productPrice,
+            quantity: 1,
+            observations: ''
         });
-        
-        section.style.display = hasVisibleProducts ? 'block' : 'none';
-    });
-}
+    }
 
-// Agregar producto al pedido
-document.querySelectorAll('.add-product-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const productId = parseInt(this.dataset.productId);
-        const productName = this.dataset.productName;
-        const productPrice = parseFloat(this.dataset.productPrice);
-        
-        const existingItem = quickOrderItems.find(item => item.product_id === productId);
-        
-        if (existingItem) {
-            existingItem.quantity++;
-        } else {
-            quickOrderItems.push({
-                product_id: productId,
-                name: productName,
-                price: productPrice,
-                quantity: 1,
-                observations: ''
-            });
-        }
-        
-        renderQuickOrderItems();
-    });
-});
+    renderQuickOrderItems();
+}
 
 // Renderizar items del pedido
 function renderQuickOrderItems() {
