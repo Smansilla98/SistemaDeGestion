@@ -2,17 +2,16 @@
 
 @section('title', 'Inicio')
 
-{{--
-  V2 del dashboard mobile — usa las mismas variables $stats que
-  resources/views/dashboard.blade.php (web) para mantener paridad de datos.
-  Requiere que $stats incluya: mesas_libres, total_tables, mesas_ocupadas,
-  pedidos_pendientes, ventas_sesion, tiene_sesion_abierta, low_stock_products.
-  Ver app/Http/Controllers/Mobile/MobileDashboardController.php
---}}
-
 @section('content')
+@php
+    $isOps = in_array($rol ?? '', ['MOZO', 'CAJERO', 'ENCARGADO'], true);
+    $isMgmt = $isManagement ?? in_array($rol ?? '', ['ADMIN', 'GERENTE', 'SUPERADMIN'], true);
+@endphp
+
 <div class="mob-dash">
 
+@if($isOps || ! $isMgmt)
+    {{-- Dashboard operativo (mozo / cajero / encargado / default) --}}
     <div class="md-grid2">
         <a href="{{ route('tables.index') }}" class="md-card md-card--teal">
             <i class="bi bi-table" aria-hidden="true"></i>
@@ -66,6 +65,76 @@
             <i class="bi bi-cash-coin" aria-hidden="true"></i> Cerrar caja
         </a>
     </div>
+
+@else
+    {{-- Dashboard de gestión (admin / gerente / superadmin) --}}
+    @php $mgmt = $management ?? []; @endphp
+
+    <a href="{{ route('stock.index') }}" class="md-card md-card--wide {{ ($mgmt['low_stock_products'] ?? 0) > 0 ? 'md-card--amber' : 'md-card--teal' }}">
+        <i class="bi bi-box-seam" aria-hidden="true"></i>
+        <span class="md-label">Stock</span>
+        <span class="md-value">
+            {{ $mgmt['low_stock_products'] ?? 0 }} bajo
+            <small>/ {{ $mgmt['stock_ok_products'] ?? 0 }} ok</small>
+        </span>
+        <span class="md-sub">
+            @if(($mgmt['low_stock_products'] ?? 0) > 0)
+                Hay productos por debajo del mínimo
+            @else
+                Sin alertas de stock bajo
+            @endif
+        </span>
+    </a>
+
+    <a href="{{ route('cash-register.index') }}" class="md-card md-card--wide md-card--teal">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        <span class="md-label">Cajas abiertas ahora</span>
+        <span class="md-value">{{ $mgmt['open_cash_sessions'] ?? 0 }}</span>
+        <span class="md-sub">
+            @if(!empty($mgmt['open_cash_session_labels']))
+                {{ implode(' · ', $mgmt['open_cash_session_labels']) }}
+            @else
+                Ninguna sesión abierta
+            @endif
+        </span>
+    </a>
+
+    <p class="md-section-label">Movimientos recientes</p>
+    @forelse(($mgmt['recent_stock_movements'] ?? []) as $movement)
+        <div class="md-card" style="min-height: auto; padding: 10px 12px;">
+            <div class="d-flex justify-content-between gap-2">
+                <div>
+                    <strong style="font-size: 13px;">{{ $movement->product->name ?? 'Producto' }}</strong>
+                    <div class="md-sub" style="margin-top: 2px;">
+                        {{ $movement->type }} · {{ $movement->created_at?->format('d/m H:i') }}
+                        @if($movement->user)
+                            · {{ $movement->user->name }}
+                        @endif
+                    </div>
+                </div>
+                <span class="md-value" style="font-size: 16px;">{{ $movement->quantity > 0 ? '+' : '' }}{{ $movement->quantity }}</span>
+            </div>
+        </div>
+    @empty
+        <p class="md-sub mb-2">Sin movimientos recientes</p>
+    @endforelse
+    <a href="{{ route('stock.movements') }}" class="md-action-btn mb-2">
+        <i class="bi bi-arrow-right" aria-hidden="true"></i> Ver todos los movimientos
+    </a>
+
+    <p class="md-section-label">Acciones rápidas</p>
+    <div class="md-actions">
+        <a href="{{ route('stock.index') }}" class="md-action-btn">
+            <i class="bi bi-box-seam" aria-hidden="true"></i> Ver stock
+        </a>
+        <a href="{{ route('products.index') }}" class="md-action-btn">
+            <i class="bi bi-card-list" aria-hidden="true"></i> Gestionar productos
+        </a>
+        <a href="{{ route('cash-register.index') }}" class="md-action-btn">
+            <i class="bi bi-cash-coin" aria-hidden="true"></i> Ver cajas
+        </a>
+    </div>
+@endif
 
 </div>
 @endsection
