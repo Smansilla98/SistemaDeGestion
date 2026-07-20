@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -134,6 +135,36 @@ class UserController extends Controller
             ->get();
 
         return view('users.show', compact('user', 'activeTables', 'tableSessions'));
+    }
+
+    /**
+     * Generar contraseña temporal (solo SUPERADMIN).
+     * Las contraseñas guardadas están hasheadas y no se pueden recuperar.
+     */
+    public function resetTemporaryPassword(Request $request, User $user)
+    {
+        if (! auth()->user()->isSuperAdmin()) {
+            abort(403, 'Solo el superadmin puede generar contraseñas temporales');
+        }
+
+        if ($user->restaurant_id !== auth()->user()->restaurant_id) {
+            abort(403, 'No tienes acceso a este usuario');
+        }
+
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No podés regenerar la contraseña de tu propio usuario desde acá.');
+        }
+
+        $temporaryPassword = Str::password(12, letters: true, numbers: true, symbols: false, spaces: false);
+
+        $user->update([
+            'password' => Hash::make($temporaryPassword),
+        ]);
+
+        return redirect()
+            ->route('users.show', $user)
+            ->with('temporary_password', $temporaryPassword)
+            ->with('success', 'Contraseña temporal generada. Copiala ahora: solo se muestra una vez.');
     }
 
     /**

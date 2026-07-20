@@ -60,6 +60,53 @@
                 @endif
             </div>
         </div>
+
+        @if(auth()->user()->isSuperAdmin())
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning-subtle">
+                <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Acceso (solo Superadmin)</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    Las contraseñas se guardan hasheadas: <strong>no se pueden ver ni recuperar</strong> las actuales.
+                    Podés generar una <strong>contraseña temporal nueva</strong> y se mostrará una sola vez.
+                </p>
+
+                <dl class="row mb-3 small">
+                    <dt class="col-5">Usuario</dt>
+                    <dd class="col-7"><code>{{ $user->username }}</code></dd>
+                    <dt class="col-5">Hash guardado</dt>
+                    <dd class="col-7 text-muted">Sí (bcrypt) — no legible</dd>
+                </dl>
+
+                @if(session('temporary_password'))
+                <div class="alert alert-success" role="alert">
+                    <div class="fw-semibold mb-2">Contraseña temporal (copiá ahora)</div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <code id="temporaryPasswordValue" class="fs-5 user-select-all">{{ session('temporary_password') }}</code>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="copyTemporaryPassword" aria-label="Copiar contraseña">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                    <small class="d-block mt-2 text-muted">Al salir o recargar esta página ya no se verá.</small>
+                </div>
+                @endif
+
+                @if($user->id !== auth()->id())
+                <form action="{{ route('users.reset-password', $user) }}" method="POST" id="resetPasswordForm">
+                    @csrf
+                    <button type="button" class="btn btn-warning w-100" onclick="confirmResetPassword()">
+                        <i class="bi bi-key"></i> Generar contraseña temporal
+                    </button>
+                </form>
+                @else
+                <div class="alert alert-secondary mb-0 small">
+                    No podés regenerar tu propia contraseña desde este panel.
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="col-md-8">
@@ -190,5 +237,48 @@
         @endif
     </div>
 </div>
+
+@if(auth()->user()->isSuperAdmin())
+@push('scripts')
+<script>
+function confirmResetPassword() {
+    Swal.fire({
+        icon: 'warning',
+        title: '¿Generar contraseña temporal?',
+        html: 'Se <strong>reemplazará</strong> la contraseña actual de <strong>{{ $user->name }}</strong>. La anterior no se podrá recuperar.',
+        showCancelButton: true,
+        confirmButtonColor: '#c94a2d',
+        cancelButtonColor: '#7b7d84',
+        confirmButtonText: 'Sí, generar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('resetPasswordForm').submit();
+        }
+    });
+}
+
+document.getElementById('copyTemporaryPassword')?.addEventListener('click', async function () {
+    const value = document.getElementById('temporaryPasswordValue')?.textContent?.trim();
+    if (!value) return;
+    try {
+        await navigator.clipboard.writeText(value);
+        Swal.fire({
+            icon: 'success',
+            title: 'Copiada',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    } catch (e) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Copiá manualmente',
+            text: value
+        });
+    }
+});
+</script>
+@endpush
+@endif
 @endsection
 
