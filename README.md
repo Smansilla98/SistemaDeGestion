@@ -1,6 +1,49 @@
-# Sistema de gestión de restaurante (Laravel)
+# Sistema de gestión de restaurante
 
-Aplicación web para operación de restaurante: mesas, pedidos, cocina, caja, stock, reportes y permisos por rol. El backend sigue evolucionando hacia una **arquitectura por capas** (controladores delgados, servicios de dominio, repositorios PDO para la API REST, validación en Form Requests).
+[![CI](https://github.com/Smansilla98/SistemaDeGestion/actions/workflows/ci.yml/badge.svg)](https://github.com/Smansilla98/SistemaDeGestion/actions/workflows/ci.yml)
+[![Laravel](https://img.shields.io/badge/Laravel-10-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php&logoColor=white)](https://php.net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Aplicación web para la operación completa de un restaurante: salón, pedidos, comandas de cocina, caja, stock, reportes y permisos por rol.
+
+## 🔗 Demo en vivo
+
+### **[→ Abrir la demo](https://base-sistema-production.up.railway.app/)**
+
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| `admin` | `admin123` | Administrador (acceso completo) |
+
+> Entorno de demostración con datos de prueba. Podés crear, editar y borrar libremente.
+
+---
+
+## 📸 Capturas
+
+<!-- Reemplazar por capturas reales desde docs/screenshots/ -->
+| Salón de mesas | Pedido |
+|---|---|
+| ![Mesas](docs/screenshots/mesas.png) | ![Pedido](docs/screenshots/pedido.png) |
+
+| Caja | Reportes |
+|---|---|
+| ![Caja](docs/screenshots/caja.png) | ![Reportes](docs/screenshots/reportes.png) |
+
+---
+
+## ✨ Funcionalidades
+
+- **Salón** — mapa de mesas en tiempo real, estados, unión y división de mesas
+- **Pedidos** — carga rápida, modificadores, envío a cocina, control de tiempos
+- **Cocina** — pantalla de comandas con estados de preparación
+- **Caja** — apertura y cierre, movimientos, arqueo, medios de pago
+- **Stock** — productos, costos, precios, descuento automático por venta
+- **Reportes** — ventas, gastos fijos, márgenes, monitor para superadmin
+- **Roles y permisos** — superadmin, administrador, encargado, mozo, cocina
+- **Multi-cliente** — nombre y logo configurables por variables de entorno
+
+---
 
 ## Arquitectura
 

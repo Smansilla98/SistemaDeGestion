@@ -35,3 +35,12 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 Desktop.ini
+
+# Nunca commitear entornos ni volcados de variables (auditoria 2026-08)
+.env
+.env.*
+!.env.example
+ENV_*.txt
+*.pem
+*.key
+storage/*.key
