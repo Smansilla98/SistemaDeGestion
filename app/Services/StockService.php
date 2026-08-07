@@ -95,6 +95,36 @@ class StockService
     }
 
     /**
+     * Reducir la cantidad de un registro de stock puntual.
+     * Devuelve el stock actualizado y evita cantidades negativas.
+     */
+    public function reduceStock(Stock $stock, int $quantity): Stock
+    {
+        if ($quantity <= 0) {
+            throw new \InvalidArgumentException('La cantidad a reducir debe ser mayor a cero');
+        }
+
+        if ($stock->quantity - $quantity < 0) {
+            throw new \Exception('No se puede tener stock negativo');
+        }
+
+        $stock->decrement('quantity', $quantity);
+
+        return $stock->refresh();
+    }
+
+    /**
+     * Indicar si un registro de stock esta por debajo (o en) su minimo.
+     * Usa el minimo del propio stock y cae al minimo definido en el producto.
+     */
+    public function isLowStock(Stock $stock): bool
+    {
+        $minimum = $stock->minimum_stock ?? $stock->product?->stock_minimum ?? 0;
+
+        return $stock->quantity <= $minimum;
+    }
+
+    /**
      * Verificar que haya stock suficiente para vender (producto con has_stock o receta con insumos).
      * Lanza \Exception con mensaje claro si no alcanza.
      */

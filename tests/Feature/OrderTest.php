@@ -25,7 +25,7 @@ class OrderTest extends TestCase
         parent::setUp();
         $this->restaurant = Restaurant::factory()->create();
         $this->user = User::factory()->create([
-            'role' => UserRole::MOZO,
+            'role' => UserRole::MOZO->value,
             'restaurant_id' => $this->restaurant->id,
             'username' => 'mozotest',
         ]);

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Table;
+use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -29,6 +30,7 @@ class OrderServiceTest extends TestCase
     public function test_create_order_calculates_totals_correctly()
     {
         $table = Table::factory()->create();
+        $user = User::factory()->create(['restaurant_id' => $table->restaurant_id]);
         $category = Category::factory()->create(['restaurant_id' => $table->restaurant_id]);
 
         $product1 = Product::factory()->create([
@@ -46,7 +48,7 @@ class OrderServiceTest extends TestCase
         $orderData = [
             'restaurant_id' => $table->restaurant_id,
             'table_id' => $table->id,
-            'user_id' => 1,
+            'user_id' => $user->id,
             'items' => [
                 ['product_id' => $product1->id, 'quantity' => 2],
                 ['product_id' => $product2->id, 'quantity' => 1],
@@ -64,7 +66,7 @@ class OrderServiceTest extends TestCase
         // Subtotal esperado: (100 * 2) + (50 * 1) = 250
         $this->assertEquals(250.00, $order->subtotal);
         $this->assertEquals(250.00, $order->total);
-        $this->assertEquals(OrderStatus::ABIERTO, $order->status);
+        $this->assertEquals(OrderStatus::ABIERTO->value, $order->status);
     }
 
     /**
@@ -73,14 +75,14 @@ class OrderServiceTest extends TestCase
     public function test_close_order_updates_status()
     {
         $order = Order::factory()->create([
-            'status' => OrderStatus::LISTO,
+            'status' => OrderStatus::LISTO->value,
         ]);
 
         $this->orderService->closeOrder($order);
 
         $order->refresh();
 
-        $this->assertEquals(OrderStatus::CERRADO, $order->status);
+        $this->assertEquals(OrderStatus::CERRADO->value, $order->status);
         $this->assertNotNull($order->closed_at);
     }
 }

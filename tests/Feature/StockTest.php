@@ -24,7 +24,7 @@ class StockTest extends TestCase
         parent::setUp();
         $this->restaurant = Restaurant::factory()->create();
         $this->user = User::factory()->create([
-            'role' => UserRole::ADMIN,
+            'role' => UserRole::ADMIN->value,
             'restaurant_id' => $this->restaurant->id,
             'username' => 'adminstock',
         ]);
