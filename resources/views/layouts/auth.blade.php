@@ -14,12 +14,15 @@
             'primary' => 'Inter',
             'secondary' => 'Roboto',
         ];
-        function hexToRgba($hex, $alpha = 0.1) {
-            $hex = str_replace('#', '', $hex);
-            $r = hexdec(substr($hex, 0, 2));
-            $g = hexdec(substr($hex, 2, 2));
-            $b = hexdec(substr($hex, 4, 2));
-            return "rgba($r, $g, $b, $alpha)";
+        if (! function_exists('hexToRgba')) {
+            function hexToRgba($hex, $alpha = 0.1) {
+                $hex = str_replace('#', '', $hex);
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+
+                return "rgba($r, $g, $b, $alpha)";
+            }
         }
         $primaryRgba10 = hexToRgba($colors['primary'], 0.1);
         $primaryRgba30 = hexToRgba($colors['primary'], 0.3);
