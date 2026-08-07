@@ -14,10 +14,12 @@ class Stock extends Model
         'restaurant_id',
         'product_id',
         'quantity',
+        'minimum_stock',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
+        'minimum_stock' => 'integer',
     ];
 
     /**

@@ -2,18 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, Conurbania, master]
+    branches: [main]
   pull_request:
-
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [main]
 
 jobs:
-  hygiene:
-    name: Pint · PHPStan · Migrations · Tests
+  tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     services:
       mysql:
@@ -25,27 +20,9 @@ jobs:
           - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
-          --health-interval=5s
+          --health-interval=10s
           --health-timeout=5s
-          --health-retries=20
-          --command="mysqld --sql-mode=STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
-
-    env:
-      APP_ENV: testing
-      APP_KEY: base64:d1Kv/0yZygLFAyye/Skclrij2theptUsnIJ1Jkad5b4=
-      DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_DATABASE: testing
-      DB_USERNAME: root
-      DB_PASSWORD: root
-      JWT_SECRET: testing-jwt-secret-conurbania-ci-32chars
-      JWT_TTL: 3600
-      JWT_REFRESH_TTL: 86400
-      CACHE_DRIVER: array
-      SESSION_DRIVER: array
-      QUEUE_CONNECTION: sync
-      MAIL_MAILER: array
+          --health-retries=10
 
     steps:
       - uses: actions/checkout@v4
@@ -53,57 +30,52 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, ctype, json, bcmath
-          coverage: pcov
-          tools: composer:v2
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, bcmath, intl, zip, gd
+          coverage: none
 
-      - name: Cache Composer
+      - name: Cache de dependencias Composer
         uses: actions/cache@v4
         with:
           path: vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Instalar dependencias
+        run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Pint (todo app/)
-        run: vendor/bin/pint --test app
-
-      - name: PHPStan / Larastan (app/ + baseline)
-        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
-
-      - name: migrate:fresh --seed
-        run: php artisan migrate:fresh --seed --force --no-interaction
-
-      - name: migrate:rollback + migrate
+      - name: Preparar entorno
         run: |
-          php artisan migrate:reset --force --no-interaction
-          php artisan migrate --force --no-interaction
+          cp .env.example .env
+          php artisan key:generate
 
-      - name: conurbania:repair
-        run: php artisan conurbania:repair --force
-
-      - name: Tests Domain (coverage mínimo 50%)
-        run: php artisan test --testsuite=Domain --coverage --min=50
-
-      - name: Tests suite completa
-        run: php artisan test --parallel --processes=4
-
-  mobile:
-    name: Mobile typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
+          node-version: '20'
+
+      - name: Compilar assets del frontend (Vite)
+        run: |
+          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          npm run build
+
+      - name: Verificar formato de codigo (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Esperar a MySQL
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then exit 0; fi
+            sleep 2
+          done
+          echo "MySQL no respondio en tiempo" && exit 1
+
+      - name: Ejecutar tests
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test

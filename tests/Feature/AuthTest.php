@@ -19,7 +19,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create([
             'username' => 'testuser',
             'password' => bcrypt('password'),
-            'role' => UserRole::MOZO,
+            'role' => UserRole::MOZO->value,
             'is_active' => true,
         ]);
 
