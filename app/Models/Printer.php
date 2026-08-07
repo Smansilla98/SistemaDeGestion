@@ -38,4 +38,3 @@ class Printer extends Model
         return $this->belongsTo(Restaurant::class);
     }
 }
-

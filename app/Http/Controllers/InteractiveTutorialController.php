@@ -76,11 +76,10 @@ class InteractiveTutorialController extends Controller
     {
         $routeName = $request->query('route');
 
-        if (!$routeName || !isset(self::TUTORIALS_BY_ROUTE[$routeName])) {
+        if (! $routeName || ! isset(self::TUTORIALS_BY_ROUTE[$routeName])) {
             return response()->json(['tutorialKey' => null, 'steps' => []]);
         }
 
         return response()->json(self::TUTORIALS_BY_ROUTE[$routeName]);
     }
 }
-

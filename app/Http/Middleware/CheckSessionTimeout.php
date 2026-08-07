@@ -4,9 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckSessionTimeout
 {
@@ -31,7 +31,7 @@ class CheckSessionTimeout
                 if ($request->expectsJson() || $request->wantsJson()) {
                     return response()->json([
                         'message' => 'Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente.',
-                        'session_expired' => true
+                        'session_expired' => true,
                     ], 401);
                 }
 
@@ -46,4 +46,3 @@ class CheckSessionTimeout
         return $next($request);
     }
 }
-

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId('current_order_id')->nullable()->constrained('orders')->onDelete('set null');
             $table->foreignId('current_session_id')->nullable()->constrained('table_sessions')->onDelete('set null');
             $table->timestamps();
-            
+
             $table->index('subsector_id');
             $table->index('status');
         });
@@ -34,4 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('subsector_items');
     }
 };
-

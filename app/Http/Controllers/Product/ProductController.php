@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Product;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Sector;
+use App\Services\ProductPricingService;
+use App\Traits\Auditable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use App\Traits\Auditable;
-use App\Services\ProductPricingService;
 
 class ProductController extends Controller
 {
@@ -47,7 +47,7 @@ class ProductController extends Controller
 
         // Filtro por sector (a través de categoría) - solo para productos
         if ($request->filled('sector_id')) {
-            $query->whereHas('category', function($q) use ($request) {
+            $query->whereHas('category', function ($q) use ($request) {
                 $q->where('sector_id', $request->sector_id);
             });
         }
@@ -60,9 +60,9 @@ class ProductController extends Controller
         // Búsqueda mejorada (nombre y descripción)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -70,7 +70,7 @@ class ProductController extends Controller
         $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
         $allowedSorts = ['name', 'price', 'created_at', 'category_id'];
-        
+
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         } else {
@@ -79,36 +79,36 @@ class ProductController extends Controller
 
         // Paginación backend real
         $products = $query->paginate(20)->withQueryString();
-        
+
         // Cargar datos para filtros
         $sectors = Sector::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->whereNull('parent_id') // Solo sectores principales
             ->orderBy('name')
             ->get();
-            
+
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
-            ->when($request->filled('sector_id'), function($q) use ($request) {
+            ->when($request->filled('sector_id'), function ($q) use ($request) {
                 $q->where('sector_id', $request->sector_id);
             })
             ->with('sector')
             ->orderBy('display_order')
             ->get();
 
-        $selectedSector = $request->filled('sector_id') 
-            ? Sector::find($request->sector_id) 
+        $selectedSector = $request->filled('sector_id')
+            ? Sector::find($request->sector_id)
             : null;
-            
-        $selectedCategory = $request->filled('category_id') 
-            ? Category::find($request->category_id) 
+
+        $selectedCategory = $request->filled('category_id')
+            ? Category::find($request->category_id)
             : null;
 
         $selectedType = $request->get('type', 'PRODUCT');
 
         return view('products.index', compact(
-            'products', 
-            'categories', 
+            'products',
+            'categories',
             'sectors',
             'selectedSector',
             'selectedCategory',
@@ -125,12 +125,12 @@ class ProductController extends Controller
 
         $restaurantId = auth()->user()->restaurant_id;
         $type = $request->get('type', 'PRODUCT'); // PRODUCT o INSUMO
-        
+
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
-            
+
         $suppliers = \App\Models\Supplier::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('name')
@@ -171,7 +171,7 @@ class ProductController extends Controller
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        
+
         // Si es insumo, el precio puede ser 0 o null
         if ($validated['type'] === 'INSUMO') {
             $validated['price'] = $validated['price'] ?? 0;
@@ -185,12 +185,12 @@ class ProductController extends Controller
         }
 
         $product = Product::create($validated);
-        
+
         // Auditoría
         $this->auditCreate($product, $validated);
 
-        $message = $validated['type'] === 'INSUMO' 
-            ? 'Insumo creado exitosamente' 
+        $message = $validated['type'] === 'INSUMO'
+            ? 'Insumo creado exitosamente'
             : 'Producto creado exitosamente';
 
         return redirect()->route('products.index', ['type' => $validated['type']])
@@ -278,7 +278,7 @@ class ProductController extends Controller
     {
         Gate::authorize('update', $product);
 
-        if (!$product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
+        if (! $product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
             return back()->with('error', 'El insumo no está en la receta.');
         }
 
@@ -415,7 +415,7 @@ class ProductController extends Controller
         ]);
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
-        
+
         // Si es insumo, el precio puede ser 0 o null
         if ($validated['type'] === 'INSUMO') {
             $validated['price'] = $validated['price'] ?? 0;
@@ -430,12 +430,12 @@ class ProductController extends Controller
 
         $oldAttributes = $product->getAttributes();
         $product->update($validated);
-        
+
         // Auditoría
         $this->auditUpdate($product, $oldAttributes, $validated);
 
-        $message = $validated['type'] === 'INSUMO' 
-            ? 'Insumo actualizado exitosamente' 
+        $message = $validated['type'] === 'INSUMO'
+            ? 'Insumo actualizado exitosamente'
             : 'Producto actualizado exitosamente';
 
         return redirect()->route('products.index', ['type' => $validated['type']])
@@ -456,11 +456,10 @@ class ProductController extends Controller
 
         // Auditoría antes de eliminar
         $this->auditDelete($product);
-        
+
         $product->delete();
 
         return redirect()->route('products.index')
             ->with('success', 'Producto eliminado exitosamente');
     }
 }
-

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->index(['restaurant_id', 'user_id']);
             $table->index(['model_type', 'model_id']);
             $table->index('created_at');
@@ -37,5 +37,3 @@ return new class extends Migration
         Schema::dropIfExists('audit_logs');
     }
 };
-
-

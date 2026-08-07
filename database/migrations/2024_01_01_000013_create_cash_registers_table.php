@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name'); // Nombre de la caja: "Caja Principal", "Caja 1"
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index('restaurant_id');
         });
     }
@@ -30,5 +30,3 @@ return new class extends Migration
         Schema::dropIfExists('cash_registers');
     }
 };
-
-

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->integer('expected_attendance')->nullable(); // Asistencia esperada
             $table->enum('status', ['PROGRAMADO', 'EN_CURSO', 'FINALIZADO', 'CANCELADO'])->default('PROGRAMADO');
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'date']);
             $table->index('status');
         });
@@ -36,4 +36,3 @@ return new class extends Migration
         Schema::dropIfExists('events');
     }
 };
-

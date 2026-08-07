@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('reference')->nullable(); // Referencia de pago (ej: número de tarjeta parcial)
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'order_id']);
             $table->index('created_at');
         });
@@ -36,5 +36,3 @@ return new class extends Migration
         Schema::dropIfExists('payments');
     }
 };
-
-

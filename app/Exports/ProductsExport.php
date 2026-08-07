@@ -30,6 +30,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
     public function map($product): array
     {
         $stockQty = $product->has_stock ? $product->getCurrentStock($this->restaurantId) : null;
+
         return [
             $product->name,
             $product->category?->name ?? '-',

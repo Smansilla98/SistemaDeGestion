@@ -13,11 +13,17 @@ class Order extends Model
 
     // Estados del pedido
     const STATUS_ABIERTO = 'ABIERTO';
+
     const STATUS_ENVIADO = 'ENVIADO';
+
     const STATUS_EN_PREPARACION = 'EN_PREPARACION';
+
     const STATUS_LISTO = 'LISTO';
+
     const STATUS_ENTREGADO = 'ENTREGADO';
+
     const STATUS_CERRADO = 'CERRADO';
+
     const STATUS_CANCELADO = 'CANCELADO';
 
     protected $fillable = [
@@ -141,5 +147,3 @@ class Order extends Model
         $this->save();
     }
 }
-
-

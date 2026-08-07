@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\CashRegisterSession;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Table;
 use App\Models\TableSession;
-use App\Models\CashRegisterSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +30,7 @@ class TableService
         $payments = collect(session('payments', []));
 
         if ($closedOrders->isEmpty() || $consolidatedItems->isEmpty()) {
-            if (!$sessionId) {
+            if (! $sessionId) {
                 if ($table->current_session_id) {
                     $sessionId = $table->current_session_id;
                 } else {
@@ -53,7 +53,7 @@ class TableService
                 }
             }
 
-            if (!$sessionId) {
+            if (! $sessionId) {
                 Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
                     'table_id' => $table->id,
                     'restaurant_id' => $table->restaurant_id,
@@ -75,7 +75,7 @@ class TableService
                 if ($sessionOrders->isNotEmpty()) {
                     $consolidatedItems = collect();
                     foreach ($sessionOrders as $order) {
-                        if (!$order->relationLoaded('items')) {
+                        if (! $order->relationLoaded('items')) {
                             $order->load('items.product.category', 'items.modifiers');
                         }
                         foreach ($order->items as $item) {
@@ -166,7 +166,7 @@ class TableService
         $baseSubtotal = $activeOrders->sum('subtotal');
         $baseDiscount = $activeOrders->sum('discount');
         $additionalDiscount = 0;
-        if (!empty($validated['discount_type_id'])) {
+        if (! empty($validated['discount_type_id'])) {
             $discountType = \App\Models\DiscountType::find($validated['discount_type_id']);
             if ($discountType && $discountType->restaurant_id === $table->restaurant_id) {
                 $additionalDiscount = $discountType->calculateDiscount($baseSubtotal);
@@ -179,7 +179,7 @@ class TableService
         if ($totalPaid < $totalAmount - 0.01) {
             return [
                 'success' => false,
-                'message' => "El total pagado (\${$totalPaid}) es menor al total a pagar (\${$totalAmount}). Faltan $" . number_format($totalAmount - $totalPaid, 2),
+                'message' => "El total pagado (\${$totalPaid}) es menor al total a pagar (\${$totalAmount}). Faltan $".number_format($totalAmount - $totalPaid, 2),
             ];
         }
 
@@ -246,7 +246,7 @@ class TableService
             ->orderBy('opened_at', 'desc')
             ->first();
 
-        if (!$cashRegisterSession) {
+        if (! $cashRegisterSession) {
             Log::warning('No se encontró sesión de caja activa al procesar pago', [
                 'table_id' => $table->id,
                 'restaurant_id' => $table->restaurant_id,
@@ -291,7 +291,7 @@ class TableService
         $finalTotalAmount = $finalTotalSubtotal - $finalTotalDiscount;
         $successMessage = 'Mesa cerrada y pago procesado exitosamente.';
         if ($change > 0.01) {
-            $successMessage .= ' Cambio: $' . number_format($change, 2);
+            $successMessage .= ' Cambio: $'.number_format($change, 2);
         }
 
         return [

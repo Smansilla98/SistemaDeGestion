@@ -13,8 +13,11 @@ class OrderItem extends Model
 
     // Estados del item
     const STATUS_PENDIENTE = 'PENDIENTE';
+
     const STATUS_EN_PREPARACION = 'EN_PREPARACION';
+
     const STATUS_LISTO = 'LISTO';
+
     const STATUS_ENTREGADO = 'ENTREGADO';
 
     protected $fillable = [
@@ -81,5 +84,3 @@ class OrderItem extends Model
         $this->save();
     }
 }
-
-

@@ -2,12 +2,12 @@
 
 namespace Tests\Unit;
 
-use App\Models\Order;
-use App\Models\Table;
-use App\Models\Product;
-use App\Models\Category;
-use App\Services\OrderService;
 use App\Enums\OrderStatus;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Table;
+use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -30,7 +30,7 @@ class OrderServiceTest extends TestCase
     {
         $table = Table::factory()->create();
         $category = Category::factory()->create(['restaurant_id' => $table->restaurant_id]);
-        
+
         $product1 = Product::factory()->create([
             'restaurant_id' => $table->restaurant_id,
             'category_id' => $category->id,
@@ -84,4 +84,3 @@ class OrderServiceTest extends TestCase
         $this->assertNotNull($order->closed_at);
     }
 }
-

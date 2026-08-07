@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
-use App\Models\Table;
-use App\Models\Product;
-use App\Models\User;
-use App\Models\Payment;
-use App\Models\TableSession;
 use App\Models\CashRegisterSession;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\Table;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -27,7 +24,7 @@ class DashboardController extends Controller
         $occupiedTables = Table::where('restaurant_id', $restaurantId)
             ->where('status', 'OCUPADA')
             ->count();
-        
+
         $totalTables = Table::where('restaurant_id', $restaurantId)->count();
 
         // Ventas de la sesión de caja abierta actual (si hay)
@@ -48,17 +45,17 @@ class DashboardController extends Controller
             'today_orders' => Order::where('restaurant_id', $restaurantId)
                 ->whereDate('created_at', $today)
                 ->count(),
-            
+
             'pedidos_pendientes' => Order::where('restaurant_id', $restaurantId)
                 ->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])
                 ->count(),
-            
+
             'mesas_ocupadas' => $occupiedTables,
-            
+
             'mesas_libres' => $totalTables - $occupiedTables,
-            
+
             'total_tables' => $totalTables,
-            
+
             'low_stock_products' => DB::table('stocks')
                 ->join('products', 'stocks.product_id', '=', 'products.id')
                 ->where('stocks.restaurant_id', $restaurantId)
@@ -96,6 +93,7 @@ class DashboardController extends Controller
             ->get()
             ->filter(function ($product) use ($restaurantId) {
                 $currentStock = $product->getCurrentStock($restaurantId);
+
                 return $currentStock <= $product->stock_minimum && $currentStock > 0;
             })
             ->sortBy(function ($product) use ($restaurantId) {
@@ -141,10 +139,10 @@ class DashboardController extends Controller
             ->get();
 
         return view('dashboard', compact(
-            'stats', 
-            'recentOrders', 
-            'topProducts', 
-            'lowStockProducts', 
+            'stats',
+            'recentOrders',
+            'topProducts',
+            'lowStockProducts',
             'outOfStockProducts',
             'salesByWaiter',
             'activeTables',

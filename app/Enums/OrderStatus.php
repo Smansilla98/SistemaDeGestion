@@ -36,4 +36,3 @@ enum OrderStatus: string
         return $this === self::CERRADO || $this === self::CANCELADO;
     }
 }
-

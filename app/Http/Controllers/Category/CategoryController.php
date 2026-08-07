@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Traits\Auditable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use App\Traits\Auditable;
 
 class CategoryController extends Controller
 {
@@ -30,9 +30,9 @@ class CategoryController extends Controller
         // Búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -40,7 +40,7 @@ class CategoryController extends Controller
         $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
         $allowedSorts = ['name', 'display_order', 'products_count', 'created_at'];
-        
+
         if (in_array($sortBy, $allowedSorts)) {
             if ($sortBy === 'products_count') {
                 $query->orderBy('products_count', $sortOrder);
@@ -79,7 +79,7 @@ class CategoryController extends Controller
         $validated['is_active'] = $request->has('is_active');
 
         $category = Category::create($validated);
-        
+
         // Auditoría
         $this->auditCreate($category, $validated);
 
@@ -94,7 +94,7 @@ class CategoryController extends Controller
     {
         Gate::authorize('view', $category);
 
-        $category->load(['products' => function($query) {
+        $category->load(['products' => function ($query) {
             $query->orderBy('name');
         }]);
 
@@ -123,7 +123,7 @@ class CategoryController extends Controller
 
         $oldAttributes = $category->getAttributes();
         $category->update($validated);
-        
+
         // Auditoría
         $this->auditUpdate($category, $oldAttributes, $validated);
 
@@ -145,11 +145,10 @@ class CategoryController extends Controller
 
         // Auditoría antes de eliminar
         $this->auditDelete($category);
-        
+
         $category->delete();
 
         return redirect()->route('categories.index')
             ->with('success', 'Categoría eliminada exitosamente');
     }
 }
-

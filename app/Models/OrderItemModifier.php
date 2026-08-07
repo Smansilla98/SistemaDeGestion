@@ -37,5 +37,3 @@ class OrderItemModifier extends Model
         return $this->belongsTo(ProductModifier::class);
     }
 }
-
-

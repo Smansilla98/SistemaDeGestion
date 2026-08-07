@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -16,7 +14,7 @@ return new class extends Migration
         DB::table('sectors')->where('name', 'Salón Principal')->update(['name' => 'Salón principal']);
         DB::table('sectors')->where('name', 'Terraza')->update(['name' => 'Patio murales']);
         DB::table('sectors')->where('name', 'Sector VIP')->update(['name' => 'Patio Diego']);
-        
+
         // Crear sector Barra si no existe
         $restaurants = DB::table('restaurants')->pluck('id');
         foreach ($restaurants as $restaurantId) {
@@ -24,8 +22,8 @@ return new class extends Migration
                 ->where('restaurant_id', $restaurantId)
                 ->where('name', 'Barra')
                 ->exists();
-            
-            if (!$barraExists) {
+
+            if (! $barraExists) {
                 DB::table('sectors')->insert([
                     'restaurant_id' => $restaurantId,
                     'name' => 'Barra',
@@ -50,4 +48,3 @@ return new class extends Migration
         DB::table('sectors')->where('name', 'Barra')->delete();
     }
 };
-

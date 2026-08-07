@@ -7,9 +7,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Notifications\OrderDispatchedNotification;
-use App\Services\OrderService;
 use App\Services\NotificationService;
-use App\Events\KitchenOrderReady;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 
 class KitchenController extends Controller
@@ -36,7 +35,7 @@ class KitchenController extends Controller
 
         // Filtrar por sector si se especifica
         if ($request->has('sector')) {
-            $query->whereHas('table', function($q) use ($request) {
+            $query->whereHas('table', function ($q) use ($request) {
                 $q->where('sector_id', $request->sector);
             });
         }
@@ -111,7 +110,7 @@ class KitchenController extends Controller
 
         return back()->with('success', 'Pedido marcado como listo. El mozo será notificado.');
     }
-    
+
     /**
      * Actualizar estado del pedido desde KDS
      * MÓDULO 3: Permite cambiar estado desde cocina
@@ -119,7 +118,7 @@ class KitchenController extends Controller
     public function updateOrderStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:EN_PREPARACION,ENTREGADO'
+            'status' => 'required|in:EN_PREPARACION,ENTREGADO',
         ]);
 
         $order->update(['status' => $validated['status']]);
@@ -144,7 +143,7 @@ class KitchenController extends Controller
 
         return back()->with('success', 'Estado del pedido actualizado');
     }
-    
+
     /**
      * API: Obtener notificaciones de pedidos listos para el mozo
      * MÓDULO 3: Endpoint para polling de notificaciones
@@ -153,22 +152,22 @@ class KitchenController extends Controller
     {
         $restaurantId = auth()->user()->restaurant_id;
         $userId = auth()->id();
-        
+
         // Obtener pedidos que cambiaron a ENTREGADO en los últimos 5 minutos
         // y que pertenecen a mesas atendidas por este mozo
         $readyOrders = Order::where('restaurant_id', $restaurantId)
             ->where('status', 'ENTREGADO')
             ->where('updated_at', '>=', now()->subMinutes(5))
-            ->whereHas('table', function($q) use ($userId) {
-                $q->whereHas('currentSession', function($sq) use ($userId) {
+            ->whereHas('table', function ($q) use ($userId) {
+                $q->whereHas('currentSession', function ($sq) use ($userId) {
                     $sq->where('waiter_id', $userId)
-                      ->where('status', 'ABIERTA');
+                        ->where('status', 'ABIERTA');
                 });
             })
             ->with(['table', 'table.sector'])
             ->orderBy('updated_at', 'desc')
             ->get()
-            ->map(function($order) {
+            ->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'number' => $order->number,
@@ -178,7 +177,7 @@ class KitchenController extends Controller
                     'updated_at' => $order->updated_at->toIso8601String(),
                 ];
             });
-        
+
         return response()->json([
             'success' => true,
             'orders' => $readyOrders,
@@ -186,4 +185,3 @@ class KitchenController extends Controller
         ]);
     }
 }
-

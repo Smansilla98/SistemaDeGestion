@@ -13,10 +13,12 @@ class TableSession extends Model
 
     // Estados de sesión
     const STATUS_ABIERTA = 'ABIERTA';
+
     const STATUS_CERRADA = 'CERRADA';
-    
+
     // Mantener compatibilidad con código antiguo
     const STATUS_OPEN = 'ABIERTA';
+
     const STATUS_CLOSED = 'CERRADA';
 
     protected $fillable = [
@@ -101,7 +103,7 @@ class TableSession extends Model
     {
         return $this->status === self::STATUS_CERRADA;
     }
-    
+
     /**
      * Calcular total de la sesión desde sus pedidos
      */
@@ -109,7 +111,7 @@ class TableSession extends Model
     {
         return $this->orders()->sum('total');
     }
-    
+
     /**
      * Verificar si la sesión está pagada
      */
@@ -118,5 +120,3 @@ class TableSession extends Model
         return $this->paid_at !== null;
     }
 }
-
-

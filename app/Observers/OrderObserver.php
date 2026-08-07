@@ -43,7 +43,7 @@ class OrderObserver
                         'old' => $order->getOriginal('status'),
                         'new' => $order->status,
                     ],
-                    'message' => "Pedido {$order->number} cambió de {$order->getOriginal('status')} a {$order->status}"
+                    'message' => "Pedido {$order->number} cambió de {$order->getOriginal('status')} a {$order->status}",
                 ]
             );
         }
@@ -58,4 +58,3 @@ class OrderObserver
         Cache::forget("top_products_today_{$order->restaurant_id}");
     }
 }
-

@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Event;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Product;
-use App\Models\Stock;
 use App\Models\RecurringActivity;
+use App\Models\Stock;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Carbon\Carbon;
 
 class EventController extends Controller
 {
@@ -21,14 +21,14 @@ class EventController extends Controller
         Gate::authorize('viewAny', Event::class);
 
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener mes y año de la solicitud (por defecto: mes actual)
         $year = $request->get('year', now()->year);
         $month = $request->get('month', now()->month);
-        
+
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
-        
+
         // Obtener eventos del mes
         $events = Event::where('restaurant_id', $restaurantId)
             ->whereBetween('date', [$startDate, $endDate])
@@ -36,12 +36,12 @@ class EventController extends Controller
             ->orderBy('date')
             ->orderBy('time')
             ->get();
-        
+
         // Obtener actividades recurrentes y generar instancias para el mes
         $recurringActivities = RecurringActivity::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->get();
-        
+
         $recurringInstances = [];
         foreach ($recurringActivities as $activity) {
             $instances = $activity->getInstancesForDateRange($startDate, $endDate);
@@ -49,12 +49,12 @@ class EventController extends Controller
                 $recurringInstances[] = $instance;
             }
         }
-        
+
         // Agrupar eventos por día
         $eventsByDay = [];
         foreach ($events as $event) {
             $day = $event->date->format('Y-m-d');
-            if (!isset($eventsByDay[$day])) {
+            if (! isset($eventsByDay[$day])) {
                 $eventsByDay[$day] = [];
             }
             $eventsByDay[$day][] = [
@@ -62,11 +62,11 @@ class EventController extends Controller
                 'data' => $event,
             ];
         }
-        
+
         // Agregar actividades recurrentes al calendario
         foreach ($recurringInstances as $instance) {
             $day = $instance['date'];
-            if (!isset($eventsByDay[$day])) {
+            if (! isset($eventsByDay[$day])) {
                 $eventsByDay[$day] = [];
             }
             $eventsByDay[$day][] = [
@@ -74,18 +74,18 @@ class EventController extends Controller
                 'data' => $instance,
             ];
         }
-        
+
         // Calcular días del mes para el calendario
         $firstDayOfWeek = $startDate->dayOfWeek; // 0 = domingo, 6 = sábado
         $daysInMonth = $startDate->daysInMonth;
-        
+
         // Mes anterior y siguiente
         $prevMonth = $startDate->copy()->subMonth();
         $nextMonth = $startDate->copy()->addMonth();
-        
+
         // Verificar alertas de stock para eventos futuros
         $stockAlerts = $this->checkStockAlerts($restaurantId, $events->where('status', Event::STATUS_PROGRAMADO));
-        
+
         return view('events.index', compact(
             'events',
             'eventsByDay',
@@ -109,21 +109,22 @@ class EventController extends Controller
         Gate::authorize('create', Event::class);
 
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener productos con stock y calcular stock actual
         $products = Product::where('restaurant_id', $restaurantId)
             ->where('has_stock', true)
             ->where('is_active', true)
             ->orderBy('name')
             ->get()
-            ->map(function($product) use ($restaurantId) {
+            ->map(function ($product) use ($restaurantId) {
                 $product->current_stock = $product->getCurrentStock($restaurantId);
+
                 return $product;
             });
-        
+
         // Fecha preseleccionada si viene por query
         $selectedDate = $request->get('date');
-        
+
         return view('events.create', compact('products', 'selectedDate'));
     }
 
@@ -172,9 +173,9 @@ class EventController extends Controller
 
         return redirect()->route('events.index', [
             'year' => Carbon::parse($validated['date'])->year,
-            'month' => Carbon::parse($validated['date'])->month
+            'month' => Carbon::parse($validated['date'])->month,
         ])
-        ->with('success', 'Evento creado exitosamente');
+            ->with('success', 'Evento creado exitosamente');
     }
 
     /**
@@ -185,9 +186,9 @@ class EventController extends Controller
         Gate::authorize('view', $event);
 
         $event->load(['products', 'creator', 'eventProducts.product']);
-        
+
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         // Obtener stock actual de productos relacionados
         $productStocks = [];
         foreach ($event->products as $product) {
@@ -208,17 +209,18 @@ class EventController extends Controller
         Gate::authorize('update', $event);
 
         $restaurantId = auth()->user()->restaurant_id;
-        
+
         $products = Product::where('restaurant_id', $restaurantId)
             ->where('has_stock', true)
             ->where('is_active', true)
             ->orderBy('name')
             ->get()
-            ->map(function($product) use ($restaurantId) {
+            ->map(function ($product) use ($restaurantId) {
                 $product->current_stock = $product->getCurrentStock($restaurantId);
+
                 return $product;
             });
-        
+
         $event->load('products');
 
         return view('events.edit', compact('event', 'products'));
@@ -291,16 +293,16 @@ class EventController extends Controller
     private function checkStockAlerts($restaurantId, $events)
     {
         $alerts = [];
-        
+
         foreach ($events as $event) {
             foreach ($event->products as $product) {
                 $stock = Stock::where('restaurant_id', $restaurantId)
                     ->where('product_id', $product->id)
                     ->first();
-                
+
                 $currentStock = $stock ? $stock->quantity : 0;
                 $expectedQuantity = $product->pivot->expected_quantity ?? 0;
-                
+
                 if ($currentStock < $expectedQuantity) {
                     $alerts[] = [
                         'event' => $event,
@@ -312,8 +314,7 @@ class EventController extends Controller
                 }
             }
         }
-        
+
         return $alerts;
     }
 }
-

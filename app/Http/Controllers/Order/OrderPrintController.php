@@ -24,13 +24,13 @@ class OrderPrintController extends Controller
     protected function groupOrderItems($items)
     {
         $groupedItems = collect();
-        
+
         foreach ($items as $item) {
             // Buscar si ya existe un item con el mismo product_id
             $existingItemIndex = $groupedItems->search(function ($i) use ($item) {
                 return $i['product_id'] === $item->product_id;
             });
-            
+
             if ($existingItemIndex !== false) {
                 // Si existe, sumar cantidad y subtotal
                 $existingItem = $groupedItems[$existingItemIndex];
@@ -39,7 +39,7 @@ class OrderPrintController extends Controller
                 // Mantener el precio unitario del primer item (no promediar)
                 // Si hay observaciones diferentes, combinarlas
                 if ($item->observations && $existingItem['observations'] !== $item->observations) {
-                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'] . '; ' : '') . $item->observations;
+                    $existingItem['observations'] = ($existingItem['observations'] ? $existingItem['observations'].'; ' : '').$item->observations;
                 }
                 $groupedItems[$existingItemIndex] = $existingItem;
             } else {
@@ -55,7 +55,7 @@ class OrderPrintController extends Controller
                 ]);
             }
         }
-        
+
         return $groupedItems;
     }
 
@@ -71,6 +71,7 @@ class OrderPrintController extends Controller
         $basePt = $withTotalsAndPayments ? 180 : 130; // cabecera + pie; factura/ticket llevan totales y pagos
         $perItemPt = 20;
         $height = $basePt + ($itemsCount * $perItemPt);
+
         return max(self::TICKET_WIDTH_PT, min($height, 1200)); // mínimo 72mm, máximo ~423mm
     }
 
@@ -89,9 +90,10 @@ class OrderPrintController extends Controller
             $printer = $this->printService->getPrinterByType($order->restaurant_id, 'kitchen');
             try {
                 $this->printService->printKitchenTicket($order, $printer);
+
                 return redirect()->back()->with('success', 'Ticket enviado a impresora');
             } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'Error al imprimir: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Error al imprimir: '.$e->getMessage());
             }
         }
 
@@ -216,4 +218,3 @@ class OrderPrintController extends Controller
         ]);
     }
 }
-

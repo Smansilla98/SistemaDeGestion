@@ -27,11 +27,12 @@ class TutorialController extends Controller
     private function getTitlesMeta(): array
     {
         $disk = Storage::disk('public');
-        if (!$disk->exists(self::META_FILE)) {
+        if (! $disk->exists(self::META_FILE)) {
             return [];
         }
         $json = $disk->get(self::META_FILE);
         $data = json_decode($json, true);
+
         return is_array($data) ? $data : [];
     }
 
@@ -48,7 +49,7 @@ class TutorialController extends Controller
         $disk = Storage::disk('public');
         $dir = self::TUTORIALS_DIR;
 
-        if (!$disk->exists($dir)) {
+        if (! $disk->exists($dir)) {
             $disk->makeDirectory($dir);
         }
 
@@ -65,7 +66,7 @@ class TutorialController extends Controller
             $pdfs[] = [
                 'name' => $name,
                 'title' => $titles[$name] ?? $defaultTitle,
-                'url' => asset('storage/' . $path),
+                'url' => asset('storage/'.$path),
                 'size' => $disk->size($path),
             ];
         }
@@ -81,36 +82,36 @@ class TutorialController extends Controller
     public function store(Request $request)
     {
         // Comprobar que el archivo llegó (evita "The file failed to upload" genérico)
-        if (!$request->hasFile('file')) {
+        if (! $request->hasFile('file')) {
             $error = $request->get('file') ? 'El archivo no se pudo subir. Puede superar el límite del servidor (p. ej. upload_max_filesize en PHP).' : 'Debes seleccionar un archivo PDF.';
             throw ValidationException::withMessages(['file' => $error]);
         }
 
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:' . self::MAX_FILE_KB,
+            'file' => 'required|file|mimes:pdf|max:'.self::MAX_FILE_KB,
             'title' => 'nullable|string|max:255',
         ], [
             'file.required' => 'Debes seleccionar un archivo PDF.',
-            'file.file' => 'El archivo no se subió correctamente. Comprueba el tamaño (máx. ' . (self::MAX_FILE_KB / 1024) . ' MB).',
+            'file.file' => 'El archivo no se subió correctamente. Comprueba el tamaño (máx. '.(self::MAX_FILE_KB / 1024).' MB).',
             'file.mimes' => 'El archivo debe ser un PDF.',
-            'file.max' => 'El archivo no debe superar ' . (self::MAX_FILE_KB / 1024) . ' MB.',
+            'file.max' => 'El archivo no debe superar '.(self::MAX_FILE_KB / 1024).' MB.',
             'title.max' => 'El nombre no debe superar 255 caracteres.',
         ]);
 
         $file = $request->file('file');
         $baseName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-        $name = $baseName . '.pdf';
+        $name = $baseName.'.pdf';
         $dir = self::TUTORIALS_DIR;
 
         $disk = Storage::disk('public');
-        if (!$disk->exists($dir)) {
+        if (! $disk->exists($dir)) {
             $disk->makeDirectory($dir);
         }
 
         $n = 0;
-        while ($disk->exists($dir . '/' . $name)) {
+        while ($disk->exists($dir.'/'.$name)) {
             $n++;
-            $name = $baseName . '-' . $n . '.pdf';
+            $name = $baseName.'-'.$n.'.pdf';
         }
 
         $file->storeAs($dir, $name, 'public');
@@ -131,14 +132,14 @@ class TutorialController extends Controller
     public function destroy(string $filename)
     {
         $filename = basename($filename);
-        if (!str_ends_with(strtolower($filename), '.pdf')) {
+        if (! str_ends_with(strtolower($filename), '.pdf')) {
             return redirect()->route('tutorials.index')->with('error', 'Archivo no válido.');
         }
 
-        $path = self::TUTORIALS_DIR . '/' . $filename;
+        $path = self::TUTORIALS_DIR.'/'.$filename;
         $disk = Storage::disk('public');
 
-        if (!$disk->exists($path)) {
+        if (! $disk->exists($path)) {
             return redirect()->route('tutorials.index')->with('error', 'El archivo no existe.');
         }
 

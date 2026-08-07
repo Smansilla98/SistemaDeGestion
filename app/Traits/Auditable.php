@@ -12,7 +12,7 @@ trait Auditable
      */
     protected function audit(string $action, ?string $modelType = null, ?int $modelId = null, ?array $changes = null): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return;
         }
 
@@ -21,7 +21,7 @@ trait Auditable
             $auditService->log($action, $modelType, $modelId, $changes);
         } catch (\Exception $e) {
             // No fallar la operación si falla la auditoría
-            \Log::warning('Error al registrar auditoría: ' . $e->getMessage());
+            \Log::warning('Error al registrar auditoría: '.$e->getMessage());
         }
     }
 
@@ -40,7 +40,7 @@ trait Auditable
     {
         $changes = [];
         foreach ($newAttributes as $key => $value) {
-            if (!isset($oldAttributes[$key]) || $oldAttributes[$key] != $value) {
+            if (! isset($oldAttributes[$key]) || $oldAttributes[$key] != $value) {
                 $changes[$key] = [
                     'old' => $oldAttributes[$key] ?? null,
                     'new' => $value,
@@ -48,7 +48,7 @@ trait Auditable
             }
         }
 
-        if (!empty($changes)) {
+        if (! empty($changes)) {
             $this->audit('updated', get_class($model), $model->id, $changes);
         }
     }
@@ -61,4 +61,3 @@ trait Auditable
         $this->audit('deleted', get_class($model), $model->id);
     }
 }
-

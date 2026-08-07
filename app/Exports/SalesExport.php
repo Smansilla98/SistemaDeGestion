@@ -19,7 +19,7 @@ class SalesExport implements FromQuery, WithHeadings, WithMapping
     {
         return Payment::where('restaurant_id', $this->restaurantId)
             ->whereBetween('created_at', [
-                $this->dateFrom . ' 00:00:00',
+                $this->dateFrom.' 00:00:00',
                 \Carbon\Carbon::parse($this->dateTo)->endOfDay()->format('Y-m-d H:i:s'),
             ])
             ->with(['order.table', 'order.user', 'user'])

@@ -12,8 +12,11 @@ class Payment extends Model
 
     // Métodos de pago
     const METHOD_EFECTIVO = 'EFECTIVO';
+
     const METHOD_DEBITO = 'DEBITO';
+
     const METHOD_CREDITO = 'CREDITO';
+
     const METHOD_TRANSFERENCIA = 'TRANSFERENCIA';
 
     protected $fillable = [
@@ -86,5 +89,3 @@ class Payment extends Model
         ];
     }
 }
-
-

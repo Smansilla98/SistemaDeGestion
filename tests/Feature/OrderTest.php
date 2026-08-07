@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Restaurant;
-use App\Models\Table;
-use App\Models\Sector;
-use App\Models\Product;
-use App\Models\Category;
 use App\Enums\UserRole;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Restaurant;
+use App\Models\Sector;
+use App\Models\Table;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +17,7 @@ class OrderTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Restaurant $restaurant;
 
     protected function setUp(): void
@@ -114,4 +115,3 @@ class OrderTest extends TestCase
         $response->assertSessionHasErrors(['items']);
     }
 }
-

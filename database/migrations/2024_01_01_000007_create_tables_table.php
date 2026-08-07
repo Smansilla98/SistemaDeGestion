@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('status', ['LIBRE', 'OCUPADA', 'RESERVADA', 'CERRADA'])->default('LIBRE');
             $table->unsignedBigInteger('current_order_id')->nullable();
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'sector_id']);
             $table->index('status');
         });
@@ -36,4 +36,3 @@ return new class extends Migration
         Schema::dropIfExists('tables');
     }
 };
-

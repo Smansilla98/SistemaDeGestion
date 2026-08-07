@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('stock_minimum')->default(0); // Stock mínimo para alertas
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'category_id']);
             $table->index('is_active');
         });
@@ -37,5 +37,3 @@ return new class extends Migration
         Schema::dropIfExists('products');
     }
 };
-
-

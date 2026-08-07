@@ -39,4 +39,3 @@ class DiscountType extends Model
         return round($subtotal * ($this->percentage / 100), 2);
     }
 }
-

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('orders', function (Blueprint $table) {
             // Hacer table_id nullable para permitir pedidos desde subsector items
             $table->foreignId('table_id')->nullable()->change();
-            
+
             // Agregar subsector_item_id
             $table->foreignId('subsector_item_id')->nullable()->after('table_id')->constrained('subsector_items')->onDelete('cascade');
-            
+
             $table->index('subsector_item_id');
         });
     }
@@ -34,4 +34,3 @@ return new class extends Migration
         });
     }
 };
-

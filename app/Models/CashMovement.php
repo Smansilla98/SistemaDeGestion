@@ -12,6 +12,7 @@ class CashMovement extends Model
 
     // Tipos de movimiento
     const TYPE_INGRESO = 'INGRESO';
+
     const TYPE_EGRESO = 'EGRESO';
 
     protected $fillable = [
@@ -63,5 +64,3 @@ class CashMovement extends Model
         ];
     }
 }
-
-

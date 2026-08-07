@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Table;
 use App\Models\Sector;
+use App\Models\Table;
 use Illuminate\Http\Request;
 
 class TableApiController extends Controller
@@ -22,7 +22,7 @@ class TableApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $tables
+            'data' => $tables,
         ]);
     }
 
@@ -34,7 +34,7 @@ class TableApiController extends Controller
         if ($table->restaurant_id !== auth()->user()->restaurant_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No autorizado'
+                'message' => 'No autorizado',
             ], 403);
         }
 
@@ -42,7 +42,7 @@ class TableApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $table
+            'data' => $table,
         ]);
     }
 
@@ -63,8 +63,7 @@ class TableApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $tables,
-            'sector' => $sector
+            'sector' => $sector,
         ]);
     }
 }
-

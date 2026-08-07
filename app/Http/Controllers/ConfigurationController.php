@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use App\Services\DatabaseResetService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Gate;
 
 class ConfigurationController extends Controller
 {
@@ -23,7 +21,7 @@ class ConfigurationController extends Controller
     public function index()
     {
         $restaurant = Restaurant::findOrFail(auth()->user()->restaurant_id);
-        
+
         // Obtener configuraciones visuales
         $settings = $restaurant->settings ?? [];
         $logo = $settings['logo'] ?? null;
@@ -57,12 +55,12 @@ class ConfigurationController extends Controller
         ]);
 
         $settings = $restaurant->settings ?? [];
-        
+
         // Inicializar arrays si no existen
-        if (!isset($settings['colors'])) {
+        if (! isset($settings['colors'])) {
             $settings['colors'] = [];
         }
-        if (!isset($settings['fonts'])) {
+        if (! isset($settings['fonts'])) {
             $settings['fonts'] = [];
         }
 
@@ -118,8 +116,7 @@ class ConfigurationController extends Controller
             return redirect()->route('configuration.index')
                 ->with('success', 'Base de datos reseteada exitosamente. Todos los datos han sido eliminados excepto los usuarios.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al resetear la base de datos: ' . $e->getMessage());
+            return back()->with('error', 'Error al resetear la base de datos: '.$e->getMessage());
         }
     }
 }
-

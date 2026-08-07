@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'customer_name')) {
+            if (! Schema::hasColumn('orders', 'customer_name')) {
                 $table->string('customer_name')->nullable()->after('observations');
             }
         });
@@ -30,4 +30,3 @@ return new class extends Migration
         });
     }
 };
-

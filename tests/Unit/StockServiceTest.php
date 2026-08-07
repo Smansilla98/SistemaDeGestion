@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Models\Stock;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\Stock;
 use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -68,4 +68,3 @@ class StockServiceTest extends TestCase
         $this->assertTrue($this->stockService->isLowStock($stock));
     }
 }
-

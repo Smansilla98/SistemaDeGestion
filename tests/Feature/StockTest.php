@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Restaurant;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\Stock;
 use App\Enums\UserRole;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Restaurant;
+use App\Models\Stock;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +16,7 @@ class StockTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Restaurant $restaurant;
 
     protected function setUp(): void

@@ -2,24 +2,23 @@
 
 namespace App\Services;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Table;
 use App\Models\TableSession;
 use App\Models\User;
-use App\Enums\OrderStatus;
 use App\Notifications\OrderCreatedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 class OrderService
 {
     public function __construct(
         private StockService $stockService
-    ) {
-    }
+    ) {}
+
     /**
      * Crear un nuevo pedido
      */
@@ -38,12 +37,12 @@ class OrderService
                 $table = Table::findOrFail($data['table_id']);
 
                 // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
-                if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
+                if ($table->status === Table::STATUS_OCUPADA && ! $table->current_session_id) {
                     // Verificar que la tabla existe antes de crear sesión
-                    if (!Schema::hasTable('table_sessions')) {
+                    if (! Schema::hasTable('table_sessions')) {
                         throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
                     }
-                    
+
                     try {
                         $session = TableSession::create([
                             'restaurant_id' => $table->restaurant_id,
@@ -52,7 +51,7 @@ class OrderService
                         ]);
                         $table->update(['current_session_id' => $session->id]);
                     } catch (\Exception $e) {
-                        \Log::error('Error al crear sesión de mesa en OrderService: ' . $e->getMessage());
+                        \Log::error('Error al crear sesión de mesa en OrderService: '.$e->getMessage());
                         throw new \Exception('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
                     }
                 }
@@ -60,13 +59,13 @@ class OrderService
                 $tableSessionId = $table->current_session_id;
             } elseif (isset($data['subsector_item_id']) && $data['subsector_item_id']) {
                 $subsectorItem = \App\Models\SubsectorItem::findOrFail($data['subsector_item_id']);
-                
+
                 // Crear sesión para el subsector item si no tiene una
-                if (!$subsectorItem->current_session_id) {
-                    if (!Schema::hasTable('table_sessions')) {
+                if (! $subsectorItem->current_session_id) {
+                    if (! Schema::hasTable('table_sessions')) {
                         throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones.');
                     }
-                    
+
                     try {
                         $session = \App\Models\TableSession::create([
                             'restaurant_id' => $subsectorItem->subsector->restaurant_id,
@@ -77,7 +76,7 @@ class OrderService
                         $subsectorItem->update(['current_session_id' => $session->id]);
                         $tableSessionId = $session->id;
                     } catch (\Exception $e) {
-                        \Log::error('Error al crear sesión para subsector item: ' . $e->getMessage());
+                        \Log::error('Error al crear sesión para subsector item: '.$e->getMessage());
                         throw new \Exception('Error al crear sesión para el elemento del subsector.');
                     }
                 } else {
@@ -141,13 +140,13 @@ class OrderService
             }
 
             // Validar que el producto esté activo
-            if (!$product->is_active) {
+            if (! $product->is_active) {
                 throw new \Exception("El producto '{$product->name}' no está activo");
             }
 
             // Validar cantidad
-            if (!isset($itemData['quantity']) || $itemData['quantity'] < 1) {
-                throw new \Exception("La cantidad debe ser mayor a 0");
+            if (! isset($itemData['quantity']) || $itemData['quantity'] < 1) {
+                throw new \Exception('La cantidad debe ser mayor a 0');
             }
 
             // Verificar stock (producto con has_stock o receta con insumos)
@@ -222,7 +221,7 @@ class OrderService
     public function updateItemStatus(OrderItem $item, string $status): OrderItem
     {
         $validStatuses = ['EN_PREPARACION', 'LISTO', 'ENTREGADO'];
-        if (!in_array($status, $validStatuses)) {
+        if (! in_array($status, $validStatuses)) {
             throw new \Exception('Estado inválido');
         }
 
@@ -267,7 +266,8 @@ class OrderService
 
     /**
      * Cerrar pedido
-     * @param bool $freeTable Si es true, libera la mesa. Si es false, solo cierra el pedido.
+     *
+     * @param  bool  $freeTable  Si es true, libera la mesa. Si es false, solo cierra el pedido.
      */
     public function closeOrder(Order $order, bool $freeTable = true): Order
     {
@@ -311,7 +311,7 @@ class OrderService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$counter) {
+            if (! $counter) {
                 $seq = 1;
                 DB::table('order_counters')->insert([
                     'restaurant_id' => $restaurantId,
@@ -326,9 +326,9 @@ class OrderService
                     ->update(['last_seq' => $seq]);
             }
 
-            $prefix = 'ORD-' . $year . '-';
-            return $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+            $prefix = 'ORD-'.$year.'-';
+
+            return $prefix.str_pad($seq, 4, '0', STR_PAD_LEFT);
         });
     }
 }
-

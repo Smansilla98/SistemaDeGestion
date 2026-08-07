@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\DiscountType;
 use App\Models\Restaurant;
+use Illuminate\Database\Seeder;
 
 class DiscountTypeSeeder extends Seeder
 {
@@ -15,7 +15,7 @@ class DiscountTypeSeeder extends Seeder
     {
         // Obtener todos los restaurantes o crear uno de ejemplo
         $restaurants = Restaurant::all();
-        
+
         if ($restaurants->isEmpty()) {
             // Si no hay restaurantes, crear uno de ejemplo
             $restaurant = Restaurant::create([
@@ -57,4 +57,3 @@ class DiscountTypeSeeder extends Seeder
         }
     }
 }
-

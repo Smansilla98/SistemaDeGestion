@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Restaurant;
 use App\Models\Sector;
 use App\Models\Table;
-use App\Models\Restaurant;
+use Illuminate\Database\Seeder;
 
 class PredeterminedLayoutsSeeder extends Seeder
 {
@@ -15,9 +15,10 @@ class PredeterminedLayoutsSeeder extends Seeder
     public function run(): void
     {
         $restaurant = Restaurant::first();
-        
-        if (!$restaurant) {
+
+        if (! $restaurant) {
             $this->command->warn('No se encontró restaurante. Ejecuta DatabaseSeeder primero.');
+
             return;
         }
 
@@ -135,7 +136,7 @@ class PredeterminedLayoutsSeeder extends Seeder
             ],
         ]);
 
-        $this->command->info("   ✓ Salón Principal: 20 mesas de 4 personas + 4 lugares de barra creadas");
+        $this->command->info('   ✓ Salón Principal: 20 mesas de 4 personas + 4 lugares de barra creadas');
     }
 
     /**
@@ -165,7 +166,7 @@ class PredeterminedLayoutsSeeder extends Seeder
             ]);
         }
 
-        $this->command->info("   ✓ Patio murales: 4 mesas de 6 personas creadas");
+        $this->command->info('   ✓ Patio murales: 4 mesas de 6 personas creadas');
     }
 
     /**
@@ -202,7 +203,6 @@ class PredeterminedLayoutsSeeder extends Seeder
             ]);
         }
 
-        $this->command->info("   ✓ Patio Diego: 4 lugares de barra exterior + 4 mesas de 5 personas creadas");
+        $this->command->info('   ✓ Patio Diego: 4 lugares de barra exterior + 4 mesas de 5 personas creadas');
     }
 }
-

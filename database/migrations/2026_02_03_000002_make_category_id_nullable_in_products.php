@@ -26,4 +26,3 @@ return new class extends Migration
         // Por seguridad, dejamos que category_id siga siendo nullable
     }
 };
-

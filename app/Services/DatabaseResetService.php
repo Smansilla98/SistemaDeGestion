@@ -17,25 +17,25 @@ class DatabaseResetService
             $orderIds = DB::table('orders')
                 ->where('restaurant_id', $restaurantId)
                 ->pluck('id');
-            
+
             if ($orderIds->isNotEmpty()) {
                 // Obtener order_item_ids antes de eliminar
                 $orderItemIds = DB::table('order_items')
                     ->whereIn('order_id', $orderIds)
                     ->pluck('id');
-                
+
                 // Eliminar modificadores de items
                 if ($orderItemIds->isNotEmpty()) {
                     DB::table('order_item_modifiers')
                         ->whereIn('order_item_id', $orderItemIds)
                         ->delete();
                 }
-                
+
                 // Eliminar items
                 DB::table('order_items')
                     ->whereIn('order_id', $orderIds)
                     ->delete();
-                
+
                 // Eliminar pedidos
                 DB::table('orders')
                     ->whereIn('id', $orderIds)
@@ -56,7 +56,7 @@ class DatabaseResetService
             $sessionIds = DB::table('cash_register_sessions')
                 ->where('restaurant_id', $restaurantId)
                 ->pluck('id');
-            
+
             if ($sessionIds->isNotEmpty()) {
                 DB::table('cash_movements')
                     ->whereIn('cash_register_session_id', $sessionIds)
@@ -118,4 +118,3 @@ class DatabaseResetService
         });
     }
 }
-
