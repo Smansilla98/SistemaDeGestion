@@ -3,22 +3,21 @@
 namespace App\Http\Controllers\Table;
 
 use App\Http\Controllers\Controller;
-use App\Models\Table;
-use App\Models\Sector;
 use App\Models\Order;
-use App\Models\TableSession;
-use App\Models\Product;
 use App\Models\Payment;
-use App\Models\CashRegisterSession;
+use App\Models\Product;
+use App\Models\Sector;
+use App\Models\Table;
+use App\Models\TableSession;
 use App\Services\OrderService;
 use App\Services\PrintService;
 use App\Services\StockService;
 use App\Services\TableService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TableController extends Controller
 {
@@ -28,6 +27,7 @@ class TableController extends Controller
         private StockService $stockService,
         private TableService $tableService
     ) {}
+
     /**
      * Mostrar lista de mesas
      */
@@ -38,20 +38,20 @@ class TableController extends Controller
 
         // Si es MOZO, solo ver mesas asignadas a él o libres
         $tablesQuery = Table::where('restaurant_id', $restaurantId);
-        
+
         if (($user->role ?? null) === 'MOZO') {
             $tablesQuery->where(function ($q) use ($user) {
                 $q->where('status', 'LIBRE')
-                  ->orWhereHas('currentSession', function ($sq) use ($user) {
-                      $sq->where('waiter_id', $user->id)
-                        ->where('status', TableSession::STATUS_ABIERTA);
-                  });
+                    ->orWhereHas('currentSession', function ($sq) use ($user) {
+                        $sq->where('waiter_id', $user->id)
+                            ->where('status', TableSession::STATUS_ABIERTA);
+                    });
             });
         }
 
         $sectors = Sector::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
-            ->with(['tables' => function ($query) use ($tablesQuery) {
+            ->with(['tables' => function ($query) {
                 $query->orderBy('number')
                     ->with(['currentOrder', 'currentSession.waiter']); // Eager loading de pedido actual y sesión con mozo
             }])
@@ -98,7 +98,7 @@ class TableController extends Controller
     public function storeOrder(Request $request, Table $table)
     {
         // Solo ADMIN / GERENTE / MOZO / ENCARGADO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -107,33 +107,29 @@ class TableController extends Controller
             abort(403, 'No tienes acceso a esta mesa');
         }
 
-        if ($table->status !== Table::STATUS_OCUPADA) {
+        // Sentar + pedir: si la mesa está libre, se ocupa y abre sesión acá
+        try {
+            $this->orderService->ensureTableReadyForOrder($table, (int) auth()->id());
+            $table->refresh();
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Solo se pueden tomar pedidos en mesas ocupadas.',
+                'message' => $e->getMessage() ?: 'No se pudo preparar la mesa.',
             ], 422);
         }
 
-        // MÓDULO 2: Validar que la mesa tenga sesión ABIERTA
-        if (!$table->current_session_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La mesa no tiene una sesión activa. Marcar como ocupada primero.',
-            ], 422);
-        }
-
-        // Verificar que la sesión esté ABIERTA
         $session = TableSession::find($table->current_session_id);
-        if (!$session || !$session->isOpen()) {
+        if (! $session || ! $session->isOpen()) {
             return response()->json([
                 'success' => false,
-                'message' => 'La sesión de la mesa no está abierta. No se pueden crear pedidos.',
+                'message' => 'No se pudo abrir la sesión de la mesa. Reintentá.',
             ], 422);
         }
 
         $validated = $request->validate([
             'observations' => 'nullable|string',
             'send_to_kitchen' => 'nullable|boolean',
+            'idempotency_key' => 'nullable|string|max:26',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -151,7 +147,7 @@ class TableController extends Controller
             if ($table->current_order_id) {
                 $existingOrder = Order::find($table->current_order_id);
                 if ($existingOrder && $existingOrder->table_id == $table->id
-                    && !in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
+                    && ! in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
                     $order = $existingOrder;
                     $addedToExisting = true;
                 }
@@ -171,7 +167,7 @@ class TableController extends Controller
                         try {
                             $this->printService->printItemTicket($order, $orderItem, $printer);
                         } catch (\Exception $e) {
-                            Log::warning('Error al imprimir ticket ítem: ' . $e->getMessage(), ['item_id' => $orderItem->id]);
+                            Log::warning('Error al imprimir ticket ítem: '.$e->getMessage(), ['item_id' => $orderItem->id]);
                         }
                     }
                 }
@@ -179,7 +175,7 @@ class TableController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => count($newItems) > 1
-                        ? count($newItems) . ' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
+                        ? count($newItems).' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
                         : 'Ítem agregado. Se imprimió el ticket del nuevo ítem en cocina.',
                     'order_id' => $order->id,
                     'order_number' => $order->number,
@@ -189,46 +185,59 @@ class TableController extends Controller
                 ]);
             }
 
-            // Pedido nuevo: crear y imprimir ticket completo
-            $data = [
+            // Pedido nuevo atómico (items en la misma transacción)
+            $order = $this->orderService->createOrder([
                 'restaurant_id' => auth()->user()->restaurant_id,
                 'table_id' => $table->id,
                 'user_id' => auth()->id(),
                 'observations' => $validated['observations'] ?? null,
                 'items' => $validated['items'],
-            ];
-            $order = $this->orderService->createOrder($data);
-
-            foreach ($data['items'] as $itemData) {
-                $this->orderService->addItem($order, $itemData);
-            }
+                'idempotency_key' => $validated['idempotency_key'] ?? null,
+                'ensure_table_occupied' => true,
+            ]);
 
             $order->load(['table', 'items.product', 'items.modifiers']);
 
+            $printOk = true;
             if ($validated['send_to_kitchen']) {
+                try {
+                    $this->orderService->sendToKitchen($order);
+                } catch (\Throwable $e) {
+                    Log::warning('sendToKitchen: '.$e->getMessage(), ['order_id' => $order->id]);
+                }
                 try {
                     $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
                     if ($printer) {
                         $this->printService->printKitchenTicket($order, $printer);
+                        $order->forceFill(['kitchen_printed_at' => now()])->saveQuietly();
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                    $printOk = false;
+                    Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
+                    DB::afterCommit(fn () => \App\Jobs\PrintKitchenTicket::dispatch($order->id)->onQueue('printing'));
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado. Ticket enviado a la impresora.',
+                'message' => $printOk
+                    ? 'Pedido creado. Ticket enviado a la impresora.'
+                    : 'Pedido creado. La impresora falló: se reintentará; podés reimprimir desde el pedido.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'added_to_existing' => false,
+                'print_ok' => $printOk,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al crear pedido desde mesa', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'No pudimos abrir el pedido. Reintentá en unos segundos.',
             ], 422);
         }
     }
@@ -263,12 +272,12 @@ class TableController extends Controller
             $tables = Table::sortByNumericGroup(
                 Table::where('sector_id', $sectorId)->get()
             );
-            
+
             // Cargar subsectores con sus items ordenados
-            $selectedSector->load(['subsectors' => function($query) {
+            $selectedSector->load(['subsectors' => function ($query) {
                 $query->where('is_active', true)
-                      ->orderBy('name');
-            }, 'subsectors.items' => function($query) {
+                    ->orderBy('name');
+            }, 'subsectors.items' => function ($query) {
                 $query->orderBy('position');
             }]);
         }
@@ -298,7 +307,7 @@ class TableController extends Controller
     public function storeOrderFromSubsectorItem(Request $request, \App\Models\SubsectorItem $item)
     {
         // Solo ADMIN / GERENTE / MOZO / ENCARGADO
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -333,7 +342,7 @@ class TableController extends Controller
             if ($item->current_order_id) {
                 $existingOrder = Order::find($item->current_order_id);
                 if ($existingOrder && $existingOrder->subsector_item_id == $item->id
-                    && !in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
+                    && ! in_array($existingOrder->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO])) {
                     $order = $existingOrder;
                     $addedToExisting = true;
                 }
@@ -352,7 +361,7 @@ class TableController extends Controller
                         try {
                             $this->printService->printItemTicket($order, $orderItem, $printer);
                         } catch (\Exception $e) {
-                            Log::warning('Error al imprimir ticket ítem: ' . $e->getMessage(), ['item_id' => $orderItem->id]);
+                            Log::warning('Error al imprimir ticket ítem: '.$e->getMessage(), ['item_id' => $orderItem->id]);
                         }
                     }
                 }
@@ -360,7 +369,7 @@ class TableController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => count($newItems) > 1
-                        ? count($newItems) . ' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
+                        ? count($newItems).' ítems agregados. Se imprimieron solo los nuevos ítems en cocina.'
                         : 'Ítem agregado. Se imprimió el ticket del nuevo ítem en cocina.',
                     'order_id' => $order->id,
                     'order_number' => $order->number,
@@ -392,7 +401,7 @@ class TableController extends Controller
                         $this->printService->printKitchenTicket($order, $printer);
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Error al imprimir ticket: ' . $e->getMessage(), ['order_id' => $order->id]);
+                    Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
                 }
             }
 
@@ -472,7 +481,7 @@ class TableController extends Controller
             'capacity' => 'required|integer|min:1',
             'position_x' => 'nullable|integer',
             'position_y' => 'nullable|integer',
-            'status' => 'required|in:' . implode(',', Table::getStatuses()),
+            'status' => 'required|in:'.implode(',', Table::getStatuses()),
         ]);
 
         $table->update($validated);
@@ -520,7 +529,7 @@ class TableController extends Controller
     public function updateLayout(Request $request)
     {
         // Verificar permisos: solo ADMIN/GERENTE/MOZO/ENCARGADO pueden actualizar layouts
-        if (!in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             abort(403, 'No tienes permisos para actualizar el layout');
         }
 
@@ -555,8 +564,8 @@ class TableController extends Controller
         $sector = Sector::find($validated['sector_id']);
         if ($sector) {
             $layoutConfig = is_array($sector->layout_config) ? $sector->layout_config : [];
-            
-            if (!empty($validated['fixtures'])) {
+
+            if (! empty($validated['fixtures'])) {
                 $layoutConfig['fixtures'] = $layoutConfig['fixtures'] ?? [];
 
                 foreach ($validated['fixtures'] as $fixture) {
@@ -571,14 +580,14 @@ class TableController extends Controller
         }
 
         // Guardar posiciones de subsectores
-        if (!empty($validated['subsectors'])) {
+        if (! empty($validated['subsectors'])) {
             foreach ($validated['subsectors'] as $subsectorData) {
                 $subsector = Sector::find($subsectorData['id']);
                 if ($subsector && $subsector->parent_id == $validated['sector_id']) {
                     $subsectorLayoutConfig = is_array($subsector->layout_config) ? $subsector->layout_config : [];
                     $subsectorLayoutConfig['x'] = (int) $subsectorData['position_x'];
                     $subsectorLayoutConfig['y'] = (int) $subsectorData['position_y'];
-                    
+
                     $subsector->update(['layout_config' => $subsectorLayoutConfig]);
                 }
             }
@@ -595,8 +604,8 @@ class TableController extends Controller
         Gate::authorize('update', $table);
 
         $validated = $request->validate([
-            'status' => 'required|in:' . implode(',', Table::getStatuses()),
-            'guests_count' => 'nullable|integer|min:0|max:' . $table->capacity,
+            'status' => 'required|in:'.implode(',', Table::getStatuses()),
+            'guests_count' => 'nullable|integer|min:0|max:'.$table->capacity,
             'waiter_id' => 'required_if:status,OCUPADA|nullable|exists:users,id', // OBLIGATORIO si pasa a OCUPADA
         ]);
 
@@ -618,31 +627,31 @@ class TableController extends Controller
             ]);
         } else {
             // Si pasa a OCUPADA y no hay sesión activa, crear una
-            if ($validated['status'] === 'OCUPADA' && !$table->current_session_id) {
+            if ($validated['status'] === 'OCUPADA' && ! $table->current_session_id) {
                 // Requerir waiter_id al abrir mesa
                 if (empty($validated['waiter_id'])) {
                     return redirect()->route('tables.index')
                         ->with('error', 'Debes asignar un mozo al abrir la mesa.');
                 }
-                
+
                 // Verificar que el waiter_id sea un usuario asignable (sin SUPERADMIN) del mismo restaurante
                 $waiter = \App\Models\User::where('id', $validated['waiter_id'])
                     ->where('restaurant_id', $table->restaurant_id)
                     ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN'])
                     ->where('is_active', true)
                     ->first();
-                
-                if (!$waiter) {
+
+                if (! $waiter) {
                     return redirect()->route('tables.index')
                         ->with('error', 'El mozo seleccionado no es válido o no pertenece a este restaurante.');
                 }
-                
+
                 // Fallback defensivo: si en prod aún no corrieron migraciones, evitar fatal
-                if (!Schema::hasTable('table_sessions')) {
+                if (! Schema::hasTable('table_sessions')) {
                     return redirect()->route('tables.index')
                         ->with('error', 'Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
                 }
-                
+
                 try {
                     $session = TableSession::create([
                         'restaurant_id' => $table->restaurant_id,
@@ -655,9 +664,10 @@ class TableController extends Controller
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
                     // Si falla la creación de sesión, registrar error pero permitir continuar
-                    Log::error('Error al crear sesión de mesa: ' . $e->getMessage());
+                    Log::error('Error al crear sesión de mesa: '.$e->getMessage());
+
                     return redirect()->route('tables.index')
-                        ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: ' . $e->getMessage());
+                        ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: '.$e->getMessage());
                 }
             }
             $table->update([
@@ -681,7 +691,7 @@ class TableController extends Controller
             return back()->with('error', 'La mesa no está ocupada');
         }
 
-        if (!$table->current_session_id) {
+        if (! $table->current_session_id) {
             return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
         }
 
@@ -695,13 +705,13 @@ class TableController extends Controller
 
         if ($activeOrders->isEmpty()) {
             // Si no hay pedidos, solo liberar la mesa
-                DB::table('table_sessions')
-                    ->where('id', $table->current_session_id)
-                    ->update([
-                        'ended_at' => now(),
-                        'status' => 'CERRADA', // Usar string directo
-                        'updated_at' => now(),
-                    ]);
+            DB::table('table_sessions')
+                ->where('id', $table->current_session_id)
+                ->update([
+                    'ended_at' => now(),
+                    'status' => 'CERRADA', // Usar string directo
+                    'updated_at' => now(),
+                ]);
             $table->update([
                 'status' => 'LIBRE',
                 'current_order_id' => null,
@@ -771,10 +781,11 @@ class TableController extends Controller
                 return response()->json([
                     'success' => $success,
                     'message' => $message,
-                    'data' => $data
+                    'data' => $data,
                 ], $success ? 200 : 422);
             }
-            return $success 
+
+            return $success
                 ? redirect()->back()->with('success', $message)
                 : redirect()->back()->with('error', $message)->withInput();
         };
@@ -783,7 +794,7 @@ class TableController extends Controller
             return $respond(false, 'La mesa no está ocupada');
         }
 
-        if (!$table->current_session_id) {
+        if (! $table->current_session_id) {
             return $respond(false, 'La mesa no tiene una sesión activa');
         }
 
@@ -801,16 +812,17 @@ class TableController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Error de validación',
-                    'errors' => $e->errors()
+                    'errors' => $e->errors(),
                 ], 422);
             }
+
             return redirect()->back()->withErrors($e->errors())->withInput();
         }
 
         try {
             $result = $this->tableService->processTablePayment($table, $validated, (int) auth()->id());
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $respond(false, $result['message'] ?? 'Error al procesar el pago');
             }
 
@@ -830,18 +842,19 @@ class TableController extends Controller
             foreach ($flash as $key => $value) {
                 $redirect->with($key, $value);
             }
+
             return $redirect;
         } catch (\Exception $e) {
-            Log::error('Error al procesar pago: ' . $e->getMessage(), [
+            Log::error('Error al procesar pago: '.$e->getMessage(), [
                 'table_id' => $table->id,
                 'user_id' => auth()->id(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió un error al procesar el pago: ' . $e->getMessage()
+                    'message' => 'Ocurrió un error al procesar el pago: '.$e->getMessage(),
                 ], 500);
             }
 
@@ -853,6 +866,7 @@ class TableController extends Controller
 
     /**
      * Cerrar mesa: cierra todos los pedidos activos y genera recibo único consolidado
+     *
      * @deprecated Usar showCloseTable y processPayment en su lugar
      */
     public function closeTable(Table $table)
@@ -898,7 +912,7 @@ class TableController extends Controller
         $totalDiscount = session('total_discount', 0);
         $sessionId = session('table_session_id');
         $payments = collect(session('payments', []));
-        
+
         // Si hay sessionId, obtener pagos de la base de datos
         if ($sessionId) {
             $dbPayments = Payment::where('table_session_id', $sessionId)
@@ -911,15 +925,15 @@ class TableController extends Controller
 
         // SIEMPRE recalcular desde la base de datos para asegurar precisión
         // Si no hay sessionId en sesión, intentar obtenerlo de los pagos más recientes
-        if (!$sessionId) {
+        if (! $sessionId) {
             $recentPayment = Payment::where('restaurant_id', $table->restaurant_id)
-                ->whereHas('order', function($query) use ($table) {
+                ->whereHas('order', function ($query) use ($table) {
                     $query->where('table_id', $table->id);
                 })
                 ->whereNotNull('table_session_id')
                 ->orderBy('created_at', 'desc')
                 ->first();
-            
+
             if ($recentPayment) {
                 $sessionId = $recentPayment->table_session_id;
             } else {
@@ -928,18 +942,18 @@ class TableController extends Controller
                     ->where('status', \App\Models\TableSession::STATUS_CERRADA)
                     ->orderBy('ended_at', 'desc')
                     ->first();
-                
+
                 if ($lastSession) {
                     $sessionId = $lastSession->id;
                 }
             }
         }
-        
+
         // CRÍTICO: Si no hay sessionId, NO obtener pedidos (evitar mezclar sesiones)
-        if (!$sessionId) {
+        if (! $sessionId) {
             Log::warning('No se pudo determinar table_session_id para el recibo consolidado', [
                 'table_id' => $table->id,
-                'restaurant_id' => $table->restaurant_id
+                'restaurant_id' => $table->restaurant_id,
             ]);
             $closedOrders = collect();
             $consolidatedItems = collect();
@@ -959,27 +973,27 @@ class TableController extends Controller
             // Consolidar items desde la base de datos
             $consolidatedItems = collect();
             $totalItemsProcessed = 0;
-            
+
             foreach ($closedOrders as $order) {
                 // Asegurar que los items estén cargados
-                if (!$order->relationLoaded('items')) {
+                if (! $order->relationLoaded('items')) {
                     $order->load('items.product.category', 'items.modifiers');
                 }
-                
+
                 foreach ($order->items as $item) {
                     $totalItemsProcessed++;
-                    
+
                     // Buscar si ya existe un item con el mismo product_id
                     $existingItemIndex = $consolidatedItems->search(function ($i) use ($item) {
                         return $i['product_id'] === $item->product_id;
                     });
-                    
+
                     if ($existingItemIndex !== false) {
                         // Si existe, sumar cantidad y subtotal
                         $existingItem = $consolidatedItems[$existingItemIndex];
                         $newQuantity = $existingItem['quantity'] + $item->quantity;
                         $newSubtotal = $existingItem['subtotal'] + $item->subtotal;
-                        
+
                         // Actualizar el item en la colección
                         $consolidatedItems[$existingItemIndex] = [
                             'product_id' => $existingItem['product_id'],
@@ -1004,32 +1018,32 @@ class TableController extends Controller
                     }
                 }
             }
-            
+
             // Calcular totales: SIEMPRE usar la suma de los pedidos para el total final
             // Esto asegura que cuando hay múltiples pedidos, el total sea correcto
             $totalSubtotal = $closedOrders->sum('subtotal');
             $totalDiscount = $closedOrders->sum('discount');
             $totalAmount = $closedOrders->sum('total'); // Usar suma directa de totales de pedidos
-            
+
             // Calcular también desde items consolidados para validación
             $calculatedSubtotalFromItems = $consolidatedItems->sum('subtotal');
             $calculatedTotalFromItems = $calculatedSubtotalFromItems - $totalDiscount;
-            
+
             // Validación adicional: verificar que todos los items se procesaron
-            $totalItemsInOrders = $closedOrders->sum(function($order) {
+            $totalItemsInOrders = $closedOrders->sum(function ($order) {
                 return $order->items->count();
             });
-            
+
             if ($totalItemsProcessed !== $totalItemsInOrders) {
                 Log::warning('Discrepancia en cantidad de items procesados', [
                     'table_id' => $table->id,
                     'session_id' => $sessionId,
                     'items_processed' => $totalItemsProcessed,
                     'items_in_orders' => $totalItemsInOrders,
-                    'orders_count' => $closedOrders->count()
+                    'orders_count' => $closedOrders->count(),
                 ]);
             }
-            
+
             // Validar que los totales sean consistentes (solo para logging)
             if (abs($totalAmount - $calculatedTotalFromItems) > 0.01) {
                 Log::info('Diferencia entre total de pedidos y total calculado desde items', [
@@ -1040,15 +1054,15 @@ class TableController extends Controller
                     'difference' => abs($totalAmount - $calculatedTotalFromItems),
                     'orders_count' => $closedOrders->count(),
                     'orders_numbers' => $closedOrders->pluck('number')->toArray(),
-                    'orders_totals' => $closedOrders->pluck('total')->toArray()
+                    'orders_totals' => $closedOrders->pluck('total')->toArray(),
                 ]);
             }
         }
 
         return view('tables.consolidated-receipt', compact(
-            'table', 
-            'closedOrders', 
-            'consolidatedItems', 
+            'table',
+            'closedOrders',
+            'consolidatedItems',
             'totalAmount',
             'totalSubtotal',
             'totalDiscount',
@@ -1130,5 +1144,3 @@ class TableController extends Controller
     // (el método "Mostrar todos los pedidos de una mesa" fue reemplazado por
     //  "Mostrar pedidos de la sesión actual de una mesa (no histórico)")
 }
-
-

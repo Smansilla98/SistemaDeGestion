@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class RecurringActivity extends Model
 {
@@ -37,11 +37,17 @@ class RecurringActivity extends Model
 
     // Días de la semana
     const DAY_MONDAY = 'MONDAY';
+
     const DAY_TUESDAY = 'TUESDAY';
+
     const DAY_WEDNESDAY = 'WEDNESDAY';
+
     const DAY_THURSDAY = 'THURSDAY';
+
     const DAY_FRIDAY = 'FRIDAY';
+
     const DAY_SATURDAY = 'SATURDAY';
+
     const DAY_SUNDAY = 'SUNDAY';
 
     /**
@@ -57,7 +63,7 @@ class RecurringActivity extends Model
      */
     public function getInstancesForDateRange($startDate, $endDate): array
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return [];
         }
 
@@ -81,12 +87,12 @@ class RecurringActivity extends Model
         // Encontrar el primer día de la semana objetivo dentro del rango
         $current = $actualStart->copy();
         $foundFirst = false;
-        
+
         while ($current->lte($actualEnd)) {
             $currentDayNumber = $current->dayOfWeek;
-            
+
             // Si es el día correcto o aún no hemos encontrado el primero
-            if ($currentDayNumber == $dayNumber || !$foundFirst) {
+            if ($currentDayNumber == $dayNumber || ! $foundFirst) {
                 if ($currentDayNumber == $dayNumber) {
                     $foundFirst = true;
                     $instances[] = [
@@ -119,7 +125,7 @@ class RecurringActivity extends Model
      */
     private function getDayNumber(): int
     {
-        return match($this->day_of_week) {
+        return match ($this->day_of_week) {
             self::DAY_SUNDAY => 0,
             self::DAY_MONDAY => 1,
             self::DAY_TUESDAY => 2,
@@ -136,7 +142,7 @@ class RecurringActivity extends Model
      */
     public function getDayLabel(): string
     {
-        return match($this->day_of_week) {
+        return match ($this->day_of_week) {
             self::DAY_MONDAY => 'Lunes',
             self::DAY_TUESDAY => 'Martes',
             self::DAY_WEDNESDAY => 'Miércoles',
@@ -148,4 +154,3 @@ class RecurringActivity extends Model
         };
     }
 }
-

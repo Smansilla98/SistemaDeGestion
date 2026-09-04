@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Kitchen;
 
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Notifications\OrderDispatchedNotification;
-use App\Services\OrderService;
 use App\Services\NotificationService;
-use App\Events\KitchenOrderReady;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 
 class KitchenController extends Controller
@@ -22,21 +22,18 @@ class KitchenController extends Controller
     }
 
     /**
-     * Vista principal de cocina (KDS - Kitchen Display System)
-     * MÓDULO 3: Tablero estilo KDS con tarjetas grandes por pedido
+     * KDS: columnas ENVIADO / EN_PREPARACION / LISTO (alineadas con la vista).
      */
     public function index(Request $request)
     {
         $restaurantId = auth()->user()->restaurant_id;
 
-        // MÓDULO 3: Obtener pedidos en estados relevantes para cocina
         $query = Order::where('restaurant_id', $restaurantId)
-            ->whereIn('status', ['ABIERTO', 'EN_PREPARACION', 'ENTREGADO'])
+            ->whereIn('status', OrderStatus::kitchenBoard())
             ->with(['table', 'table.sector', 'user', 'items.product', 'items.modifiers']);
 
-        // Filtrar por sector si se especifica
         if ($request->has('sector')) {
-            $query->whereHas('table', function($q) use ($request) {
+            $query->whereHas('table', function ($q) use ($request) {
                 $q->where('sector_id', $request->sector);
             });
         }
@@ -49,8 +46,52 @@ class KitchenController extends Controller
     }
 
     /**
-     * Actualizar estado de item
+     * Tablero KDS en JSON para refresh parcial (sin location.reload).
      */
+    public function boardJson(Request $request)
+    {
+        $restaurantId = auth()->user()->restaurant_id;
+
+        $query = Order::where('restaurant_id', $restaurantId)
+            ->whereIn('status', OrderStatus::kitchenBoard())
+            ->with(['table', 'table.sector', 'user', 'items.product']);
+
+        if ($request->has('sector')) {
+            $query->whereHas('table', function ($q) use ($request) {
+                $q->where('sector_id', $request->sector);
+            });
+        }
+
+        $orders = $query->orderBy('created_at', 'asc')->get();
+
+        $payload = $orders->map(function (Order $order) {
+            return [
+                'id' => $order->id,
+                'number' => $order->number,
+                'status' => $order->status,
+                'sent_at' => optional($order->sent_at ?? $order->created_at)->toIso8601String(),
+                'table' => $order->table?->number,
+                'sector' => $order->table?->sector?->name,
+                'waiter' => $order->user?->name,
+                'items_count' => $order->items->count(),
+                'items_ready' => $order->items->where('status', 'LISTO')->count()
+                    + $order->items->where('status', 'ENTREGADO')->count(),
+                'updated_at' => $order->updated_at?->toIso8601String(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'counts' => [
+                'ENVIADO' => $orders->where('status', 'ENVIADO')->count(),
+                'EN_PREPARACION' => $orders->where('status', 'EN_PREPARACION')->count(),
+                'LISTO' => $orders->where('status', 'LISTO')->count(),
+            ],
+            'orders' => $payload,
+            'signature' => md5($payload->pluck('id')->sort()->implode(',').'|'.$payload->pluck('status')->implode(',')),
+        ]);
+    }
+
     public function updateItemStatus(Request $request, OrderItem $item)
     {
         $validated = $request->validate([
@@ -59,16 +100,15 @@ class KitchenController extends Controller
 
         $this->orderService->updateItemStatus($item, $validated['status']);
 
-        // Actualizar estado del pedido si es necesario
         $order = $item->order;
         $allItemsReady = $order->items()
             ->where('status', '!=', 'ENTREGADO')
             ->count() === 0;
 
-        if ($allItemsReady && $order->status === 'EN_PREPARACION') {
-            $order->update(['status' => 'LISTO']);
-        } elseif ($order->status === 'ENVIADO' && $validated['status'] === 'EN_PREPARACION') {
-            $order->update(['status' => 'EN_PREPARACION']);
+        if ($allItemsReady && in_array($order->status, [OrderStatus::EN_PREPARACION->value, OrderStatus::ENVIADO->value], true)) {
+            $order->transitionTo(OrderStatus::LISTO, auth()->user(), 'Ítems listos');
+        } elseif ($order->status === OrderStatus::ENVIADO->value && $validated['status'] === 'EN_PREPARACION') {
+            $order->transitionTo(OrderStatus::EN_PREPARACION, auth()->user(), 'Cocina tomó el pedido');
         }
 
         if (request()->wantsJson() || request()->expectsJson()) {
@@ -83,21 +123,14 @@ class KitchenController extends Controller
         return back()->with('success', 'Estado actualizado');
     }
 
-    /**
-     * Marcar pedido como listo
-     * MÓDULO 3: Notificar al mozo cuando el pedido está listo
-     */
     public function markOrderReady(Order $order)
     {
-        // Cambiar estado a ENTREGADO (en el nuevo flujo, LISTO no existe)
-        $order->update(['status' => 'ENTREGADO']);
+        $order->transitionTo(OrderStatus::LISTO, auth()->user(), 'Marcado listo desde KDS');
 
-        // Notificar al mozo que el pedido está listo (cache para KDS)
         $this->notificationService->notifyOrderReady($order);
-        // Notificación en base de datos para campana del layout
         User::where('restaurant_id', $order->restaurant_id)
             ->where('is_active', true)
-            ->whereIn('role', ['MOZO', 'ADMIN'])
+            ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN', 'CAJERO'])
             ->get()
             ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, 'LISTO')));
 
@@ -111,27 +144,23 @@ class KitchenController extends Controller
 
         return back()->with('success', 'Pedido marcado como listo. El mozo será notificado.');
     }
-    
-    /**
-     * Actualizar estado del pedido desde KDS
-     * MÓDULO 3: Permite cambiar estado desde cocina
-     */
+
     public function updateOrderStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:EN_PREPARACION,ENTREGADO'
+            'status' => 'required|in:ENVIADO,EN_PREPARACION,LISTO,ENTREGADO',
         ]);
 
-        $order->update(['status' => $validated['status']]);
+        $target = OrderStatus::from($validated['status']);
+        $order->transitionTo($target, auth()->user(), 'Cambio desde KDS');
 
-        if ($validated['status'] === 'ENTREGADO') {
+        if (in_array($validated['status'], ['LISTO', 'ENTREGADO'], true)) {
             $this->notificationService->notifyOrderReady($order);
             User::where('restaurant_id', $order->restaurant_id)
                 ->where('is_active', true)
-                ->whereIn('role', ['MOZO', 'ADMIN'])
+                ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN', 'CAJERO'])
                 ->get()
-                ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, 'ENTREGADO')));
-            $order->load(['table', 'user']);
+                ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, $validated['status'])));
         }
 
         if (request()->wantsJson() || request()->expectsJson()) {
@@ -144,41 +173,43 @@ class KitchenController extends Controller
 
         return back()->with('success', 'Estado del pedido actualizado');
     }
-    
+
     /**
-     * API: Obtener notificaciones de pedidos listos para el mozo
-     * MÓDULO 3: Endpoint para polling de notificaciones
+     * Pedidos LISTO del local (no solo mesas del mozo logueado).
      */
     public function getReadyOrdersNotifications(Request $request)
     {
         $restaurantId = auth()->user()->restaurant_id;
-        $userId = auth()->id();
-        
-        // Obtener pedidos que cambiaron a ENTREGADO en los últimos 5 minutos
-        // y que pertenecen a mesas atendidas por este mozo
-        $readyOrders = Order::where('restaurant_id', $restaurantId)
-            ->where('status', 'ENTREGADO')
+        $user = auth()->user();
+
+        $query = Order::where('restaurant_id', $restaurantId)
+            ->whereIn('status', [OrderStatus::LISTO->value, OrderStatus::ENTREGADO->value])
             ->where('updated_at', '>=', now()->subMinutes(5))
-            ->whereHas('table', function($q) use ($userId) {
-                $q->whereHas('currentSession', function($sq) use ($userId) {
-                    $sq->where('waiter_id', $userId)
-                      ->where('status', 'ABIERTA');
-                });
-            })
-            ->with(['table', 'table.sector'])
-            ->orderBy('updated_at', 'desc')
+            ->with(['table', 'table.sector']);
+
+        // Mozos: priorizar sus mesas, pero no ocultar el resto del salón
+        if (($user->role ?? null) === 'MOZO') {
+            $query->where(function ($q) use ($user) {
+                $q->whereHas('table.currentSession', function ($sq) use ($user) {
+                    $sq->where('waiter_id', $user->id)->where('status', 'ABIERTA');
+                })->orWhere('user_id', $user->id)
+                    ->orWhereNull('table_id');
+            });
+        }
+
+        $readyOrders = $query->orderBy('updated_at', 'desc')
             ->get()
-            ->map(function($order) {
+            ->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'number' => $order->number,
-                    'table_number' => $order->table->number,
-                    'table_id' => $order->table->id,
+                    'table_number' => $order->table->number ?? ($order->customer_name ?: 'Barra'),
+                    'table_id' => $order->table_id,
                     'table_sector' => $order->table->sector->name ?? 'N/A',
                     'updated_at' => $order->updated_at->toIso8601String(),
                 ];
             });
-        
+
         return response()->json([
             'success' => true,
             'orders' => $readyOrders,
@@ -186,4 +217,3 @@ class KitchenController extends Controller
         ]);
     }
 }
-

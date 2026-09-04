@@ -13,7 +13,9 @@ class StockMovement extends Model
 
     // Tipos de movimiento
     const TYPE_ENTRADA = 'ENTRADA';
+
     const TYPE_SALIDA = 'SALIDA';
+
     const TYPE_AJUSTE = 'AJUSTE';
 
     protected $fillable = [
@@ -94,5 +96,3 @@ class StockMovement extends Model
         ];
     }
 }
-
-

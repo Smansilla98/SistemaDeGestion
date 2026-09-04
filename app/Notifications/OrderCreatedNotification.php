@@ -23,6 +23,7 @@ class OrderCreatedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         $target = $this->order->table?->number ?? $this->order->customer_name ?? 'N/A';
+
         return [
             'type' => 'order_created',
             'message' => "Nuevo pedido #{$this->order->number} - {$target}",

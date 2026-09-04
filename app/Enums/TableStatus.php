@@ -17,4 +17,3 @@ enum TableStatus: string
         return array_column(self::cases(), 'value');
     }
 }
-

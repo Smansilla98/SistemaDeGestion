@@ -30,7 +30,7 @@ class AuditService
      */
     public function logCreate(string $modelType, int $modelId, array $attributes): void
     {
-        $this->log("created", $modelType, $modelId, ['attributes' => $attributes]);
+        $this->log('created', $modelType, $modelId, ['attributes' => $attributes]);
     }
 
     /**
@@ -40,7 +40,7 @@ class AuditService
     {
         $changes = [];
         foreach ($newAttributes as $key => $value) {
-            if (!isset($oldAttributes[$key]) || $oldAttributes[$key] !== $value) {
+            if (! isset($oldAttributes[$key]) || $oldAttributes[$key] !== $value) {
                 $changes[$key] = [
                     'old' => $oldAttributes[$key] ?? null,
                     'new' => $value,
@@ -48,8 +48,8 @@ class AuditService
             }
         }
 
-        if (!empty($changes)) {
-            $this->log("updated", $modelType, $modelId, $changes);
+        if (! empty($changes)) {
+            $this->log('updated', $modelType, $modelId, $changes);
         }
     }
 
@@ -58,7 +58,6 @@ class AuditService
      */
     public function logDelete(string $modelType, int $modelId): void
     {
-        $this->log("deleted", $modelType, $modelId);
+        $this->log('deleted', $modelType, $modelId);
     }
 }
-

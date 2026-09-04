@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class ProductApiController extends Controller
@@ -32,7 +32,7 @@ class ProductApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $products
+            'data' => $products,
         ]);
     }
 
@@ -44,7 +44,7 @@ class ProductApiController extends Controller
         if ($product->restaurant_id !== auth()->user()->restaurant_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No autorizado'
+                'message' => 'No autorizado',
             ], 403);
         }
 
@@ -52,7 +52,7 @@ class ProductApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $product
+            'data' => $product,
         ]);
     }
 
@@ -75,8 +75,7 @@ class ProductApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $products,
-            'category' => $category
+            'category' => $category,
         ]);
     }
 }
-

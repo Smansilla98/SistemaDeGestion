@@ -39,8 +39,8 @@ class RecurringActivityController extends Controller
                 WHEN 'SUNDAY' THEN 7
             END
         ")
-        ->orderBy('start_time')
-        ->paginate(20);
+            ->orderBy('start_time')
+            ->paginate(20);
 
         return view('recurring-activities.index', compact('activities'));
     }
@@ -157,4 +157,3 @@ class RecurringActivityController extends Controller
             ->with('success', 'Actividad recurrente eliminada exitosamente.');
     }
 }
-

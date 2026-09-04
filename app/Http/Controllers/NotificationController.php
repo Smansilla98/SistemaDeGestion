@@ -39,6 +39,7 @@ class NotificationController extends Controller
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'url' => $url]);
         }
+
         return $url ? redirect($url) : redirect()->route('notifications.index');
     }
 
@@ -48,6 +49,7 @@ class NotificationController extends Controller
         if (request()->wantsJson()) {
             return response()->json(['success' => true]);
         }
+
         return redirect()->back()->with('success', 'Todas las notificaciones marcadas como leídas');
     }
 }

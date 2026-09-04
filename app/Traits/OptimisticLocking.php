@@ -11,7 +11,7 @@ trait OptimisticLocking
      * Actualizar modelo con optimistic locking
      * Previene conflictos cuando dos usuarios editan simultáneamente
      */
-    protected function updateWithLock(Model $model, array $attributes, int $expectedVersion = null): bool
+    protected function updateWithLock(Model $model, array $attributes, ?int $expectedVersion = null): bool
     {
         return DB::transaction(function () use ($model, $attributes, $expectedVersion) {
             // Recargar el modelo para obtener la versión actual
@@ -43,12 +43,12 @@ trait OptimisticLocking
      */
     protected function isModelModified(Model $model, int $expectedVersion): bool
     {
-        if (!isset($model->version)) {
+        if (! isset($model->version)) {
             return false;
         }
 
         $model->refresh();
+
         return $model->version != $expectedVersion;
     }
 }
-

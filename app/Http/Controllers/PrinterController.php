@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Printer;
 use App\Services\PrintService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 
 class PrinterController extends Controller
 {
@@ -134,11 +134,11 @@ class PrinterController extends Controller
             $testContent = "TEST DE IMPRESORA\n\n";
             $testContent .= "Impresora: {$printer->name}\n";
             $testContent .= "Tipo: {$printer->type}\n";
-            $testContent .= "Fecha: " . now()->format('Y-m-d H:i:s') . "\n";
+            $testContent .= 'Fecha: '.now()->format('Y-m-d H:i:s')."\n";
             $testContent .= "\nEste es un documento de prueba.\n";
 
             // Guardar en archivo temporal
-            $tempFile = storage_path('app/temp/test-printer-' . $printer->id . '.txt');
+            $tempFile = storage_path('app/temp/test-printer-'.$printer->id.'.txt');
             File::ensureDirectoryExists(storage_path('app/temp'));
             file_put_contents($tempFile, $testContent);
 
@@ -148,15 +148,16 @@ class PrinterController extends Controller
                     socket_write($socket, $testContent);
                     socket_close($socket);
                     @unlink($tempFile);
+
                     return back()->with('success', 'Prueba de impresión enviada exitosamente');
                 }
             }
 
             @unlink($tempFile);
+
             return back()->with('info', 'Prueba guardada en archivo. Configuración verificada.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al probar impresora: ' . $e->getMessage());
+            return back()->with('error', 'Error al probar impresora: '.$e->getMessage());
         }
     }
 }
-

@@ -37,7 +37,7 @@ class AuthController extends Controller
         $validated = $request->validated();
 
         $restaurant = Restaurant::where('is_active', true)->first();
-        if (!$restaurant) {
+        if (! $restaurant) {
             return back()->withErrors(['register' => 'No hay restaurantes disponibles para el registro. Contacta al administrador.'])->withInput();
         }
 
@@ -105,4 +105,3 @@ class AuthController extends Controller
         };
     }
 }
-

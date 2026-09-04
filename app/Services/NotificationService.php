@@ -30,15 +30,15 @@ class NotificationService
             $notificationsKey = "ready_orders_{$order->restaurant_id}";
             $notifications = Cache::get($notificationsKey, []);
             $notifications[] = $notification;
-            
+
             // Mantener solo las últimas 50 notificaciones
             if (count($notifications) > 50) {
                 $notifications = array_slice($notifications, -50);
             }
-            
+
             Cache::put($notificationsKey, $notifications, now()->addMinutes(10));
         } catch (\Exception $e) {
-            Log::error('Error al notificar pedido listo: ' . $e->getMessage());
+            Log::error('Error al notificar pedido listo: '.$e->getMessage());
         }
     }
 
@@ -60,7 +60,8 @@ class NotificationService
 
             return array_values($notifications);
         } catch (\Exception $e) {
-            Log::error('Error al obtener notificaciones: ' . $e->getMessage());
+            Log::error('Error al obtener notificaciones: '.$e->getMessage());
+
             return [];
         }
     }
@@ -87,7 +88,7 @@ class NotificationService
                 'timestamp' => now()->toIso8601String(),
             ], now()->addMinutes(2));
         } catch (\Exception $e) {
-            Log::error('Error al notificar cambio de estado de mesa: ' . $e->getMessage());
+            Log::error('Error al notificar cambio de estado de mesa: '.$e->getMessage());
         }
     }
 
@@ -100,4 +101,3 @@ class NotificationService
         return [];
     }
 }
-

@@ -29,17 +29,19 @@ class FixTableSessionsEnum extends Command
     {
         $this->info('Verificando enum de status en table_sessions...');
 
-        if (!Schema::hasTable('table_sessions')) {
+        if (! Schema::hasTable('table_sessions')) {
             $this->warn('La tabla table_sessions no existe. Se creará con las migraciones.');
+
             return 0;
         }
 
         try {
             // Verificar el tipo actual de la columna
             $columnInfo = DB::select("SHOW COLUMNS FROM table_sessions WHERE Field = 'status'");
-            
+
             if (empty($columnInfo)) {
                 $this->warn('La columna status no existe en table_sessions.');
+
                 return 0;
             }
 
@@ -49,6 +51,7 @@ class FixTableSessionsEnum extends Command
             // Verificar si el enum contiene ABIERTA y CERRADA
             if (strpos($currentType, 'ABIERTA') !== false && strpos($currentType, 'CERRADA') !== false) {
                 $this->info('✓ El enum ya está correcto (ABIERTA, CERRADA)');
+
                 return 0;
             }
 
@@ -63,7 +66,7 @@ class FixTableSessionsEnum extends Command
                 ELSE 'ABIERTA' 
             END");
 
-            $this->info("Valores actualizados: " . ($updated ? 'Sí' : 'No'));
+            $this->info('Valores actualizados: '.($updated ? 'Sí' : 'No'));
 
             // Modificar el enum
             DB::statement("ALTER TABLE table_sessions MODIFY COLUMN status ENUM('ABIERTA', 'CERRADA') DEFAULT 'ABIERTA'");
@@ -72,15 +75,15 @@ class FixTableSessionsEnum extends Command
 
             // Verificar el resultado
             $newColumnInfo = DB::select("SHOW COLUMNS FROM table_sessions WHERE Field = 'status'");
-            if (!empty($newColumnInfo)) {
+            if (! empty($newColumnInfo)) {
                 $this->info("Nuevo tipo: {$newColumnInfo[0]->Type}");
             }
 
             return 0;
         } catch (\Exception $e) {
-            $this->error('Error al corregir el enum: ' . $e->getMessage());
+            $this->error('Error al corregir el enum: '.$e->getMessage());
+
             return 1;
         }
     }
 }
-

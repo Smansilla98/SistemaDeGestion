@@ -37,5 +37,3 @@ class CashRegister extends Model
         return $this->hasMany(CashRegisterSession::class);
     }
 }
-
-

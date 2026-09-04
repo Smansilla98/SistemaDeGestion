@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Stock;
-use App\Models\StockMovement;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\Stock;
+use App\Models\StockMovement;
 use App\Models\User;
-use App\Models\Supplier;
 use App\Notifications\LowStockNotification;
 use Illuminate\Support\Facades\DB;
 
@@ -20,13 +19,20 @@ class StockService
     {
         return DB::transaction(function () use ($data) {
             $product = Product::findOrFail($data['product_id']);
-            $currentStock = $product->getCurrentStock($data['restaurant_id']);
+
+            // Actualizar o crear stock (lock para concurrencia)
+            $stock = Stock::where('restaurant_id', $data['restaurant_id'])
+                ->where('product_id', $data['product_id'])
+                ->lockForUpdate()
+                ->first();
+
+            $currentStock = $stock?->quantity ?? $product->getCurrentStock($data['restaurant_id']);
 
             // Calcular nuevo stock según el tipo
             $newStock = match ($data['type']) {
                 'ENTRADA' => $currentStock + $data['quantity'],
                 'SALIDA' => $currentStock - $data['quantity'],
-                'AJUSTE' => $data['quantity'], // En ajuste, quantity es el nuevo valor
+                'AJUSTE' => $data['quantity'],
                 default => throw new \Exception('Tipo de movimiento inválido'),
             };
 
@@ -34,7 +40,6 @@ class StockService
                 throw new \Exception('No se puede tener stock negativo');
             }
 
-            // Actualizar o crear stock
             Stock::updateOrCreate(
                 [
                     'restaurant_id' => $data['restaurant_id'],
@@ -70,9 +75,9 @@ class StockService
             // Si es una ENTRADA y tiene información de compra, registrar la compra
             if ($data['type'] === 'ENTRADA' && isset($data['purchase_data'])) {
                 $purchaseData = $data['purchase_data'];
-                
+
                 // Validar que tenga los datos requeridos
-                if (!isset($purchaseData['supplier_id']) || !isset($purchaseData['unit_cost']) || !isset($purchaseData['purchase_date'])) {
+                if (! isset($purchaseData['supplier_id']) || ! isset($purchaseData['unit_cost']) || ! isset($purchaseData['purchase_date'])) {
                     throw new \Exception('Para una entrada, debe proporcionar proveedor, costo unitario y fecha de compra');
                 }
 
@@ -114,6 +119,7 @@ class StockService
                     );
                 }
             }
+
             return;
         }
 
@@ -148,14 +154,15 @@ class StockService
                     'user_id' => auth()->id(),
                     'type' => 'SALIDA',
                     'quantity' => $toDeduct,
-                    'reason' => 'Venta (receta: ' . $product->name . ')',
+                    'reason' => 'Venta (receta: '.$product->name.')',
                     'reference' => $orderId ? "order_{$orderId}" : null,
                 ]);
             }
+
             return;
         }
 
-        if (!$product->has_stock) {
+        if (! $product->has_stock) {
             return;
         }
 
@@ -181,7 +188,9 @@ class StockService
         if ($product->hasRecipe()) {
             foreach ($product->ingredients as $ingredient) {
                 $toAdd = (int) ($ingredient->pivot->quantity * $quantity);
-                if ($toAdd <= 0) continue;
+                if ($toAdd <= 0) {
+                    continue;
+                }
 
                 $this->recordMovement([
                     'restaurant_id' => $restaurantId,
@@ -193,10 +202,11 @@ class StockService
                     'reference' => $orderId ? "order_{$orderId}" : null,
                 ]);
             }
+
             return;
         }
 
-        if (!$product->has_stock) {
+        if (! $product->has_stock) {
             return;
         }
 
@@ -241,4 +251,3 @@ class StockService
         return $alerts;
     }
 }
-

@@ -25,8 +25,11 @@ class SubsectorItem extends Model
     ];
 
     const STATUS_LIBRE = 'LIBRE';
+
     const STATUS_OCUPADA = 'OCUPADA';
+
     const STATUS_RESERVADA = 'RESERVADA';
+
     const STATUS_CERRADA = 'CERRADA';
 
     /**
@@ -77,4 +80,3 @@ class SubsectorItem extends Model
         return $this->status === self::STATUS_OCUPADA;
     }
 }
-

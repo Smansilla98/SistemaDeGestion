@@ -352,7 +352,7 @@
         <div class="kds-column" data-column="pending">
             <div class="kds-column-header pending">
                 <h3><i class="bi bi-clock-history"></i> Pendientes</h3>
-                <span class="kds-badge" id="pending-count">0</span>
+                <span class="kds-badge" id="pending-count" data-kds-count="ENVIADO">0</span>
             </div>
             <div class="kds-orders-container" id="pending-orders">
                 @if(isset($orders['ENVIADO']) && $orders['ENVIADO']->count() > 0)
@@ -372,7 +372,7 @@
         <div class="kds-column" data-column="preparing">
             <div class="kds-column-header preparing">
                 <h3><i class="bi bi-gear-fill"></i> En Preparación</h3>
-                <span class="kds-badge" id="preparing-count">0</span>
+                <span class="kds-badge" id="preparing-count" data-kds-count="EN_PREPARACION">0</span>
             </div>
             <div class="kds-orders-container" id="preparing-orders">
                 @if(isset($orders['EN_PREPARACION']) && $orders['EN_PREPARACION']->count() > 0)
@@ -392,7 +392,7 @@
         <div class="kds-column" data-column="ready">
             <div class="kds-column-header ready">
                 <h3><i class="bi bi-check-circle-fill"></i> Listos</h3>
-                <span class="kds-badge" id="ready-count">0</span>
+                <span class="kds-badge" id="ready-count" data-kds-count="LISTO">0</span>
             </div>
             <div class="kds-orders-container" id="ready-orders">
                 @if(isset($orders['LISTO']) && $orders['LISTO']->count() > 0)
@@ -546,14 +546,49 @@ document.addEventListener('change', async function(e) {
     }
 });
 
-// Auto-refresh cada 30 segundos (solo si no hay interacción reciente)
+// Auto-refresh suave cada 15s vía JSON (reload solo si cambió el tablero)
+let lastBoardSignature = null;
+async function refreshKitchenBoardSoft() {
+    try {
+        const url = @json(route('kitchen.board-json')) + (window.location.search || '');
+        const res = await fetch(url, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.success) return;
+
+        // Contadores
+        if (data.counts) {
+            const map = {
+                'ENVIADO': data.counts.ENVIADO || 0,
+                'EN_PREPARACION': data.counts.EN_PREPARACION || 0,
+                'LISTO': data.counts.LISTO || 0,
+            };
+            document.querySelectorAll('[data-kds-count]').forEach(el => {
+                const key = el.getAttribute('data-kds-count');
+                if (key in map) el.textContent = map[key];
+            });
+        }
+
+        if (lastBoardSignature && data.signature && lastBoardSignature !== data.signature) {
+            // Cambió el set de pedidos: un reload limpio evita DOM stale
+            location.reload();
+            return;
+        }
+        lastBoardSignature = data.signature;
+    } catch (e) {
+        console.warn('KDS soft refresh falló', e);
+    }
+}
+
 function startAutoRefresh() {
     autoRefreshInterval = setInterval(() => {
         const timeSinceLastUpdate = Date.now() - lastUpdateTime;
-        if (timeSinceLastUpdate > 25000) { // 25 segundos sin interacción
-            location.reload();
+        if (timeSinceLastUpdate > 12000) {
+            refreshKitchenBoardSoft();
         }
-    }, 30000);
+    }, 15000);
 }
 
 // Marcar interacción

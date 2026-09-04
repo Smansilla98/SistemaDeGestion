@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    use Concerns\BelongsToRestaurant;
     use HasFactory;
 
     protected $fillable = [
@@ -190,5 +191,3 @@ class Product extends Model
         return $this->ingredients()->exists();
     }
 }
-
-

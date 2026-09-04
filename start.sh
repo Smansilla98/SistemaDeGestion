@@ -12,9 +12,11 @@ echo "DB_CONNECTION: ${DB_CONNECTION:-no configurado}"
 echo "DB_HOST: ${DB_HOST:-no configurado}"
 echo "DB_DATABASE: ${DB_DATABASE:-no configurado}"
 echo "DB_USERNAME: ${DB_USERNAME:-no configurado}"
+echo "QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}"
+echo "PORT: ${PORT:-8000}"
 echo ""
 
-# Esperar DB (solo verificación, NO migraciones)
+# Esperar DB
 echo "=== Esperando base de datos ==="
 for i in $(seq 1 30); do
     if php -r "
@@ -39,31 +41,48 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# Limpieza de cachés (evita vistas/config viejos en cada deploy)
+# Autoload fresco (Domain/, Jobs/, Support/)
+echo "=== Composer dump-autoload ==="
+composer dump-autoload --no-interaction --optimize || true
+
+# Limpieza de cachés
 echo "=== Limpiando cachés ==="
 php artisan optimize:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
+php artisan config:clear || true
+php artisan queue:restart 2>/dev/null || true
 
-# Ejecutar migraciones siempre (para aplicar nuevas migraciones en cada deploy)
+# Migraciones (secuencias, unique por tenant, audit, índices, etc.)
 echo "=== Ejecutando migraciones ==="
 php artisan migrate --force --no-interaction || {
     echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
     echo "   El sistema puede funcionar con funcionalidad limitada."
 }
 
-# Corregir enum de table_sessions si es necesario (solo si la BD tiene tablas)
+# Reparaciones Conurbania (secuencias, sesiones duplicadas, snapshots)
+echo "=== Reparación de integridad Conurbania ==="
+php artisan conurbania:repair --force 2>/dev/null || {
+    echo "⚠️  conurbania:repair no disponible o falló (se continúa)."
+}
+
+# Enum table_sessions legacy
 echo "=== Verificando enum de table_sessions ==="
 php artisan fix:table-sessions-enum 2>/dev/null || true
 
-# Regenerar autoloader de Composer (por si hay cambios en clases)
-composer dump-autoload --no-interaction --optimize || true
-
-# Storage (enlace simbólico para uploads y logs)
+# Storage
 echo "=== Verificando storage ==="
 php artisan storage:link || true
 
-# Producción: cachear config, rutas y vistas para mejor rendimiento
+# Tablas de cola si usan database driver
+if [ "${QUEUE_CONNECTION:-database}" = "database" ]; then
+    echo "=== Verificando tablas de cola ==="
+    php artisan queue:table 2>/dev/null || true
+    php artisan queue:failed-table 2>/dev/null || true
+    php artisan migrate --force --no-interaction 2>/dev/null || true
+fi
+
+# Producción: cache
 if [ "${APP_ENV:-local}" = "production" ]; then
     echo "=== Cache de producción ==="
     php artisan config:cache || true
@@ -72,12 +91,27 @@ if [ "${APP_ENV:-local}" = "production" ]; then
     php artisan event:cache 2>/dev/null || true
 fi
 
+# Worker de impresión + default (jobs PrintKitchenTicket)
+echo "=== Iniciando queue worker (printing,default) ==="
+php artisan queue:work --queue=printing,default --sleep=1 --tries=5 --timeout=90 --max-time=3600 &
+QUEUE_PID=$!
+echo "✓ Queue worker PID=$QUEUE_PID"
+
+cleanup() {
+    echo ""
+    echo "=== Deteniendo queue worker ($QUEUE_PID) ==="
+    kill "$QUEUE_PID" 2>/dev/null || true
+    wait "$QUEUE_PID" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
 echo ""
 echo "=========================================="
 echo "=== Servidor iniciado ==="
 echo "Host: 0.0.0.0"
 echo "Port: ${PORT:-8000}"
+echo "Queues: printing,default"
 echo "=========================================="
 echo ""
 
-exec php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"

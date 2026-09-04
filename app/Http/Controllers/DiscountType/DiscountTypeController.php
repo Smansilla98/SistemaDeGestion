@@ -5,7 +5,6 @@ namespace App\Http\Controllers\DiscountType;
 use App\Http\Controllers\Controller;
 use App\Models\DiscountType;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class DiscountTypeController extends Controller
 {
@@ -26,9 +25,9 @@ class DiscountTypeController extends Controller
         // Búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -45,7 +44,7 @@ class DiscountTypeController extends Controller
         $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
         $allowedSorts = ['name', 'percentage', 'is_active', 'created_at'];
-        
+
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         } else {
@@ -160,4 +159,3 @@ class DiscountTypeController extends Controller
             ->with('success', 'Tipo de descuento eliminado exitosamente');
     }
 }
-

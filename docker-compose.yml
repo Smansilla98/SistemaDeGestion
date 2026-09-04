@@ -31,6 +31,10 @@ services:
 
   mysql:
     image: mysql:8.0
+    command:
+      - --sql-mode=STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_DATABASE: restaurante
       MYSQL_USER: laravel

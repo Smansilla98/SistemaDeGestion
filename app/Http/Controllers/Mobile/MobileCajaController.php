@@ -52,4 +52,3 @@ class MobileCajaController extends Controller
         ]);
     }
 }
-

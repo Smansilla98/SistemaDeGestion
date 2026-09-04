@@ -173,6 +173,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/{order}/items/group/remove', [OrderController::class, 'removeItemGroup'])->name('items-group.remove');
         Route::post('/{order}/items/group/replace', [OrderController::class, 'replaceItemGroup'])->name('items-group.replace');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{order}/discount', [OrderController::class, 'applyDiscount'])->name('discount.apply');
         Route::put('/items/{item}/status', [OrderController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
@@ -198,6 +199,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     */
     Route::prefix('kitchen')->name('kitchen.')->middleware('role:COCINA,ADMIN')->group(function () {
         Route::get('/', [KitchenController::class, 'index'])->name('index');
+        Route::get('/board.json', [KitchenController::class, 'boardJson'])->name('board-json');
         Route::post('/items/{item}/status', [KitchenController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/orders/{order}/ready', [KitchenController::class, 'markOrderReady'])->name('mark-ready');
         Route::put('/orders/{order}/status', [KitchenController::class, 'updateOrderStatus'])->name('update-order-status');

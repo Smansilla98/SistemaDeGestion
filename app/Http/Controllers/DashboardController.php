@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Product;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\Table;
 use App\Services\DashboardStatsService;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -64,6 +64,7 @@ class DashboardController extends Controller
             ->get()
             ->filter(function ($product) use ($restaurantId) {
                 $currentStock = $product->getCurrentStock($restaurantId);
+
                 return $currentStock <= $product->stock_minimum && $currentStock > 0;
             })
             ->sortBy(function ($product) use ($restaurantId) {

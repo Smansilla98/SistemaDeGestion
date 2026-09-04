@@ -357,6 +357,9 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         customer_name: '',
         observations: document.getElementById('quickOrderObservations').value,
         send_to_kitchen: document.getElementById('quickOrderSendToKitchen').checked,
+        idempotency_key: (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID().replace(/-/g, '').slice(0, 26)
+            : String(Date.now()) + Math.random().toString(36).slice(2, 10),
         items: items
     };
 
@@ -420,12 +423,19 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             }
 
             Swal.fire({
-                icon: 'success',
-                title: '¡Pedido creado!',
-                text: data.message,
+                icon: data.print_ok === false ? 'warning' : 'success',
+                title: data.print_ok === false ? 'Pedido creado (revisá impresora)' : '¡Pedido creado!',
+                html: `
+                    <p>${data.message || ''}</p>
+                    ${data.kitchen_ticket_url ? `
+                        <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm ${data.print_ok === false ? 'btn-warning' : 'btn-outline-primary'} mt-2">
+                            <i class="bi bi-printer"></i> ${data.print_ok === false ? 'Reimprimir' : 'Ver ticket'}
+                        </a>
+                    ` : ''}
+                `,
                 confirmButtonColor: '#1e8081',
-                timer: 2000,
-                showConfirmButton: false
+                timer: data.print_ok === false ? undefined : 2500,
+                showConfirmButton: data.print_ok === false
             });
             
             // Cerrar modal y limpiar

@@ -44,6 +44,7 @@ class PromoteUserToSuperadmin extends Command
 
         if ($users->count() === 0) {
             $this->error('No se encontró ningún usuario con ese identificador.');
+
             return self::FAILURE;
         }
 
@@ -60,6 +61,7 @@ class PromoteUserToSuperadmin extends Command
                     'is_active' => $u->is_active ? '1' : '0',
                 ];
             })->all());
+
             return self::FAILURE;
         }
 
@@ -68,11 +70,13 @@ class PromoteUserToSuperadmin extends Command
 
         if ($user->role === User::ROLE_SUPERADMIN) {
             $this->info('El usuario ya es SUPERADMIN.');
+
             return self::SUCCESS;
         }
 
         if (! $this->confirm("Promover a SUPERADMIN a {$user->name} ({$user->username}) [id={$user->id}]?")) {
             $this->info('Operación cancelada.');
+
             return self::SUCCESS;
         }
 
@@ -80,7 +84,7 @@ class PromoteUserToSuperadmin extends Command
         $user->save();
 
         $this->info('OK. Rol actualizado a SUPERADMIN.');
+
         return self::SUCCESS;
     }
 }
-

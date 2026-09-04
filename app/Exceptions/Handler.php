@@ -122,20 +122,25 @@ class Handler extends ExceptionHandler
      */
     protected function handleQueryException($request, QueryException $exception)
     {
-        $message = 'Error al procesar la solicitud en la base de datos.';
+        report($exception);
 
-        if (config('app.debug')) {
-            $message = $exception->getMessage();
+        $code = (int) ($exception->errorInfo[1] ?? 0);
+        $message = match ($code) {
+            1062 => 'Ese registro ya existe. Refrescá la pantalla y reintentá.',
+            1213, 1205 => 'El sistema está ocupado, reintentá en unos segundos.',
+            default => 'No pudimos completar la operación. Avisá al encargado.',
+        };
+
+        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'code' => 'DATABASE_ERROR',
+                'ref' => $request->header('X-Request-Id'),
+            ], $code === 1062 ? 409 : 500);
         }
 
-        if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
-            return ApiResponse::error($message, 500, 'DATABASE_ERROR');
-        }
-
-        return response()->view('errors.500', [
-            'message' => $message,
-            'exception' => $exception,
-        ], 500);
+        return back()->withErrors(['general' => $message])->with('error', $message);
     }
 
     /**

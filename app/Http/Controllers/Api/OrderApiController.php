@@ -36,7 +36,7 @@ class OrderApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $orders
+            'data' => $orders,
         ]);
     }
 
@@ -48,7 +48,7 @@ class OrderApiController extends Controller
         if ($order->restaurant_id !== auth()->user()->restaurant_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No autorizado'
+                'message' => 'No autorizado',
             ], 403);
         }
 
@@ -56,7 +56,7 @@ class OrderApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order
+            'data' => $order,
         ]);
     }
 
@@ -75,7 +75,7 @@ class OrderApiController extends Controller
         $byProduct = [];
         foreach ($order->items as $item) {
             $key = $item->product_id;
-            if (!isset($byProduct[$key])) {
+            if (! isset($byProduct[$key])) {
                 $byProduct[$key] = [
                     'quantity' => 0,
                     'name' => $item->product->name,
@@ -140,7 +140,7 @@ class OrderApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $order,
-            'message' => 'Pedido creado exitosamente'
+            'message' => 'Pedido creado exitosamente',
         ], 201);
     }
 
@@ -152,7 +152,7 @@ class OrderApiController extends Controller
         if ($order->restaurant_id !== auth()->user()->restaurant_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No autorizado'
+                'message' => 'No autorizado',
             ], 403);
         }
 
@@ -169,8 +169,7 @@ class OrderApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $order,
-            'message' => 'Item agregado exitosamente'
+            'message' => 'Item agregado exitosamente',
         ]);
     }
 }
-

@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Sector;
 use App\Http\Controllers\Controller;
 use App\Models\Sector;
 use App\Models\SubsectorItem;
+use App\Traits\Auditable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\DB;
-use App\Traits\Auditable;
 
 class SectorController extends Controller
 {
@@ -32,7 +31,7 @@ class SectorController extends Controller
         $query = Sector::where('restaurant_id', $restaurantId)
             ->whereNull('parent_id')
             ->where('type', Sector::TYPE_SECTOR)
-            ->withCount(['tables', 'subsectors', 'categories' => function($q) {
+            ->withCount(['tables', 'subsectors', 'categories' => function ($q) {
                 $q->where('is_active', true);
             }])
             ->with(['subsectors']);
@@ -40,9 +39,9 @@ class SectorController extends Controller
         // Búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -50,7 +49,7 @@ class SectorController extends Controller
         $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
         $allowedSorts = ['name', 'created_at'];
-        
+
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         } else {
@@ -103,22 +102,22 @@ class SectorController extends Controller
 
         $validated['restaurant_id'] = auth()->user()->restaurant_id;
         $validated['is_active'] = $request->has('is_active');
-        
+
         // Si es subsector, asegurar que tiene parent_id
-        if ($validated['type'] === Sector::TYPE_SUBSECTOR && !$validated['parent_id']) {
+        if ($validated['type'] === Sector::TYPE_SUBSECTOR && ! $validated['parent_id']) {
             return back()->with('error', 'Un subsector debe tener un sector padre')->withInput();
         }
-        
+
         // Si es sector principal, asegurar que no tiene parent_id
         if ($validated['type'] === Sector::TYPE_SECTOR) {
             $validated['parent_id'] = null;
         }
 
         $sector = Sector::create($validated);
-        
+
         // Auditoría
         $this->auditCreate($sector, $validated);
-        
+
         // Si es subsector y tiene capacidad, crear los items automáticamente
         if ($sector->isSubsector() && $sector->capacity) {
             for ($i = 1; $i <= $sector->capacity; $i++) {
@@ -149,9 +148,9 @@ class SectorController extends Controller
 
         $sector->load([
             'tables',
-            'subsectors.items' => function($query) {
+            'subsectors.items' => function ($query) {
                 $query->orderBy('position');
-            }
+            },
         ]);
         $sector->setRelation('tables', \App\Models\Table::sortByNumericGroup($sector->tables));
 
@@ -183,12 +182,12 @@ class SectorController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-        
+
         // Si es subsector y cambió la capacidad, ajustar items
         if ($sector->isSubsector() && isset($validated['capacity'])) {
             $currentItemsCount = $sector->items()->count();
             $newCapacity = $validated['capacity'];
-            
+
             if ($newCapacity > $currentItemsCount) {
                 // Agregar items faltantes
                 for ($i = $currentItemsCount + 1; $i <= $newCapacity; $i++) {
@@ -205,7 +204,7 @@ class SectorController extends Controller
                     ->where('position', '>', $newCapacity)
                     ->where('status', SubsectorItem::STATUS_LIBRE)
                     ->get();
-                
+
                 foreach ($itemsToDelete as $item) {
                     $item->delete();
                 }
@@ -237,7 +236,7 @@ class SectorController extends Controller
 
         // Auditoría antes de eliminar
         $this->auditDelete($sector);
-        
+
         $parentId = $sector->parent_id;
         $sector->delete();
 
@@ -257,7 +256,7 @@ class SectorController extends Controller
     {
         Gate::authorize('update', $sector);
 
-        if (!$sector->isSubsector()) {
+        if (! $sector->isSubsector()) {
             return back()->with('error', 'Solo se pueden agregar items a subsectores');
         }
 
@@ -298,4 +297,3 @@ class SectorController extends Controller
         return back()->with('success', 'Item eliminado exitosamente');
     }
 }
-

@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\CashMovement;
 use App\Models\CashRegisterSession;
 use App\Models\Payment;
-use App\Models\CashMovement;
 use Illuminate\Support\Facades\DB;
 
 class CashRegisterService
@@ -130,4 +130,3 @@ class CashRegisterService
         ]);
     }
 }
-

@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main, Conurbania, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: Pint · PHPStan · Migrations · Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --command="mysqld --sql-mode=STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:d1Kv/0yZygLFAyye/Skclrij2theptUsnIJ1Jkad5b4=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: testing
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, ctype, json, bcmath
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Pint (todo app/)
+        run: vendor/bin/pint --test app
+
+      - name: PHPStan / Larastan (app/ + baseline)
+        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+      - name: migrate:fresh --seed
+        run: php artisan migrate:fresh --seed --force --no-interaction
+
+      - name: migrate:rollback + migrate
+        run: |
+          php artisan migrate:reset --force --no-interaction
+          php artisan migrate --force --no-interaction
+
+      - name: conurbania:repair
+        run: php artisan conurbania:repair --force
+
+      - name: Tests Domain (coverage mínimo 50%)
+        run: php artisan test --testsuite=Domain --coverage --min=50
+
+      - name: Tests suite completa
+        run: php artisan test --parallel --processes=4

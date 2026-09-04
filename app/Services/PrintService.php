@@ -6,8 +6,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Printer;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class PrintService
 {
@@ -25,6 +25,7 @@ class PrintService
         $basePt = $withTotalsAndPayments ? 180 : 130;
         $perItemPt = 20;
         $height = $basePt + ($itemsCount * $perItemPt);
+
         return max(self::TICKET_WIDTH_PT, min($height, 1200));
     }
 
@@ -41,7 +42,7 @@ class PrintService
                 $existing['quantity'] += $item->quantity;
                 $existing['subtotal'] += $item->subtotal;
                 if ($item->observations && ($existing['observations'] ?? '') !== $item->observations) {
-                    $existing['observations'] = ($existing['observations'] ?? '') . ($existing['observations'] ? '; ' : '') . $item->observations;
+                    $existing['observations'] = ($existing['observations'] ?? '').($existing['observations'] ? '; ' : '').$item->observations;
                 }
                 $groupedItems[$existingIndex] = $existing;
             } else {
@@ -56,6 +57,7 @@ class PrintService
                 ]);
             }
         }
+
         return $groupedItems;
     }
 
@@ -77,9 +79,9 @@ class PrintService
                 return $this->sendToPrinter($pdf, $printer, "ticket-cocina-{$order->number}.pdf");
             }
 
-            return $this->saveToFile($pdf, "kitchen", "ticket-cocina-{$order->number}.pdf");
+            return $this->saveToFile($pdf, 'kitchen', "ticket-cocina-{$order->number}.pdf");
         } catch (\Exception $e) {
-            Log::error('Error al imprimir ticket de cocina: ' . $e->getMessage());
+            Log::error('Error al imprimir ticket de cocina: '.$e->getMessage());
             throw $e;
         }
     }
@@ -103,7 +105,8 @@ class PrintService
         if ($printer && $printer->is_active) {
             return $this->sendToPrinter($pdf, $printer, "ticket-{$order->number}-item-{$item->id}.pdf");
         }
-        return $this->saveToFile($pdf, "kitchen", "ticket-{$order->number}-item-{$item->id}.pdf");
+
+        return $this->saveToFile($pdf, 'kitchen', "ticket-{$order->number}-item-{$item->id}.pdf");
     }
 
     /**
@@ -119,6 +122,7 @@ class PrintService
         if ($printer) {
             return $printer;
         }
+
         return Printer::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->first();
@@ -138,9 +142,9 @@ class PrintService
                 return $this->sendToPrinter($pdf, $printer, "comanda-{$order->number}.pdf");
             }
 
-            return $this->saveToFile($pdf, "comanda", "comanda-{$order->number}.pdf");
+            return $this->saveToFile($pdf, 'comanda', "comanda-{$order->number}.pdf");
         } catch (\Exception $e) {
-            Log::error('Error al imprimir comanda: ' . $e->getMessage());
+            Log::error('Error al imprimir comanda: '.$e->getMessage());
             throw $e;
         }
     }
@@ -164,9 +168,9 @@ class PrintService
                 return $this->sendToPrinter($pdf, $printer, "ticket-{$order->number}.pdf");
             }
 
-            return $this->saveToFile($pdf, "ticket", "ticket-{$order->number}.pdf");
+            return $this->saveToFile($pdf, 'ticket', "ticket-{$order->number}.pdf");
         } catch (\Exception $e) {
-            Log::error('Error al imprimir ticket: ' . $e->getMessage());
+            Log::error('Error al imprimir ticket: '.$e->getMessage());
             throw $e;
         }
     }
@@ -177,8 +181,8 @@ class PrintService
     protected function sendToPrinter($pdf, Printer $printer, string $filename)
     {
         $output = $pdf->output();
-        $tempFile = storage_path('app/temp/' . $filename);
-        
+        $tempFile = storage_path('app/temp/'.$filename);
+
         // Asegurar que existe el directorio
         File::ensureDirectoryExists(storage_path('app/temp'));
         file_put_contents($tempFile, $output);
@@ -186,16 +190,16 @@ class PrintService
         switch ($printer->connection_type) {
             case 'network':
                 return $this->sendToNetworkPrinter($tempFile, $printer);
-            
+
             case 'file':
                 return $this->sendToFilePrinter($tempFile, $printer);
-            
+
             case 'usb':
                 // Para USB se requeriría librería adicional como mike42/escpos-php
-                return $this->saveToFile($pdf, "usb", $filename);
-            
+                return $this->saveToFile($pdf, 'usb', $filename);
+
             default:
-                return $this->saveToFile($pdf, "default", $filename);
+                return $this->saveToFile($pdf, 'default', $filename);
         }
     }
 
@@ -204,19 +208,19 @@ class PrintService
      */
     protected function sendToNetworkPrinter(string $filePath, Printer $printer)
     {
-        if (!$printer->ip_address) {
+        if (! $printer->ip_address) {
             throw new \Exception('IP de impresora no configurada');
         }
 
         try {
             // Usar socket para enviar archivo raw a impresora de red
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-            if (!$socket) {
+            if (! $socket) {
                 throw new \Exception('No se pudo crear socket');
             }
 
             $connected = @socket_connect($socket, $printer->ip_address, $printer->port);
-            if (!$connected) {
+            if (! $connected) {
                 throw new \Exception("No se pudo conectar a {$printer->ip_address}:{$printer->port}");
             }
 
@@ -232,7 +236,7 @@ class PrintService
 
             return true;
         } catch (\Exception $e) {
-            Log::error("Error enviando a impresora de red: " . $e->getMessage());
+            Log::error('Error enviando a impresora de red: '.$e->getMessage());
             throw $e;
         }
     }
@@ -242,17 +246,18 @@ class PrintService
      */
     protected function sendToFilePrinter(string $filePath, Printer $printer)
     {
-        if (!$printer->path) {
+        if (! $printer->path) {
             throw new \Exception('Ruta de impresora no configurada');
         }
 
         try {
             File::ensureDirectoryExists(dirname($printer->path));
-            File::copy($filePath, $printer->path . '/' . basename($filePath));
+            File::copy($filePath, $printer->path.'/'.basename($filePath));
             @unlink($filePath);
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Error guardando en impresora de archivo: " . $e->getMessage());
+            Log::error('Error guardando en impresora de archivo: '.$e->getMessage());
             throw $e;
         }
     }
@@ -264,10 +269,10 @@ class PrintService
     {
         $directory = storage_path("app/prints/{$type}");
         File::ensureDirectoryExists($directory);
-        
-        $pdf->save($directory . '/' . $filename);
-        
-        return $directory . '/' . $filename;
+
+        $pdf->save($directory.'/'.$filename);
+
+        return $directory.'/'.$filename;
     }
 
     /**
@@ -281,4 +286,3 @@ class PrintService
             ->first();
     }
 }
-

@@ -205,21 +205,6 @@ class OrderController extends Controller
         try {
             $order = $this->orderService->createOrder($validated);
 
-            foreach ($validated['items'] as $itemData) {
-                try {
-                    $this->orderService->addItem($order, $itemData);
-                } catch (\Exception $e) {
-                    if (str_contains($e->getMessage(), 'Stock insuficiente')) {
-                        if ($wantsJson) {
-                            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-                        }
-
-                        return back()->with('error', $e->getMessage())->withInput();
-                    }
-                    throw $e;
-                }
-            }
-
             $order->load(['table', 'items.product', 'items.modifiers']);
 
             // Impresión automática sin pedir permiso: enviar a la impresora configurada
@@ -277,7 +262,12 @@ class OrderController extends Controller
             })
             ->values();
 
-        return view('orders.show', compact('order', 'groupedItems', 'products'));
+        $discountTypes = DiscountType::where('restaurant_id', $order->restaurant_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('orders.show', compact('order', 'groupedItems', 'products', 'discountTypes'));
     }
 
     /**
@@ -482,53 +472,122 @@ class OrderController extends Controller
     }
 
     /**
-     * Cambiar estado del pedido (simplificado: solo mozo puede cambiar)
-     * Flujo simplificado: ABIERTO -> ENTREGADO
+     * Cambiar estado del pedido (mozo: → ENTREGADO) con lock optimista.
      */
     public function updateStatus(Request $request, Order $order)
     {
         Gate::authorize('update', $order);
 
         $validated = $request->validate([
-            'status' => 'required|in:ENTREGADO',
+            'status' => 'required|in:ENTREGADO,LISTO,ENVIADO,EN_PREPARACION,CANCELADO',
+            'lock_version' => 'nullable|integer|min:0',
         ]);
 
-        $newStatus = $validated['status'];
-        $currentStatus = $order->status;
+        $target = \App\Enums\OrderStatus::from($validated['status']);
+        $from = $order->statusEnum() ?? \App\Enums\OrderStatus::ABIERTO;
 
-        // Validar transiciones permitidas
-        $allowedFrom = ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'];
-        if (! in_array($currentStatus, $allowedFrom, true)) {
-            return back()->with('error', "No se puede cambiar el estado de {$currentStatus} a {$newStatus}");
+        try {
+            if (! $from->canTransitionTo($target)) {
+                throw new \App\Exceptions\InvalidOrderTransition($from, $target);
+            }
+
+            if (array_key_exists('lock_version', $validated) && $validated['lock_version'] !== null) {
+                $order->lock_version = (int) $validated['lock_version'];
+                $order->saveWithVersion(['status' => $target->value]);
+                $order->recordStatusChange($from, $target, auth()->user(), 'Cambio de estado (optimistic lock)');
+            } else {
+                $order->transitionTo($target, auth()->user(), 'Cambio de estado');
+            }
+        } catch (\App\Exceptions\StaleOrderException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\App\Exceptions\InvalidOrderTransition $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        // Actualizar estado
-        $order->status = $newStatus;
-
-        // Cargar mesa si existe para el mensaje/JS de entregado.
         $order->load(['table']);
 
-        $order->save();
-
-        // MÓDULO 2: Mensaje especial para pedidos entregados
-        if ($newStatus === 'ENTREGADO') {
+        if ($target === \App\Enums\OrderStatus::ENTREGADO || $target === \App\Enums\OrderStatus::LISTO) {
             if ($order->table) {
-                return back()->with('success', "✅ Pedido #{$order->number} entregado en Mesa {$order->table->number}")
+                return back()->with('success', "✅ Pedido #{$order->number} listo/entregado en Mesa {$order->table->number}")
                     ->with('order_delivered', [
                         'order_number' => $order->number,
                         'table_number' => $order->table->number,
                     ]);
-            } else {
-                // Pedido rápido sin mesa
-                return back()->with('success', "✅ Pedido #{$order->number} entregado")
-                    ->with('order_delivered', [
-                        'order_number' => $order->number,
-                        'customer_name' => $order->customer_name ?? 'Cliente',
-                    ]);
             }
+
+            return back()->with('success', "✅ Pedido #{$order->number} listo/entregado")
+                ->with('order_delivered', [
+                    'order_number' => $order->number,
+                    'customer_name' => $order->customer_name ?? 'Cliente',
+                ]);
         }
 
-        return back()->with('success', "Estado del pedido actualizado a {$newStatus}");
+        return back()->with('success', "Estado del pedido actualizado a {$target->value}");
+    }
+
+    /**
+     * Aplicar/quitar descuento sobre pedido abierto (ADMIN/GERENTE/ENCARGADO).
+     */
+    public function applyDiscount(Request $request, Order $order)
+    {
+        Gate::authorize('update', $order);
+
+        if (! auth()->user()->canManageOrdersLikeAdmin()
+            && ! in_array(auth()->user()->role ?? '', ['GERENTE', 'ENCARGADO'], true)) {
+            abort(403, 'No tenés permiso para aplicar descuentos');
+        }
+
+        if (in_array($order->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO], true)) {
+            return back()->with('error', 'No se puede descontar un pedido cerrado o anulado.');
+        }
+
+        $validated = $request->validate([
+            'discount_type_id' => 'nullable|exists:discount_types,id',
+            'reason' => 'nullable|string|max:255',
+            'lock_version' => 'nullable|integer|min:0',
+        ]);
+
+        $oldDiscount = (float) $order->discount;
+        $newDiscount = 0.0;
+
+        if (! empty($validated['discount_type_id'])) {
+            $discountType = DiscountType::find($validated['discount_type_id']);
+            if (! $discountType || $discountType->restaurant_id !== $order->restaurant_id) {
+                return back()->with('error', 'Tipo de descuento inválido.');
+            }
+            $newDiscount = (float) $discountType->calculateDiscount($order->subtotal);
+        }
+
+        try {
+            $payload = [
+                'discount' => $newDiscount,
+                'total' => (float) $order->subtotal - $newDiscount,
+            ];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'discount_cents')) {
+                $payload['discount_cents'] = \App\Domain\Money\Money::fromDecimal($newDiscount)->cents;
+                $payload['subtotal_cents'] = \App\Domain\Money\Money::fromDecimal($order->subtotal)->cents;
+                $payload['total_cents'] = max(0, $payload['subtotal_cents'] - $payload['discount_cents']);
+            }
+            if (isset($validated['lock_version'])) {
+                $order->lock_version = (int) $validated['lock_version'];
+                $order->saveWithVersion($payload);
+            } else {
+                $order->update($payload);
+            }
+        } catch (\App\Exceptions\StaleOrderException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        \App\Models\AuditLog::record($order, 'discount.applied', [
+            'discount' => $oldDiscount,
+        ], [
+            'discount' => $newDiscount,
+            'discount_type_id' => $validated['discount_type_id'] ?? null,
+        ], $validated['reason'] ?? 'Descuento en cuenta abierta');
+
+        return back()->with('success', $newDiscount > 0
+            ? 'Descuento aplicado: $'.number_format($newDiscount, 2)
+            : 'Descuento quitado.');
     }
 
     /**
@@ -553,12 +612,7 @@ class OrderController extends Controller
 
         try {
             $wasQuickOrder = ! $order->table_id;
-
-            // Eliminar items primero (si hay restricciones de foreign key)
-            $order->items()->delete();
-
-            // Eliminar el pedido
-            $order->delete();
+            $this->orderService->deleteOrder($order, 'Eliminado desde panel');
 
             if ($wasQuickOrder && \Illuminate\Support\Facades\Route::has('orders.quick.index')) {
                 return redirect()->route('orders.quick.index')
@@ -568,7 +622,7 @@ class OrderController extends Controller
             return redirect()->route('orders.index')
                 ->with('success', 'Pedido eliminado exitosamente');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al eliminar el pedido: '.$e->getMessage());
+            return back()->with('error', 'No pudimos eliminar el pedido. Reintentá o avisá al encargado.');
         }
     }
 
@@ -748,6 +802,7 @@ class OrderController extends Controller
             'customer_name' => 'nullable|string|max:255',
             'observations' => 'nullable|string|max:500',
             'send_to_kitchen' => 'nullable|boolean',
+            'idempotency_key' => 'nullable|string|max:26',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -768,19 +823,16 @@ class OrderController extends Controller
                 'customer_name' => $customerName,
                 'observations' => $validated['observations'] ?? null,
                 'items' => $validated['items'],
+                'idempotency_key' => $validated['idempotency_key'] ?? null,
             ];
 
             $order = $this->orderService->createOrder($orderData);
-
-            // Agregar items al pedido
-            foreach ($validated['items'] as $itemData) {
-                $this->orderService->addItem($order, $itemData);
-            }
 
             // Recargar el pedido con sus relaciones
             $order->load(['items.product', 'items.modifiers']);
 
             $printMessage = '';
+            $printOk = true;
             if ($request->boolean('send_to_kitchen')) {
                 try {
                     $this->orderService->sendToKitchen($order);
@@ -796,10 +848,16 @@ class OrderController extends Controller
                 $printer = $this->printService->getPrinterForKitchenTicket($restaurantId);
                 if ($printer) {
                     $this->printService->printKitchenTicket($order, $printer);
+                    $order->forceFill(['kitchen_printed_at' => now()])->saveQuietly();
                     $printMessage .= ' Ticket enviado a la impresora.';
                 }
             } catch (\Exception $e) {
+                $printOk = false;
                 Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
+                $printMessage .= ' Impresora falló: reintentá desde el ticket.';
+                \Illuminate\Support\Facades\DB::afterCommit(
+                    fn () => \App\Jobs\PrintKitchenTicket::dispatch($order->id)->onQueue('printing')
+                );
             }
 
             // Para órdenes rápidas: imprimir automáticamente desde /orders/{id}/print/item/{itemId}/ticket/auto
@@ -810,6 +868,7 @@ class OrderController extends Controller
                 'message' => 'Pedido rápido creado exitosamente.'.$printMessage,
                 'order_id' => $order->id,
                 'order_number' => $order->number,
+                'print_ok' => $printOk,
                 'kitchen_ticket_url' => $itemTicketUrls ? $itemTicketUrls[0] : route('orders.print.kitchen.auto', $order),
                 'item_ticket_urls' => $itemTicketUrls,
             ]);
@@ -1117,44 +1176,22 @@ class OrderController extends Controller
                     app(\App\Services\StockService::class)->ensureStockForSale($restaurantId, $product->id, (int) $itemData['quantity']);
                 }
 
-                // Crear pedido rápido (sin mesa)
+                // Crear pedido rápido atómico (sin mesa)
                 $orderData = [
                     'restaurant_id' => $restaurantId,
                     'user_id' => auth()->id(),
-                    'table_id' => null, // Sin mesa
-                    'subsector_item_id' => null, // Sin subsector
-                    'table_session_id' => null, // Sin sesión de mesa
+                    'table_id' => null,
+                    'subsector_item_id' => null,
+                    'table_session_id' => null,
                     'customer_name' => $validated['customer_name'],
                     'observations' => 'Pedido rápido - Consumo inmediato',
+                    'items' => $validated['items'],
+                    'idempotency_key' => $validated['idempotency_key'] ?? null,
                 ];
 
                 $order = $this->orderService->createOrder($orderData);
                 Log::info('Pedido creado', ['order_id' => $order->id, 'order_number' => $order->number]);
 
-                // Agregar items al pedido (ya validados arriba)
-                foreach ($validated['items'] as $index => $itemData) {
-                    try {
-                        Log::debug('Agregando item al pedido', [
-                            'order_id' => $order->id,
-                            'item_index' => $index,
-                            'product_id' => $itemData['product_id'],
-                            'quantity' => $itemData['quantity'],
-                        ]);
-                        $this->orderService->addItem($order, $itemData);
-                    } catch (\Exception $e) {
-                        Log::error('Error al agregar item al pedido', [
-                            'order_id' => $order->id,
-                            'item_index' => $index,
-                            'product_id' => $itemData['product_id'] ?? null,
-                            'error' => $e->getMessage(),
-                        ]);
-                        // Si falla al agregar un item, cancelar el pedido y lanzar error
-                        $order->update(['status' => Order::STATUS_CANCELADO]);
-                        throw new \Exception('Error al agregar item al pedido: '.$e->getMessage());
-                    }
-                }
-
-                // Recalcular total (addItem ya lo hace, pero asegurarnos que esté actualizado)
                 $order->refresh();
                 $order->calculateTotal();
                 $order->refresh();

@@ -29,6 +29,7 @@ class Sector extends Model
     ];
 
     const TYPE_SECTOR = 'SECTOR';
+
     const TYPE_SUBSECTOR = 'SUBSECTOR';
 
     /**
@@ -95,5 +96,3 @@ class Sector extends Model
         return $this->type === self::TYPE_SECTOR && $this->parent_id === null;
     }
 }
-
-

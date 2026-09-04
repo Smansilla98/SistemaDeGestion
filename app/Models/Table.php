@@ -9,12 +9,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Table extends Model
 {
+    use Concerns\BelongsToRestaurant;
     use HasFactory;
 
     // Estados de la mesa
     const STATUS_LIBRE = 'LIBRE';
+
     const STATUS_OCUPADA = 'OCUPADA';
+
     const STATUS_RESERVADA = 'RESERVADA';
+
     const STATUS_CERRADA = 'CERRADA';
 
     protected $fillable = [
@@ -109,6 +113,7 @@ class Table extends Model
         if (preg_match('/^(\d+)/', $number, $m)) {
             return (int) $m[1];
         }
+
         return 0;
     }
 
@@ -122,5 +127,3 @@ class Table extends Model
         })->values();
     }
 }
-
-

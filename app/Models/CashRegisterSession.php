@@ -13,6 +13,7 @@ class CashRegisterSession extends Model
 
     // Estados de la sesión
     const STATUS_ABIERTA = 'ABIERTA';
+
     const STATUS_CERRADA = 'CERRADA';
 
     protected $fillable = [
@@ -97,5 +98,3 @@ class CashRegisterSession extends Model
         return $this->status === self::STATUS_ABIERTA;
     }
 }
-
-

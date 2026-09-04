@@ -11,7 +11,11 @@ use App\Repositories\ClientRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\UserRepository;
+use App\Support\CurrentRestaurant;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Logger::class, static fn () => new Logger);
         $this->app->singleton(JwtTokenService::class, static fn () => new JwtTokenService);
+        $this->app->singleton(CurrentRestaurant::class);
 
         $this->app->bind(ProductRepository::class, static fn () => new ProductRepository(Database::connection()));
         $this->app->bind(UserRepository::class, static fn () => new UserRepository(Database::connection()));
@@ -36,16 +41,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Configurar timezone para Carbon
         Carbon::setLocale('es');
         date_default_timezone_set(config('app.timezone'));
 
-        // Forzar HTTPS en producción
         if (config('app.env') === 'production' || request()->secure()) {
             URL::forceScheme('https');
         }
 
-        // Registrar Observers
         Order::observe(OrderObserver::class);
+
+        Model::shouldBeStrict($this->app->environment('local'));
+
+        DB::whenQueryingForLongerThan(500, function ($connection, $event) {
+            Log::warning('Query lenta', ['sql' => $event->sql, 'ms' => $event->time]);
+        });
+
+        if ($this->app->isProduction()) {
+            Model::handleLazyLoadingViolationUsing(function ($model, $relation) {
+                Log::warning('N+1', ['model' => $model::class, 'relation' => $relation]);
+            });
+        }
     }
 }

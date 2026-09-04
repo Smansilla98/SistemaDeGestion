@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Carbon\Carbon;
 
 class Event extends Model
 {
@@ -31,8 +31,11 @@ class Event extends Model
 
     // Estados del evento
     const STATUS_PROGRAMADO = 'PROGRAMADO';
+
     const STATUS_EN_CURSO = 'EN_CURSO';
+
     const STATUS_FINALIZADO = 'FINALIZADO';
+
     const STATUS_CANCELADO = 'CANCELADO';
 
     /**
@@ -87,8 +90,10 @@ class Event extends Model
         }
         if ($this->date->isToday() && $this->time) {
             $time = is_string($this->time) ? Carbon::parse($this->time) : Carbon::parse($this->time);
+
             return now()->format('H:i') < $time->format('H:i');
         }
+
         return false;
     }
 
@@ -102,8 +107,10 @@ class Event extends Model
         }
         if ($this->date->isToday() && $this->time) {
             $time = is_string($this->time) ? Carbon::parse($this->time) : Carbon::parse($this->time);
+
             return now()->format('H:i') > $time->format('H:i');
         }
+
         return false;
     }
 
@@ -115,9 +122,10 @@ class Event extends Model
         $date = $this->date->format('d/m/Y');
         if ($this->time) {
             $time = is_string($this->time) ? $this->time : Carbon::parse($this->time)->format('H:i');
-            return $date . ' ' . $time . 'hs';
+
+            return $date.' '.$time.'hs';
         }
+
         return $date;
     }
 }
-

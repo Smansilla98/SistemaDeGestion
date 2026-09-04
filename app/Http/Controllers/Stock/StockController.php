@@ -110,7 +110,7 @@ class StockController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $products = $query->orderBy('name')->paginate(20)->withQueryString();
@@ -250,7 +250,7 @@ class StockController extends Controller
                 ]);
 
                 // Si se crea un nuevo proveedor
-                if ($request->filled('new_supplier_name') && !$request->filled('supplier_id')) {
+                if ($request->filled('new_supplier_name') && ! $request->filled('supplier_id')) {
                     $supplier = Supplier::create([
                         'restaurant_id' => auth()->user()->restaurant_id,
                         'name' => $purchaseValidation['new_supplier_name'],
@@ -259,10 +259,10 @@ class StockController extends Controller
                         'email' => $request->get('new_supplier_email'),
                         'is_active' => true,
                     ]);
-                    
+
                     // Auditoría
                     $this->auditCreate($supplier, $supplier->getAttributes());
-                    
+
                     $purchaseValidation['supplier_id'] = $supplier->id;
                 }
 
@@ -280,7 +280,7 @@ class StockController extends Controller
             $validated['user_id'] = auth()->id();
 
             $movement = $this->stockService->recordMovement($validated);
-            
+
             // Auditoría
             $this->audit('STOCK_MOVEMENT_CREATED', StockMovement::class, $movement->id, [
                 'type' => $validated['type'],
@@ -292,16 +292,16 @@ class StockController extends Controller
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => $validated['type'] === 'ENTRADA' 
-                        ? 'Entrada registrada correctamente. Stock actualizado.' 
+                    'message' => $validated['type'] === 'ENTRADA'
+                        ? 'Entrada registrada correctamente. Stock actualizado.'
                         : 'Movimiento de stock registrado exitosamente',
                     'movement' => $movement->load(['product', 'purchase.supplier']),
                 ]);
             }
 
-            return back()->with('success', 
-                $validated['type'] === 'ENTRADA' 
-                    ? 'Entrada registrada correctamente. Stock actualizado.' 
+            return back()->with('success',
+                $validated['type'] === 'ENTRADA'
+                    ? 'Entrada registrada correctamente. Stock actualizado.'
                     : 'Movimiento de stock registrado exitosamente'
             );
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -310,7 +310,7 @@ class StockController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Error de validación',
-                    'errors' => $e->errors()
+                    'errors' => $e->errors(),
                 ], 422);
             }
             throw $e;
@@ -319,11 +319,10 @@ class StockController extends Controller
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al registrar el movimiento: ' . $e->getMessage()
+                    'message' => 'Error al registrar el movimiento: '.$e->getMessage(),
                 ], 500);
             }
             throw $e;
         }
     }
 }
-

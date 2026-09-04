@@ -17,12 +17,16 @@
         "symfony/css-selector": "^7.0"
     },
     "require-dev": {
+        "brianium/paratest": "^7.4",
         "fakerphp/faker": "^1.21",
+        "larastan/larastan": "^2.9",
         "laravel/pail": "^1.0",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^7.0",
+        "pestphp/pest": "^2.36",
+        "pestphp/pest-plugin-laravel": "^2.4",
         "phpunit/phpunit": "^10.1"
     },
     "autoload": {
@@ -53,6 +57,29 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "test:parallel": [
+            "@php artisan test --parallel --processes=4"
+        ],
+        "pint": [
+            "@php vendor/bin/pint"
+        ],
+        "pint:test": [
+            "@php vendor/bin/pint --test app"
+        ],
+        "analyse": [
+            "@php vendor/bin/phpstan analyse --memory-limit=2G"
+        ],
+        "migrate:verify": [
+            "@php artisan migrate:fresh --seed --force --no-interaction",
+            "@php artisan migrate:reset --force --no-interaction",
+            "@php artisan migrate --force --no-interaction",
+            "@php artisan conurbania:repair --force"
+        ],
+        "ci": [
+            "@composer pint:test",
+            "@composer analyse",
+            "@php artisan test --testsuite=Domain"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

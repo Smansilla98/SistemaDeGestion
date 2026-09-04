@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Table;
-use App\Models\Sector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Carbon\Carbon;
 
 class TableReservationController extends Controller
 {
@@ -22,7 +20,7 @@ class TableReservationController extends Controller
 
     /**
      * Crear reserva (implementación básica)
-     * 
+     *
      * Nota: Esta es una implementación básica. Para producción,
      * se debería crear una tabla 'reservations' con campos como:
      * - customer_name
@@ -41,7 +39,7 @@ class TableReservationController extends Controller
             'customer_phone' => 'required|string|max:20',
             'reservation_date' => 'required|date|after_or_equal:today',
             'reservation_time' => 'required',
-            'number_of_guests' => 'required|integer|min:1|max:' . $table->capacity,
+            'number_of_guests' => 'required|integer|min:1|max:'.$table->capacity,
         ]);
 
         // Verificar que la mesa esté disponible
@@ -59,4 +57,3 @@ class TableReservationController extends Controller
             ->with('success', "Reserva creada para {$validated['customer_name']} el {$validated['reservation_date']}");
     }
 }
-
