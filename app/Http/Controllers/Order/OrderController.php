@@ -818,7 +818,9 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el pedido: '.$e->getMessage(),
+                'message' => $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'No pudimos abrir el pedido. Reintentá en unos segundos.',
             ], 422);
         }
     }
@@ -1291,11 +1293,18 @@ class OrderController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el pedido: '.$e->getMessage(),
+                    'message' => $e instanceof \RuntimeException
+                        ? $e->getMessage()
+                        : 'No pudimos procesar el pedido. Reintentá en unos segundos.',
                 ], 500);
             }
 
-            return back()->with('error', 'Error al procesar el pedido: '.$e->getMessage())->withInput();
+            return back()->with(
+                'error',
+                $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'No pudimos procesar el pedido. Reintentá en unos segundos.'
+            )->withInput();
         }
     }
 

@@ -10,7 +10,9 @@ use App\Models\TableSession;
 use App\Models\User;
 use App\Enums\OrderStatus;
 use App\Notifications\OrderCreatedNotification;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -21,110 +23,131 @@ class OrderService
     ) {
     }
     /**
-     * Crear un nuevo pedido
+     * Crear un nuevo pedido.
+     *
+     * Reintenta si choca el unique de `number` (red de seguridad ante desync del contador).
      */
     public function createOrder(array $data): Order
     {
-        return DB::transaction(function () use ($data) {
-            // Generar número de pedido único
-            $orderNumber = $this->generateOrderNumber($data['restaurant_id']);
+        $maxAttempts = 5;
 
-            $table = null;
-            $subsectorItem = null;
-            $tableSessionId = null;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return DB::transaction(function () use ($data) {
+                    $orderNumber = $this->generateOrderNumber((int) $data['restaurant_id']);
 
-            // Manejar pedidos desde mesas o desde subsector items
-            if (isset($data['table_id']) && $data['table_id']) {
-                $table = Table::findOrFail($data['table_id']);
+                    $table = null;
+                    $subsectorItem = null;
+                    $tableSessionId = null;
 
-                // Asegurar sesión activa: si la mesa está OCUPADA pero no tiene sesión, crearla
-                if ($table->status === Table::STATUS_OCUPADA && !$table->current_session_id) {
-                    // Verificar que la tabla existe antes de crear sesión
-                    if (!Schema::hasTable('table_sessions')) {
-                        throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+                    if (isset($data['table_id']) && $data['table_id']) {
+                        $table = Table::findOrFail($data['table_id']);
+
+                        if ($table->status === Table::STATUS_OCUPADA && ! $table->current_session_id) {
+                            if (! Schema::hasTable('table_sessions')) {
+                                throw new \RuntimeException('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
+                            }
+
+                            try {
+                                $session = TableSession::create([
+                                    'restaurant_id' => $table->restaurant_id,
+                                    'table_id' => $table->id,
+                                    'started_at' => now(),
+                                ]);
+                                $table->update(['current_session_id' => $session->id]);
+                            } catch (\Exception $e) {
+                                Log::error('Error al crear sesión de mesa en OrderService: '.$e->getMessage());
+                                throw new \RuntimeException('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
+                            }
+                        }
+
+                        $tableSessionId = $table->current_session_id;
+                    } elseif (isset($data['subsector_item_id']) && $data['subsector_item_id']) {
+                        $subsectorItem = \App\Models\SubsectorItem::findOrFail($data['subsector_item_id']);
+
+                        if (! $subsectorItem->current_session_id) {
+                            if (! Schema::hasTable('table_sessions')) {
+                                throw new \RuntimeException('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones.');
+                            }
+
+                            try {
+                                $session = TableSession::create([
+                                    'restaurant_id' => $subsectorItem->subsector->restaurant_id,
+                                    'table_id' => null,
+                                    'started_at' => now(),
+                                    'status' => TableSession::STATUS_ABIERTA,
+                                ]);
+                                $subsectorItem->update(['current_session_id' => $session->id]);
+                                $tableSessionId = $session->id;
+                            } catch (\Exception $e) {
+                                Log::error('Error al crear sesión para subsector item: '.$e->getMessage());
+                                throw new \RuntimeException('Error al crear sesión para el elemento del subsector.');
+                            }
+                        } else {
+                            $tableSessionId = $subsectorItem->current_session_id;
+                        }
+                    } else {
+                        $tableSessionId = null;
                     }
-                    
-                    try {
-                        $session = TableSession::create([
-                            'restaurant_id' => $table->restaurant_id,
-                            'table_id' => $table->id,
-                            'started_at' => now(),
+
+                    $order = Order::create([
+                        'restaurant_id' => $data['restaurant_id'],
+                        'table_id' => $data['table_id'] ?? null,
+                        'subsector_item_id' => $data['subsector_item_id'] ?? null,
+                        'table_session_id' => $tableSessionId,
+                        'user_id' => $data['user_id'],
+                        'number' => $orderNumber,
+                        'status' => OrderStatus::ABIERTO->value,
+                        'observations' => $data['observations'] ?? null,
+                        'customer_name' => $data['customer_name'] ?? null,
+                    ]);
+
+                    if ($table) {
+                        $table->update([
+                            'status' => 'OCUPADA',
+                            'current_order_id' => $order->id,
                         ]);
-                        $table->update(['current_session_id' => $session->id]);
-                    } catch (\Exception $e) {
-                        \Log::error('Error al crear sesión de mesa en OrderService: ' . $e->getMessage());
-                        throw new \Exception('Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente.');
+                    } elseif ($subsectorItem) {
+                        $subsectorItem->update([
+                            'status' => \App\Models\SubsectorItem::STATUS_OCUPADA,
+                            'current_order_id' => $order->id,
+                        ]);
                     }
+
+                    User::where('restaurant_id', $order->restaurant_id)
+                        ->where('is_active', true)
+                        ->whereIn('role', ['COCINA', 'ADMIN'])
+                        ->get()
+                        ->each(fn ($u) => $u->notify(new OrderCreatedNotification($order)));
+
+                    return $order;
+                });
+            } catch (QueryException $e) {
+                if ($this->isDuplicateOrderNumber($e) && $attempt < $maxAttempts) {
+                    Log::warning('Colisión de número de pedido; reintentando', [
+                        'restaurant_id' => $data['restaurant_id'] ?? null,
+                        'attempt' => $attempt,
+                    ]);
+                    usleep(20_000 * $attempt);
+
+                    continue;
                 }
 
-                $tableSessionId = $table->current_session_id;
-            } elseif (isset($data['subsector_item_id']) && $data['subsector_item_id']) {
-                $subsectorItem = \App\Models\SubsectorItem::findOrFail($data['subsector_item_id']);
-                
-                // Crear sesión para el subsector item si no tiene una
-                if (!$subsectorItem->current_session_id) {
-                    if (!Schema::hasTable('table_sessions')) {
-                        throw new \Exception('Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones.');
-                    }
-                    
-                    try {
-                        $session = \App\Models\TableSession::create([
-                            'restaurant_id' => $subsectorItem->subsector->restaurant_id,
-                            'table_id' => null, // No hay mesa asociada
-                            'started_at' => now(),
-                            'status' => \App\Models\TableSession::STATUS_ABIERTA,
-                        ]);
-                        $subsectorItem->update(['current_session_id' => $session->id]);
-                        $tableSessionId = $session->id;
-                    } catch (\Exception $e) {
-                        \Log::error('Error al crear sesión para subsector item: ' . $e->getMessage());
-                        throw new \Exception('Error al crear sesión para el elemento del subsector.');
-                    }
-                } else {
-                    $tableSessionId = $subsectorItem->current_session_id;
-                }
-            } else {
-                // Pedido rápido sin mesa ni subsector (consumo inmediato desde caja)
-                // No requiere table_session_id
-                $tableSessionId = null;
-            }
-
-            // Crear el pedido
-            $order = Order::create([
-                'restaurant_id' => $data['restaurant_id'],
-                'table_id' => $data['table_id'] ?? null,
-                'subsector_item_id' => $data['subsector_item_id'] ?? null,
-                'table_session_id' => $tableSessionId,
-                'user_id' => $data['user_id'],
-                'number' => $orderNumber,
-                'status' => OrderStatus::ABIERTO->value,
-                'observations' => $data['observations'] ?? null,
-                'customer_name' => $data['customer_name'] ?? null,
-            ]);
-
-            // Actualizar estado según el tipo
-            if ($table) {
-                $table->update([
-                    'status' => 'OCUPADA',
-                    'current_order_id' => $order->id,
+                Log::error('Error SQL al crear pedido', [
+                    'restaurant_id' => $data['restaurant_id'] ?? null,
+                    'sqlstate' => $e->errorInfo[0] ?? null,
+                    'message' => $e->getMessage(),
                 ]);
-            } elseif ($subsectorItem) {
-                $subsectorItem->update([
-                    'status' => \App\Models\SubsectorItem::STATUS_OCUPADA,
-                    'current_order_id' => $order->id,
-                ]);
+
+                throw new \RuntimeException(
+                    'No pudimos abrir el pedido. Reintentá en unos segundos.',
+                    0,
+                    $e
+                );
             }
-            // Si no hay mesa ni subsector, es un pedido rápido (no actualizar nada)
+        }
 
-            // Notificar a cocina el nuevo pedido
-            User::where('restaurant_id', $order->restaurant_id)
-                ->where('is_active', true)
-                ->whereIn('role', ['COCINA', 'ADMIN'])
-                ->get()
-                ->each(fn ($u) => $u->notify(new OrderCreatedNotification($order)));
-
-            return $order;
-        });
+        throw new \RuntimeException('No pudimos abrir el pedido. Reintentá en unos segundos.');
     }
 
     /**
@@ -297,38 +320,97 @@ class OrderService
     }
 
     /**
-     * Generar número de pedido único
+     * Generar número de pedido único por local y año.
+     *
+     * Debe llamarse dentro de la transacción de createOrder.
+     * Usa order_counters + lockForUpdate, y se alinea con el máximo ya existente
+     * en orders (evita desync tipo ORD-2026-1000 duplicado).
      */
     private function generateOrderNumber(int $restaurantId): string
     {
         $year = (int) date('Y');
+        $prefix = 'ORD-'.$year.'-';
+        $maxExisting = $this->maxSeqFromOrders($restaurantId, $year);
 
-        return DB::transaction(function () use ($restaurantId, $year) {
-            // Intentamos bloquear la fila del contador para evitar race conditions
+        // Crear fila de contador si no existe (seguro bajo concurrencia).
+        // Si ya existe, no toca last_seq acá: el avance va con el lock.
+        DB::table('order_counters')->insertOrIgnore([
+            'restaurant_id' => $restaurantId,
+            'year' => $year,
+            'last_seq' => $maxExisting,
+        ]);
+
+        $counter = DB::table('order_counters')
+            ->where('restaurant_id', $restaurantId)
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $counter) {
+            // Carrera extrema: otro proceso borró la fila; recrear y bloquear.
+            DB::table('order_counters')->insert([
+                'restaurant_id' => $restaurantId,
+                'year' => $year,
+                'last_seq' => $maxExisting,
+            ]);
             $counter = DB::table('order_counters')
                 ->where('restaurant_id', $restaurantId)
                 ->where('year', $year)
                 ->lockForUpdate()
-                ->first();
+                ->firstOrFail();
+        }
 
-            if (!$counter) {
-                $seq = 1;
-                DB::table('order_counters')->insert([
-                    'restaurant_id' => $restaurantId,
-                    'year' => $year,
-                    'last_seq' => $seq,
-                ]);
-            } else {
-                $seq = $counter->last_seq + 1;
-                DB::table('order_counters')
-                    ->where('restaurant_id', $restaurantId)
-                    ->where('year', $year)
-                    ->update(['last_seq' => $seq]);
+        $seq = max((int) $counter->last_seq, $maxExisting) + 1;
+
+        DB::table('order_counters')
+            ->where('restaurant_id', $restaurantId)
+            ->where('year', $year)
+            ->update(['last_seq' => $seq]);
+
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function maxSeqFromOrders(int $restaurantId, int $year): int
+    {
+        $prefix = 'ORD-'.$year.'-';
+        $driver = DB::connection()->getDriverName();
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $max = DB::table('orders')
+                ->where('restaurant_id', $restaurantId)
+                ->where('number', 'like', $prefix.'%')
+                ->selectRaw('MAX(CAST(SUBSTRING(number, ?) AS UNSIGNED)) as max_seq', [strlen($prefix) + 1])
+                ->value('max_seq');
+
+            return (int) ($max ?? 0);
+        }
+
+        // SQLite / otros: parseo en PHP (tests).
+        $max = 0;
+        $numbers = DB::table('orders')
+            ->where('restaurant_id', $restaurantId)
+            ->where('number', 'like', $prefix.'%')
+            ->pluck('number');
+
+        foreach ($numbers as $number) {
+            $suffix = substr((string) $number, strlen($prefix));
+            if (ctype_digit($suffix)) {
+                $max = max($max, (int) $suffix);
             }
+        }
 
-            $prefix = 'ORD-' . $year . '-';
-            return $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
-        });
+        return $max;
+    }
+
+    private function isDuplicateOrderNumber(QueryException $e): bool
+    {
+        $sqlState = $e->errorInfo[0] ?? '';
+        $message = $e->getMessage();
+
+        return $sqlState === '23000'
+            && (str_contains($message, 'orders_number_unique')
+                || str_contains($message, 'orders_restaurant_id_number_unique')
+                || (str_contains($message, 'Duplicate entry') && str_contains($message, 'ORD-')));
     }
 }
 

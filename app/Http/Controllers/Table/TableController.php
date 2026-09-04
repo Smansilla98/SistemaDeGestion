@@ -406,9 +406,16 @@ class TableController extends Controller
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al crear pedido desde mesa', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage(),
+                'message' => $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'No pudimos abrir el pedido. Reintentá en unos segundos.',
             ], 500);
         }
     }
