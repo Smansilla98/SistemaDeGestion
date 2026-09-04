@@ -222,7 +222,13 @@ let quickOrderItems = [];
 let quickOrderItemCounter = 0;
 const currentUserIsAdmin = @json(auth()->user()->canManageOrdersLikeAdmin());
 
-// Búsqueda de productos (product-picker partial usa #quickOrderProductSearch)
+// Búsqueda de productos: el partial product-picker escucha #quickOrderProductSearch
+function resetQuickOrderProductSearch() {
+    const input = document.getElementById('quickOrderProductSearch');
+    if (!input) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
 
 function quickOrderAddProduct(productId, productName, productPrice) {
     const existingItem = quickOrderItems.find(item => item.product_id === productId);
@@ -431,9 +437,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             // Limpiar formulario
             quickOrderItems = [];
             document.getElementById('quickOrderObservations').value = '';
-            document.getElementById('quickOrderProductSearch').value = '';
             renderQuickOrderItems();
-            filterQuickOrderProducts('');
+            resetQuickOrderProductSearch();
             
             // Actualizar lista de pedidos después de un breve delay
             setTimeout(() => {
@@ -472,9 +477,8 @@ document.getElementById('newQuickOrderModal')?.addEventListener('hidden.bs.modal
     quickOrderItems = [];
     quickOrderItemCounter = 0;
     document.getElementById('quickOrderObservations').value = '';
-    document.getElementById('quickOrderProductSearch').value = '';
     renderQuickOrderItems();
-    filterQuickOrderProducts('');
+    resetQuickOrderProductSearch();
 });
 
 // ========== SISTEMA DE ACTUALIZACIÓN DINÁMICA DE PEDIDOS ==========
