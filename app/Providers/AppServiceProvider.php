@@ -53,7 +53,11 @@ class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict($this->app->environment('local'));
 
         DB::whenQueryingForLongerThan(500, function ($connection, $event) {
-            Log::warning('Query lenta', ['sql' => $event->sql, 'ms' => $event->time]);
+            $sql = (string) $event->sql;
+            if (strlen($sql) > 800) {
+                $sql = substr($sql, 0, 800).'…';
+            }
+            Log::warning('Query lenta', ['sql' => $sql, 'ms' => $event->time]);
         });
 
         if ($this->app->isProduction()) {

@@ -5,8 +5,8 @@ namespace App\Exceptions;
 use App\Core\ApiResponse;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\ErrorHandler\Error\FatalError;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -30,17 +30,72 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
-        $this->reportable(function (Throwable $e) {
-            // Log todas las excepciones importantes
-            if ($this->shouldReport($e)) {
-                Log::error('Exception no manejada', [
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-        });
+        // Sin Log::error duplicado con trace completo: Laravel ya reporta.
+        // Un segundo dump (sobre todo QueryException/OOM) puede agotar memoria en Monolog.
+    }
+
+    /**
+     * Report or log an exception without blowing up Monolog on huge contexts.
+     */
+    public function report(Throwable $e): void
+    {
+        if ($this->isMemoryExhaustion($e)) {
+            $this->writeOomBreadcrumb($e);
+
+            return;
+        }
+
+        try {
+            parent::report($e);
+        } catch (Throwable $loggingFailure) {
+            // Nunca dejar que el logger mate el request con otro FatalError.
+            $this->writeOomBreadcrumb($loggingFailure);
+        }
+    }
+
+    /**
+     * Laravel incluye `['exception' => $e]` por defecto; Monolog intenta
+     * normalizar el objeto (SQL + bindings + trace) y puede OOM (128MB).
+     *
+     * @return array<string, mixed>
+     */
+    protected function buildExceptionContext(Throwable $e): array
+    {
+        return array_merge(
+            $this->exceptionContext($e),
+            $this->context()
+        );
+    }
+
+    /**
+     * Contexto mínimo: evita serializar bindings SQL / modelos / request gigantes.
+     *
+     * @return array<string, mixed>
+     */
+    protected function context(): array
+    {
+        try {
+            return array_filter([
+                'user_id' => auth()->id(),
+                'restaurant_id' => auth()->user()->restaurant_id ?? null,
+                'url' => request()->path(),
+            ]);
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function exceptionContext(Throwable $e): array
+    {
+        return [
+            'exception' => $e::class,
+            'message' => $this->truncate((string) $e->getMessage(), 1500),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ];
     }
 
     /**
@@ -57,35 +112,29 @@ class Handler extends ExceptionHandler
             );
         }
 
-        // Manejar errores de validación PRIMERO (antes de otros errores)
         if ($exception instanceof ValidationException) {
             return $this->handleValidationException($request, $exception);
         }
 
-        // Manejar errores de base de datos
         if ($exception instanceof QueryException) {
             return $this->handleQueryException($request, $exception);
         }
 
-        // Manejar errores 404
         if ($exception instanceof NotFoundHttpException) {
             return $this->handleNotFound($request, $exception);
         }
 
-        // Manejar errores 403
         if ($exception instanceof AccessDeniedHttpException) {
             return $this->handleAccessDenied($request, $exception);
         }
 
-        // Manejar errores HTTP genéricos
         if ($exception instanceof HttpException) {
             return $this->handleHttpException($request, $exception);
         }
 
-        // Para AJAX/API requests, devolver JSON
         if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson() || $request->ajax()) {
             $msg = $this->getUserFriendlyMessage($exception);
-            $debug = config('app.debug') ? $exception->getMessage() : null;
+            $debug = config('app.debug') ? $this->truncate($exception->getMessage(), 500) : null;
 
             return response()->json(array_filter([
                 'success' => false,
@@ -98,12 +147,8 @@ class Handler extends ExceptionHandler
         return parent::render($request, $exception);
     }
 
-    /**
-     * Manejar errores de validación
-     */
     protected function handleValidationException($request, ValidationException $exception)
     {
-        // Para peticiones AJAX/JSON, siempre devolver JSON
         if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return ApiResponse::error(
                 'Error de validación.',
@@ -113,16 +158,12 @@ class Handler extends ExceptionHandler
             );
         }
 
-        // Para peticiones normales, usar el comportamiento por defecto
         return parent::render($request, $exception);
     }
 
-    /**
-     * Manejar errores de base de datos
-     */
     protected function handleQueryException($request, QueryException $exception)
     {
-        report($exception);
+        // report() ya corre antes de render; no re-loguear SQL/bindings.
 
         $code = (int) ($exception->errorInfo[1] ?? 0);
         $message = match ($code) {
@@ -143,9 +184,6 @@ class Handler extends ExceptionHandler
         return back()->withErrors(['general' => $message])->with('error', $message);
     }
 
-    /**
-     * Manejar errores 404
-     */
     protected function handleNotFound($request, NotFoundHttpException $exception)
     {
         if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
@@ -155,9 +193,6 @@ class Handler extends ExceptionHandler
         return response()->view('errors.404', [], 404);
     }
 
-    /**
-     * Manejar errores 403
-     */
     protected function handleAccessDenied($request, AccessDeniedHttpException $exception)
     {
         if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
@@ -167,9 +202,6 @@ class Handler extends ExceptionHandler
         return response()->view('errors.403', [], 403);
     }
 
-    /**
-     * Manejar errores HTTP genéricos
-     */
     protected function handleHttpException($request, HttpException $exception)
     {
         $statusCode = $exception->getStatusCode();
@@ -185,9 +217,6 @@ class Handler extends ExceptionHandler
         ], $statusCode);
     }
 
-    /**
-     * Obtener mensaje amigable para el usuario
-     */
     protected function getUserFriendlyMessage(Throwable $exception): string
     {
         if ($exception instanceof ValidationException) {
@@ -201,9 +230,6 @@ class Handler extends ExceptionHandler
         return 'Ha ocurrido un error. Por favor, intenta nuevamente o contacta al administrador.';
     }
 
-    /**
-     * Obtener código de estado HTTP
-     */
     protected function getStatusCode(Throwable $exception): int
     {
         if ($exception instanceof HttpException) {
@@ -215,5 +241,37 @@ class Handler extends ExceptionHandler
         }
 
         return 500;
+    }
+
+    private function isMemoryExhaustion(Throwable $e): bool
+    {
+        if ($e instanceof FatalError && str_contains($e->getMessage(), 'Allowed memory size')) {
+            return true;
+        }
+
+        return str_contains($e->getMessage(), 'Allowed memory size');
+    }
+
+    private function writeOomBreadcrumb(Throwable $e): void
+    {
+        $line = sprintf(
+            "[%s] OOM/log-fail %s: %s in %s:%d\n",
+            date('c'),
+            $e::class,
+            $this->truncate($e->getMessage(), 400),
+            $e->getFile(),
+            $e->getLine()
+        );
+
+        @file_put_contents(storage_path('logs/oom.log'), $line, FILE_APPEND | LOCK_EX);
+    }
+
+    private function truncate(string $value, int $max): string
+    {
+        if (strlen($value) <= $max) {
+            return $value;
+        }
+
+        return substr($value, 0, $max).'…';
     }
 }

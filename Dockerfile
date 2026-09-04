@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql zip opcache mbstring bcmath gd \
     && rm -rf /var/lib/apt/lists/*
 
+COPY docker/php/zz-conurbania.ini /usr/local/etc/php/conf.d/zz-conurbania.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html

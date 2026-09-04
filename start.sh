@@ -114,4 +114,4 @@ echo "Queues: printing,default"
 echo "=========================================="
 echo ""
 
-php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
+php -d memory_limit="${PHP_MEMORY_LIMIT:-256M}" artisan serve --host=0.0.0.0 --port="${PORT:-8000}"

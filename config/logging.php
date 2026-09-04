@@ -55,7 +55,8 @@ return [
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),
-            'ignore_exceptions' => false,
+            // Evita cascada FatalError en Monolog (LineFormatter) cuando el contexto es enorme.
+            'ignore_exceptions' => true,
         ],
 
         'single' => [
