@@ -136,6 +136,81 @@ class TableService
     }
 
     /**
+     * Garantizar que la mesa tenga una sesión utilizable para cerrar.
+     *
+     * Una mesa puede quedar OCUPADA con current_session_id nulo (por ejemplo si el
+     * pedido se creó cuando la mesa no estaba OCUPADA: OrderService no abre sesión
+     * en ese caso y guarda el pedido con table_session_id nulo). Con la sesión en
+     * nulo el cierre queda bloqueado para siempre. Acá reusamos la sesión abierta
+     * que exista, o creamos una, y adoptamos los pedidos huérfanos de la mesa.
+     *
+     * @return int|null id de la sesión lista para cerrar, o null si no hay nada que cerrar
+     */
+    public function ensureSessionForClose(Table $table): ?int
+    {
+        return DB::transaction(function () use ($table) {
+            $sessionId = $table->current_session_id;
+
+            if (! $sessionId) {
+                $openSession = TableSession::where('table_id', $table->id)
+                    ->where('status', TableSession::STATUS_ABIERTA)
+                    ->orderByDesc('started_at')
+                    ->first();
+
+                if ($openSession) {
+                    $sessionId = $openSession->id;
+                } else {
+                    $orphanOrder = $this->orphanOrdersQuery($table)->orderBy('id')->first();
+
+                    if (! $orphanOrder) {
+                        return null;
+                    }
+
+                    $newSession = TableSession::create([
+                        'restaurant_id' => $table->restaurant_id,
+                        'table_id' => $table->id,
+                        'waiter_id' => $orphanOrder->user_id,
+                        'opened_by_user_id' => $orphanOrder->user_id ?? auth()->id(),
+                        'started_at' => $orphanOrder->created_at ?? now(),
+                        'status' => TableSession::STATUS_ABIERTA,
+                    ]);
+
+                    $sessionId = $newSession->id;
+
+                    Log::warning('Mesa sin sesión activa: se creó una sesión de recuperación para poder cerrarla', [
+                        'table_id' => $table->id,
+                        'session_id' => $sessionId,
+                    ]);
+                }
+
+                $table->forceFill(['current_session_id' => $sessionId])->save();
+            }
+
+            $adopted = $this->orphanOrdersQuery($table)->update(['table_session_id' => $sessionId]);
+
+            if ($adopted > 0) {
+                Log::info('Pedidos huérfanos adoptados por la sesión de la mesa', [
+                    'table_id' => $table->id,
+                    'session_id' => $sessionId,
+                    'orders' => $adopted,
+                ]);
+            }
+
+            return $sessionId;
+        });
+    }
+
+    /**
+     * Pedidos abiertos de la mesa que quedaron sin sesión asociada.
+     */
+    protected function orphanOrdersQuery(Table $table)
+    {
+        return Order::where('table_id', $table->id)
+            ->whereNull('table_session_id')
+            ->whereNotIn('status', [Order::STATUS_CERRADO, Order::STATUS_CANCELADO]);
+    }
+
+    /**
      * Procesar pago de mesa y cerrar sesión. Retorna array con datos para la respuesta.
      * Ejecuta la lógica dentro de una transacción DB.
      *

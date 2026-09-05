@@ -66,7 +66,8 @@ return [
         'CAJERO' => [
             'stock_mozo.create' => false,
             'dashboard.view' => true,
-            'tables.view' => false, 'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => false,
+            'tables.view' => true, 'tables.create' => false, 'tables.update' => true, 'tables.delete' => false,
+            'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => false,
             'kitchen.view' => false, 'cash-register.view' => true, 'cash-register.create' => false, 'cash-register.update' => true, 'cash-register.delete' => false,
             'discount-types.view' => false, 'sectors.view' => false, 'categories.view' => false,
             'products.view' => true, 'stock.view' => true, 'stock.create' => true, 'stock.update' => true, 'stock.delete' => false,
@@ -100,7 +101,8 @@ return [
         ],
         'SUPERVISOR' => [
             'dashboard.view' => true,
-            'tables.view' => true, 'orders.view' => true, 'kitchen.view' => false, 'cash-register.view' => true,
+            'tables.view' => true, 'tables.create' => false, 'tables.update' => true, 'tables.delete' => false,
+            'orders.view' => true, 'kitchen.view' => false, 'cash-register.view' => true,
             'discount-types.view' => false, 'sectors.view' => false, 'categories.view' => false,
             'products.view' => true, 'stock.view' => true, 'users.view' => false, 'printers.view' => false,
             'events.view' => true, 'recurring-activities.view' => true,

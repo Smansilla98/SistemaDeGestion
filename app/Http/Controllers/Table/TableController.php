@@ -687,12 +687,15 @@ class TableController extends Controller
     {
         Gate::authorize('update', $table);
 
-        if ($table->status !== 'OCUPADA') {
-            return back()->with('error', 'La mesa no está ocupada');
-        }
+        // Auto-reparación: mesas OCUPADAS sin sesión y pedidos huérfanos quedaban
+        // imposibles de cerrar. Se reusa/crea la sesión y se adoptan esos pedidos.
+        $sessionId = $this->tableService->ensureSessionForClose($table);
+        $table->refresh();
 
-        if (! $table->current_session_id) {
-            return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
+        if (! $sessionId) {
+            return back()->with('error', $table->status === 'OCUPADA'
+                ? 'La mesa no tiene pedidos abiertos para cerrar'
+                : 'La mesa no está ocupada');
         }
 
         // Obtener todos los pedidos activos de la mesa
@@ -790,12 +793,15 @@ class TableController extends Controller
                 : redirect()->back()->with('error', $message)->withInput();
         };
 
-        if ($table->status !== 'OCUPADA') {
-            return $respond(false, 'La mesa no está ocupada');
-        }
+        // Misma auto-reparación que en showCloseTable: sin esto, una mesa OCUPADA
+        // con current_session_id nulo no se podía cobrar nunca.
+        $sessionId = $this->tableService->ensureSessionForClose($table);
+        $table->refresh();
 
-        if (! $table->current_session_id) {
-            return $respond(false, 'La mesa no tiene una sesión activa');
+        if (! $sessionId) {
+            return $respond(false, $table->status === 'OCUPADA'
+                ? 'La mesa no tiene pedidos abiertos para cerrar'
+                : 'La mesa no está ocupada');
         }
 
         try {
