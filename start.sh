@@ -60,6 +60,12 @@ php artisan migrate --force --no-interaction || {
     echo "   El sistema puede funcionar con funcionalidad limitada."
 }
 
+# Esquema crítico de cobro (enum de payments + audit_logs legacy)
+echo "=== Verificando esquema de cobro (payments/audit_logs) ==="
+php artisan checkout:verify-schema --fix 2>/dev/null || {
+    echo "⚠️  checkout:verify-schema no disponible o falló (se continúa)."
+}
+
 # Reparaciones Conurbania (secuencias, sesiones duplicadas, snapshots)
 echo "=== Reparación de integridad Conurbania ==="
 php artisan conurbania:repair --force 2>/dev/null || {
