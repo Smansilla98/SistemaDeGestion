@@ -115,6 +115,11 @@ final class StockOpsController extends Controller
             'quantity' => 'required|integer|min:1',
             'reason' => 'nullable|string|max:255',
             'reference' => 'nullable|string|max:255',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
+            'new_supplier_name' => 'nullable|string|max:255',
+            'unit_cost' => 'nullable|numeric|min:0',
+            'purchase_date' => 'nullable|date',
+            'invoice_number' => 'nullable|string|max:255',
         ]);
 
         $product = Product::query()->findOrFail($validated['product_id']);
@@ -136,21 +141,63 @@ final class StockOpsController extends Controller
             }
         }
 
+        $payload = [
+            'restaurant_id' => $restaurantId,
+            'product_id' => $validated['product_id'],
+            'user_id' => (int) $request->user()->id,
+            'type' => $validated['type'],
+            'quantity' => $validated['quantity'],
+            'reason' => $validated['reason'] ?? null,
+            'reference' => $validated['reference'] ?? 'mobile',
+        ];
+
+        if ($validated['type'] === 'ENTRADA' && (
+            ! empty($validated['supplier_id'])
+            || ! empty($validated['new_supplier_name'])
+            || isset($validated['unit_cost'])
+        )) {
+            $supplierId = $validated['supplier_id'] ?? null;
+            if (! $supplierId && ! empty($validated['new_supplier_name'])) {
+                $supplier = \App\Models\Supplier::query()->create([
+                    'restaurant_id' => $restaurantId,
+                    'name' => $validated['new_supplier_name'],
+                    'is_active' => true,
+                ]);
+                $supplierId = $supplier->id;
+            }
+            if ($supplierId && isset($validated['unit_cost']) && ! empty($validated['purchase_date'])) {
+                $payload['purchase_data'] = [
+                    'supplier_id' => $supplierId,
+                    'unit_cost' => $validated['unit_cost'],
+                    'purchase_date' => $validated['purchase_date'],
+                    'invoice_number' => $validated['invoice_number'] ?? null,
+                ];
+            }
+        }
+
         try {
-            $movement = $stock->recordMovement([
-                'restaurant_id' => $restaurantId,
-                'product_id' => $validated['product_id'],
-                'user_id' => (int) $request->user()->id,
-                'type' => $validated['type'],
-                'quantity' => $validated['quantity'],
-                'reason' => $validated['reason'] ?? null,
-                'reference' => $validated['reference'] ?? 'mobile',
-            ]);
+            $movement = $stock->recordMovement($payload);
         } catch (\Throwable $e) {
             return ApiResponse::error($e->getMessage(), 422, 'STOCK_MOVEMENT_ERROR');
         }
 
         return ApiResponse::success($movement->load(['product:id,name', 'user:id,name'])->toArray(), 201, 'Movimiento registrado');
+    }
+
+    public function suppliers(Request $request): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $rows = \App\Models\Supplier::query()
+            ->where('restaurant_id', $restaurantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return ApiResponse::success($rows->toArray());
     }
 
     private function requireRestaurantId(Request $request): int|JsonResponse

@@ -148,4 +148,170 @@ class DashboardStatsService
             'pedidos_pendientes' => $ops['pedidos_pendientes'],
         ];
     }
+
+    /**
+     * Insights del dashboard desktop para ADMIN / SUPERADMIN / GERENTE.
+     *
+     * @return array{
+     *     recent_orders: list<array<string, mixed>>,
+     *     top_products: list<array{name: string, total_quantity: int|float}>,
+     *     low_stock_list: list<array{id: int, name: string, current_stock: int, stock_minimum: int}>,
+     *     out_of_stock_list: list<array{id: int, name: string}>,
+     *     sales_by_waiter: list<array{name: string, total_sales: float, payment_count: int}>,
+     *     income_by_method: list<array{payment_method: string, total: float}>,
+     *     active_tables: list<array{id: int, number: string, sector: ?string, waiter: ?string}>,
+     *     today_orders: int
+     * }
+     */
+    public function insights(?int $restaurantId): array
+    {
+        $empty = [
+            'recent_orders' => [],
+            'top_products' => [],
+            'low_stock_list' => [],
+            'out_of_stock_list' => [],
+            'sales_by_waiter' => [],
+            'income_by_method' => [],
+            'active_tables' => [],
+            'today_orders' => 0,
+        ];
+
+        if (! $restaurantId) {
+            return $empty;
+        }
+
+        $today = Carbon::today();
+
+        $recentOrders = Order::where('restaurant_id', $restaurantId)
+            ->with(['table:id,number', 'user:id,name'])
+            ->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get()
+            ->map(fn (Order $o) => [
+                'id' => $o->id,
+                'number' => $o->number,
+                'status' => $o->status,
+                'total' => (float) $o->total,
+                'table' => $o->table?->number,
+                'waiter' => $o->user?->name,
+            ])
+            ->values()
+            ->all();
+
+        $topProducts = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->where('orders.restaurant_id', $restaurantId)
+            ->where('orders.status', 'CERRADO')
+            ->whereDate('orders.created_at', $today)
+            ->select('products.name', DB::raw('SUM(order_items.quantity) as total_quantity'))
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_quantity')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'total_quantity' => (int) $r->total_quantity,
+            ])
+            ->all();
+
+        $stockRows = DB::table('stocks')
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->where('stocks.restaurant_id', $restaurantId)
+            ->where('products.has_stock', true)
+            ->where('products.is_active', true)
+            ->select(
+                'products.id',
+                'products.name',
+                'products.stock_minimum',
+                'stocks.quantity as current_stock'
+            )
+            ->get();
+
+        $lowStockList = $stockRows
+            ->filter(fn ($r) => (int) $r->current_stock > 0 && (int) $r->current_stock <= (int) $r->stock_minimum)
+            ->sortBy('current_stock')
+            ->take(8)
+            ->map(fn ($r) => [
+                'id' => (int) $r->id,
+                'name' => (string) $r->name,
+                'current_stock' => (int) $r->current_stock,
+                'stock_minimum' => (int) $r->stock_minimum,
+            ])
+            ->values()
+            ->all();
+
+        $outOfStockList = $stockRows
+            ->filter(fn ($r) => (int) $r->current_stock <= 0)
+            ->take(8)
+            ->map(fn ($r) => [
+                'id' => (int) $r->id,
+                'name' => (string) $r->name,
+            ])
+            ->values()
+            ->all();
+
+        $salesByWaiter = Payment::query()
+            ->where('payments.restaurant_id', $restaurantId)
+            ->whereDate('payments.created_at', $today)
+            ->join('table_sessions', 'payments.table_session_id', '=', 'table_sessions.id')
+            ->join('users', 'table_sessions.waiter_id', '=', 'users.id')
+            ->select(
+                'users.name',
+                DB::raw('SUM(payments.amount) as total_sales'),
+                DB::raw('COUNT(DISTINCT payments.id) as payment_count')
+            )
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total_sales')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'total_sales' => (float) $r->total_sales,
+                'payment_count' => (int) $r->payment_count,
+            ])
+            ->all();
+
+        $incomeByMethod = Payment::query()
+            ->where('restaurant_id', $restaurantId)
+            ->whereDate('created_at', $today)
+            ->select('payment_method', DB::raw('SUM(amount) as total'))
+            ->groupBy('payment_method')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($r) => [
+                'payment_method' => (string) $r->payment_method,
+                'total' => (float) $r->total,
+            ])
+            ->all();
+
+        $activeTables = Table::where('restaurant_id', $restaurantId)
+            ->where('status', 'OCUPADA')
+            ->with(['sector:id,name', 'currentSession.waiter:id,name'])
+            ->orderBy('number')
+            ->limit(12)
+            ->get()
+            ->map(fn (Table $t) => [
+                'id' => $t->id,
+                'number' => (string) $t->number,
+                'sector' => $t->sector?->name,
+                'waiter' => $t->currentSession?->waiter?->name,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'recent_orders' => $recentOrders,
+            'top_products' => $topProducts,
+            'low_stock_list' => $lowStockList,
+            'out_of_stock_list' => $outOfStockList,
+            'sales_by_waiter' => $salesByWaiter,
+            'income_by_method' => $incomeByMethod,
+            'active_tables' => $activeTables,
+            'today_orders' => Order::where('restaurant_id', $restaurantId)
+                ->whereDate('created_at', $today)
+                ->count(),
+        ];
+    }
 }

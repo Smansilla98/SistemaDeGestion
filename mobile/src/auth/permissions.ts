@@ -8,6 +8,15 @@ export function hasPermission(user: ApiUser | null | undefined, permission: stri
   return perms.includes(permission);
 }
 
+export function isAdminRole(role?: string): boolean {
+  return role === 'ADMIN' || role === 'SUPERADMIN';
+}
+
+export function canSeeAdminHub(user: ApiUser | null | undefined): boolean {
+  if (!user) return false;
+  return isAdminRole(user.role) || user.role === 'GERENTE';
+}
+
 export function canSeeTab(
   user: ApiUser | null | undefined,
   tab: 'dashboard' | 'mesas' | 'pedido' | 'pedidos' | 'cocina' | 'caja' | 'stock',

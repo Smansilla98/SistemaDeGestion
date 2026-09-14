@@ -26,6 +26,7 @@ final class DashboardOpsController extends Controller
             'role' => $role,
             'operational' => $operational,
             'management' => null,
+            'insights' => null,
         ];
 
         if (in_array($role, ['ADMIN', 'SUPERADMIN', 'GERENTE'], true)) {
@@ -42,6 +43,7 @@ final class DashboardOpsController extends Controller
                 ->values()
                 ->all();
             $payload['management'] = $mgmt;
+            $payload['insights'] = $stats->insights($restaurantId);
         }
 
         return ApiResponse::success($payload);

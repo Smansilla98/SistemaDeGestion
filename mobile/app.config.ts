@@ -2,11 +2,21 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 const APP_ENV = process.env.APP_ENV ?? 'development';
 
+/** Producción por defecto: API Railway. Override con EXPO_PUBLIC_API_URL. */
 const apiUrls: Record<string, string> = {
   development: process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api',
   staging: process.env.EXPO_PUBLIC_API_URL ?? 'https://staging.example.com/api',
-  production: process.env.EXPO_PUBLIC_API_URL ?? 'https://api.conurbania.app/api',
+  production:
+    process.env.EXPO_PUBLIC_API_URL ?? 'https://conurbaniabar.up.railway.app/api',
 };
+
+/**
+ * EAS_PROJECT_ID: setear con `eas init` y/o secret EAS.
+ * El fallback UUID evita crashear builds locales; en producción EAS debe inyectar el real.
+ * Ver docs/STORE_CHECKLIST.md.
+ */
+const easProjectId =
+  process.env.EAS_PROJECT_ID ?? '00000000-0000-0000-0000-000000000000';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -17,6 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'conurbania',
   userInterfaceStyle: 'light',
   icon: './assets/icon.png',
+  // owner: 'tu-cuenta-expo', // opcional: setear si el proyecto EAS tiene owner
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.conurbania.app',
@@ -53,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     appEnv: APP_ENV,
     apiUrl: apiUrls[APP_ENV] ?? apiUrls.development,
     eas: {
-      projectId: process.env.EAS_PROJECT_ID ?? '00000000-0000-0000-0000-000000000000',
+      projectId: easProjectId,
     },
   },
   experiments: {

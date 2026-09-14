@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "simulator": false
+      },
       "env": {
         "APP_ENV": "development"
       }
@@ -15,6 +18,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
       },
       "env": {
         "APP_ENV": "staging"
@@ -25,12 +31,27 @@
         "buildType": "app-bundle"
       },
       "ios": {
+        "simulator": false,
         "resourceClass": "m-medium"
       },
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api"
       },
       "autoIncrement": true
+    },
+    "production-apk": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api"
+      }
     }
   },
   "submit": {

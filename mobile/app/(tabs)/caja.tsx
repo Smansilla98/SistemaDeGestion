@@ -1,26 +1,41 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
-import type { TableRow } from '../../src/api/types';
+import type { CashSessionRow, TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { colors, radius, space } from '../../src/theme';
-import { Card, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import {
+  AppText,
+  Badge,
+  Card,
+  Chip,
+  Field,
+  PageHeader,
+  PrimaryButton,
+  SectionLabel,
+} from '../../src/ui/primitives';
 
-const METHODS = ['EFECTIVO', 'DEBITO', 'CREDITO', 'TRANSFERENCIA'] as const;
+const METHODS = ['EFECTIVO', 'DEBITO', 'CREDITO', 'TRANSFERENCIA', 'QR', 'OTRO'] as const;
+
+type PayLine = { payment_method: (typeof METHODS)[number]; amount: string };
 
 export default function CajaScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ tableId?: string }>();
   const canWrite = hasPermission(user, 'cash.write');
+
   const [summary, setSummary] = useState<{
     session: Record<string, unknown> | null;
     sales_total: number;
@@ -28,30 +43,42 @@ export default function CajaScreen() {
     expected_amount?: number;
   } | null>(null);
   const [registers, setRegisters] = useState<Array<{ id: number; name: string }>>([]);
+  const [registerId, setRegisterId] = useState<number | null>(null);
   const [tables, setTables] = useState<TableRow[]>([]);
+  const [sessions, setSessions] = useState<CashSessionRow[]>([]);
   const [initial, setInitial] = useState('0');
   const [finalAmount, setFinalAmount] = useState('');
   const [payTableId, setPayTableId] = useState<number | null>(null);
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState<(typeof METHODS)[number]>('EFECTIVO');
+  const [payLines, setPayLines] = useState<PayLine[]>([{ payment_method: 'EFECTIVO', amount: '' }]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [movOpen, setMovOpen] = useState(false);
+  const [movType, setMovType] = useState<'INGRESO' | 'EGRESO'>('INGRESO');
+  const [movAmount, setMovAmount] = useState('');
+  const [movDesc, setMovDesc] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, t] = await Promise.all([api.cashSummary(), api.cashRegisters(), api.tables()]);
+      const [s, r, t, sess] = await Promise.all([
+        api.cashSummary(),
+        api.cashRegisters(),
+        api.tables(),
+        api.cashSessions().catch(() => [] as CashSessionRow[]),
+      ]);
       setSummary(s);
       setRegisters(Array.isArray(r) ? r : []);
+      if (!registerId && r?.[0]) setRegisterId(r[0].id);
       setTables((Array.isArray(t) ? t : []).filter((x) => x.status === 'OCUPADA'));
+      setSessions(Array.isArray(sess) ? sess : []);
       if (s.expected_amount != null) setFinalAmount(String(s.expected_amount));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error caja');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [registerId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,13 +87,17 @@ export default function CajaScreen() {
     }, [load]),
   );
 
-  const openFirst = async () => {
-    if (!registers[0]) {
-      setError('No hay cajas configuradas');
+  useEffect(() => {
+    if (params.tableId) setPayTableId(Number(params.tableId));
+  }, [params.tableId]);
+
+  const openCash = async () => {
+    if (!registerId) {
+      setError('Elegí una caja');
       return;
     }
     try {
-      await api.openCash(registers[0].id, Number(initial) || 0);
+      await api.openCash(registerId, Number(initial) || 0);
       setMsg('Caja abierta');
       await load();
     } catch (e) {
@@ -91,146 +122,256 @@ export default function CajaScreen() {
 
   const pay = async () => {
     if (!payTableId) return;
-    const value = Number(amount);
-    if (!value || value <= 0) {
-      setError('Monto inválido');
+    const payments = payLines
+      .map((l) => ({ payment_method: l.payment_method, amount: Number(l.amount) }))
+      .filter((p) => p.amount > 0);
+    if (payments.length === 0) {
+      setError('Ingresá al menos un monto');
       return;
     }
     try {
-      await api.payTable(payTableId, [{ payment_method: method, amount: value }]);
+      await api.payTable(payTableId, payments);
       setMsg('Mesa cobrada');
-      setAmount('');
+      setPayLines([{ payment_method: 'EFECTIVO', amount: '' }]);
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Cobro falló');
     }
   };
 
-  if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
+  const saveMovement = async () => {
+    const amount = Number(movAmount);
+    if (!amount || amount <= 0 || !movDesc.trim()) {
+      setError('Completá monto y descripción');
+      return;
+    }
+    try {
+      await api.cashMovement({
+        type: movType,
+        amount,
+        description: movDesc.trim(),
+      });
+      setMsg(`${movType} registrado`);
+      setMovOpen(false);
+      setMovAmount('');
+      setMovDesc('');
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Movimiento falló');
+    }
+  };
+
+  if (loading) {
+    return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
+  }
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 40 }}>
-      <PageHeader title="Caja" subtitle="Sesión y cobros" icon="cash" />
-      <View style={{ padding: space.lg }}>
-        {error && <Text style={styles.err}>{error}</Text>}
-        {msg && <Text style={styles.ok}>{msg}</Text>}
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={{ paddingBottom: 48 }}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
+    >
+      <PageHeader title="Caja" subtitle="Sesión, cobros y movimientos" icon="cash" />
+      <View style={{ padding: space.lg, gap: 6 }}>
+        {error ? (
+          <AppText weight="medium" style={styles.err}>
+            {error}
+          </AppText>
+        ) : null}
+        {msg ? (
+          <AppText weight="medium" style={styles.ok}>
+            {msg}
+          </AppText>
+        ) : null}
 
-        <Text style={styles.h}>Sesión</Text>
+        <SectionLabel>Sesión actual</SectionLabel>
         {summary?.session ? (
           <Card>
-            <Text style={styles.bold}>Caja abierta</Text>
-            <Text>Ventas ${Number(summary.sales_total).toFixed(2)}</Text>
-            <Text>{summary.payments_count} pagos</Text>
-            <Text>Esperado ${Number(summary.expected_amount ?? 0).toFixed(2)}</Text>
-            {canWrite && (
+            <AppText weight="bold">Caja abierta</AppText>
+            <AppText style={styles.meta}>
+              {(summary.session as { cash_register?: { name?: string } }).cash_register?.name ??
+                'Sesión'}
+            </AppText>
+            <AppText>Ventas ${Number(summary.sales_total).toFixed(2)}</AppText>
+            <AppText>{summary.payments_count} pagos</AppText>
+            <AppText weight="semibold">
+              Esperado ${Number(summary.expected_amount ?? 0).toFixed(2)}
+            </AppText>
+            {canWrite ? (
               <>
-                <TextInput
-                  style={styles.input}
+                <Field
+                  label="Monto final contado"
                   keyboardType="decimal-pad"
                   value={finalAmount}
                   onChangeText={setFinalAmount}
-                  placeholder="Monto final contado"
                 />
-                <PrimaryButton title="Cerrar caja" variant="danger" onPress={() => void close()} />
+                <View style={styles.row}>
+                  <View style={{ flex: 1 }}>
+                    <PrimaryButton title="Movimiento" variant="ghost" onPress={() => setMovOpen(true)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <PrimaryButton title="Cerrar caja" variant="danger" onPress={() => void close()} />
+                  </View>
+                </View>
               </>
-            )}
+            ) : null}
           </Card>
         ) : (
           <Card>
-            <Text>No hay caja abierta</Text>
-            {canWrite && (
+            <AppText>No hay caja abierta</AppText>
+            {canWrite ? (
               <>
-                <TextInput
-                  style={styles.input}
+                <SectionLabel>Elegir caja</SectionLabel>
+                <View style={styles.chips}>
+                  {registers.map((r) => (
+                    <Chip
+                      key={r.id}
+                      label={r.name}
+                      selected={registerId === r.id}
+                      onPress={() => setRegisterId(r.id)}
+                    />
+                  ))}
+                </View>
+                <Field
+                  label="Monto inicial"
                   keyboardType="decimal-pad"
                   value={initial}
                   onChangeText={setInitial}
-                  placeholder="Monto inicial"
                 />
-                <PrimaryButton title={`Abrir ${registers[0]?.name ?? 'caja'}`} onPress={() => void openFirst()} />
+                <PrimaryButton title="Abrir caja" onPress={() => void openCash()} />
               </>
-            )}
+            ) : null}
           </Card>
         )}
 
-        {canWrite && (
+        {canWrite && summary?.session ? (
           <>
-            <Text style={styles.h}>Cobrar mesa</Text>
-            <View style={styles.row}>
+            <SectionLabel>Cobrar mesa (multi-pago)</SectionLabel>
+            <View style={styles.chips}>
               {tables.map((t) => (
-                <Pressable
+                <Chip
                   key={t.id}
-                  style={[styles.chip, payTableId === t.id && styles.chipOn]}
+                  label={String(t.number)}
+                  selected={payTableId === t.id}
                   onPress={() => setPayTableId(t.id)}
-                >
-                  <Text style={{ color: payTableId === t.id ? '#fff' : colors.gray900, fontWeight: '700' }}>
-                    {t.number}
-                  </Text>
-                </Pressable>
+                />
               ))}
             </View>
-            <View style={styles.row}>
-              {METHODS.map((m) => (
-                <Pressable
-                  key={m}
-                  style={[styles.chip, method === m && styles.chipOn]}
-                  onPress={() => setMethod(m)}
-                >
-                  <Text style={{ color: method === m ? '#fff' : colors.gray800, fontSize: 11, fontWeight: '700' }}>
-                    {m}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <TextInput
-              style={styles.input}
-              keyboardType="decimal-pad"
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Monto"
+            {payLines.map((line, idx) => (
+              <Card key={idx} style={{ marginBottom: 8 }}>
+                <View style={styles.chips}>
+                  {METHODS.map((m) => (
+                    <Chip
+                      key={m}
+                      label={m}
+                      selected={line.payment_method === m}
+                      onPress={() =>
+                        setPayLines((prev) =>
+                          prev.map((p, i) => (i === idx ? { ...p, payment_method: m } : p)),
+                        )
+                      }
+                    />
+                  ))}
+                </View>
+                <Field
+                  label="Monto"
+                  keyboardType="decimal-pad"
+                  value={line.amount}
+                  onChangeText={(v) =>
+                    setPayLines((prev) =>
+                      prev.map((p, i) => (i === idx ? { ...p, amount: v } : p)),
+                    )
+                  }
+                />
+              </Card>
+            ))}
+            <PrimaryButton
+              title="Agregar método"
+              variant="ghost"
+              onPress={() =>
+                setPayLines((prev) => [...prev, { payment_method: 'EFECTIVO', amount: '' }])
+              }
             />
             <PrimaryButton title="Cobrar" onPress={() => void pay()} disabled={!payTableId} />
           </>
-        )}
+        ) : null}
+
+        <SectionLabel>Sesiones recientes</SectionLabel>
+        {sessions.map((s) => (
+          <Pressable key={s.id} onPress={() => router.push(`/cash/${s.id}` as Href)}>
+            <Card style={{ marginBottom: 8 }}>
+              <View style={styles.rowBetween}>
+                <AppText weight="bold">{s.register ?? `Sesión #${s.id}`}</AppText>
+                <Badge label={s.status} />
+              </View>
+              <AppText style={styles.meta}>
+                {s.user ?? '—'} · Ini ${Number(s.initial_amount).toFixed(0)}
+                {s.final_amount != null ? ` · Fin $${Number(s.final_amount).toFixed(0)}` : ''}
+              </AppText>
+              <AppText style={styles.meta}>{s.opened_at?.slice(0, 16) ?? ''}</AppText>
+            </Card>
+          </Pressable>
+        ))}
+        {sessions.length === 0 ? (
+          <AppText style={styles.meta}>Sin sesiones</AppText>
+        ) : null}
       </View>
+
+      <Modal visible={movOpen} animationType="slide" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            <AppText weight="bold" style={{ fontSize: 18 }}>
+              Movimiento de caja
+            </AppText>
+            <View style={styles.chips}>
+              <Chip
+                label="INGRESO"
+                selected={movType === 'INGRESO'}
+                onPress={() => setMovType('INGRESO')}
+                tone={colors.green}
+              />
+              <Chip
+                label="EGRESO"
+                selected={movType === 'EGRESO'}
+                onPress={() => setMovType('EGRESO')}
+                tone={colors.danger}
+              />
+            </View>
+            <Field
+              label="Monto"
+              keyboardType="decimal-pad"
+              value={movAmount}
+              onChangeText={setMovAmount}
+            />
+            <Field
+              label="Descripción"
+              value={movDesc}
+              onChangeText={setMovDesc}
+              placeholder="Ej. Retiro, propina, etc."
+            />
+            <PrimaryButton title="Guardar" onPress={() => void saveMovement()} />
+            <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setMovOpen(false)} />
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray50 },
-  h: {
-    fontWeight: '700',
-    color: colors.gray500,
-    textTransform: 'uppercase',
-    fontSize: 12,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  bold: { fontWeight: '800', marginBottom: 6, color: colors.gray900 },
-  input: {
-    marginTop: 10,
+  err: { color: colors.danger },
+  ok: { color: colors.green },
+  meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },
+  row: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalCard: {
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    minHeight: 48,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: space.lg,
+    gap: 8,
   },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  chip: {
-    minWidth: 56,
-    minHeight: 44,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  chipOn: { backgroundColor: colors.teal500, borderColor: colors.teal500 },
-  err: { color: colors.danger, marginBottom: 8 },
-  ok: { color: colors.green, marginBottom: 8, fontWeight: '600' },
 });

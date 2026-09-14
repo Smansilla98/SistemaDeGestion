@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { api, ApiError } from '../api/client';
 import type { ApiUser } from '../api/types';
+import { flushOfflineQueue } from '../offline/queue';
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './storage';
 
 type AuthState = {
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthState | null>(null);
 async function registerForPushSafe(): Promise<void> {
   try {
     const Notifications = await import('expo-notifications');
+    const Constants = await import('expo-constants');
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
@@ -36,12 +38,21 @@ async function registerForPushSafe(): Promise<void> {
     }
     if (finalStatus !== 'granted') return;
 
-    // Sin EAS projectId real, getExpoPushTokenAsync falla en Expo Go — no bloquear login.
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const projectId =
+      process.env.EAS_PROJECT_ID ??
+      Constants.default.easConfig?.projectId ??
+      (Constants.default.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas
+        ?.projectId;
+
+    if (!projectId || projectId.startsWith('00000000')) {
+      return;
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
     await api.registerDevice(tokenData.data, platform);
   } catch {
-    // push opcional en dev / Expo Go
+    // push opcional en Expo Go / sin EAS_PROJECT_ID
   }
 }
 
@@ -68,6 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshMe(),
           new Promise<void>((resolve) => setTimeout(resolve, 8000)),
         ]);
+        if (!cancelled) {
+          void flushOfflineQueue();
+        }
       } catch {
         await clearTokens();
         if (!cancelled) setUser(null);
@@ -81,6 +95,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refreshMe]);
 
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void flushOfflineQueue();
+    });
+    const t = setInterval(() => void flushOfflineQueue(), 30000);
+    return () => {
+      sub.remove();
+      clearInterval(t);
+    };
+  }, []);
+
   const login = useCallback(async (username: string, password: string) => {
     setOfflineHint(null);
     try {
@@ -91,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setTokens(payload.access_token, payload.refresh_token);
       setUser(payload.user);
       void registerForPushSafe();
+      void flushOfflineQueue();
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') {
         setOfflineHint(e.message);

@@ -12,6 +12,13 @@ import { LinearGradientFallback } from '../src/ui/gradient';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const stackHeader = {
+  headerShown: true,
+  headerStyle: { backgroundColor: colors.teal900 },
+  headerTintColor: '#fff',
+  headerTitleStyle: { fontFamily: font.semibold },
+};
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const segments = useSegments();
@@ -72,16 +79,25 @@ export default function RootLayout() {
             >
               <Stack.Screen name="login" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="order/[id]"
-                options={{
-                  headerShown: true,
-                  title: 'Pedido',
-                  headerStyle: { backgroundColor: colors.teal900 },
-                  headerTintColor: '#fff',
-                  headerTitleStyle: { fontFamily: font.semibold },
-                }}
-              />
+              <Stack.Screen name="order/[id]" options={{ ...stackHeader, title: 'Pedido' }} />
+              <Stack.Screen name="table/[id]" options={{ ...stackHeader, title: 'Mesa' }} />
+              <Stack.Screen name="tables/map" />
+              <Stack.Screen name="cash/[id]" options={{ ...stackHeader, title: 'Sesión de caja' }} />
+              <Stack.Screen name="products/index" />
+              <Stack.Screen name="products/new" />
+              <Stack.Screen name="products/[id]" />
+              <Stack.Screen name="users/index" />
+              <Stack.Screen name="users/new" />
+              <Stack.Screen name="admin/index" />
+              <Stack.Screen name="admin/categories" />
+              <Stack.Screen name="admin/sectors" />
+              <Stack.Screen name="admin/discounts" />
+              <Stack.Screen name="admin/clients" />
+              <Stack.Screen name="admin/reports" />
+              <Stack.Screen name="admin/events" />
+              <Stack.Screen name="admin/recurring" />
+              <Stack.Screen name="admin/expenses" />
+              <Stack.Screen name="admin/notifications" />
             </Stack>
           </AuthGate>
         </AuthProvider>

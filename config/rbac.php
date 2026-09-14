@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Permisos JWT alineados a la matriz web (config/permissions.php role_defaults).
- * GERENTE NO tiene comodín *: sin cocina, sin reportes/impresoras/sectores vía API ops.
+ * GERENTE NO tiene comodín *: sin cocina; sin catálogo sectores/descuentos/categorías; sin reportes.
  */
 return [
     'permissions' => [
@@ -26,12 +26,18 @@ return [
         'cash.write',
         'stock.read',
         'stock.write',
+        'catalog.read',
+        'catalog.write',
+        'reports.read',
+        'events.read',
+        'events.write',
+        'expenses.read',
+        'expenses.write',
         'devices.write',
     ],
     'role_permissions' => [
         'SUPERADMIN' => ['*'],
         'ADMIN' => ['*'],
-        // Paridad web: supervisión operativa, sin cocina
         'GERENTE' => [
             'auth.me',
             'dashboard.read',
@@ -49,6 +55,8 @@ return [
             'cash.write',
             'stock.read',
             'stock.write',
+            'events.read',
+            'events.write',
             'devices.write',
         ],
         'CAJERO' => [
@@ -65,6 +73,8 @@ return [
             'cash.write',
             'stock.read',
             'stock.write',
+            'reports.read',
+            'expenses.read',
             'devices.write',
         ],
         'MOZO' => [
@@ -100,6 +110,8 @@ return [
             'tables.read',
             'cash.read',
             'stock.read',
+            'reports.read',
+            'events.read',
             'devices.write',
         ],
         'ENCARGADO' => [
@@ -115,6 +127,7 @@ return [
             'cash.write',
             'stock.read',
             'stock.write',
+            'reports.read',
             'devices.write',
         ],
     ],
