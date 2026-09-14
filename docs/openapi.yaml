@@ -88,6 +88,22 @@ components:
         to: { type: integer, nullable: true }
 
 paths:
+  /:
+    get:
+      tags: [Auth]
+      summary: Health / discovery de la API
+      responses:
+        '200':
+          description: API OK
+
+  /health:
+    get:
+      tags: [Auth]
+      summary: Healthcheck simple
+      responses:
+        '200':
+          description: OK
+
   /auth/login:
     post:
       tags: [Auth]

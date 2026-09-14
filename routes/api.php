@@ -13,6 +13,35 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+/** Health / discovery — evita 404 al abrir /api en el navegador o healthchecks. */
+Route::get('/', function () {
+    return \App\Core\ApiResponse::success([
+        'name' => config('app.name', 'Conurbania'),
+        'api' => 'jwt',
+        'version' => '1.0',
+        'docs' => url('/docs'),
+        'endpoints' => [
+            'POST /api/auth/login',
+            'POST /api/auth/refresh',
+            'POST /api/auth/logout',
+            'GET  /api/auth/me',
+            'GET  /api/tables',
+            'GET  /api/orders',
+            'GET  /api/products',
+            'GET  /api/kitchen/board',
+            'GET  /api/cash/summary',
+            'POST /api/devices',
+        ],
+    ], 200, 'API Conurbania OK');
+})->name('api.health');
+
+Route::get('/health', function () {
+    return \App\Core\ApiResponse::success([
+        'status' => 'ok',
+        'time' => now()->toIso8601String(),
+    ]);
+})->name('api.health.check');
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
