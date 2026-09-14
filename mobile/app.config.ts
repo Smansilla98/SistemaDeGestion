@@ -28,23 +28,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.conurbania.app',
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
-      backgroundColor: '#0F766E',
+      backgroundColor: '#1d9e75',
     },
   },
   plugins: [
     'expo-router',
     'expo-secure-store',
+    'expo-font',
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#0F766E',
+        backgroundColor: '#082822',
         image: './assets/splash-icon.png',
       },
     ],
     [
       'expo-notifications',
       {
-        color: '#0F766E',
+        color: '#1d9e75',
       },
     ],
   ],

@@ -20,6 +20,25 @@ fi
 export CHOKIDAR_USEPOLLING="${CHOKIDAR_USEPOLLING:-1}"
 export CHOKIDAR_INTERVAL="${CHOKIDAR_INTERVAL:-1000}"
 
+# Evita ruido de DevTools en Linux (opcional)
+export EXPO_NO_TELEMETRY="${EXPO_NO_TELEMETRY:-1}"
+
+# CI vacío rompe getenv boolish de Expo — nunca exportar CI="" 
+if [ -z "${CI:-}" ]; then
+  unset CI 2>/dev/null || true
+fi
+
+# RN DevTools en Linux exige chrome-sandbox root:4755; sin eso solo ensucia el log.
+# Lo deshabilitamos: Expo Go en el celu no lo necesita.
+for sb in "$HOME"/.cache/dotslash/*/React\ Native\ DevTools-linux-x64/chrome-sandbox; do
+  if [ -f "$sb" ] && [ ! -f "${sb}.disabled" ]; then
+    mv "$sb" "${sb}.disabled" 2>/dev/null || true
+    echo "✓ chrome-sandbox DevTools deshabilitado (no afecta Expo Go)"
+  fi
+done
+
 PORT="${PORT:-8088}"
 echo "=== Expo en puerto ${PORT} → API: ${EXPO_PUBLIC_API_URL:-ver .env} ==="
+echo "    (Usá Expo Go en el celular; Proceed anonymously si pregunta login)"
+echo "    El ERROR de chrome-sandbox se puede ignorar si ves el QR abajo."
 exec npx expo start -c --port "$PORT"

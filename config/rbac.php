@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Permisos JWT alineados a la matriz web (config/permissions.php role_defaults).
+ * GERENTE NO tiene comodín *: sin cocina, sin reportes/impresoras/sectores vía API ops.
+ */
 return [
     'permissions' => [
         'auth.me',
+        'dashboard.read',
         'products.read',
         'products.write',
         'orders.read',
@@ -19,14 +24,36 @@ return [
         'kitchen.write',
         'cash.read',
         'cash.write',
+        'stock.read',
+        'stock.write',
         'devices.write',
     ],
     'role_permissions' => [
         'SUPERADMIN' => ['*'],
         'ADMIN' => ['*'],
-        'GERENTE' => ['*'],
+        // Paridad web: supervisión operativa, sin cocina
+        'GERENTE' => [
+            'auth.me',
+            'dashboard.read',
+            'products.read',
+            'products.write',
+            'orders.read',
+            'orders.write',
+            'clients.read',
+            'clients.write',
+            'users.read',
+            'users.write',
+            'tables.read',
+            'tables.write',
+            'cash.read',
+            'cash.write',
+            'stock.read',
+            'stock.write',
+            'devices.write',
+        ],
         'CAJERO' => [
             'auth.me',
+            'dashboard.read',
             'products.read',
             'orders.read',
             'orders.write',
@@ -36,10 +63,13 @@ return [
             'tables.write',
             'cash.read',
             'cash.write',
+            'stock.read',
+            'stock.write',
             'devices.write',
         ],
         'MOZO' => [
             'auth.me',
+            'dashboard.read',
             'products.read',
             'orders.read',
             'orders.write',
@@ -47,10 +77,13 @@ return [
             'tables.read',
             'tables.write',
             'cash.read',
+            'stock.read',
+            'stock.write',
             'devices.write',
         ],
         'COCINA' => [
             'auth.me',
+            'dashboard.read',
             'products.read',
             'orders.read',
             'orders.write',
@@ -60,25 +93,28 @@ return [
         ],
         'SUPERVISOR' => [
             'auth.me',
+            'dashboard.read',
             'products.read',
             'orders.read',
             'clients.read',
             'tables.read',
-            'kitchen.read',
             'cash.read',
+            'stock.read',
             'devices.write',
         ],
         'ENCARGADO' => [
             'auth.me',
+            'dashboard.read',
             'products.read',
             'orders.read',
             'orders.write',
             'clients.read',
             'tables.read',
             'tables.write',
-            'kitchen.read',
             'cash.read',
             'cash.write',
+            'stock.read',
+            'stock.write',
             'devices.write',
         ],
     ],

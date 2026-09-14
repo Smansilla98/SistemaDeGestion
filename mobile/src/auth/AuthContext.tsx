@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { api, ApiError } from '../api/client';
 import type { ApiUser } from '../api/types';
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './storage';
@@ -16,18 +15,19 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
-async function registerForPush(): Promise<void> {
+async function registerForPushSafe(): Promise<void> {
   try {
+    const Notifications = await import('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
     if (existing !== 'granted') {
@@ -36,11 +36,12 @@ async function registerForPush(): Promise<void> {
     }
     if (finalStatus !== 'granted') return;
 
+    // Sin EAS projectId real, getExpoPushTokenAsync falla en Expo Go — no bloquear login.
     const tokenData = await Notifications.getExpoPushTokenAsync();
     const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
     await api.registerDevice(tokenData.data, platform);
   } catch {
-    // push opcional en dev / simulador
+    // push opcional en dev / Expo Go
   }
 }
 
@@ -60,16 +61,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const boot = async () => {
       try {
-        await refreshMe();
+        await Promise.race([
+          refreshMe(),
+          new Promise<void>((resolve) => setTimeout(resolve, 8000)),
+        ]);
       } catch {
         await clearTokens();
-        setUser(null);
+        if (!cancelled) setUser(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    })();
+    };
+    void boot();
+    return () => {
+      cancelled = true;
+    };
   }, [refreshMe]);
 
   const login = useCallback(async (username: string, password: string) => {
@@ -81,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       await setTokens(payload.access_token, payload.refresh_token);
       setUser(payload.user);
-      void registerForPush();
+      void registerForPushSafe();
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') {
         setOfflineHint(e.message);
@@ -92,8 +101,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     const refresh = await getRefreshToken();
-    await api.logout(refresh);
-    setUser(null);
+    try {
+      await api.logout(refresh);
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const value = useMemo(

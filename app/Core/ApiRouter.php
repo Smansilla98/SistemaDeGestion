@@ -7,11 +7,13 @@ namespace App\Core;
 use App\Controllers\Api\AuthJwtController;
 use App\Controllers\Api\CashOpsController;
 use App\Controllers\Api\ClientController;
+use App\Controllers\Api\DashboardOpsController;
 use App\Controllers\Api\DeviceController;
 use App\Controllers\Api\KitchenOpsController;
 use App\Controllers\Api\OrderController;
 use App\Controllers\Api\OrderOpsController;
 use App\Controllers\Api\ProductController;
+use App\Controllers\Api\StockOpsController;
 use App\Controllers\Api\TableOpsController;
 use App\Controllers\Api\UserController;
 
@@ -62,6 +64,13 @@ final class ApiRouter
             ['methods' => ['GET'], 'uri' => 'cash/session', 'action' => [CashOpsController::class, 'currentSession'], 'middleware' => array_merge($jwt, ['permission:cash.read'])],
             ['methods' => ['GET'], 'uri' => 'cash/summary', 'action' => [CashOpsController::class, 'summary'], 'middleware' => array_merge($jwt, ['permission:cash.read'])],
             ['methods' => ['POST'], 'uri' => 'cash/registers/{registerId}/open', 'action' => [CashOpsController::class, 'open'], 'middleware' => array_merge($jwt, ['permission:cash.write'])],
+            ['methods' => ['POST'], 'uri' => 'cash/session/close', 'action' => [CashOpsController::class, 'close'], 'middleware' => array_merge($jwt, ['permission:cash.write'])],
+
+            ['methods' => ['GET'], 'uri' => 'dashboard', 'action' => [DashboardOpsController::class, 'show'], 'middleware' => array_merge($jwt, ['permission:dashboard.read'])],
+
+            ['methods' => ['GET'], 'uri' => 'stock', 'action' => [StockOpsController::class, 'index'], 'middleware' => array_merge($jwt, ['permission:stock.read'])],
+            ['methods' => ['GET'], 'uri' => 'stock/movements', 'action' => [StockOpsController::class, 'movements'], 'middleware' => array_merge($jwt, ['permission:stock.read'])],
+            ['methods' => ['POST'], 'uri' => 'stock/movements', 'action' => [StockOpsController::class, 'storeMovement'], 'middleware' => array_merge($jwt, ['permission:stock.write'])],
 
             ['methods' => ['POST'], 'uri' => 'devices', 'action' => [DeviceController::class, 'store'], 'middleware' => array_merge($jwt, ['permission:devices.write'])],
             ['methods' => ['DELETE'], 'uri' => 'devices', 'action' => [DeviceController::class, 'destroy'], 'middleware' => array_merge($jwt, ['permission:devices.write'])],

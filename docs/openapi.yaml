@@ -590,6 +590,39 @@ paths:
           required: true
           schema: { type: integer }
 
+  /cash/session/close:
+    post:
+      tags: [Cash]
+      summary: Cerrar sesión de caja abierta
+      security:
+        - bearerAuth: []
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Stats operativos / gerenciales
+      security:
+        - bearerAuth: []
+
+  /stock:
+    get:
+      tags: [Stock]
+      summary: Productos con stock actual
+      security:
+        - bearerAuth: []
+
+  /stock/movements:
+    get:
+      tags: [Stock]
+      summary: Listado de movimientos
+      security:
+        - bearerAuth: []
+    post:
+      tags: [Stock]
+      summary: Registrar ENTRADA / SALIDA / AJUSTE
+      security:
+        - bearerAuth: []
+
   /devices:
     post:
       tags: [Devices]

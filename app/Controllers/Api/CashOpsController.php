@@ -98,18 +98,54 @@ final class CashOpsController extends Controller
                 'session' => null,
                 'sales_total' => 0,
                 'payments_count' => 0,
+                'expected_amount' => 0,
             ]);
         }
 
         $payments = $session->payments();
-        $sales = (clone $payments)->sum('amount');
+        $sales = (float) (clone $payments)->sum('amount');
         $count = (clone $payments)->count();
+        $ingresos = (float) $session->cashMovements()->where('type', 'INGRESO')->sum('amount');
+        $egresos = (float) $session->cashMovements()->where('type', 'EGRESO')->sum('amount');
+        $expected = (float) $session->initial_amount + $sales + $ingresos - $egresos;
 
         return ApiResponse::success([
             'session' => $session->load('cashRegister:id,name')->toArray(),
-            'sales_total' => (float) $sales,
+            'sales_total' => $sales,
             'payments_count' => $count,
+            'expected_amount' => $expected,
         ]);
+    }
+
+    public function close(Request $request, CashRegisterService $cash): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $session = CashRegisterSession::query()
+            ->where('restaurant_id', $restaurantId)
+            ->where('status', CashRegisterSession::STATUS_ABIERTA)
+            ->orderByDesc('opened_at')
+            ->first();
+
+        if ($session === null) {
+            return ApiResponse::error('No hay sesión de caja abierta', 422, 'NO_OPEN_SESSION');
+        }
+
+        $validated = $request->validate([
+            'final_amount' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $closed = $cash->closeSession($session, $validated);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'CLOSE_CASH_ERROR');
+        }
+
+        return ApiResponse::success($closed->toArray(), 200, 'Caja cerrada');
     }
 
     private function requireRestaurantId(Request $request): int|JsonResponse

@@ -173,11 +173,43 @@ export const api = {
       orders: Array<Record<string, unknown>>;
     }>('/kitchen/board'),
 
+  kitchenItemStatus: (itemId: number, status: string) =>
+    apiRequest(`/kitchen/items/${itemId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    }),
+
+  order: (id: number) => apiRequest<import('./types').OrderRow>(`/orders/${id}`),
+
+  dashboard: () => apiRequest<import('./types').DashboardPayload>('/dashboard'),
+
+  stock: (search?: string) =>
+    apiRequest<import('./types').StockRow[]>(
+      search ? `/stock?search=${encodeURIComponent(search)}` : '/stock',
+    ),
+
+  stockMovements: (productId?: number) =>
+    apiRequest<import('./types').StockMovementRow[]>(
+      productId ? `/stock/movements?product_id=${productId}` : '/stock/movements',
+    ),
+
+  createStockMovement: (body: {
+    product_id: number;
+    type: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
+    quantity: number;
+    reason?: string;
+  }) =>
+    apiRequest('/stock/movements', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   cashSummary: () =>
     apiRequest<{
       session: Record<string, unknown> | null;
       sales_total: number;
       payments_count: number;
+      expected_amount?: number;
     }>('/cash/summary'),
 
   cashRegisters: () =>
@@ -187,6 +219,12 @@ export const api = {
     apiRequest(`/cash/registers/${registerId}/open`, {
       method: 'POST',
       body: JSON.stringify({ initial_amount }),
+    }),
+
+  closeCash: (final_amount: number, notes?: string) =>
+    apiRequest('/cash/session/close', {
+      method: 'POST',
+      body: JSON.stringify({ final_amount, notes }),
     }),
 
   registerDevice: (token: string, platform: 'ios' | 'android' | 'web') =>

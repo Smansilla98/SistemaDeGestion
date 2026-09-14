@@ -3,19 +3,8 @@ const { getDefaultConfig } = require('expo/metro-config');
 const projectRoot = __dirname;
 const config = getDefaultConfig(projectRoot);
 
-// Limitar raíces vigiladas al proyecto mobile (no todo el monorepo).
+// No vigilar el monorepo Laravel; solo esta app.
 config.watchFolders = [projectRoot];
 
-const block = [
-  /\/node_modules\/.*\/node_modules\/.*/,
-  /\/node_modules\/@jest\/.*/,
-  /\/node_modules\/jest-.*/,
-  /\/\.git\/.*/,
-  /\/vendor\/.*/,
-];
-
-config.resolver.blockList = Array.isArray(config.resolver.blockList)
-  ? [...config.resolver.blockList, ...block]
-  : block;
-
+// Importante: no bloquear "**/vendor/**" — RN usa Libraries/vendor/emitter/EventEmitter.
 module.exports = config;

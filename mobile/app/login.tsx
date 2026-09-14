@@ -1,17 +1,10 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { useAuth } from '../src/auth/AuthContext';
 import { ApiError } from '../src/api/client';
-import { colors } from '../src/theme';
+import { colors, radius, space } from '../src/theme';
+import { AppText, Field, Icon, PrimaryButton } from '../src/ui/primitives';
+import { LinearGradientFallback } from '../src/ui/gradient';
 
 export default function LoginScreen() {
   const { login, offlineHint } = useAuth();
@@ -33,70 +26,81 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.hero}>
-        <Text style={styles.brand}>Conurbania</Text>
-        <Text style={styles.sub}>Salón · Cocina · Caja</Text>
-      </View>
+    <LinearGradientFallback colors={colors.mosaic} style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.inner}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.hero}>
+          <View style={styles.mark}>
+            <Icon name="restaurant" size={22} color={colors.white} />
+          </View>
+          <AppText weight="bold" style={styles.brand}>
+            Conurbania
+          </AppText>
+          <AppText weight="medium" style={styles.sub}>
+            Salón · Cocina · Caja
+          </AppText>
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Usuario</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={styles.input}
-          value={username}
-          onChangeText={setUsername}
-          placeholder="mozo1"
-          placeholderTextColor={colors.gray600}
-        />
-        <Text style={styles.label}>Contraseña</Text>
-        <TextInput
-          secureTextEntry
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={colors.gray600}
-        />
-        {(error || offlineHint) && (
-          <Text style={styles.error}>{error ?? offlineHint}</Text>
-        )}
-        <Pressable style={styles.btn} onPress={onSubmit} disabled={busy}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Entrar</Text>}
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        <View style={styles.card}>
+          <AppText weight="semibold" style={styles.cardTitle}>
+            Iniciar sesión
+          </AppText>
+          <Field
+            label="Usuario"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="mozo1"
+          />
+          <Field
+            label="Contraseña"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+          />
+          {(error || offlineHint) && (
+            <AppText weight="medium" style={styles.error}>
+              {error ?? offlineHint}
+            </AppText>
+          )}
+          <PrimaryButton
+            title="Entrar"
+            icon="log-in-outline"
+            onPress={() => void onSubmit()}
+            loading={busy}
+            disabled={busy}
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </LinearGradientFallback>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.teal950, justifyContent: 'center', padding: 24 },
+  root: { flex: 1 },
+  inner: { flex: 1, justifyContent: 'center', padding: space.xl },
   hero: { marginBottom: 28 },
-  brand: { color: colors.white, fontSize: 36, fontWeight: '800', letterSpacing: -0.5 },
-  sub: { color: colors.teal500, marginTop: 6, fontSize: 16 },
-  card: { backgroundColor: colors.white, borderRadius: 16, padding: 20 },
-  label: { color: colors.gray600, marginBottom: 6, marginTop: 10, fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    minHeight: 48,
-    fontSize: 16,
-    color: colors.gray900,
-  },
-  error: { color: colors.danger, marginTop: 12 },
-  btn: {
-    marginTop: 20,
-    backgroundColor: colors.teal700,
-    borderRadius: 12,
-    minHeight: 52,
+  mark: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.teal500,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 14,
   },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  brand: { color: colors.white, fontSize: 36, letterSpacing: -0.5 },
+  sub: { color: colors.teal300, marginTop: 6, fontSize: 15 },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: radius.xl,
+    padding: space.xl,
+    gap: 4,
+  },
+  cardTitle: { color: colors.gray800, fontSize: 16, marginBottom: 8 },
+  error: { color: colors.danger, marginVertical: 8 },
 });

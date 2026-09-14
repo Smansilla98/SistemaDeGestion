@@ -4,21 +4,28 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { ProductRow, TableRow } from '../../src/api/types';
-import { colors } from '../../src/theme';
+import { colors, radius, space } from '../../src/theme';
+import {
+  AppText,
+  Chip,
+  Field,
+  PageHeader,
+  PrimaryButton,
+  SectionLabel,
+} from '../../src/ui/primitives';
 
 type CartItem = { product_id: number; name: string; quantity: number; price: number };
 
 export default function PedidoScreen() {
+  const params = useLocalSearchParams<{ tableId?: string }>();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
-  const [mesa, setMesa] = useState<number | null>(null);
+  const [mesa, setMesa] = useState<number | null>(params.tableId ? Number(params.tableId) : null);
   const [q, setQ] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sendKitchen, setSendKitchen] = useState(true);
@@ -39,7 +46,8 @@ export default function PedidoScreen() {
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load]),
+      if (params.tableId) setMesa(Number(params.tableId));
+    }, [load, params.tableId]),
   );
 
   const filtered = useMemo(() => {
@@ -64,7 +72,8 @@ export default function PedidoScreen() {
   const bump = (idx: number, delta: number) => {
     setCart((prev) => {
       const copy = [...prev];
-      const next = Math.max(1, copy[idx].quantity + delta);
+      const next = copy[idx].quantity + delta;
+      if (next <= 0) return prev.filter((_, i) => i !== idx);
       copy[idx] = { ...copy[idx], quantity: next };
       return copy;
     });
@@ -98,133 +107,133 @@ export default function PedidoScreen() {
   };
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <Text style={styles.h}>Mesa</Text>
-      <View style={styles.row}>
-        {tables.map((t) => (
-          <Pressable
-            key={t.id}
-            onPress={() => setMesa(t.id)}
-            style={[styles.mesa, mesa === t.id && styles.mesaOn]}
-          >
-            <Text style={[styles.mesaText, mesa === t.id && { color: '#fff' }]}>{t.number}</Text>
-          </Pressable>
-        ))}
-      </View>
+    <View style={styles.root}>
+      <PageHeader title="Nuevo pedido" subtitle="Salón · toma rápida" icon="add-circle" />
+      <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: 48 }}>
+        <SectionLabel>Mesa</SectionLabel>
+        <View style={styles.row}>
+          {tables.map((t) => (
+            <Chip
+              key={t.id}
+              label={t.number}
+              selected={mesa === t.id}
+              onPress={() => setMesa(t.id)}
+              tone={t.status === 'OCUPADA' ? colors.amber : colors.teal500}
+            />
+          ))}
+        </View>
 
-      <Text style={styles.h}>Productos</Text>
-      <TextInput
-        style={styles.search}
-        placeholder="Buscar…"
-        value={q}
-        onChangeText={setQ}
-        placeholderTextColor={colors.gray600}
-      />
-      <View style={styles.row}>
-        {filtered.map((p) => (
-          <Pressable key={p.id} style={styles.prod} onPress={() => addProduct(p)}>
-            <Text style={styles.prodName} numberOfLines={2}>
-              {p.name}
-            </Text>
-            <Text style={styles.prodPrice}>${Number(p.price).toFixed(2)}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Text style={styles.h}>Carrito</Text>
-      {cart.length === 0 ? (
-        <Text style={styles.muted}>Todavía no agregaste productos.</Text>
-      ) : (
-        cart.map((c, idx) => (
-          <View key={c.product_id} style={styles.cartRow}>
-            <Text style={{ flex: 1 }}>{c.name}</Text>
-            <Pressable onPress={() => bump(idx, -1)} style={styles.step}>
-              <Text>−</Text>
+        <SectionLabel>Productos</SectionLabel>
+        <Field placeholder="Buscar…" value={q} onChangeText={setQ} />
+        <View style={styles.row}>
+          {filtered.map((p) => (
+            <Pressable key={p.id} style={styles.prod} onPress={() => addProduct(p)}>
+              <AppText weight="semibold" style={styles.prodName} numberOfLines={2}>
+                {p.name}
+              </AppText>
+              <AppText weight="bold" style={styles.prodPrice}>
+                ${Number(p.price).toFixed(2)}
+              </AppText>
             </Pressable>
-            <Text style={{ width: 28, textAlign: 'center' }}>{c.quantity}</Text>
-            <Pressable onPress={() => bump(idx, 1)} style={styles.step}>
-              <Text>+</Text>
-            </Pressable>
-          </View>
-        ))
-      )}
+          ))}
+        </View>
 
-      <Pressable onPress={() => setSendKitchen((v) => !v)} style={styles.toggle}>
-        <Text>{sendKitchen ? '✓ Enviar a cocina' : '○ Solo guardar'}</Text>
-      </Pressable>
+        <SectionLabel>Carrito</SectionLabel>
+        {cart.length === 0 ? (
+          <AppText style={styles.muted}>Todavía no agregaste productos.</AppText>
+        ) : (
+          cart.map((c, idx) => (
+            <View key={c.product_id} style={styles.cartRow}>
+              <AppText weight="medium" style={{ flex: 1 }}>
+                {c.name}
+              </AppText>
+              <Pressable onPress={() => bump(idx, -1)} style={styles.step}>
+                <AppText weight="bold">−</AppText>
+              </Pressable>
+              <AppText weight="bold" style={{ width: 28, textAlign: 'center' }}>
+                {c.quantity}
+              </AppText>
+              <Pressable onPress={() => bump(idx, 1)} style={styles.step}>
+                <AppText weight="bold">+</AppText>
+              </Pressable>
+            </View>
+          ))
+        )}
 
-      <Text style={styles.total}>Total ${total.toFixed(2)}</Text>
-      {err && <Text style={styles.err}>{err}</Text>}
-      {msg && <Text style={styles.ok}>{msg}</Text>}
+        <Pressable onPress={() => setSendKitchen((v) => !v)} style={styles.toggle}>
+          <AppText weight="medium">
+            {sendKitchen ? '✓ Enviar a cocina' : '○ Solo guardar'}
+          </AppText>
+        </Pressable>
 
-      <Pressable style={styles.btn} onPress={() => void submit()} disabled={busy}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Confirmar pedido</Text>}
-      </Pressable>
-    </ScrollView>
+        <AppText weight="bold" style={styles.total}>
+          Total ${total.toFixed(2)}
+        </AppText>
+        {err && (
+          <AppText weight="medium" style={styles.err}>
+            {err}
+          </AppText>
+        )}
+        {msg && (
+          <AppText weight="medium" style={styles.ok}>
+            {msg}
+          </AppText>
+        )}
+
+        <PrimaryButton
+          title="Confirmar pedido"
+          icon="checkmark-circle"
+          onPress={() => void submit()}
+          loading={busy}
+          disabled={busy}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray50 },
-  h: { fontWeight: '700', color: colors.gray600, textTransform: 'uppercase', fontSize: 12, marginTop: 12, marginBottom: 8 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  mesa: {
-    minWidth: 64,
-    minHeight: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  mesaOn: { backgroundColor: colors.teal700, borderColor: colors.teal700 },
-  mesaText: { fontWeight: '700', color: colors.gray900 },
-  search: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    minHeight: 48,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 8,
-  },
   prod: {
     width: '47%',
-    minHeight: 72,
+    minHeight: 78,
     backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: radius.lg,
+    padding: 12,
     borderWidth: 1,
-    borderColor: colors.gray200,
+    borderColor: colors.gray100,
   },
-  prodName: { fontWeight: '600', color: colors.gray900 },
-  prodPrice: { marginTop: 6, color: colors.teal700 },
-  cartRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  prodName: { color: colors.gray900 },
+  prodPrice: { marginTop: 8, color: colors.teal500 },
+  cartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray100,
+  },
   step: {
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.gray200,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.white,
   },
-  toggle: { marginTop: 12, padding: 12, backgroundColor: colors.white, borderRadius: 10 },
-  total: { marginTop: 12, fontSize: 18, fontWeight: '800' },
-  err: { color: colors.danger, marginTop: 8 },
-  ok: { color: colors.green, marginTop: 8 },
-  muted: { color: colors.gray600 },
-  btn: {
-    marginTop: 16,
-    backgroundColor: colors.teal700,
-    borderRadius: 12,
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
+  toggle: {
+    marginTop: 14,
+    padding: 14,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.gray100,
   },
-  btnText: { color: '#fff', fontWeight: '700' },
+  total: { marginTop: 14, marginBottom: 8, fontSize: 20, color: colors.gray900 },
+  err: { color: colors.danger, marginBottom: 8 },
+  ok: { color: colors.green, marginBottom: 8 },
+  muted: { color: colors.gray500 },
 });

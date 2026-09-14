@@ -18,8 +18,7 @@ final class RbacChecker
             return false;
         }
 
-        $map = config('rbac.role_permissions', []);
-        $granted = $map[$role] ?? [];
+        $granted = self::permissionsForRole($role);
 
         if (in_array('*', $granted, true)) {
             return true;
@@ -32,5 +31,30 @@ final class RbacChecker
         }
 
         return false;
+    }
+
+    /**
+     * Lista efectiva de permisos JWT del rol (expande `*` a todos los declarados).
+     *
+     * @return list<string>
+     */
+    public static function permissionsForRole(?string $role): array
+    {
+        if ($role === null || $role === '') {
+            return [];
+        }
+
+        $map = config('rbac.role_permissions', []);
+        /** @var list<string> $granted */
+        $granted = $map[$role] ?? [];
+
+        if (in_array('*', $granted, true)) {
+            /** @var list<string> $all */
+            $all = config('rbac.permissions', []);
+
+            return array_values(array_unique(array_merge(['*'], $all)));
+        }
+
+        return array_values($granted);
     }
 }

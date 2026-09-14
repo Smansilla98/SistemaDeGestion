@@ -195,6 +195,7 @@ final class JwtAuthService
             'role' => $user->role,
             'restaurant_id' => $user->restaurant_id,
             'is_active' => (bool) $user->is_active,
+            'permissions' => \App\Core\Rbac\RbacChecker::permissionsForRole($user->role),
         ];
     }
 }
