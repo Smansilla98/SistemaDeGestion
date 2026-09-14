@@ -14,6 +14,15 @@ echo "DB_DATABASE: ${DB_DATABASE:-no configurado}"
 echo "DB_USERNAME: ${DB_USERNAME:-no configurado}"
 echo "QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}"
 echo "PORT: ${PORT:-8000}"
+echo "PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}"
+echo "JWT_TTL: ${JWT_TTL:-3600}"
+echo "JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-2592000}"
+if [ -z "${JWT_SECRET:-}" ]; then
+    echo "JWT_SECRET: (vacío — se usará APP_KEY; definí JWT_SECRET en prod/mobile)"
+else
+    echo "JWT_SECRET: configurado"
+fi
+echo "API móvil: /api/auth + /api/tables|/orders|/kitchen|/cash|/devices"
 echo ""
 
 # Esperar DB
@@ -53,7 +62,7 @@ php artisan view:clear || true
 php artisan config:clear || true
 php artisan queue:restart 2>/dev/null || true
 
-# Migraciones (secuencias, unique por tenant, audit, índices, etc.)
+# Migraciones (secuencias, centavos, refresh_tokens, device_tokens, etc.)
 echo "=== Ejecutando migraciones ==="
 php artisan migrate --force --no-interaction || {
     echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
@@ -71,6 +80,12 @@ echo "=== Reparación de integridad Conurbania ==="
 php artisan conurbania:repair --force 2>/dev/null || {
     echo "⚠️  conurbania:repair no disponible o falló (se continúa)."
 }
+
+# API JWT lista para app Expo (mobile/): auth refresh + ops salón
+echo "=== API JWT (web + app nativa) ==="
+echo "✓ Rutas auth: login/refresh/logout/me"
+echo "✓ Ops: tables, orders, kitchen, cash, devices"
+echo "  Cliente móvil: ver mobile/README.md y docs/MOBILE_PLATFORM.md"
 
 # Enum table_sessions legacy
 echo "=== Verificando enum de table_sessions ==="
@@ -97,7 +112,7 @@ if [ "${APP_ENV:-local}" = "production" ]; then
     php artisan event:cache 2>/dev/null || true
 fi
 
-# Worker de impresión + default (jobs PrintKitchenTicket)
+# Worker: impresión cocina + default (Expo push SendExpoPushNotification, etc.)
 echo "=== Iniciando queue worker (printing,default) ==="
 php artisan queue:work --queue=printing,default --sleep=1 --tries=5 --timeout=90 --max-time=3600 &
 QUEUE_PID=$!
@@ -116,7 +131,9 @@ echo "=========================================="
 echo "=== Servidor iniciado ==="
 echo "Host: 0.0.0.0"
 echo "Port: ${PORT:-8000}"
-echo "Queues: printing,default"
+echo "Queues: printing,default (tickets + push Expo)"
+echo "API: /api (JWT) · OpenAPI: /docs"
+echo "Mobile app: mobile/ (Expo)"
 echo "=========================================="
 echo ""
 

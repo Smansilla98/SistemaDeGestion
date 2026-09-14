@@ -80,10 +80,22 @@ final class OrderRestService
             'subsector_item_id' => $input['subsector_item_id'] ?? null,
             'observations' => isset($input['observations']) ? strip_tags((string) $input['observations']) : null,
             'customer_name' => isset($input['customer_name']) ? strip_tags((string) $input['customer_name']) : null,
+            'idempotency_key' => $input['idempotency_key'] ?? null,
+            'ensure_table_occupied' => (bool) ($input['ensure_table_occupied'] ?? true),
+            'items' => $input['items'] ?? [],
         ];
 
         try {
-            return $this->orderService->createOrder($payload);
+            $order = $this->orderService->createOrder($payload);
+            if (! empty($input['send_to_kitchen'])) {
+                try {
+                    $order = $this->orderService->sendToKitchen($order);
+                } catch (\Throwable) {
+                    // pedido ya creado; cocina puede reintentarse
+                }
+            }
+
+            return $order;
         } catch (\Throwable $e) {
             $this->logger->error('Error al crear pedido vía API', [], $e);
             throw $e;

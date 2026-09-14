@@ -39,6 +39,9 @@ jobs:
       DB_DATABASE: testing
       DB_USERNAME: root
       DB_PASSWORD: root
+      JWT_SECRET: testing-jwt-secret-conurbania-ci-32chars
+      JWT_TTL: 3600
+      JWT_REFRESH_TTL: 86400
       CACHE_DRIVER: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -87,3 +90,20 @@ jobs:
 
       - name: Tests suite completa
         run: php artisan test --parallel --processes=4
+
+  mobile:
+    name: Mobile typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck

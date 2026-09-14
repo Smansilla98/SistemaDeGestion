@@ -16,8 +16,12 @@ composer migrate:verify  # fresh --seed + reset + migrate + repair
 
 MySQL 8 con `STRICT_ALL_TABLES`.
 
-## Pendiente real
+## Mobile nativo
 
-- Cobertura global Codecov (hoy mínimo solo Domain)
-- Quitar columnas decimal legacy cuando el dual-write esté maduro en prod
-- Cobro/caja desde mobile (hoy toma pedido operativa)
+Ver [`docs/MOBILE_PLATFORM.md`](MOBILE_PLATFORM.md) y carpeta `mobile/` (Expo).
+
+```bash
+cd mobile && npm ci && npm run typecheck
+```
+
+CI job `mobile` corre typecheck en push.

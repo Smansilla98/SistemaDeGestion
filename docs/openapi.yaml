@@ -18,13 +18,17 @@ servers:
 
 tags:
   - name: Auth
-    description: JWT — login, registro y perfil
+    description: JWT — login, refresh, logout y perfil
   - name: Products
   - name: Orders
   - name: Clients
   - name: Users
+  - name: Tables
+  - name: Kitchen
+  - name: Cash
+  - name: Devices
   - name: Legacy v1
-    description: Rutas Sanctum legadas (compatibilidad)
+    description: Rutas Sanctum legadas (deprecated — migrar a JWT)
 
 components:
   securitySchemes:
@@ -68,6 +72,8 @@ components:
             access_token: { type: string }
             token_type: { type: string, example: Bearer }
             expires_in: { type: integer, description: segundos }
+            refresh_token: { type: string, description: token opaco rotativo }
+            refresh_expires_in: { type: integer }
             user:
               $ref: '#/components/schemas/UserPublic'
 
@@ -168,6 +174,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar access token (rota refresh)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Nuevos tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Refresh inválido
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revocar refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Revocado
 
   /products:
     get:
@@ -398,10 +442,10 @@ paths:
   /v1/tables:
     get:
       tags: [Legacy v1]
-      summary: Mesas (Sanctum)
+      summary: Mesas (Sanctum) — DEPRECATED
       security:
         - bearerAuth: []
-      description: Requiere token Sanctum, no JWT.
+      description: Requiere token Sanctum, no JWT. Preferir GET /tables.
 
   /v1/orders:
     get:
@@ -412,5 +456,132 @@ paths:
   /v1/products:
     get:
       tags: [Legacy v1]
+      security:
+        - bearerAuth: []
+
+  /tables:
+    get:
+      tags: [Tables]
+      summary: Listar mesas del restaurante
+      security:
+        - bearerAuth: []
+
+  /tables/{id}:
+    get:
+      tags: [Tables]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /tables/{id}/occupy:
+    post:
+      tags: [Tables]
+      summary: Ocupar mesa / abrir sesión
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /tables/{id}/pay:
+    post:
+      tags: [Cash]
+      summary: Cobrar mesa (requiere caja abierta)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /orders/{id}/send-to-kitchen:
+    post:
+      tags: [Orders]
+      summary: Enviar pedido a cocina
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /orders/{id}/transition:
+    post:
+      tags: [Orders]
+      summary: Transicionar estado de pedido
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+
+  /kitchen/board:
+    get:
+      tags: [Kitchen]
+      summary: Tablero KDS
+      security:
+        - bearerAuth: []
+
+  /kitchen/items/{itemId}/status:
+    post:
+      tags: [Kitchen]
+      summary: Actualizar estado de ítem
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: integer }
+
+  /cash/registers:
+    get:
+      tags: [Cash]
+      security:
+        - bearerAuth: []
+
+  /cash/session:
+    get:
+      tags: [Cash]
+      summary: Sesión de caja abierta
+      security:
+        - bearerAuth: []
+
+  /cash/summary:
+    get:
+      tags: [Cash]
+      security:
+        - bearerAuth: []
+
+  /cash/registers/{registerId}/open:
+    post:
+      tags: [Cash]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: registerId
+          required: true
+          schema: { type: integer }
+
+  /devices:
+    post:
+      tags: [Devices]
+      summary: Registrar Expo push token
+      security:
+        - bearerAuth: []
+    delete:
+      tags: [Devices]
+      summary: Eliminar push token
       security:
         - bearerAuth: []

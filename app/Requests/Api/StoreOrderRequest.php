@@ -30,6 +30,12 @@ class StoreOrderRequest extends FormRequest
             'subsector_item_id' => 'nullable|integer|exists:subsector_items,id',
             'observations' => 'nullable|string|max:5000',
             'customer_name' => 'nullable|string|max:255',
+            'idempotency_key' => 'nullable|string|max:64',
+            'ensure_table_occupied' => 'nullable|boolean',
+            'send_to_kitchen' => 'nullable|boolean',
+            'items' => 'nullable|array|min:1',
+            'items.*.product_id' => 'required_with:items|integer|exists:products,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
         ];
     }
 }

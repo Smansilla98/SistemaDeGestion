@@ -12,13 +12,16 @@ use App\DTO\Auth\RegisterUserDto;
 use App\Events\Internal\UserRegisteredViaJwt;
 use App\Events\Internal\UserSignedInViaJwt;
 use App\Exceptions\ApiException;
+use App\Models\RefreshToken;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Repositories\UserRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
- * Casos de uso de autenticación JWT (login, registro, perfil).
+ * Casos de uso de autenticación JWT (login, registro, refresh, logout, perfil).
  */
 final class JwtAuthService
 {
@@ -27,7 +30,7 @@ final class JwtAuthService
         private readonly JwtTokenService $jwt
     ) {}
 
-    public function login(LoginCredentialsDto $dto): AuthTokenPayloadDto
+    public function login(LoginCredentialsDto $dto, ?Request $request = null): AuthTokenPayloadDto
     {
         if ($dto->username === '' || $dto->password === '') {
             throw new ApiException('Usuario y contraseña son obligatorios.', 422, 'VALIDATION_ERROR');
@@ -51,10 +54,10 @@ final class JwtAuthService
 
         InternalEvents::dispatch(new UserSignedInViaJwt(userId: $user->id, username: $user->username));
 
-        return $this->buildTokenResponse($user);
+        return $this->buildTokenResponse($user, $request);
     }
 
-    public function register(RegisterUserDto $dto): AuthTokenPayloadDto
+    public function register(RegisterUserDto $dto, ?Request $request = null): AuthTokenPayloadDto
     {
         if ($dto->name === '' || $dto->username === '') {
             throw new ApiException('Nombre y usuario son obligatorios.', 422, 'VALIDATION_ERROR');
@@ -101,7 +104,40 @@ final class JwtAuthService
 
         InternalEvents::dispatch(new UserRegisteredViaJwt(userId: $user->id, username: $user->username));
 
-        return $this->buildTokenResponse($user);
+        return $this->buildTokenResponse($user, $request);
+    }
+
+    public function refresh(string $plainRefreshToken, ?Request $request = null): AuthTokenPayloadDto
+    {
+        $hash = hash('sha256', $plainRefreshToken);
+        $row = RefreshToken::query()->where('token_hash', $hash)->first();
+
+        if ($row === null || ! $row->isValid()) {
+            throw new ApiException('Refresh token inválido o expirado.', 401, 'INVALID_REFRESH');
+        }
+
+        $user = User::query()->find($row->user_id);
+        if ($user === null || ! $user->is_active) {
+            $row->forceFill(['revoked_at' => now()])->save();
+            throw new ApiException('Cuenta no disponible.', 403, 'ACCOUNT_DISABLED');
+        }
+
+        $row->forceFill(['revoked_at' => now()])->save();
+
+        return $this->buildTokenResponse($user, $request);
+    }
+
+    public function logout(?string $plainRefreshToken): void
+    {
+        if ($plainRefreshToken === null || $plainRefreshToken === '') {
+            return;
+        }
+
+        $hash = hash('sha256', $plainRefreshToken);
+        RefreshToken::query()
+            ->where('token_hash', $hash)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
     }
 
     /**
@@ -112,16 +148,38 @@ final class JwtAuthService
         return $this->userToPublicArray($user);
     }
 
-    private function buildTokenResponse(User $user): AuthTokenPayloadDto
+    private function buildTokenResponse(User $user, ?Request $request = null): AuthTokenPayloadDto
     {
         $issued = $this->jwt->issueForUser($user);
+        [$plainRefresh, $refreshTtl] = $this->issueRefreshToken($user, $request);
 
         return new AuthTokenPayloadDto(
             accessToken: $issued['token'],
             tokenType: 'Bearer',
             expiresIn: $issued['expires_in'],
-            user: $this->userToPublicArray($user)
+            user: $this->userToPublicArray($user),
+            refreshToken: $plainRefresh,
+            refreshExpiresIn: $refreshTtl,
         );
+    }
+
+    /**
+     * @return array{0: string, 1: int}
+     */
+    private function issueRefreshToken(User $user, ?Request $request = null): array
+    {
+        $ttl = (int) config('jwt.refresh_ttl', 60 * 60 * 24 * 30);
+        $plain = Str::random(64);
+
+        RefreshToken::query()->create([
+            'user_id' => $user->id,
+            'token_hash' => hash('sha256', $plain),
+            'expires_at' => now()->addSeconds($ttl),
+            'device_name' => $request?->header('X-Device-Name'),
+            'ip' => $request?->ip(),
+        ]);
+
+        return [$plain, $ttl];
     }
 
     /**
