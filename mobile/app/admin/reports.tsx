@@ -295,7 +295,7 @@ export default function AdminReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48, gap: 8 },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   err: { color: colors.danger },

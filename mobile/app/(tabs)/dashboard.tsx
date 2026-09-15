@@ -17,6 +17,7 @@ import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
 import { flushOfflineQueue, getQueueSize } from '../../src/offline/queue';
 import { colors, radius, space } from '../../src/theme';
 import {
+  Amount,
   AppText,
   Badge,
   Card,
@@ -174,7 +175,7 @@ export default function DashboardScreen() {
       <PageHeader
         title="Conurbania"
         subtitle={`${user?.name ?? ''} · ${user?.role ?? ''}`}
-        icon="home"
+        bi="house-door"
       />
       <ScrollView
         contentContainerStyle={styles.body}
@@ -252,9 +253,7 @@ export default function DashboardScreen() {
               <AppText weight="semibold" style={styles.cardLabel}>
                 Ventas del día
               </AppText>
-              <AppText weight="bold" style={styles.cardValueLg}>
-                ${Number(mgmt.ventas_hoy).toFixed(0)}
-              </AppText>
+              <Amount value={mgmt.ventas_hoy} style={styles.cardValueLg} />
               <AppText style={styles.cardSub}>
                 {mgmt.tiene_sesion_abierta
                   ? `Sesión: $${Number(mgmt.ventas_sesion).toFixed(0)}`
@@ -270,13 +269,14 @@ export default function DashboardScreen() {
         {/* Operativo siempre visible debajo / o solo si no manager */}
         {ops && !isManagerLayer && (
           <View style={styles.grid}>
-            <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} icon="grid-outline" />
-            <StatTile label="Mesas ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} icon="people-outline" />
-            <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} icon="receipt-outline" />
+            <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} bi="table" />
+            <StatTile label="Mesas ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} bi="people" />
+            <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} bi="receipt" />
             <StatTile
               label="Ventas sesión"
               value={`$${Number(ops.ventas_sesion).toFixed(0)}`}
-              icon="cash-outline"
+              bi="cash-coin"
+              mono
             />
           </View>
         )}
@@ -285,13 +285,13 @@ export default function DashboardScreen() {
           <>
             <SectionLabel>Operación en vivo</SectionLabel>
             <View style={styles.grid}>
-              <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} icon="grid-outline" />
-              <StatTile label="Ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} icon="people-outline" />
-              <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} icon="receipt-outline" />
+              <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} bi="table" />
+              <StatTile label="Ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} bi="people" />
+              <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} bi="receipt" />
               <StatTile
                 label="Pedidos hoy"
                 value={insights?.today_orders ?? 0}
-                icon="calendar-outline"
+                bi="calendar"
               />
             </View>
           </>
@@ -384,7 +384,7 @@ export default function DashboardScreen() {
                     <AppText weight="medium" style={{ flex: 1 }}>
                       {w.name}
                     </AppText>
-                    <AppText weight="bold">${Number(w.total_sales).toFixed(0)}</AppText>
+                    <Amount value={w.total_sales} />
                   </View>
                 ))}
               </Card>
@@ -398,7 +398,7 @@ export default function DashboardScreen() {
                 {insights.income_by_method.map((m) => (
                   <View key={m.payment_method} style={styles.listRow}>
                     <Badge label={m.payment_method} />
-                    <AppText weight="bold">${Number(m.total).toFixed(0)}</AppText>
+                    <Amount value={m.total} />
                   </View>
                 ))}
               </Card>
@@ -477,7 +477,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48 },
   topRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 },
   logout: { color: colors.teal600 },

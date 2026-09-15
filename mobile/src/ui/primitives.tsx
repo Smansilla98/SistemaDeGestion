@@ -12,8 +12,9 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { LinearGradientFallback } from './gradient';
-import { colors, font, radius, space, statusTone } from '../theme';
+import { AppGradient } from './gradient';
+import { AppIcon } from './icons';
+import { colors, font, gradients, radius, space, statusTone } from '../theme';
 
 type Weight = 'regular' | 'medium' | 'semibold' | 'bold';
 
@@ -37,16 +38,59 @@ export function AppText({
   );
 }
 
+/** Texto DM Mono — montos y códigos (.td-mono / .td-amount). */
+export function MonoText({
+  children,
+  medium,
+  style,
+  ...rest
+}: TextProps & { medium?: boolean }) {
+  return (
+    <Text
+      {...rest}
+      style={[
+        {
+          fontFamily: medium ? font.monoMedium : font.mono,
+          color: colors.gray600,
+          fontSize: 12,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
+
+export function Amount({
+  value,
+  style,
+}: {
+  value: number | string;
+  style?: StyleProp<TextStyle>;
+}) {
+  const n = typeof value === 'number' ? value : Number(value);
+  return (
+    <MonoText medium style={[{ fontSize: 13, color: colors.gray900, fontWeight: '600' }, style]}>
+      ${Number.isFinite(n) ? n.toFixed(2) : '0.00'}
+    </MonoText>
+  );
+}
+
 export function Icon({
   name,
+  bi,
   size = 18,
   color = colors.teal500,
 }: {
-  name: keyof typeof Ionicons.glyphMap;
+  name?: keyof typeof Ionicons.glyphMap;
+  /** Bootstrap icon name (sin bi-), mapeado a Ionicons */
+  bi?: string;
   size?: number;
   color?: string;
 }) {
-  return <Ionicons name={name} size={size} color={color} />;
+  if (bi) return <AppIcon bi={bi} size={size} color={color} />;
+  return <Ionicons name={name ?? 'ellipse-outline'} size={size} color={color} />;
 }
 
 export function Badge({ label }: { label: string }) {
@@ -81,19 +125,37 @@ export function PrimaryButton({
   title: string;
   onPress: () => void;
   disabled?: boolean;
-  variant?: 'primary' | 'danger' | 'ghost' | 'amber';
+  variant?: 'primary' | 'danger' | 'ghost' | 'amber' | 'outline';
   icon?: keyof typeof Ionicons.glyphMap;
   loading?: boolean;
 }) {
   const bg =
     variant === 'danger'
-      ? colors.danger
+      ? colors.dangerBg
       : variant === 'amber'
         ? colors.amber
         : variant === 'ghost'
-          ? colors.gray100
-          : colors.teal500;
-  const fg = variant === 'ghost' ? colors.gray900 : colors.white;
+          ? 'transparent'
+          : variant === 'outline'
+            ? colors.white
+            : colors.btnPrimary;
+  const fg =
+    variant === 'danger'
+      ? colors.dangerFg
+      : variant === 'ghost'
+        ? colors.gray600
+        : variant === 'outline'
+          ? colors.gray700
+          : colors.white;
+  const borderColor =
+    variant === 'outline'
+      ? colors.gray200
+      : variant === 'danger'
+        ? colors.dangerBg
+        : variant === 'ghost'
+          ? 'transparent'
+          : bg;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -101,15 +163,19 @@ export function PrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.btn,
-        { backgroundColor: bg, opacity: disabled || loading ? 0.5 : pressed ? 0.9 : 1 },
+        {
+          backgroundColor: bg,
+          borderColor,
+          opacity: disabled || loading ? 0.5 : pressed ? 0.9 : 1,
+        },
       ]}
     >
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
         <View style={styles.btnInner}>
-          {icon ? <Icon name={icon} size={18} color={fg} /> : null}
-          <AppText weight="bold" style={[styles.btnText, { color: fg }]}>
+          {icon ? <Icon name={icon} size={14} color={fg} /> : null}
+          <AppText weight="medium" style={[styles.btnText, { color: fg }]}>
             {title}
           </AppText>
         </View>
@@ -122,19 +188,23 @@ export function PageHeader({
   title,
   subtitle,
   icon,
+  bi,
 }: {
   title: string;
   subtitle?: string;
   icon?: keyof typeof Ionicons.glyphMap;
+  /** Bootstrap icon name (web) → Ionicons */
+  bi?: string;
 }) {
+  const showIcon = Boolean(icon || bi);
   return (
-    <LinearGradientFallback colors={[colors.teal900, colors.teal700, colors.teal600]} style={styles.ph}>
+    <AppGradient colors={gradients.pageHeader} style={styles.ph}>
       <View style={styles.phBlob} />
       <View style={styles.phInner}>
         <View style={styles.phTitleRow}>
-          {icon ? (
+          {showIcon ? (
             <View style={styles.phIconWrap}>
-              <Icon name={icon} size={18} color={colors.white} />
+              <Icon name={icon} bi={bi} size={20} color="rgba(255,255,255,0.9)" />
             </View>
           ) : null}
           <AppText weight="bold" style={styles.phTitle}>
@@ -147,7 +217,7 @@ export function PageHeader({
           </AppText>
         ) : null}
       </View>
-    </LinearGradientFallback>
+    </AppGradient>
   );
 }
 
@@ -184,25 +254,40 @@ export function StatTile({
   value,
   accent,
   icon,
+  bi,
+  mono,
 }: {
   label: string;
   value: string | number;
   accent?: string;
   icon?: keyof typeof Ionicons.glyphMap;
+  bi?: string;
+  /** Montos / códigos en DM Mono */
+  mono?: boolean;
 }) {
+  const useMono =
+    mono ??
+    (typeof value === 'string' && value.trim().startsWith('$'));
   return (
     <View style={styles.stat}>
-      {icon ? (
+      <View style={[styles.statAccent, { backgroundColor: accent ?? colors.teal500 }]} />
+      {icon || bi ? (
         <View style={styles.statIcon}>
-          <Icon name={icon} size={16} color={accent ?? colors.teal500} />
+          <Icon name={icon} bi={bi} size={18} color={accent ?? colors.teal500} />
         </View>
       ) : null}
-      <AppText weight="bold" style={[styles.statVal, accent ? { color: accent } : null]}>
-        {value}
-      </AppText>
-      <AppText weight="medium" style={styles.statLabel}>
+      <AppText weight="bold" style={styles.statLabel}>
         {label}
       </AppText>
+      {useMono ? (
+        <MonoText medium style={[styles.statVal, accent ? { color: accent } : null]}>
+          {value}
+        </MonoText>
+      ) : (
+        <AppText weight="bold" style={[styles.statVal, accent ? { color: accent } : null]}>
+          {value}
+        </AppText>
+      )}
     </View>
   );
 }
@@ -223,12 +308,13 @@ export function Chip({
       onPress={onPress}
       style={[
         styles.chip,
-        selected && { backgroundColor: tone ?? colors.teal500, borderColor: tone ?? colors.teal500 },
+        selected && styles.chipOn,
+        tone ? { borderColor: tone } : null,
       ]}
     >
       <AppText
-        weight="bold"
-        style={{ color: selected ? colors.white : colors.gray800, fontSize: 12 }}
+        weight={selected ? 'semibold' : 'medium'}
+        style={[styles.chipText, selected && styles.chipTextOn]}
       >
         {label}
       </AppText>
@@ -239,7 +325,7 @@ export function Chip({
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 20,
   },
@@ -252,28 +338,30 @@ const styles = StyleSheet.create({
     borderColor: colors.gray100,
   },
   btn: {
-    minHeight: 52,
-    borderRadius: radius.lg,
+    minHeight: 40,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: space.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1,
   },
-  btnInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  btnText: { fontSize: 16 },
+  btnInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  btnText: { fontSize: 13 },
   ph: {
-    paddingHorizontal: space.lg,
-    paddingTop: space.lg,
-    paddingBottom: space.xl,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 18,
     overflow: 'hidden',
   },
   phBlob: {
     position: 'absolute',
-    right: -36,
+    right: -40,
     top: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(29,158,117,0.18)',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(29,158,117,0.12)',
   },
   phInner: { zIndex: 1 },
   phTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -281,12 +369,16 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(29,158,117,0.35)',
+    backgroundColor: 'rgba(29,158,117,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  phTitle: { color: colors.white, fontSize: 22, letterSpacing: -0.4 },
-  phSub: { color: 'rgba(255,255,255,0.55)', marginTop: 4, fontSize: 13 },
+  phTitle: {
+    color: colors.white,
+    fontSize: 24,
+    letterSpacing: -0.5,
+  },
+  phSub: { color: 'rgba(255,255,255,0.5)', marginTop: 2, fontSize: 13 },
   section: {
     fontSize: 11,
     color: colors.gray500,
@@ -299,42 +391,66 @@ const styles = StyleSheet.create({
   fieldLabel: { color: colors.gray600, marginBottom: 6, fontSize: 13 },
   input: {
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.gray200,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: colors.gray900,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: colors.gray800,
     fontFamily: font.regular,
   },
   stat: {
     width: '100%',
     backgroundColor: colors.white,
     borderRadius: radius.lg,
-    padding: space.md,
+    padding: 18,
     borderWidth: 1,
     borderColor: colors.gray100,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  statAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   statIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.sm,
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
     backgroundColor: colors.teal50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
   },
-  statVal: { fontSize: 22, color: colors.teal500 },
-  statLabel: { marginTop: 4, fontSize: 12, color: colors.gray600 },
+  statVal: {
+    fontSize: 28,
+    color: colors.gray900,
+    letterSpacing: -1,
+    lineHeight: 32,
+    marginTop: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: colors.gray400,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   chip: {
-    minHeight: 40,
     paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.gray200,
     backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
+  chipOn: {
+    backgroundColor: colors.teal50,
+    borderColor: colors.teal400,
+  },
+  chipText: { fontSize: 13, color: colors.gray600 },
+  chipTextOn: { color: colors.teal700 },
 });

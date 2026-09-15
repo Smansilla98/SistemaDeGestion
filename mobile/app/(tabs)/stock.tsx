@@ -16,7 +16,9 @@ import type { StockMovementRow, StockRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { colors, radius, space } from '../../src/theme';
+import { DataTable, type DataColumn } from '../../src/ui/DataTable';
 import {
+  Amount,
   AppText,
   Badge,
   Card,
@@ -176,7 +178,7 @@ export default function StockScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Stock" subtitle="Consulta y movimientos" icon="cube" />
+      <PageHeader title="Stock" subtitle="Consulta y movimientos" bi="box-seam" />
       <View style={styles.tabs}>
         <Pressable style={[styles.tab, tab === 'productos' && styles.tabOn]} onPress={() => setTab('productos')}>
           <Text style={[styles.tabText, tab === 'productos' && styles.tabTextOn]}>Productos</Text>
@@ -214,38 +216,75 @@ export default function StockScreen() {
         <ActivityIndicator style={{ marginTop: 24 }} color={colors.teal500} />
       ) : tab === 'productos' ? (
         <FlatList
-          data={rows}
-          keyExtractor={(r) => String(r.id)}
+          data={[0]}
+          keyExtractor={() => 'stock-table'}
           contentContainerStyle={{ padding: space.md }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-          ListEmptyComponent={<Text style={styles.empty}>Sin productos con stock</Text>}
-          renderItem={({ item }) => (
-            <Card style={{ marginBottom: 10 }}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.name}>{item.name}</Text>
-                {item.is_low_stock ? <Badge label="BAJO" /> : <Badge label="OK" />}
-              </View>
-              <Text style={styles.meta}>
-                Stock {item.current_stock}
-                {item.unit ? ` ${item.unit}` : ''} · mín {item.stock_minimum}
-              </Text>
-              {canWrite && (
-                <PrimaryButton
-                  title="Movimiento"
-                  onPress={() => {
-                    setType('ENTRADA');
-                    resetPurchase();
-                    setModal(item);
-                  }}
-                />
-              )}
-            </Card>
+          renderItem={() => (
+            <DataTable
+              columns={
+                [
+                  {
+                    key: 'name',
+                    title: 'Producto',
+                    flex: 1.5,
+                    bold: true,
+                    render: (r: StockRow) => r.name,
+                  },
+                  {
+                    key: 'stock',
+                    title: 'Stock',
+                    flex: 1,
+                    mono: true,
+                    align: 'right',
+                    render: (r: StockRow) =>
+                      `${r.current_stock}${r.unit ? ` ${r.unit}` : ''}`,
+                  },
+                  {
+                    key: 'min',
+                    title: 'Mín',
+                    flex: 0.7,
+                    mono: true,
+                    align: 'right',
+                    render: (r: StockRow) => String(r.stock_minimum ?? '—'),
+                  },
+                  {
+                    key: 'st',
+                    title: '',
+                    flex: 0.8,
+                    render: (r: StockRow) => (
+                      <Badge label={r.is_low_stock ? 'BAJO' : 'OK'} />
+                    ),
+                  },
+                  {
+                    key: 'act',
+                    title: '',
+                    flex: 1.1,
+                    render: (r: StockRow) =>
+                      canWrite ? (
+                        <PrimaryButton
+                          title="Mov."
+                          variant="ghost"
+                          onPress={() => {
+                            setType('ENTRADA');
+                            resetPurchase();
+                            setModal(r);
+                          }}
+                        />
+                      ) : null,
+                  },
+                ] as DataColumn<StockRow>[]
+              }
+              rows={rows}
+              keyExtractor={(r) => r.id}
+              emptyText="Sin productos con stock"
+            />
           )}
         />
       ) : tab === 'movimientos' ? (
         <FlatList
-          data={movements}
-          keyExtractor={(m) => String(m.id)}
+          data={[0]}
+          keyExtractor={() => 'mov-table'}
           contentContainerStyle={{ padding: space.md }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
           ListHeaderComponent={
@@ -283,29 +322,57 @@ export default function StockScreen() {
               <PrimaryButton title="Aplicar filtros" variant="ghost" onPress={() => void load()} />
             </View>
           }
-          ListEmptyComponent={<Text style={styles.empty}>Sin movimientos</Text>}
-          renderItem={({ item }) => (
-            <Card style={{ marginBottom: 10 }}>
-              <View style={styles.rowBetween}>
-                <Badge label={item.type} />
-                <Text style={styles.qty}>x{item.quantity}</Text>
-              </View>
-              <Text style={styles.name}>{item.product ?? 'Producto'}</Text>
-              <Text style={styles.meta}>
-                {item.previous_stock ?? '—'} → {item.new_stock ?? '—'} · {item.user ?? ''}
-              </Text>
-              {item.reason ? <Text style={styles.meta}>{item.reason}</Text> : null}
-              {item.purchase ? (
-                <Text style={styles.meta}>
-                  Compra: {item.purchase.supplier ?? '—'}
-                  {item.purchase.unit_cost != null
-                    ? ` · $${Number(item.purchase.unit_cost).toFixed(2)}`
-                    : ''}
-                  {item.purchase.purchase_date ? ` · ${item.purchase.purchase_date}` : ''}
-                  {item.purchase.invoice_number ? ` · Fac ${item.purchase.invoice_number}` : ''}
-                </Text>
-              ) : null}
-            </Card>
+          renderItem={() => (
+            <DataTable
+              columns={
+                [
+                  {
+                    key: 'type',
+                    title: 'Tipo',
+                    flex: 1,
+                    render: (m: StockMovementRow) => <Badge label={m.type} />,
+                  },
+                  {
+                    key: 'product',
+                    title: 'Producto',
+                    flex: 1.4,
+                    bold: true,
+                    render: (m: StockMovementRow) => m.product ?? '—',
+                  },
+                  {
+                    key: 'qty',
+                    title: 'Cant',
+                    flex: 0.7,
+                    mono: true,
+                    align: 'right',
+                    render: (m: StockMovementRow) => `x${m.quantity}`,
+                  },
+                  {
+                    key: 'delta',
+                    title: 'Stock',
+                    flex: 1.1,
+                    mono: true,
+                    render: (m: StockMovementRow) =>
+                      `${m.previous_stock ?? '—'}→${m.new_stock ?? '—'}`,
+                  },
+                  {
+                    key: 'cost',
+                    title: 'Costo',
+                    flex: 0.9,
+                    align: 'right',
+                    render: (m: StockMovementRow) =>
+                      m.purchase?.unit_cost != null ? (
+                        <Amount value={m.purchase.unit_cost} />
+                      ) : (
+                        '—'
+                      ),
+                  },
+                ] as DataColumn<StockMovementRow>[]
+              }
+              rows={movements}
+              keyExtractor={(m) => m.id}
+              emptyText="Sin movimientos"
+            />
           )}
         />
       ) : (
@@ -434,7 +501,7 @@ export default function StockScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   tabs: { flexDirection: 'row', padding: space.md, gap: 8 },
   tab: {
     flex: 1,

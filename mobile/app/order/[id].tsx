@@ -533,7 +533,7 @@ export default function OrderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48, gap: 4 },
   err: { color: colors.danger, marginTop: 8 },
   total: { fontSize: 22, color: colors.teal600 },

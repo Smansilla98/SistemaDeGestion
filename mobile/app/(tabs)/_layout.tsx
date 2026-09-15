@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeTab } from '../../src/auth/permissions';
 import { colors } from '../../src/theme';
+import { tabIcons } from '../../src/ui/icons';
 import { AppText } from '../../src/ui/primitives';
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
@@ -20,10 +21,10 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   );
 }
 
-function tabIcon(name: keyof typeof Ionicons.glyphMap, focused: boolean) {
+function tabIcon(active: keyof typeof Ionicons.glyphMap, inactive: keyof typeof Ionicons.glyphMap, focused: boolean) {
   return (
     <Ionicons
-      name={name}
+      name={focused ? active : inactive}
       size={22}
       color={focused ? colors.teal500 : colors.gray400}
     />
@@ -53,7 +54,8 @@ export default function TabsLayout() {
         options={{
           title: 'Inicio',
           href: canSeeTab(user, 'dashboard') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'home' : 'home-outline', focused),
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.dashboard.active, tabIcons.dashboard.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Inicio" focused={focused} />,
         }}
       />
@@ -62,7 +64,7 @@ export default function TabsLayout() {
         options={{
           title: 'Mesas',
           href: canSeeTab(user, 'mesas') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'grid' : 'grid-outline', focused),
+          tabBarIcon: ({ focused }) => tabIcon(tabIcons.mesas.active, tabIcons.mesas.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Mesas" focused={focused} />,
         }}
       />
@@ -71,7 +73,8 @@ export default function TabsLayout() {
         options={{
           title: 'Nuevo',
           href: canSeeTab(user, 'pedido') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'add-circle' : 'add-circle-outline', focused),
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.pedido.active, tabIcons.pedido.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Nuevo" focused={focused} />,
         }}
       />
@@ -80,7 +83,8 @@ export default function TabsLayout() {
         options={{
           title: 'Pedidos',
           href: canSeeTab(user, 'pedidos') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'receipt' : 'receipt-outline', focused),
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.pedidos.active, tabIcons.pedidos.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Pedidos" focused={focused} />,
         }}
       />
@@ -89,7 +93,8 @@ export default function TabsLayout() {
         options={{
           title: 'Cocina',
           href: canSeeTab(user, 'cocina') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'flame' : 'flame-outline', focused),
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.cocina.active, tabIcons.cocina.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Cocina" focused={focused} />,
         }}
       />
@@ -98,7 +103,7 @@ export default function TabsLayout() {
         options={{
           title: 'Caja',
           href: canSeeTab(user, 'caja') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'cash' : 'cash-outline', focused),
+          tabBarIcon: ({ focused }) => tabIcon(tabIcons.caja.active, tabIcons.caja.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Caja" focused={focused} />,
         }}
       />
@@ -107,7 +112,8 @@ export default function TabsLayout() {
         options={{
           title: 'Stock',
           href: canSeeTab(user, 'stock') ? undefined : null,
-          tabBarIcon: ({ focused }) => tabIcon(focused ? 'cube' : 'cube-outline', focused),
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.stock.active, tabIcons.stock.inactive, focused),
           tabBarLabel: ({ focused }) => <TabLabel label="Stock" focused={focused} />,
         }}
       />

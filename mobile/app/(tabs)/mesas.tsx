@@ -154,7 +154,7 @@ export default function MesasScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Mesas" subtitle={user?.name} icon="grid" />
+      <PageHeader title="Mesas" subtitle={user?.name} bi="table" />
       <View style={styles.top}>
         <View style={styles.filters}>
           {(['TODAS', 'LIBRE', 'OCUPADA', 'RESERVADA'] as const).map((f) => (
@@ -252,7 +252,7 @@ export default function MesasScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   top: {
     paddingHorizontal: space.md,
     paddingVertical: 10,

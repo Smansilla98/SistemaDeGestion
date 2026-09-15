@@ -145,7 +145,7 @@ export default function EditTableScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, gap: 10, paddingBottom: 48 },
   err: { color: colors.danger },
   label: { color: colors.gray600, marginTop: 4 },

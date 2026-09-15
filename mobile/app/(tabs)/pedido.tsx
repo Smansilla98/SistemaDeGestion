@@ -153,7 +153,7 @@ export default function PedidoScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Nuevo pedido" subtitle="Salón · toma rápida" icon="add-circle" />
+      <PageHeader title="Nuevo pedido" subtitle="Salón · toma rápida" bi="plus-square" />
       <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: 48 }}>
         <SectionLabel>Mesa (opcional)</SectionLabel>
         <View style={styles.row}>
@@ -271,7 +271,7 @@ export default function PedidoScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   prod: {
     width: '47%',

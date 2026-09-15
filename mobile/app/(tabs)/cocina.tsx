@@ -121,7 +121,7 @@ export default function CocinaScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Cocina" subtitle="Kanban en vivo" icon="flame" />
+      <PageHeader title="Cocina" subtitle="Kanban en vivo" bi="egg-fried" />
       <View style={styles.counts}>
         {Object.entries(counts).map(([k, v]) => (
           <View key={k} style={styles.countBox}>
@@ -236,7 +236,7 @@ export default function CocinaScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   counts: { flexDirection: 'row', gap: 8, padding: space.md },
   chips: {
     flexDirection: 'row',

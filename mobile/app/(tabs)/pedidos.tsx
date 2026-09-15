@@ -1,11 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -13,7 +11,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { OrderRow } from '../../src/api/types';
 import { colors, radius, space } from '../../src/theme';
-import { Badge, Card, Chip, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { DataTable, type DataColumn } from '../../src/ui/DataTable';
+import { Amount, Badge, Chip, PageHeader, PrimaryButton, AppText } from '../../src/ui/primitives';
 
 const STATUS_FILTERS = [
   { key: 'ALL', label: 'Todos' },
@@ -30,7 +29,7 @@ function tableLabel(order: OrderRow): string {
   if (order.table && typeof order.table === 'object' && order.table.number) {
     return String(order.table.number);
   }
-  return '';
+  return '—';
 }
 
 export default function PedidosScreen() {
@@ -80,15 +79,66 @@ export default function PedidosScreen() {
     }
   };
 
+  const columns: DataColumn<OrderRow>[] = useMemo(
+    () => [
+      {
+        key: 'number',
+        title: 'Nº',
+        flex: 1.1,
+        bold: true,
+        mono: true,
+        render: (o) => String(o.number ?? o.id),
+      },
+      {
+        key: 'mesa',
+        title: 'Mesa',
+        flex: 0.8,
+        mono: true,
+        render: (o) => tableLabel(o),
+      },
+      {
+        key: 'status',
+        title: 'Estado',
+        flex: 1.4,
+        render: (o) => <Badge label={o.status} />,
+      },
+      {
+        key: 'total',
+        title: 'Total',
+        flex: 1,
+        align: 'right',
+        render: (o) => <Amount value={o.total ?? 0} />,
+      },
+      {
+        key: 'act',
+        title: '',
+        flex: 1.2,
+        render: (o) =>
+          o.status === 'ABIERTO' ? (
+            <PrimaryButton title="Cocina" variant="ghost" onPress={() => void send(o.id)} />
+          ) : null,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orders],
+  );
+
   if (loading) {
     return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
   }
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Pedidos" subtitle="Lista operativa" icon="receipt" />
-      {error && <Text style={styles.err}>{error}</Text>}
-      <View style={styles.filters}>
+      <PageHeader title="Pedidos" subtitle="Lista operativa" bi="receipt" />
+      {error ? (
+        <AppText weight="medium" style={{ color: colors.danger, marginHorizontal: space.md }}>
+          {error}
+        </AppText>
+      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.body}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
+      >
         <TextInput
           style={styles.search}
           placeholder="Buscar nº o mesa…"
@@ -106,40 +156,21 @@ export default function PedidosScreen() {
             />
           ))}
         </View>
-      </View>
-      <FlatList
-        data={filtered}
-        keyExtractor={(o) => String(o.id)}
-        contentContainerStyle={{ padding: space.md }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-        ListEmptyComponent={<Text style={styles.empty}>Sin pedidos</Text>}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/order/${item.id}` as never)}>
-            <Card style={{ marginBottom: 10 }}>
-              <View style={styles.row}>
-                <Text style={styles.num}>{item.number}</Text>
-                <Badge label={item.status} />
-              </View>
-              {tableLabel(item) ? (
-                <Text style={styles.meta}>Mesa {tableLabel(item)}</Text>
-              ) : null}
-              <Text style={styles.total}>${Number(item.total ?? 0).toFixed(2)}</Text>
-              {item.status === 'ABIERTO' && (
-                <PrimaryButton title="Enviar cocina" onPress={() => void send(item.id)} />
-              )}
-            </Card>
-          </Pressable>
-        )}
-      />
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          keyExtractor={(o) => o.id}
+          onPressRow={(o) => router.push(`/order/${o.id}` as never)}
+          emptyText="Sin pedidos"
+        />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
-  err: { color: colors.danger, margin: 12 },
-  empty: { textAlign: 'center', color: colors.gray600, marginTop: 40 },
-  filters: { paddingHorizontal: space.md, gap: 8 },
+  root: { flex: 1, backgroundColor: 'transparent' },
+  body: { padding: space.md, gap: 10, paddingBottom: 40 },
   search: {
     backgroundColor: colors.white,
     borderWidth: 1,
@@ -150,8 +181,4 @@ const styles = StyleSheet.create({
     color: colors.gray900,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  num: { fontWeight: '800', fontSize: 16, color: colors.gray900 },
-  meta: { marginTop: 4, color: colors.gray500, fontSize: 13 },
-  total: { marginTop: 8, marginBottom: 8, color: colors.gray600, fontWeight: '600' },
 });

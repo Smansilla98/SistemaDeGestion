@@ -189,7 +189,7 @@ export default function CajaScreen() {
       contentContainerStyle={{ paddingBottom: 48 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
     >
-      <PageHeader title="Caja" subtitle="Sesión, cobros y movimientos" icon="cash" />
+      <PageHeader title="Caja" subtitle="Sesión, cobros y movimientos" bi="cash-coin" />
       <View style={{ padding: space.lg, gap: 6 }}>
         {error ? (
           <AppText weight="medium" style={styles.err}>
@@ -404,7 +404,7 @@ export default function CajaScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   err: { color: colors.danger },
   ok: { color: colors.green },
   meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },

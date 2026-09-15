@@ -105,7 +105,7 @@ export default function AdminNotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   bar: { flexDirection: 'row', gap: 8, padding: space.md },
   err: { color: colors.danger, paddingHorizontal: space.md },
   meta: { color: colors.gray500, marginTop: 4, fontSize: 13 },

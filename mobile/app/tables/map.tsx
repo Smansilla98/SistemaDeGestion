@@ -6,7 +6,6 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -17,33 +16,24 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission, isAdminRole } from '../../src/auth/permissions';
 import { colors, radius, space } from '../../src/theme';
 import { AppText, Chip, Field, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { AppIcon } from '../../src/ui/icons';
 
-const CANVAS_W = 720;
-const CANVAS_H = 520;
-const TABLE_SIZE = 56;
+type LocalTable = TableLayoutPayload['tables'][number];
 
-type LocalTable = TableLayoutPayload['tables'][number] & {
-  position_x: number;
-  position_y: number;
-};
-
-function tableColor(status: string) {
+function statusBg(status: string) {
   if (status === 'OCUPADA') return colors.amber;
   if (status === 'LIBRE') return colors.green;
   if (status === 'RESERVADA') return colors.teal500;
   return colors.gray400;
 }
 
+/**
+ * Mapa liviano: grilla compacta (sin canvas 720×520).
+ * Edición = reordenar con flechas sobre la celda seleccionada + guardar posiciones en grilla.
+ */
 export default function TablesMapScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { width } = useWindowDimensions();
-  const pad = space.lg * 2;
-  const scale = Math.max(0.4, (width - pad) / CANVAS_W);
-  const canvasW = CANVAS_W * scale;
-  const canvasH = CANVAS_H * scale;
-  const tablePx = TABLE_SIZE * scale;
-
   const canEdit = useMemo(
     () =>
       (isAdminRole(user?.role) || user?.role === 'GERENTE') &&
@@ -51,7 +41,7 @@ export default function TablesMapScreen() {
     [user],
   );
 
-  const [data, setData] = useState<TableLayoutPayload | null>(null);
+  const [sectors, setSectors] = useState<Array<{ id: number; name: string }>>([]);
   const [tables, setTables] = useState<LocalTable[]>([]);
   const [sectorId, setSectorId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,9 +58,9 @@ export default function TablesMapScreen() {
     setError(null);
     try {
       const payload = await api.tablesLayout(sid ?? undefined);
-      setData(payload);
+      setSectors(payload.sectors ?? []);
       setSectorId(payload.sector_id);
-      setTables(payload.tables.map((t) => ({ ...t })));
+      setTables(payload.tables ?? []);
       setDirty(false);
       setSelectedId(null);
     } catch (e) {
@@ -90,7 +80,7 @@ export default function TablesMapScreen() {
   const selectSector = (id: number) => {
     if (id === sectorId) return;
     if (dirty) {
-      Alert.alert('Cambios sin guardar', 'Guardá o cancelá la edición antes de cambiar de sector.');
+      Alert.alert('Cambios sin guardar', 'Guardá o cancelá antes de cambiar de sector.');
       return;
     }
     setSectorId(id);
@@ -98,14 +88,21 @@ export default function TablesMapScreen() {
     void load(id);
   };
 
-  const nudge = (dx: number, dy: number) => {
+  /** Reposiciona en grilla: 4 columnas × filas (liviano, sin drag). */
+  const moveSelected = (dir: 'up' | 'down' | 'left' | 'right') => {
     if (!editMode || selectedId == null) return;
+    const COLS = 4;
+    const STEP = 80;
     setTables((prev) =>
       prev.map((t) => {
         if (t.id !== selectedId) return t;
-        const nx = Math.max(0, Math.min(CANVAS_W, t.position_x + dx));
-        const ny = Math.max(0, Math.min(CANVAS_H, t.position_y + dy));
-        return { ...t, position_x: nx, position_y: ny };
+        let x = t.position_x;
+        let y = t.position_y;
+        if (dir === 'left') x = Math.max(40, x - STEP);
+        if (dir === 'right') x = Math.min(40 + (COLS - 1) * STEP, x + STEP);
+        if (dir === 'up') y = Math.max(40, y - STEP);
+        if (dir === 'down') y = y + STEP;
+        return { ...t, position_x: x, position_y: y };
       }),
     );
     setDirty(true);
@@ -142,8 +139,8 @@ export default function TablesMapScreen() {
         sector_id: sectorId,
         number: newNumber.trim(),
         capacity: Math.max(1, Number(newCapacity) || 4),
-        position_x: 80,
-        position_y: 80,
+        position_x: 40 + (tables.length % 4) * 80,
+        position_y: 40 + Math.floor(tables.length / 4) * 80,
       });
       setShowCreate(false);
       setNewNumber('');
@@ -156,13 +153,17 @@ export default function TablesMapScreen() {
     }
   };
 
+  const sorted = useMemo(
+    () =>
+      [...tables].sort(
+        (a, b) => a.position_y - b.position_y || a.position_x - b.position_x || a.number.localeCompare(b.number),
+      ),
+    [tables],
+  );
+
   return (
     <View style={styles.root}>
-      <PageHeader
-        title="Mapa del salón"
-        subtitle={editMode ? 'Modo edición · mové con los botones' : 'Tocá una mesa para abrirla'}
-        icon="map"
-      />
+      <PageHeader title="Mapa del salón" subtitle="Vista liviana por sector" bi="table" />
       <ScrollView
         contentContainerStyle={styles.body}
         refreshControl={
@@ -204,11 +205,7 @@ export default function TablesMapScreen() {
             />
             {editMode ? (
               <>
-                <PrimaryButton
-                  title="Nueva mesa"
-                  variant="ghost"
-                  onPress={() => setShowCreate(true)}
-                />
+                <PrimaryButton title="Nueva mesa" variant="ghost" onPress={() => setShowCreate(true)} />
                 <PrimaryButton
                   title="Guardar"
                   loading={saving}
@@ -234,13 +231,9 @@ export default function TablesMapScreen() {
           </View>
         ) : null}
 
-        {data?.sectors?.length ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.sectorRow}
-          >
-            {data.sectors.map((s) => (
+        {sectors.length ? (
+          <View style={styles.sectorRow}>
+            {sectors.map((s) => (
               <Chip
                 key={s.id}
                 label={s.name}
@@ -248,7 +241,7 @@ export default function TablesMapScreen() {
                 onPress={() => selectSector(s.id)}
               />
             ))}
-          </ScrollView>
+          </View>
         ) : null}
 
         {error ? (
@@ -259,15 +252,16 @@ export default function TablesMapScreen() {
 
         {editMode && selectedId != null ? (
           <View style={styles.nudge}>
-            <PrimaryButton title="↑" variant="ghost" onPress={() => nudge(0, -20)} />
+            <PrimaryButton title="↑" variant="ghost" onPress={() => moveSelected('up')} />
             <View style={styles.nudgeMid}>
-              <PrimaryButton title="←" variant="ghost" onPress={() => nudge(-20, 0)} />
-              <PrimaryButton title="→" variant="ghost" onPress={() => nudge(20, 0)} />
+              <PrimaryButton title="←" variant="ghost" onPress={() => moveSelected('left')} />
+              <PrimaryButton title="→" variant="ghost" onPress={() => moveSelected('right')} />
             </View>
-            <PrimaryButton title="↓" variant="ghost" onPress={() => nudge(0, 20)} />
+            <PrimaryButton title="↓" variant="ghost" onPress={() => moveSelected('down')} />
             <PrimaryButton
               title="Editar datos"
               variant="ghost"
+              icon="create-outline"
               onPress={() => router.push(`/tables/edit?id=${selectedId}` as Href)}
             />
           </View>
@@ -276,19 +270,8 @@ export default function TablesMapScreen() {
         {loading ? (
           <ActivityIndicator color={colors.teal500} style={{ marginTop: 24 }} />
         ) : (
-          <View style={[styles.canvas, { width: canvasW, height: canvasH }]}>
-            {tables.map((t) => {
-              const size = tablePx;
-              const left = Math.min(
-                canvasW - size,
-                Math.max(0, t.position_x * scale - size / 2),
-              );
-              const top = Math.min(
-                canvasH - size,
-                Math.max(0, t.position_y * scale - size / 2),
-              );
-              const bg = tableColor(t.status);
-              const round = (t.capacity ?? 4) <= 2 ? size / 2 : radius.lg;
+          <View style={styles.grid}>
+            {sorted.map((t) => {
               const selected = selectedId === t.id;
               return (
                 <Pressable
@@ -301,26 +284,19 @@ export default function TablesMapScreen() {
                     router.push(`/table/${t.id}` as Href);
                   }}
                   style={[
-                    styles.table,
-                    {
-                      left,
-                      top,
-                      width: size,
-                      height: size,
-                      borderRadius: round,
-                      backgroundColor: bg,
-                      borderColor: selected ? colors.white : 'rgba(255,255,255,0.55)',
-                      borderWidth: selected ? 3 : 2,
-                    },
+                    styles.cell,
+                    { backgroundColor: statusBg(t.status) },
+                    selected && styles.cellSelected,
                   ]}
                 >
-                  <AppText weight="bold" style={styles.tableNum}>
+                  <AppText weight="bold" style={styles.cellNum}>
                     {t.number}
                   </AppText>
+                  <AppText style={styles.cellCap}>{t.capacity}p</AppText>
                 </Pressable>
               );
             })}
-            {tables.length === 0 ? (
+            {sorted.length === 0 ? (
               <AppText style={styles.empty}>No hay mesas en este sector</AppText>
             ) : null}
           </View>
@@ -339,6 +315,7 @@ export default function TablesMapScreen() {
             <View style={[styles.dot, { backgroundColor: colors.teal500 }]} />
             <AppText style={styles.meta}>Reservada</AppText>
           </View>
+          <AppIcon bi="table" size={14} color={colors.gray500} />
         </View>
       </ScrollView>
     </View>
@@ -346,7 +323,7 @@ export default function TablesMapScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48, gap: 10 },
   editRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   createBox: {
@@ -357,35 +334,42 @@ const styles = StyleSheet.create({
     borderColor: colors.gray100,
     gap: 8,
   },
-  sectorRow: { gap: 8, paddingVertical: 4 },
+  sectorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   err: { color: colors.danger },
   nudge: { alignItems: 'center', gap: 4 },
   nudgeMid: { flexDirection: 'row', gap: 12 },
-  canvas: {
-    alignSelf: 'center',
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     backgroundColor: colors.white,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.gray100,
-    overflow: 'hidden',
-    position: 'relative',
+    padding: space.md,
   },
-  table: {
-    position: 'absolute',
+  cell: {
+    width: '22%',
+    minWidth: 64,
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.45)',
+  },
+  cellSelected: { borderColor: colors.white, borderWidth: 3 },
+  cellNum: { color: colors.white, fontSize: 16 },
+  cellCap: { color: 'rgba(255,255,255,0.8)', fontSize: 10, marginTop: 2 },
+  empty: { width: '100%', textAlign: 'center', color: colors.gray500, padding: 24 },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tableNum: { color: colors.white, fontSize: 14 },
-  empty: {
-    position: 'absolute',
-    top: '45%',
-    alignSelf: 'center',
-    width: '100%',
-    textAlign: 'center',
-    color: colors.gray500,
-  },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  meta: { color: colors.gray600, fontSize: 13 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  meta: { color: colors.gray600, fontSize: 12 },
 });

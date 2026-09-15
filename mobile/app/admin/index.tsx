@@ -1,17 +1,17 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
 import { colors, radius, space } from '../../src/theme';
+import { AppIcon } from '../../src/ui/icons';
 import { AppText, PageHeader, PrimaryButton } from '../../src/ui/primitives';
 
 type Link = {
   title: string;
   subtitle: string;
   href: Href;
-  icon: keyof typeof Ionicons.glyphMap;
+  bi: string;
   show: boolean;
 };
 
@@ -22,7 +22,7 @@ export default function AdminHubScreen() {
   if (!canSeeAdminHub(user)) {
     return (
       <View style={styles.root}>
-        <PageHeader title="Admin" subtitle="Sin acceso" icon="lock-closed" />
+        <PageHeader title="Admin" subtitle="Sin acceso" bi="lock-closed" />
         <View style={{ padding: space.lg }}>
           <AppText>No tenés permisos para el hub de administración.</AppText>
           <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
@@ -36,77 +36,77 @@ export default function AdminHubScreen() {
       title: 'Categorías',
       subtitle: 'Catálogo de productos',
       href: '/admin/categories' as Href,
-      icon: 'folder',
+      bi: 'folder',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Sectores',
       subtitle: 'Zonas de mesas',
       href: '/admin/sectors' as Href,
-      icon: 'map',
+      bi: 'map',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Descuentos',
       subtitle: 'Tipos de descuento',
       href: '/admin/discounts' as Href,
-      icon: 'pricetag',
+      bi: 'percent',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Clientes',
       subtitle: 'Agenda de clientes',
       href: '/admin/clients' as Href,
-      icon: 'people',
+      bi: 'people',
       show: hasPermission(user, 'clients.read') || hasPermission(user, 'clients.write'),
     },
     {
       title: 'Reportes',
       subtitle: 'Ventas del período',
       href: '/admin/reports' as Href,
-      icon: 'bar-chart',
+      bi: 'graph-up',
       show: hasPermission(user, 'reports.read'),
     },
     {
       title: 'Eventos',
       subtitle: 'Eventos y agenda',
       href: '/admin/events' as Href,
-      icon: 'calendar',
+      bi: 'calendar',
       show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
     },
     {
       title: 'Recurrentes',
       subtitle: 'Actividades semanales',
       href: '/admin/recurring' as Href,
-      icon: 'repeat',
+      bi: 'repeat',
       show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
     },
     {
       title: 'Gastos fijos',
       subtitle: 'Gastos e ingresos fijos',
       href: '/admin/expenses' as Href,
-      icon: 'wallet',
+      bi: 'wallet',
       show: hasPermission(user, 'expenses.read') || hasPermission(user, 'expenses.write'),
     },
     {
       title: 'Notificaciones',
       subtitle: 'Alertas del sistema',
       href: '/admin/notifications' as Href,
-      icon: 'notifications',
+      bi: 'bell',
       show: true,
     },
     {
       title: 'Matriz de permisos',
       subtitle: 'Overrides por usuario y rol',
       href: '/admin/permissions' as Href,
-      icon: 'key',
+      bi: 'key',
       show: hasPermission(user, 'users.read') || hasPermission(user, 'users.write'),
     },
   ];
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Administración" subtitle="Catálogo, reportes y más" icon="settings" />
+      <PageHeader title="Administración" subtitle="Catálogo, reportes y más" bi="gear" />
       <ScrollView contentContainerStyle={styles.body}>
         <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
         <View style={styles.grid}>
@@ -115,7 +115,7 @@ export default function AdminHubScreen() {
             .map((l) => (
               <Pressable key={l.title} style={styles.card} onPress={() => router.push(l.href)}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name={l.icon} size={22} color={colors.teal500} />
+                  <AppIcon bi={l.bi} size={22} color={colors.teal500} />
                 </View>
                 <AppText weight="bold">{l.title}</AppText>
                 <AppText style={styles.sub}>{l.subtitle}</AppText>
@@ -128,7 +128,7 @@ export default function AdminHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   card: {

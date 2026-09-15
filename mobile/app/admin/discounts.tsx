@@ -250,7 +250,7 @@ export default function AdminDiscountsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   err: { color: colors.danger, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },

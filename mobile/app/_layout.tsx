@@ -6,10 +6,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { homeHrefForRole } from '../src/auth/permissions';
-import { colors, font } from '../src/theme';
+import { colors, font, gradients } from '../src/theme';
 import { AppTopbar } from '../src/ui/AppTopbar';
 import { useOutfitFonts } from '../src/ui/fonts';
-import { LinearGradientFallback } from '../src/ui/gradient';
+import { MosaicBackground, LinearGradientFallback } from '../src/ui/gradient';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -37,7 +37,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   if (loading || !fontsReady) {
     return (
       <LinearGradientFallback
-        colors={colors.mosaic}
+        colors={gradients.mosaic}
         style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}
       >
         <View
@@ -70,10 +70,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   const onLogin = segments[0] === 'login';
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.gray50 }}>
+    <MosaicBackground>
       {user && !onLogin ? <AppTopbar /> : null}
       <View style={{ flex: 1 }}>{children}</View>
-    </View>
+    </MosaicBackground>
   );
 }
 
@@ -81,7 +81,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar barStyle="light-content" backgroundColor={colors.teal900} />
+        <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
         <AuthProvider>
           <AuthGate>
             <Shell>
@@ -89,7 +89,7 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   headerTitleStyle: { fontFamily: font.bold },
-                  contentStyle: { backgroundColor: colors.gray50 },
+                  contentStyle: { backgroundColor: 'transparent' },
                 }}
               >
                 <Stack.Screen name="login" />

@@ -186,7 +186,7 @@ export default function CashSessionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   body: { padding: space.lg, paddingBottom: 48, gap: 6 },
   err: { color: colors.danger },
   meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },

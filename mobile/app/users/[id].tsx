@@ -210,6 +210,6 @@ export default function EditUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

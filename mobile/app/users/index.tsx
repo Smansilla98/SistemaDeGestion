@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -14,7 +14,9 @@ import { api, ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { colors, space } from '../../src/theme';
-import { AppText, Badge, Card, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { DataTable, type DataColumn } from '../../src/ui/DataTable';
+import { AppText, Badge, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { AppIcon } from '../../src/ui/icons';
 
 type UserRow = {
   id: number;
@@ -70,9 +72,58 @@ export default function UsersScreen() {
     ]);
   };
 
+  const columns: DataColumn<UserRow>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        title: 'Nombre',
+        flex: 1.4,
+        bold: true,
+        render: (u) => u.name,
+      },
+      {
+        key: 'user',
+        title: 'Usuario',
+        flex: 1.1,
+        mono: true,
+        render: (u) => `@${u.username}`,
+      },
+      {
+        key: 'role',
+        title: 'Rol',
+        flex: 1.1,
+        render: (u) => <Badge label={u.role} />,
+      },
+      {
+        key: 'active',
+        title: 'Estado',
+        flex: 1,
+        render: (u) => <Badge label={u.is_active ? 'ACTIVO' : 'INACTIVO'} />,
+      },
+      {
+        key: 'act',
+        title: '',
+        flex: 0.9,
+        render: (u) =>
+          canWrite ? (
+            <View style={styles.actRow}>
+              <Pressable onPress={() => router.push(`/users/${u.id}` as Href)} hitSlop={6}>
+                <AppIcon bi="pencil" size={16} color={colors.teal600} />
+              </Pressable>
+              <Pressable onPress={() => remove(u)} hitSlop={6}>
+                <AppIcon bi="trash" size={16} color={colors.danger} />
+              </Pressable>
+            </View>
+          ) : null,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canWrite],
+  );
+
   return (
     <View style={styles.root}>
-      <PageHeader title="Usuarios" subtitle="Equipo del restaurante" icon="people" />
+      <PageHeader title="Usuarios" subtitle="Equipo del restaurante" bi="people" />
       <View style={styles.bar}>
         <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
         {canWrite ? (
@@ -91,57 +142,26 @@ export default function UsersScreen() {
       {loading ? (
         <ActivityIndicator color={colors.teal500} />
       ) : (
-        <FlatList
-          data={rows}
-          keyExtractor={(u) => String(u.id)}
-          contentContainerStyle={{ padding: space.md }}
+        <ScrollView
+          contentContainerStyle={{ padding: space.md, paddingBottom: 40 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-          ListEmptyComponent={
-            <AppText style={{ textAlign: 'center', color: colors.gray500 }}>Sin usuarios</AppText>
-          }
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push(`/users/${item.id}` as Href)}
-            >
-              <Card style={{ marginBottom: 10 }}>
-                <AppText weight="bold">{item.name}</AppText>
-                <AppText style={styles.meta}>@{item.username}</AppText>
-                <View style={styles.row}>
-                  <Badge label={item.role} />
-                  <Badge label={item.is_active ? 'ACTIVO' : 'INACTIVO'} />
-                </View>
-                {canWrite ? (
-                  <View style={styles.actions}>
-                    <Pressable onPress={() => router.push(`/users/${item.id}` as Href)}>
-                      <AppText weight="bold" style={{ color: colors.teal600, fontSize: 13 }}>
-                        Editar
-                      </AppText>
-                    </Pressable>
-                    <Pressable onPress={() => remove(item)}>
-                      <AppText weight="bold" style={{ color: colors.danger, fontSize: 13 }}>
-                        Eliminar
-                      </AppText>
-                    </Pressable>
-                  </View>
-                ) : null}
-              </Card>
-            </Pressable>
-          )}
-        />
+        >
+          <DataTable
+            columns={columns}
+            rows={rows}
+            keyExtractor={(u) => u.id}
+            onPressRow={(u) => router.push(`/users/${u.id}` as Href)}
+            emptyText="Sin usuarios"
+          />
+        </ScrollView>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   bar: { flexDirection: 'row', gap: 8, padding: space.md },
   err: { color: colors.danger, paddingHorizontal: space.md },
-  meta: { color: colors.gray500, marginTop: 4, marginBottom: 8 },
-  row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  actions: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 10,
-  },
+  actRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
 });

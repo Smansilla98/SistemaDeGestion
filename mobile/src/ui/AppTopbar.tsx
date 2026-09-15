@@ -5,10 +5,13 @@ import type { Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { colors, font, space } from '../theme';
+import { colors, font, radius, space } from '../theme';
+import { AppIcon } from './icons';
 import { AppText } from './primitives';
 
-/** Topbar sticky (paridad web: título + rol + usuario + logout). */
+/**
+ * Topbar sticky — paridad web (.topbar): fondo blanco, badge rol teal, avatar + logout.
+ */
 export function AppTopbar() {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
@@ -35,10 +38,12 @@ export function AppTopbar() {
 
   if (!user) return null;
 
+  const initial = (user.name || user.username || '?').trim().charAt(0).toUpperCase();
+
   return (
-    <View style={[styles.bar, { paddingTop: Math.max(insets.top, 6) }]}>
+    <View style={[styles.bar, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.left}>
-        <AppText weight="bold" style={styles.brand}>
+        <AppText weight="medium" style={styles.title}>
           Conurbania
         </AppText>
         <View style={styles.rolePill}>
@@ -54,9 +59,7 @@ export function AppTopbar() {
           accessibilityRole="button"
           style={styles.bellWrap}
         >
-          <AppText weight="bold" style={styles.bell}>
-            ✉
-          </AppText>
+          <AppIcon bi="bell" size={18} color={colors.gray600} />
           {unread > 0 ? (
             <View style={styles.badge}>
               <AppText weight="bold" style={styles.badgeText}>
@@ -65,11 +68,19 @@ export function AppTopbar() {
             </View>
           ) : null}
         </Pressable>
-        <AppText weight="medium" style={styles.user} numberOfLines={1}>
-          {user.name || user.username}
-        </AppText>
-        <Pressable onPress={() => void logout()} hitSlop={8} accessibilityRole="button">
-          <AppText weight="bold" style={styles.logout}>
+        <View style={styles.userChip}>
+          <View style={styles.avatar}>
+            <AppText weight="semibold" style={styles.avatarText}>
+              {initial}
+            </AppText>
+          </View>
+          <AppText weight="medium" style={styles.user} numberOfLines={1}>
+            {user.name || user.username}
+          </AppText>
+        </View>
+        <Pressable onPress={() => void logout()} hitSlop={8} accessibilityRole="button" style={styles.logoutBtn}>
+          <AppIcon bi="box-arrow-right" size={16} color={colors.teal600} />
+          <AppText weight="semibold" style={styles.logout}>
             Salir
           </AppText>
         </Pressable>
@@ -83,24 +94,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.md,
-    paddingBottom: 8,
-    backgroundColor: colors.teal900,
+    paddingHorizontal: space.lg,
+    paddingBottom: 10,
+    minHeight: 52,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomColor: colors.gray100,
   },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  brand: { color: colors.white, fontSize: 15, letterSpacing: -0.2, fontFamily: font.bold },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
+  title: { color: colors.gray600, fontSize: 13, fontFamily: font.medium },
   rolePill: {
-    backgroundColor: 'rgba(29,158,117,0.35)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    backgroundColor: colors.teal500,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
   },
-  roleText: { color: colors.teal200, fontSize: 10, letterSpacing: 0.4 },
-  right: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
+  roleText: { color: colors.white, fontSize: 11, letterSpacing: 0.2 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
   bellWrap: { position: 'relative', paddingRight: 4 },
-  bell: { color: colors.teal200, fontSize: 16 },
   badge: {
     position: 'absolute',
     top: -6,
@@ -114,6 +125,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { color: '#fff', fontSize: 9, lineHeight: 12 },
-  user: { color: 'rgba(255,255,255,0.7)', fontSize: 13, maxWidth: 100 },
-  logout: { color: colors.teal200, fontSize: 13 },
+  userChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.gray100,
+  },
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: colors.teal500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: colors.white, fontSize: 10 },
+  user: { color: colors.gray700, fontSize: 13, maxWidth: 90 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  logout: { color: colors.teal600, fontSize: 13 },
 });

@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -15,7 +15,9 @@ import type { ProductRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { colors, space } from '../../src/theme';
-import { AppText, Badge, Card, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { DataTable, type DataColumn } from '../../src/ui/DataTable';
+import { Amount, AppText, Badge, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { AppIcon } from '../../src/ui/icons';
 
 export default function ProductsScreen() {
   const { user } = useAuth();
@@ -72,9 +74,55 @@ export default function ProductsScreen() {
     ]);
   };
 
+  const columns: DataColumn<ProductRow>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        title: 'Producto',
+        flex: 1.6,
+        bold: true,
+        render: (p) => p.name,
+      },
+      {
+        key: 'price',
+        title: 'Precio',
+        flex: 1,
+        align: 'right',
+        render: (p) => <Amount value={p.price} />,
+      },
+      {
+        key: 'status',
+        title: 'Estado',
+        flex: 1,
+        render: (p) => <Badge label={p.is_active === false ? 'INACTIVO' : 'ACTIVO'} />,
+      },
+      {
+        key: 'act',
+        title: '',
+        flex: 1,
+        render: (p) =>
+          canWrite ? (
+            <View style={styles.actRow}>
+              <Pressable onPress={() => void toggleActive(p)} hitSlop={6}>
+                <AppIcon bi={p.is_active === false ? 'checkmark-circle' : 'create'} size={16} color={colors.teal600} />
+              </Pressable>
+              <Pressable onPress={() => router.push(`/products/${p.id}` as Href)} hitSlop={6}>
+                <AppIcon bi="pencil" size={16} color={colors.gray700} />
+              </Pressable>
+              <Pressable onPress={() => remove(p)} hitSlop={6}>
+                <AppIcon bi="trash" size={16} color={colors.danger} />
+              </Pressable>
+            </View>
+          ) : null,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canWrite],
+  );
+
   return (
     <View style={styles.root}>
-      <PageHeader title="Productos" subtitle="Catálogo del restaurante" icon="pricetags" />
+      <PageHeader title="Productos" subtitle="Catálogo del restaurante" bi="card-list" />
       <View style={styles.bar}>
         <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
         {canWrite ? (
@@ -93,59 +141,28 @@ export default function ProductsScreen() {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} color={colors.teal500} />
       ) : (
-        <FlatList
-          data={rows}
-          keyExtractor={(p) => String(p.id)}
-          contentContainerStyle={{ padding: space.md }}
+        <ScrollView
+          contentContainerStyle={{ padding: space.md, paddingBottom: 40 }}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-          ListEmptyComponent={
-            <AppText style={{ textAlign: 'center', color: colors.gray500, marginTop: 40 }}>
-              Sin productos
-            </AppText>
-          }
-          renderItem={({ item }) => (
-            <Pressable onPress={() => canWrite && router.push(`/products/${item.id}` as Href)}>
-              <Card style={{ marginBottom: 10 }}>
-                <View style={styles.row}>
-                  <AppText weight="bold" style={{ flex: 1 }}>
-                    {item.name}
-                  </AppText>
-                  <Badge label={item.is_active === false ? 'INACTIVO' : 'ACTIVO'} />
-                </View>
-                <AppText style={styles.price}>${Number(item.price).toFixed(2)}</AppText>
-                {canWrite ? (
-                  <View style={styles.actions}>
-                    <Pressable onPress={() => void toggleActive(item)}>
-                      <AppText weight="bold" style={{ color: colors.teal600, fontSize: 13 }}>
-                        {item.is_active === false ? 'Activar' : 'Desactivar'}
-                      </AppText>
-                    </Pressable>
-                    <Pressable onPress={() => router.push(`/products/${item.id}` as Href)}>
-                      <AppText weight="bold" style={{ color: colors.gray700, fontSize: 13 }}>
-                        Editar
-                      </AppText>
-                    </Pressable>
-                    <Pressable onPress={() => remove(item)}>
-                      <AppText weight="bold" style={{ color: colors.danger, fontSize: 13 }}>
-                        Eliminar
-                      </AppText>
-                    </Pressable>
-                  </View>
-                ) : null}
-              </Card>
-            </Pressable>
-          )}
-        />
+        >
+          <DataTable
+            columns={columns}
+            rows={rows}
+            keyExtractor={(p) => p.id}
+            onPressRow={(p) => {
+              if (canWrite) router.push(`/products/${p.id}` as Href);
+            }}
+            emptyText="Sin productos"
+          />
+        </ScrollView>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   bar: { flexDirection: 'row', gap: 8, padding: space.md },
   err: { color: colors.danger, paddingHorizontal: space.md },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  price: { marginTop: 8, color: colors.teal600 },
-  actions: { flexDirection: 'row', gap: 16, marginTop: 12 },
+  actRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
 });

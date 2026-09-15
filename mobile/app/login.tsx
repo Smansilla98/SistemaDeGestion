@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { useAuth } from '../src/auth/AuthContext';
 import { ApiError } from '../src/api/client';
-import { colors, radius, space } from '../src/theme';
+import { colors, gradients, radius, space } from '../src/theme';
 import { AppText, Field, Icon, PrimaryButton } from '../src/ui/primitives';
 import { LinearGradientFallback } from '../src/ui/gradient';
 
@@ -26,7 +26,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradientFallback colors={colors.mosaic} style={styles.root}>
+    <LinearGradientFallback colors={gradients.mosaic} style={styles.root}>
       <KeyboardAvoidingView
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

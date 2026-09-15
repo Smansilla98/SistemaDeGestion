@@ -368,7 +368,7 @@ export default function AdminRecurringScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.gray50 },
+  root: { flex: 1, backgroundColor: 'transparent' },
   err: { color: colors.danger, marginTop: 8 },
   meta: { color: colors.gray500, marginTop: 4 },
   fieldHint: { color: colors.gray600, marginBottom: 6, fontSize: 13 },
