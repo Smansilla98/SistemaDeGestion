@@ -11,6 +11,27 @@
 | PWA `/m` | Se mantiene durante la transición |
 | MVP store | Mozo + Cocina + Caja |
 | Negocio | Solo en backend (`Services` / `Domain`) |
+| Navegación | El **sidebar web** se reemplaza por **bottom tabs** nativos; excepción de UX nativa, no un patrón faltante |
+| Impresoras | **Excluidas de mobile v1**: config de hardware físico del local (IP/USB/drivers). Se gestionan en web (`printers.*`). Reevaluar cuando haya impresión remota/cloud |
+| Impresión de pedidos | **Excluida v1** (misma razón: hardware local) |
+| Sidebar → tabs | Bottom tabs nativos; no es gap |
+
+## Checklist de validación (Parte D)
+
+Probar contra API desplegada (Railway) tras `relogin` por rol.
+
+| Módulo | SUPERADMIN/ADMIN | GERENTE | MOZO | COCINA | CAJERO |
+|--------|------------------|---------|------|--------|--------|
+| Mesas (reserva/layout/edit) | sí | sí (layout) | ops + reserva | — | ops limitadas |
+| Pedidos (filtros/cierre/notas/quick) | sí | sí | sí | lectura/ops | sí |
+| Cocina (obs/entregado/filtros) | sí | — (sin kitchen) | — | sí | — |
+| Caja (sesiones/notas/ventas) | sí | sí | lectura | — | sí |
+| Stock (compra/filtros/mozo) | sí | sí | write + insumos | — | write |
+| Admin hub (catálogo/matriz) | sí | parcial (sin catalog/reports) | — | — | — |
+| Topbar logout + badge notif | sí | sí | sí | sí | sí |
+
+Excepciones documentadas: impresoras, impresión térmica, push “pedido listo” (pendiente de cola push/FCM).
+
 
 ## Arquitectura
 

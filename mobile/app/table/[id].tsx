@@ -154,8 +154,26 @@ export default function TableDetailScreen() {
         <SectionLabel>Acciones</SectionLabel>
         <View style={styles.actions}>
           {canWrite && table?.status === 'LIBRE' ? (
+            <>
+              <PrimaryButton
+                title="Ocupar mesa"
+                loading={busy}
+                onPress={() =>
+                  void run(async () => {
+                    await api.occupyTable(table.id);
+                  })
+                }
+              />
+              <PrimaryButton
+                title="Reservar"
+                variant="ghost"
+                onPress={() => router.push(`/tables/reserve?id=${table.id}` as Href)}
+              />
+            </>
+          ) : null}
+          {canWrite && table?.status === 'RESERVADA' ? (
             <PrimaryButton
-              title="Ocupar mesa"
+              title="Ocupar (desde reserva)"
               loading={busy}
               onPress={() =>
                 void run(async () => {
@@ -186,6 +204,13 @@ export default function TableDetailScreen() {
               />
               <PrimaryButton title="Transferir" variant="amber" onPress={() => void openTransfer()} />
             </>
+          ) : null}
+          {canWrite && table ? (
+            <PrimaryButton
+              title="Editar mesa"
+              variant="ghost"
+              onPress={() => router.push(`/tables/edit?id=${table.id}` as Href)}
+            />
           ) : null}
           {canOrder && table ? (
             <PrimaryButton

@@ -100,21 +100,32 @@ export default function UsersScreen() {
             <AppText style={{ textAlign: 'center', color: colors.gray500 }}>Sin usuarios</AppText>
           }
           renderItem={({ item }) => (
-            <Card style={{ marginBottom: 10 }}>
-              <AppText weight="bold">{item.name}</AppText>
-              <AppText style={styles.meta}>@{item.username}</AppText>
-              <View style={styles.row}>
-                <Badge label={item.role} />
-                <Badge label={item.is_active ? 'ACTIVO' : 'INACTIVO'} />
-              </View>
-              {canWrite ? (
-                <Pressable style={{ marginTop: 10 }} onPress={() => remove(item)}>
-                  <AppText weight="bold" style={{ color: colors.danger, fontSize: 13 }}>
-                    Eliminar
-                  </AppText>
-                </Pressable>
-              ) : null}
-            </Card>
+            <Pressable
+              onPress={() => router.push(`/users/${item.id}` as Href)}
+            >
+              <Card style={{ marginBottom: 10 }}>
+                <AppText weight="bold">{item.name}</AppText>
+                <AppText style={styles.meta}>@{item.username}</AppText>
+                <View style={styles.row}>
+                  <Badge label={item.role} />
+                  <Badge label={item.is_active ? 'ACTIVO' : 'INACTIVO'} />
+                </View>
+                {canWrite ? (
+                  <View style={styles.actions}>
+                    <Pressable onPress={() => router.push(`/users/${item.id}` as Href)}>
+                      <AppText weight="bold" style={{ color: colors.teal600, fontSize: 13 }}>
+                        Editar
+                      </AppText>
+                    </Pressable>
+                    <Pressable onPress={() => remove(item)}>
+                      <AppText weight="bold" style={{ color: colors.danger, fontSize: 13 }}>
+                        Eliminar
+                      </AppText>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </Card>
+            </Pressable>
           )}
         />
       )}
@@ -128,4 +139,9 @@ const styles = StyleSheet.create({
   err: { color: colors.danger, paddingHorizontal: space.md },
   meta: { color: colors.gray500, marginTop: 4, marginBottom: 8 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  actions: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 10,
+  },
 });

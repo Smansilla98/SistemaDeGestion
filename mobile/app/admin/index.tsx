@@ -95,6 +95,13 @@ export default function AdminHubScreen() {
       icon: 'notifications',
       show: true,
     },
+    {
+      title: 'Matriz de permisos',
+      subtitle: 'Overrides por usuario y rol',
+      href: '/admin/permissions' as Href,
+      icon: 'key',
+      show: hasPermission(user, 'users.read') || hasPermission(user, 'users.write'),
+    },
   ];
 
   return (

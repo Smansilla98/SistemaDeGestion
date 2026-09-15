@@ -180,6 +180,80 @@ export const api = {
       body: JSON.stringify({ target_table_id }),
     }),
 
+  createTable: (body: {
+    sector_id: number;
+    number: string;
+    capacity: number;
+    position_x?: number;
+    position_y?: number;
+  }) =>
+    apiRequest('/tables', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateTable: (id: number, body: Record<string, unknown>) =>
+    apiRequest(`/tables/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteTable: (id: number) => apiRequest(`/tables/${id}`, { method: 'DELETE' }),
+
+  reserveTable: (
+    id: number,
+    body: {
+      customer_name: string;
+      customer_phone: string;
+      reservation_date: string;
+      reservation_time: string;
+      number_of_guests: number;
+    },
+  ) =>
+    apiRequest(`/tables/${id}/reserve`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  saveTablesLayout: (body: {
+    sector_id: number;
+    tables: { id: number; position_x: number; position_y: number }[];
+  }) =>
+    apiRequest('/tables/layout', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  permissionModules: () =>
+    apiRequest<{
+      modules: Array<{ key: string; label: string; actions: string[] }>;
+      action_labels: Record<string, string>;
+      roles: string[];
+      matrix_by_role: Record<string, Record<string, boolean>>;
+      all_keys: string[];
+    }>('/permissions/modules'),
+
+  userPermissionMatrix: (userId: number) =>
+    apiRequest<{
+      user: { id: number; name: string; username: string; role: string };
+      matrix: Record<string, boolean>;
+      overrides: Record<string, boolean>;
+      modules: Array<{ key: string; label: string; actions: string[] }>;
+      action_labels: Record<string, string>;
+    }>(`/permissions/users/${userId}/matrix`),
+
+  updateUserPermissions: (user_id: number, permissions: Record<string, boolean>) =>
+    apiRequest('/permissions/user', {
+      method: 'POST',
+      body: JSON.stringify({ user_id, permissions }),
+    }),
+
+  updateRolePermissions: (role: string, permissions: Record<string, boolean>) =>
+    apiRequest('/permissions/role', {
+      method: 'POST',
+      body: JSON.stringify({ role, permissions }),
+    }),
+
   payTable: (id: number, payments: { payment_method: string; amount: number }[], discount_type_id?: number) =>
     apiRequest(`/tables/${id}/pay`, {
       method: 'POST',
@@ -242,7 +316,17 @@ export const api = {
         return asList<OrderRow>(json.data ?? json);
       }),
 
-  order: (id: number) => apiRequest<OrderRow>(`/orders/${id}`),
+  order: async (id: number) => {
+    const data = await apiRequest<OrderRow | { order: OrderRow; items?: OrderRow['items'] }>(
+      `/orders/${id}`,
+    );
+    if (data && typeof data === 'object' && 'order' in data && data.order) {
+      const o = { ...data.order };
+      if (!o.items && Array.isArray(data.items)) o.items = data.items;
+      return o;
+    }
+    return data as OrderRow;
+  },
 
   updateOrder: (id: number, body: Record<string, unknown>) =>
     apiRequest<OrderRow>(`/orders/${id}`, {
@@ -250,8 +334,13 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  deleteOrder: (id: number) => apiRequest(`/orders/${id}`, { method: 'DELETE' }),
+
   sendToKitchen: (id: number) =>
     apiRequest(`/orders/${id}/send-to-kitchen`, { method: 'POST' }),
+
+  closeOrder: (id: number) =>
+    apiRequest<OrderRow>(`/orders/${id}/close`, { method: 'POST' }),
 
   transitionOrder: (id: number, status: string, note?: string) =>
     apiRequest(`/orders/${id}/transition`, {
@@ -269,6 +358,15 @@ export const api = {
     apiRequest<OrderRow>(`/orders/${id}/items/remove`, {
       method: 'POST',
       body: JSON.stringify({ item_ids }),
+    }),
+
+  replaceOrderItem: (
+    id: number,
+    body: { order_item_id: number; product_id: number; quantity?: number; observations?: string },
+  ) =>
+    apiRequest<{ item: unknown; order: OrderRow }>(`/orders/${id}/items/replace`, {
+      method: 'POST',
+      body: JSON.stringify(body),
     }),
 
   applyDiscount: (id: number, discount_type_id: number | null, reason?: string) =>
@@ -305,8 +403,12 @@ export const api = {
   catalogCategories: () =>
     apiRequest<CatalogCategory[]>('/catalog/categories').then((d) => asList<CatalogCategory>(d)),
 
-  createCatalogCategory: (body: { name: string; description?: string; is_active?: boolean }) =>
-    apiRequest('/catalog/categories', { method: 'POST', body: JSON.stringify(body) }),
+  createCatalogCategory: (body: {
+    name: string;
+    description?: string;
+    display_order?: number;
+    is_active?: boolean;
+  }) => apiRequest('/catalog/categories', { method: 'POST', body: JSON.stringify(body) }),
 
   updateCatalogCategory: (id: number, body: Record<string, unknown>) =>
     apiRequest(`/catalog/categories/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
@@ -357,6 +459,11 @@ export const api = {
   createClient: (body: { name: string; phone?: string; email?: string; notes?: string }) =>
     apiRequest('/clients', { method: 'POST', body: JSON.stringify(body) }),
 
+  updateClient: (id: number, body: Record<string, unknown>) =>
+    apiRequest(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteClient: (id: number) => apiRequest(`/clients/${id}`, { method: 'DELETE' }),
+
   users: () => {
     type UserListRow = {
       id: number;
@@ -392,23 +499,67 @@ export const api = {
 
   deleteUser: (id: number) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
 
-  stock: (search?: string) =>
-    apiRequest<import('./types').StockRow[]>(
-      search ? `/stock?search=${encodeURIComponent(search)}` : '/stock',
-    ),
+  getUser: (id: number) =>
+    apiRequest<{
+      id: number;
+      name: string;
+      username: string;
+      email?: string | null;
+      role: string;
+      is_active: boolean;
+    }>(`/users/${id}`),
 
-  stockMovements: (productId?: number) =>
-    apiRequest<import('./types').StockMovementRow[]>(
-      productId ? `/stock/movements?product_id=${productId}` : '/stock/movements',
-    ),
+  resetUserPassword: (id: number) =>
+    apiRequest<{
+      user: Record<string, unknown>;
+      temporary_password: string;
+    }>(`/users/${id}/reset-password`, { method: 'POST' }),
+
+  stock: (search?: string, type?: 'PRODUCT' | 'INSUMO') => {
+    const qs = new URLSearchParams();
+    if (search) qs.set('search', search);
+    if (type) qs.set('type', type);
+    const q = qs.toString();
+    return apiRequest<import('./types').StockRow[]>(`/stock${q ? `?${q}` : ''}`);
+  },
+
+  stockMovements: (opts?: { productId?: number; dateFrom?: string; dateTo?: string }) => {
+    const qs = new URLSearchParams();
+    if (opts?.productId) qs.set('product_id', String(opts.productId));
+    if (opts?.dateFrom) qs.set('date_from', opts.dateFrom);
+    if (opts?.dateTo) qs.set('date_to', opts.dateTo);
+    const q = qs.toString();
+    return apiRequest<import('./types').StockMovementRow[]>(
+      `/stock/movements${q ? `?${q}` : ''}`,
+    );
+  },
 
   createStockMovement: (body: {
     product_id: number;
     type: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
     quantity: number;
     reason?: string;
+    reference?: string;
+    supplier_id?: number;
+    new_supplier_name?: string;
+    unit_cost?: number;
+    purchase_date?: string;
+    invoice_number?: string;
   }) =>
     apiRequest('/stock/movements', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  mozoInsumos: () =>
+    apiRequest<Array<{ id: number; name: string; unit?: string | null; current_stock?: number }>>(
+      '/stock/mozo-insumos',
+    ).then((d) =>
+      asList<{ id: number; name: string; unit?: string | null; current_stock?: number }>(d),
+    ),
+
+  createMozoInsumo: (body: { product_id: number; quantity: number; reason?: string }) =>
+    apiRequest('/stock/mozo-insumos', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -418,18 +569,29 @@ export const api = {
       asList<{ id: number; name: string }>(d),
     ),
 
-  cashSummary: () =>
-    apiRequest<{
+  cashSummary: (sessionId?: number) => {
+    const q = sessionId ? `?session_id=${sessionId}` : '';
+    return apiRequest<{
       session: Record<string, unknown> | null;
       sales_total: number;
       payments_count: number;
       expected_amount?: number;
-    }>('/cash/summary'),
+      open_sessions?: CashSessionRow[];
+    }>(`/cash/summary${q}`);
+  },
 
   cashRegisters: () =>
-    apiRequest<Array<{ id: number; name: string }>>('/cash/registers').then((d) =>
-      asList<{ id: number; name: string }>(d),
+    apiRequest<Array<{ id: number; name: string; is_active?: boolean }>>('/cash/registers').then(
+      (d) => asList<{ id: number; name: string; is_active?: boolean }>(d),
     ),
+
+  createCashRegister: (body: { name: string; is_active?: boolean }) =>
+    apiRequest('/cash/registers', { method: 'POST', body: JSON.stringify(body) }),
+
+  updateCashRegister: (id: number, body: { name?: string; is_active?: boolean }) =>
+    apiRequest(`/cash/registers/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteCashRegister: (id: number) => apiRequest(`/cash/registers/${id}`, { method: 'DELETE' }),
 
   openCash: (registerId: number, initial_amount: number) =>
     apiRequest(`/cash/registers/${registerId}/open`, {
@@ -437,10 +599,14 @@ export const api = {
       body: JSON.stringify({ initial_amount }),
     }),
 
-  closeCash: (final_amount: number, notes?: string) =>
+  closeCash: (final_amount: number, notes?: string, sessionId?: number) =>
     apiRequest('/cash/session/close', {
       method: 'POST',
-      body: JSON.stringify({ final_amount, notes }),
+      body: JSON.stringify({
+        final_amount,
+        notes,
+        ...(sessionId != null ? { session_id: sessionId } : {}),
+      }),
     }),
 
   cashSessions: () =>
@@ -454,11 +620,15 @@ export const api = {
     amount: number;
     description: string;
     reference?: string;
+    session_id?: number;
   }) =>
     apiRequest('/cash/movements', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  deleteCashMovement: (id: number) =>
+    apiRequest(`/cash/movements/${id}`, { method: 'DELETE' }),
 
   reportsSales: (dateFrom?: string, dateTo?: string) => {
     const qs = new URLSearchParams();

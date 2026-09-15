@@ -11,9 +11,12 @@ use App\Enums\OrderStatus;
 use App\Models\AuditLog;
 use App\Models\DiscountType;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -230,6 +233,93 @@ final class OrderOpsController extends Controller
         }
 
         return ApiResponse::success($order->fresh()->toArray(), 200, 'Pedido anulado');
+    }
+
+    public function close(Request $request, int $id, OrderService $orders): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $order = Order::query()->where('restaurant_id', $restaurantId)->find($id);
+        if ($order === null) {
+            return ApiResponse::error('Pedido no encontrado', 404, 'NOT_FOUND');
+        }
+
+        Gate::authorize('update', $order);
+
+        try {
+            $fresh = $orders->closeOrder($order);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'CLOSE_ERROR');
+        }
+
+        return ApiResponse::success($fresh->load(['items.product', 'table'])->toArray(), 200, 'Pedido cerrado');
+    }
+
+    /**
+     * Reemplaza un ítem del pedido por otro producto (misma lógica que web replaceItemGroup, 1 ítem).
+     */
+    public function replaceItem(Request $request, int $id, OrderService $orders): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $order = Order::query()->where('restaurant_id', $restaurantId)->find($id);
+        if ($order === null) {
+            return ApiResponse::error('Pedido no encontrado', 404, 'NOT_FOUND');
+        }
+
+        Gate::authorize('update', $order);
+
+        if (in_array($order->status, [Order::STATUS_CERRADO, Order::STATUS_CANCELADO], true)) {
+            return ApiResponse::error('No se pueden reemplazar ítems en un pedido cerrado o cancelado', 422, 'ORDER_LOCKED');
+        }
+
+        $validated = $request->validate([
+            'order_item_id' => 'required|integer',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'observations' => 'nullable|string|max:1000',
+        ]);
+
+        $oldItem = OrderItem::query()
+            ->where('order_id', $order->id)
+            ->where('id', (int) $validated['order_item_id'])
+            ->first();
+
+        if ($oldItem === null) {
+            return ApiResponse::error('El ítem no pertenece a este pedido', 422, 'INVALID_ITEM');
+        }
+
+        $product = Product::findOrFail((int) $validated['product_id']);
+        if ((int) $product->restaurant_id !== $restaurantId) {
+            return ApiResponse::error('El producto no pertenece a este restaurante', 422, 'INVALID_PRODUCT');
+        }
+
+        $qty = (int) ($validated['quantity'] ?? $oldItem->quantity);
+
+        try {
+            $newItem = DB::transaction(function () use ($orders, $order, $oldItem, $product, $qty, $validated) {
+                $orders->removeOrderItems($order, [$oldItem->id]);
+
+                return $orders->addItem($order, [
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'observations' => $validated['observations'] ?? $oldItem->observations,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'REPLACE_ITEM_ERROR');
+        }
+
+        return ApiResponse::success([
+            'item' => $newItem->load('product')->toArray(),
+            'order' => $order->fresh(['items.product', 'table'])->toArray(),
+        ], 200, 'Ítem reemplazado');
     }
 
     private function requireRestaurantId(Request $request): int|JsonResponse

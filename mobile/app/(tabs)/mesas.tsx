@@ -25,7 +25,7 @@ function statusColor(status: string) {
 }
 
 export default function MesasScreen() {
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const canOccupy = hasPermission(user, 'tables.write');
   const canPay = hasPermission(user, 'cash.write');
@@ -35,19 +35,25 @@ export default function MesasScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'TODAS' | 'LIBRE' | 'OCUPADA'>('TODAS');
+  const [statusFilter, setStatusFilter] = useState<'TODAS' | 'LIBRE' | 'OCUPADA' | 'RESERVADA'>('TODAS');
   const [sectorId, setSectorId] = useState<number | null>(null);
   const [transferFrom, setTransferFrom] = useState<TableRow | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [rows, secs] = await Promise.all([
+      const [rows, layout] = await Promise.all([
         api.tables(sectorId ?? undefined),
-        api.catalogSectors().catch(() => [] as CatalogSector[]),
+        api.tablesLayout(sectorId ?? undefined).catch(() => null),
       ]);
       setTables(Array.isArray(rows) ? rows : []);
-      setSectors(Array.isArray(secs) ? secs : []);
+      const secs = (layout?.sectors ?? []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: null,
+        is_active: true,
+      }));
+      setSectors(secs);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar mesas');
     } finally {
@@ -115,6 +121,10 @@ export default function MesasScreen() {
     ];
     if (t.status === 'LIBRE' && canOccupy) {
       buttons.push({ text: 'Ocupar', onPress: () => void occupy(t) });
+      buttons.push({
+        text: 'Reservar',
+        onPress: () => router.push(`/tables/reserve?id=${t.id}` as Href),
+      });
     }
     if (t.status === 'OCUPADA' && canOccupy) {
       buttons.push({ text: 'Liberar', style: 'destructive', onPress: () => void free(t) });
@@ -132,6 +142,12 @@ export default function MesasScreen() {
           router.push({ pathname: '/(tabs)/caja', params: { tableId: String(t.id) } } as never),
       });
     }
+    if (canOccupy) {
+      buttons.push({
+        text: 'Editar mesa',
+        onPress: () => router.push(`/tables/edit?id=${t.id}` as Href),
+      });
+    }
     buttons.push({ text: 'Cancelar', style: 'cancel' });
     Alert.alert(`Mesa ${t.number}`, t.sector ? `Sector: ${t.sector}` : undefined, buttons);
   };
@@ -141,15 +157,10 @@ export default function MesasScreen() {
       <PageHeader title="Mesas" subtitle={user?.name} icon="grid" />
       <View style={styles.top}>
         <View style={styles.filters}>
-          {(['TODAS', 'LIBRE', 'OCUPADA'] as const).map((f) => (
+          {(['TODAS', 'LIBRE', 'OCUPADA', 'RESERVADA'] as const).map((f) => (
             <Chip key={f} label={f} selected={statusFilter === f} onPress={() => setStatusFilter(f)} />
           ))}
         </View>
-        <Pressable onPress={() => void logout()}>
-          <AppText weight="bold" style={styles.logout}>
-            Salir
-          </AppText>
-        </Pressable>
       </View>
 
       {sectors.length > 0 ? (

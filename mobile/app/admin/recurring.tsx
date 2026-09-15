@@ -45,6 +45,9 @@ const emptyForm = () => ({
   start_time: '21:00',
   end_time: '23:00',
   description: '',
+  expected_attendance: '',
+  start_date: '',
+  end_date: '',
   is_active: true,
 });
 
@@ -86,6 +89,10 @@ export default function AdminRecurringScreen() {
       start_time: item.start_time ?? '',
       end_time: item.end_time ?? '',
       description: item.description ?? '',
+      expected_attendance:
+        item.expected_attendance != null ? String(item.expected_attendance) : '',
+      start_date: item.start_date ? String(item.start_date).slice(0, 10) : '',
+      end_date: item.end_date ? String(item.end_date).slice(0, 10) : '',
       is_active: item.is_active !== false,
     });
   };
@@ -103,6 +110,11 @@ export default function AdminRecurringScreen() {
         start_time: form.start_time,
         end_time: form.end_time || null,
         description: form.description.trim() || null,
+        expected_attendance: form.expected_attendance
+          ? Number(form.expected_attendance)
+          : null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
         is_active: true,
       });
       setForm(emptyForm());
@@ -128,6 +140,11 @@ export default function AdminRecurringScreen() {
         start_time: editForm.start_time,
         end_time: editForm.end_time || null,
         description: editForm.description.trim() || null,
+        expected_attendance: editForm.expected_attendance
+          ? Number(editForm.expected_attendance)
+          : null,
+        start_date: editForm.start_date || null,
+        end_date: editForm.end_date || null,
         is_active: editForm.is_active,
       });
       setEditing(null);
@@ -204,6 +221,24 @@ export default function AdminRecurringScreen() {
               value={form.description}
               onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
               multiline
+            />
+            <Field
+              label="Asistencia esperada"
+              value={form.expected_attendance}
+              onChangeText={(v) => setForm((f) => ({ ...f, expected_attendance: v }))}
+              keyboardType="number-pad"
+            />
+            <Field
+              label="Inicio vigencia (YYYY-MM-DD)"
+              value={form.start_date}
+              onChangeText={(v) => setForm((f) => ({ ...f, start_date: v }))}
+              placeholder="Opcional"
+            />
+            <Field
+              label="Fin vigencia (YYYY-MM-DD)"
+              value={form.end_date}
+              onChangeText={(v) => setForm((f) => ({ ...f, end_date: v }))}
+              placeholder="Opcional"
             />
             <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
           </>
@@ -286,6 +321,22 @@ export default function AdminRecurringScreen() {
                 value={editForm.description}
                 onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
                 multiline
+              />
+              <Field
+                label="Asistencia esperada"
+                value={editForm.expected_attendance}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, expected_attendance: v }))}
+                keyboardType="number-pad"
+              />
+              <Field
+                label="Inicio vigencia (YYYY-MM-DD)"
+                value={editForm.start_date}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, start_date: v }))}
+              />
+              <Field
+                label="Fin vigencia (YYYY-MM-DD)"
+                value={editForm.end_date}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, end_date: v }))}
               />
               <View style={styles.chips}>
                 <Chip

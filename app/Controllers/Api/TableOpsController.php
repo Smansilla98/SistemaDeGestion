@@ -300,6 +300,204 @@ final class TableOpsController extends Controller
         ], 200, 'Mesa transferida');
     }
 
+    public function store(Request $request): JsonResponse
+    {
+        $this->authorize('create', Table::class);
+
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $validated = $request->validate([
+            'sector_id' => 'required|integer|exists:sectors,id',
+            'number' => 'required|string|max:255',
+            'capacity' => 'required|integer|min:1',
+            'position_x' => 'nullable|integer|min:0',
+            'position_y' => 'nullable|integer|min:0',
+        ]);
+
+        $sectorOk = \App\Models\Sector::query()
+            ->where('restaurant_id', $restaurantId)
+            ->where('id', $validated['sector_id'])
+            ->exists();
+        if (! $sectorOk) {
+            return ApiResponse::error('Sector inválido', 422, 'INVALID_SECTOR');
+        }
+
+        $table = Table::create([
+            ...$validated,
+            'restaurant_id' => $restaurantId,
+            'status' => Table::STATUS_LIBRE,
+            'position_x' => $validated['position_x'] ?? 50,
+            'position_y' => $validated['position_y'] ?? 50,
+        ]);
+
+        return ApiResponse::success($table->fresh(['sector'])->toArray(), 201, 'Mesa creada');
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $table = Table::query()->where('restaurant_id', $restaurantId)->find($id);
+        if ($table === null) {
+            return ApiResponse::error('Mesa no encontrada', 404, 'NOT_FOUND');
+        }
+
+        Gate::authorize('update', $table);
+
+        $validated = $request->validate([
+            'sector_id' => 'sometimes|required|integer|exists:sectors,id',
+            'number' => 'sometimes|required|string|max:255',
+            'capacity' => 'sometimes|required|integer|min:1',
+            'position_x' => 'nullable|integer|min:0',
+            'position_y' => 'nullable|integer|min:0',
+            'status' => 'sometimes|required|in:'.implode(',', Table::getStatuses()),
+        ]);
+
+        if (isset($validated['sector_id'])) {
+            $sectorOk = \App\Models\Sector::query()
+                ->where('restaurant_id', $restaurantId)
+                ->where('id', $validated['sector_id'])
+                ->exists();
+            if (! $sectorOk) {
+                return ApiResponse::error('Sector inválido', 422, 'INVALID_SECTOR');
+            }
+        }
+
+        $table->update($validated);
+
+        return ApiResponse::success($table->fresh(['sector'])->toArray(), 200, 'Mesa actualizada');
+    }
+
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $table = Table::query()->where('restaurant_id', $restaurantId)->find($id);
+        if ($table === null) {
+            return ApiResponse::error('Mesa no encontrada', 404, 'NOT_FOUND');
+        }
+
+        Gate::authorize('delete', $table);
+
+        if ($table->current_order_id) {
+            return ApiResponse::error('No se puede eliminar una mesa con pedido activo', 422, 'HAS_ORDER');
+        }
+        if ($table->current_session_id) {
+            $session = TableSession::find($table->current_session_id);
+            if ($session && $session->isOpen()) {
+                return ApiResponse::error('No se puede eliminar una mesa con sesión abierta', 422, 'HAS_SESSION');
+            }
+        }
+
+        $table->delete();
+
+        return ApiResponse::success(null, 200, 'Mesa eliminada');
+    }
+
+    public function reserve(Request $request, int $id): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $table = Table::query()->where('restaurant_id', $restaurantId)->find($id);
+        if ($table === null) {
+            return ApiResponse::error('Mesa no encontrada', 404, 'NOT_FOUND');
+        }
+
+        Gate::authorize('update', $table);
+
+        $validated = $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|max:20',
+            'reservation_date' => 'required|date|after_or_equal:today',
+            'reservation_time' => 'required',
+            'number_of_guests' => 'required|integer|min:1|max:'.$table->capacity,
+        ]);
+
+        if ($table->status !== Table::STATUS_LIBRE) {
+            return ApiResponse::error('La mesa no está disponible para reservar', 422, 'NOT_AVAILABLE');
+        }
+
+        // Paridad web: marca RESERVADA (sin tabla reservations aún).
+        $table->update(['status' => Table::STATUS_RESERVADA]);
+
+        return ApiResponse::success([
+            'table' => $table->fresh(['sector'])->toArray(),
+            'reservation' => $validated,
+        ], 200, 'Mesa reservada');
+    }
+
+    public function updateLayout(Request $request): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $role = (string) ($request->user()?->role ?? '');
+        if (! in_array($role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+            return ApiResponse::error('Sin permiso para editar layout', 403, 'FORBIDDEN');
+        }
+
+        $validated = $request->validate([
+            'sector_id' => 'required|integer|exists:sectors,id',
+            'tables' => 'required|array',
+            'tables.*.id' => 'required|integer|exists:tables,id',
+            'tables.*.position_x' => 'required|integer|min:0',
+            'tables.*.position_y' => 'required|integer|min:0',
+            'fixtures' => 'nullable|array',
+            'fixtures.*.id' => 'required_with:fixtures|string|max:50',
+            'fixtures.*.position_x' => 'required_with:fixtures|integer|min:0',
+            'fixtures.*.position_y' => 'required_with:fixtures|integer|min:0',
+        ]);
+
+        $sector = \App\Models\Sector::query()
+            ->where('restaurant_id', $restaurantId)
+            ->find($validated['sector_id']);
+        if ($sector === null) {
+            return ApiResponse::error('Sector no encontrado', 404, 'NOT_FOUND');
+        }
+
+        foreach ($validated['tables'] as $tableData) {
+            $table = Table::query()
+                ->where('restaurant_id', $restaurantId)
+                ->find($tableData['id']);
+            if ($table === null) {
+                continue;
+            }
+            Gate::authorize('update', $table);
+            $table->update([
+                'position_x' => $tableData['position_x'],
+                'position_y' => $tableData['position_y'],
+            ]);
+        }
+
+        if (! empty($validated['fixtures'])) {
+            $layoutConfig = is_array($sector->layout_config) ? $sector->layout_config : [];
+            $layoutConfig['fixtures'] = $layoutConfig['fixtures'] ?? [];
+            foreach ($validated['fixtures'] as $fixture) {
+                $layoutConfig['fixtures'][$fixture['id']] = [
+                    'x' => (int) $fixture['position_x'],
+                    'y' => (int) $fixture['position_y'],
+                ];
+            }
+            $sector->update(['layout_config' => $layoutConfig]);
+        }
+
+        return ApiResponse::success(null, 200, 'Layout actualizado');
+    }
+
     public function pay(Request $request, int $id, TableService $tables): JsonResponse
     {
         $restaurantId = $this->requireRestaurantId($request);

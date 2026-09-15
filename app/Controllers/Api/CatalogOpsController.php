@@ -39,6 +39,7 @@ final class CatalogOpsController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
+            'display_order' => 'nullable|integer|min:0|max:9999',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -46,6 +47,7 @@ final class CatalogOpsController extends Controller
             'restaurant_id' => $rid,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
+            'display_order' => $data['display_order'] ?? 0,
             'is_active' => $data['is_active'] ?? true,
         ]);
 
@@ -67,6 +69,7 @@ final class CatalogOpsController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string|max:1000',
+            'display_order' => 'nullable|integer|min:0|max:9999',
             'is_active' => 'sometimes|boolean',
         ]);
         $row->update($data);

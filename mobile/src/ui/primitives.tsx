@@ -309,8 +309,7 @@ const styles = StyleSheet.create({
     fontFamily: font.regular,
   },
   stat: {
-    flex: 1,
-    minWidth: '45%',
+    width: '100%',
     backgroundColor: colors.white,
     borderRadius: radius.lg,
     padding: space.md,

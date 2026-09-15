@@ -105,6 +105,34 @@ final class UserController extends Controller
         return ApiResponse::success(['deleted' => true], 200, 'Eliminado');
     }
 
+    public function resetTemporaryPassword(Request $request, int $id, UserService $users): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $actor = $request->user();
+        try {
+            $result = $users->resetTemporaryPassword(
+                $id,
+                $restaurantId,
+                (int) $actor->id,
+                $actor->isSuperAdmin()
+            );
+        } catch (InvalidArgumentException $e) {
+            $msg = $e->getMessage();
+            $code = str_contains(strtolower($msg), 'no encontrado') ? 404 : 403;
+            $key = $code === 404 ? 'NOT_FOUND' : 'FORBIDDEN';
+
+            return ApiResponse::error($msg, $code, $key);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'RESET_ERROR');
+        }
+
+        return ApiResponse::success($result, 200, 'Contraseña temporal generada');
+    }
+
     private function requireRestaurantId(Request $request): int|JsonResponse
     {
         $rid = $request->user()?->restaurant_id;

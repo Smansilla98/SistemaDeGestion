@@ -335,6 +335,9 @@ final class AdminExtrasOpsController extends Controller
             'day_of_week' => 'required|in:MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY',
             'start_time' => 'required|string|max:20',
             'end_time' => 'nullable|string|max:20',
+            'expected_attendance' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -345,6 +348,9 @@ final class AdminExtrasOpsController extends Controller
             'day_of_week' => $data['day_of_week'],
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time'] ?? null,
+            'expected_attendance' => $data['expected_attendance'] ?? null,
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
 
@@ -369,6 +375,9 @@ final class AdminExtrasOpsController extends Controller
             'day_of_week' => 'sometimes|in:MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY',
             'start_time' => 'sometimes|string|max:20',
             'end_time' => 'nullable|string|max:20',
+            'expected_attendance' => 'nullable|integer|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'sometimes|boolean',
         ]);
         $row->update($data);
@@ -418,7 +427,9 @@ final class AdminExtrasOpsController extends Controller
             'category' => 'required|string|max:100',
             'amount' => 'required|numeric|min:0',
             'frequency' => 'required|in:MENSUAL,QUINCENAL,SEMANAL,DIARIO,ANUAL',
+            'due_day' => 'nullable|integer|min:1|max:31',
             'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -430,7 +441,9 @@ final class AdminExtrasOpsController extends Controller
             'category' => $data['category'],
             'amount' => $data['amount'],
             'frequency' => $data['frequency'],
+            'due_day' => $data['due_day'] ?? null,
             'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
 
@@ -456,7 +469,9 @@ final class AdminExtrasOpsController extends Controller
             'category' => 'sometimes|string|max:100',
             'amount' => 'sometimes|numeric|min:0',
             'frequency' => 'sometimes|in:MENSUAL,QUINCENAL,SEMANAL,DIARIO,ANUAL',
+            'due_day' => 'nullable|integer|min:1|max:31',
             'start_date' => 'sometimes|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'sometimes|boolean',
         ]);
         $row->update($data);

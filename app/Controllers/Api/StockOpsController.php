@@ -6,9 +6,11 @@ namespace App\Controllers\Api;
 
 use App\Controllers\Controller;
 use App\Core\ApiResponse;
+use App\Core\Rbac\RbacChecker;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\StockService;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +32,17 @@ final class StockOpsController extends Controller
             ->where('has_stock', true)
             ->where('is_active', true);
 
-        if ($user?->role === User::ROLE_MOZO) {
+        $type = strtoupper((string) $request->input('type', ''));
+        $canMozoInsumo = RbacChecker::roleHasAny($user?->role, ['stock_mozo.create', 'stock.write']);
+
+        if ($type === 'INSUMO') {
+            if ($user?->role === User::ROLE_MOZO && ! $canMozoInsumo) {
+                return ApiResponse::error('No tenés permiso para ver insumos', 403, 'FORBIDDEN');
+            }
+            $query->insumos();
+        } elseif ($user?->role === User::ROLE_MOZO) {
+            $query->products();
+        } elseif ($type === 'PRODUCT') {
             $query->products();
         }
 
@@ -73,14 +85,27 @@ final class StockOpsController extends Controller
 
         $query = StockMovement::query()
             ->where('restaurant_id', $restaurantId)
-            ->with(['product:id,name,type', 'user:id,name']);
+            ->with(['product:id,name,type', 'user:id,name', 'purchase.supplier:id,name']);
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->integer('product_id'));
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->string('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->string('date_to'));
+        }
+
         if ($request->user()?->role === User::ROLE_MOZO) {
-            $query->whereHas('product', fn ($q) => $q->where('type', 'PRODUCT'));
+            $canMozoInsumo = RbacChecker::roleHasAny($request->user()?->role, ['stock_mozo.create', 'stock.write']);
+            if ($canMozoInsumo) {
+                $query->whereHas('product', fn ($q) => $q->whereIn('type', ['PRODUCT', 'INSUMO']));
+            } else {
+                $query->whereHas('product', fn ($q) => $q->where('type', 'PRODUCT'));
+            }
         }
 
         $movements = $query->orderByDesc('created_at')->limit(100)->get();
@@ -97,6 +122,14 @@ final class StockOpsController extends Controller
             'product' => $m->product?->name,
             'user' => $m->user?->name,
             'created_at' => optional($m->created_at)->toIso8601String(),
+            'purchase' => $m->purchase ? [
+                'supplier_id' => $m->purchase->supplier_id,
+                'supplier' => $m->purchase->supplier?->name,
+                'unit_cost' => $m->purchase->unit_cost !== null ? (float) $m->purchase->unit_cost : null,
+                'total_cost' => $m->purchase->total_cost !== null ? (float) $m->purchase->total_cost : null,
+                'purchase_date' => optional($m->purchase->purchase_date)?->toDateString(),
+                'invoice_number' => $m->purchase->invoice_number,
+            ] : null,
         ])->values()->all();
 
         return ApiResponse::success($rows);
@@ -128,13 +161,20 @@ final class StockOpsController extends Controller
         }
 
         $role = $request->user()?->role;
+        $canMozoInsumo = RbacChecker::roleHasAny($role, ['stock_mozo.create', 'stock.write']);
+
         if ($role === User::ROLE_MOZO) {
-            if (! $product->isProduct()) {
+            if ($product->isInsumo()) {
+                if (! $canMozoInsumo || $validated['type'] !== 'ENTRADA') {
+                    throw ValidationException::withMessages([
+                        'product_id' => ['Solo podés registrar entradas de insumos con el permiso correspondiente.'],
+                    ]);
+                }
+            } elseif (! $product->isProduct()) {
                 throw ValidationException::withMessages([
                     'product_id' => ['Los mozos solo pueden mover stock de productos a la venta.'],
                 ]);
-            }
-            if ($validated['type'] === 'AJUSTE') {
+            } elseif ($validated['type'] === 'AJUSTE') {
                 throw ValidationException::withMessages([
                     'type' => ['Los mozos solo pueden registrar entradas o salidas.'],
                 ]);
@@ -158,7 +198,7 @@ final class StockOpsController extends Controller
         )) {
             $supplierId = $validated['supplier_id'] ?? null;
             if (! $supplierId && ! empty($validated['new_supplier_name'])) {
-                $supplier = \App\Models\Supplier::query()->create([
+                $supplier = Supplier::query()->create([
                     'restaurant_id' => $restaurantId,
                     'name' => $validated['new_supplier_name'],
                     'is_active' => true,
@@ -181,7 +221,91 @@ final class StockOpsController extends Controller
             return ApiResponse::error($e->getMessage(), 422, 'STOCK_MOVEMENT_ERROR');
         }
 
-        return ApiResponse::success($movement->load(['product:id,name', 'user:id,name'])->toArray(), 201, 'Movimiento registrado');
+        return ApiResponse::success(
+            $movement->load(['product:id,name', 'user:id,name', 'purchase.supplier:id,name'])->toArray(),
+            201,
+            'Movimiento registrado'
+        );
+    }
+
+    /**
+     * Listado de insumos para el flujo mozo (GET) / ingreso simple (POST).
+     */
+    public function mozoInsumos(Request $request): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $products = Product::query()
+            ->where('restaurant_id', $restaurantId)
+            ->insumos()
+            ->where('is_active', true)
+            ->where('has_stock', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'unit', 'type']);
+
+        $stockMap = Stock::query()
+            ->where('restaurant_id', $restaurantId)
+            ->whereIn('product_id', $products->pluck('id'))
+            ->get()
+            ->keyBy('product_id');
+
+        $rows = $products->map(fn (Product $p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'type' => $p->type,
+            'unit' => $p->unit,
+            'current_stock' => (int) ($stockMap->get($p->id)?->quantity ?? 0),
+        ])->values()->all();
+
+        return ApiResponse::success($rows);
+    }
+
+    public function storeMozoInsumo(Request $request, StockService $stock): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|integer|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $product = Product::query()->findOrFail($validated['product_id']);
+        if ((int) $product->restaurant_id !== $restaurantId) {
+            return ApiResponse::error('Producto de otro restaurante', 403, 'FORBIDDEN');
+        }
+        if (! $product->isInsumo()) {
+            return ApiResponse::error('Solo podés registrar ingresos de insumos', 422, 'NOT_INSUMO');
+        }
+        if (! $product->has_stock) {
+            return ApiResponse::error('Este insumo no tiene control de stock activado', 422, 'NO_STOCK');
+        }
+
+        try {
+            $movement = $stock->recordMovement([
+                'restaurant_id' => $restaurantId,
+                'product_id' => $product->id,
+                'user_id' => (int) $request->user()->id,
+                'type' => 'ENTRADA',
+                'quantity' => $validated['quantity'],
+                'reason' => $validated['reason'] ?? 'Ingreso de insumo (mozo)',
+                'reference' => 'mobile_mozo_insumo',
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'STOCK_MOVEMENT_ERROR');
+        }
+
+        return ApiResponse::success(
+            $movement->load(['product:id,name', 'user:id,name'])->toArray(),
+            201,
+            'Ingreso de insumo registrado'
+        );
     }
 
     public function suppliers(Request $request): JsonResponse
@@ -191,7 +315,7 @@ final class StockOpsController extends Controller
             return $restaurantId;
         }
 
-        $rows = \App\Models\Supplier::query()
+        $rows = Supplier::query()
             ->where('restaurant_id', $restaurantId)
             ->where('is_active', true)
             ->orderBy('name')

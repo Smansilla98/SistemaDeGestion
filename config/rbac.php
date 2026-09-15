@@ -26,6 +26,7 @@ return [
         'cash.write',
         'stock.read',
         'stock.write',
+        'stock_mozo.create',
         'catalog.read',
         'catalog.write',
         'reports.read',
@@ -89,6 +90,7 @@ return [
             'cash.read',
             'stock.read',
             'stock.write',
+            'stock_mozo.create',
             'devices.write',
         ],
         'COCINA' => [

@@ -35,6 +35,9 @@ const emptyForm = () => ({
   category: 'GENERAL',
   type: 'GASTO' as 'GASTO' | 'INGRESO',
   frequency: 'MENSUAL',
+  description: '',
+  due_day: '',
+  end_date: '',
   is_active: true,
 });
 
@@ -76,6 +79,9 @@ export default function AdminExpensesScreen() {
       category: item.category ?? 'GENERAL',
       type: (item.type === 'INGRESO' ? 'INGRESO' : 'GASTO') as 'GASTO' | 'INGRESO',
       frequency: item.frequency ?? 'MENSUAL',
+      description: item.description ?? '',
+      due_day: item.due_day != null ? String(item.due_day) : '',
+      end_date: item.end_date ? String(item.end_date).slice(0, 10) : '',
       is_active: item.is_active !== false,
     });
   };
@@ -94,7 +100,10 @@ export default function AdminExpensesScreen() {
         category: form.category,
         amount: value,
         frequency: form.frequency,
+        description: form.description.trim() || null,
+        due_day: form.due_day ? Number(form.due_day) : null,
         start_date: new Date().toISOString().slice(0, 10),
+        end_date: form.end_date || null,
         is_active: true,
       });
       setForm(emptyForm());
@@ -121,6 +130,9 @@ export default function AdminExpensesScreen() {
         category: editForm.category,
         type: editForm.type,
         frequency: editForm.frequency,
+        description: editForm.description.trim() || null,
+        due_day: editForm.due_day ? Number(editForm.due_day) : null,
+        end_date: editForm.end_date || null,
         is_active: editForm.is_active,
       });
       setEditing(null);
@@ -202,6 +214,25 @@ export default function AdminExpensesScreen() {
                 />
               ))}
             </View>
+            <Field
+              label="Día de cobro (1-31)"
+              value={form.due_day}
+              onChangeText={(v) => setForm((f) => ({ ...f, due_day: v }))}
+              keyboardType="number-pad"
+              placeholder="Opcional"
+            />
+            <Field
+              label="Fin (YYYY-MM-DD)"
+              value={form.end_date}
+              onChangeText={(v) => setForm((f) => ({ ...f, end_date: v }))}
+              placeholder="Opcional"
+            />
+            <Field
+              label="Descripción"
+              value={form.description}
+              onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+              multiline
+            />
             <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
           </>
         ) : null}
@@ -286,6 +317,23 @@ export default function AdminExpensesScreen() {
                   />
                 ))}
               </View>
+              <Field
+                label="Día de cobro (1-31)"
+                value={editForm.due_day}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, due_day: v }))}
+                keyboardType="number-pad"
+              />
+              <Field
+                label="Fin (YYYY-MM-DD)"
+                value={editForm.end_date}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, end_date: v }))}
+              />
+              <Field
+                label="Descripción"
+                value={editForm.description}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+                multiline
+              />
               <View style={styles.chips}>
                 <Chip
                   label="Activo"

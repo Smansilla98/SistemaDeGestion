@@ -52,6 +52,7 @@ export type ProductRow = {
   description?: string | null;
   has_stock?: boolean;
   stock_minimum?: number;
+  current_stock?: number;
   unit?: string | null;
   cost_price?: number | string | null;
   supplier_id?: number | null;
@@ -98,10 +99,19 @@ export type StockMovementRow = {
   previous_stock?: number;
   new_stock?: number;
   reason?: string | null;
+  reference?: string | null;
   product?: string;
   product_id?: number;
   user?: string;
   created_at?: string;
+  purchase?: {
+    supplier_id?: number | null;
+    supplier?: string | null;
+    unit_cost?: number | null;
+    total_cost?: number | null;
+    purchase_date?: string | null;
+    invoice_number?: string | null;
+  } | null;
 };
 
 export type DiscountTypeRow = {
@@ -116,6 +126,7 @@ export type CatalogCategory = {
   id: number;
   name: string;
   description?: string | null;
+  display_order?: number | null;
   is_active?: boolean;
 };
 
@@ -164,7 +175,28 @@ export type CashSessionDetail = {
     type: string;
     amount: number;
     description?: string | null;
+    reference?: string | null;
+    user_id?: number | null;
+    can_delete?: boolean;
     created_at?: string | null;
+  }>;
+  sales_detail?: Array<{
+    id: number;
+    number?: string | null;
+    total: number;
+    customer_name?: string | null;
+    table?: string | number | null;
+    user?: string | null;
+    created_at?: string | null;
+    items: Array<{
+      id: number;
+      product?: string | null;
+      product_id?: number;
+      quantity: number;
+      unit_price: number;
+      subtotal: number;
+      has_stock?: boolean;
+    }>;
   }>;
 };
 
@@ -235,6 +267,9 @@ export type RecurringRow = {
   day_of_week: string;
   start_time: string;
   end_time?: string | null;
+  expected_attendance?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
   is_active?: boolean;
 };
 
@@ -247,7 +282,9 @@ export type ExpenseRow = {
   frequency?: string;
   is_active?: boolean;
   description?: string | null;
+  due_day?: number | null;
   start_date?: string;
+  end_date?: string | null;
 };
 
 export type NotificationRow = {

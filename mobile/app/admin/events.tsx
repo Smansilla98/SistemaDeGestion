@@ -35,6 +35,7 @@ const emptyForm = () => ({
   time: '20:00',
   status: 'PROGRAMADO' as string,
   description: '',
+  expected_attendance: '',
 });
 
 export default function AdminEventsScreen() {
@@ -75,6 +76,8 @@ export default function AdminEventsScreen() {
       time: item.time ?? '',
       status: item.status ?? 'PROGRAMADO',
       description: item.description ?? '',
+      expected_attendance:
+        item.expected_attendance != null ? String(item.expected_attendance) : '',
     });
   };
 
@@ -91,6 +94,9 @@ export default function AdminEventsScreen() {
         time: form.time || undefined,
         status: form.status,
         description: form.description.trim() || undefined,
+        expected_attendance: form.expected_attendance
+          ? Number(form.expected_attendance)
+          : undefined,
       });
       setForm(emptyForm());
       await load();
@@ -115,6 +121,9 @@ export default function AdminEventsScreen() {
         time: editForm.time || null,
         status: editForm.status,
         description: editForm.description.trim() || null,
+        expected_attendance: editForm.expected_attendance
+          ? Number(editForm.expected_attendance)
+          : null,
       });
       setEditing(null);
       await load();
@@ -189,6 +198,13 @@ export default function AdminEventsScreen() {
               onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
               multiline
             />
+            <Field
+              label="Asistencia esperada"
+              value={form.expected_attendance}
+              onChangeText={(v) => setForm((f) => ({ ...f, expected_attendance: v }))}
+              keyboardType="number-pad"
+              placeholder="0"
+            />
             <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
           </>
         ) : null}
@@ -221,6 +237,9 @@ export default function AdminEventsScreen() {
                 <AppText style={styles.meta}>
                   {item.date}
                   {item.time ? ` · ${item.time}` : ''}
+                  {item.expected_attendance != null
+                    ? ` · ${item.expected_attendance} pers.`
+                    : ''}
                 </AppText>
                 {item.description ? (
                   <AppText style={styles.meta} numberOfLines={2}>
@@ -270,6 +289,12 @@ export default function AdminEventsScreen() {
                 value={editForm.description}
                 onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
                 multiline
+              />
+              <Field
+                label="Asistencia esperada"
+                value={editForm.expected_attendance}
+                onChangeText={(v) => setEditForm((f) => ({ ...f, expected_attendance: v }))}
+                keyboardType="number-pad"
               />
               <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
               {editing ? (

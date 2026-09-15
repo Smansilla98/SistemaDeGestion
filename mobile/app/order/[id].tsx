@@ -12,7 +12,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { DiscountTypeRow, OrderRow, ProductRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
-import { hasPermission } from '../../src/auth/permissions';
+import { canSeeAdminHub, hasPermission, isAdminRole } from '../../src/auth/permissions';
 import { colors, radius, space } from '../../src/theme';
 import {
   AppText,
@@ -38,11 +38,17 @@ function itemLabel(it: NonNullable<OrderRow['items']>[number]) {
   return it.name ?? it.product_name ?? it.product?.name ?? 'Ítem';
 }
 
+function isOutOfStock(p: ProductRow): boolean {
+  return typeof p.current_stock === 'number' && p.current_stock <= 0;
+}
+
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
   const canWrite = hasPermission(user, 'orders.write');
+  const canDelete =
+    isAdminRole(user?.role) || canSeeAdminHub(user) || user?.role === 'ENCARGADO';
 
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -52,8 +58,11 @@ export default function OrderDetailScreen() {
   const [busy, setBusy] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceItemId, setReplaceItemId] = useState<number | null>(null);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [notes, setNotes] = useState('');
+  const [itemObs, setItemObs] = useState('');
   const [qty, setQty] = useState('1');
 
   const load = useCallback(async () => {
@@ -95,15 +104,43 @@ export default function OrderDetailScreen() {
     }
   };
 
+  const loadProducts = async () => {
+    const [prods, stock] = await Promise.all([
+      api.products({ activeOnly: true }),
+      api.stock().catch(() => [] as import('../../src/api/types').StockRow[]),
+    ]);
+    const stockMap = new Map(
+      (Array.isArray(stock) ? stock : []).map((s) => [s.id, s.current_stock]),
+    );
+    return (Array.isArray(prods) ? prods : []).map((p) => {
+      const qtyStock = stockMap.get(p.id);
+      return qtyStock != null ? { ...p, current_stock: qtyStock } : p;
+    });
+  };
+
   const openAdd = async () => {
     try {
       const [prods, discs] = await Promise.all([
-        api.products({ activeOnly: true }),
+        loadProducts(),
         api.discountTypes().catch(() => [] as DiscountTypeRow[]),
       ]);
       setProducts(prods);
       setDiscounts(discs);
+      setItemObs('');
+      setQty('1');
       setAddOpen(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudieron cargar productos');
+    }
+  };
+
+  const openReplace = async (itemId: number) => {
+    try {
+      setProducts(await loadProducts());
+      setReplaceItemId(itemId);
+      setItemObs('');
+      setQty('1');
+      setReplaceOpen(true);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudieron cargar productos');
     }
@@ -160,6 +197,9 @@ export default function OrderDetailScreen() {
                     <AppText weight="semibold">
                       {it.quantity}× {itemLabel(it)}
                     </AppText>
+                    {it.observations ? (
+                      <AppText style={styles.meta}>Obs: {it.observations}</AppText>
+                    ) : null}
                     {it.unit_price != null ? (
                       <AppText style={styles.meta}>
                         ${Number(it.unit_price).toFixed(2)} c/u
@@ -168,25 +208,32 @@ export default function OrderDetailScreen() {
                   </View>
                   {it.status ? <Badge label={it.status} /> : null}
                   {canWrite && !locked ? (
-                    <Pressable
-                      onPress={() =>
-                        Alert.alert('Quitar ítem', `¿Eliminar ${itemLabel(it)}?`, [
-                          { text: 'Cancelar', style: 'cancel' },
-                          {
-                            text: 'Quitar',
-                            style: 'destructive',
-                            onPress: () =>
-                              void run(async () => {
-                                await api.removeOrderItems(order.id, [it.id]);
-                              }),
-                          },
-                        ])
-                      }
-                    >
-                      <AppText weight="bold" style={{ color: colors.danger, fontSize: 12 }}>
-                        Quitar
-                      </AppText>
-                    </Pressable>
+                    <View style={styles.itemActions}>
+                      <Pressable onPress={() => void openReplace(it.id)}>
+                        <AppText weight="bold" style={{ color: colors.teal600, fontSize: 12 }}>
+                          Cambiar
+                        </AppText>
+                      </Pressable>
+                      <Pressable
+                        onPress={() =>
+                          Alert.alert('Quitar ítem', `¿Eliminar ${itemLabel(it)}?`, [
+                            { text: 'Cancelar', style: 'cancel' },
+                            {
+                              text: 'Quitar',
+                              style: 'destructive',
+                              onPress: () =>
+                                void run(async () => {
+                                  await api.removeOrderItems(order.id, [it.id]);
+                                }),
+                            },
+                          ])
+                        }
+                      >
+                        <AppText weight="bold" style={{ color: colors.danger, fontSize: 12 }}>
+                          Quitar
+                        </AppText>
+                      </Pressable>
+                    </View>
                   ) : null}
                 </View>
               ))}
@@ -212,6 +259,29 @@ export default function OrderDetailScreen() {
                       }
                     />
                   ) : null}
+                  {order.status !== 'CERRADO' ? (
+                    <PrimaryButton
+                      title="Cerrar pedido"
+                      icon="checkmark-done"
+                      loading={busy}
+                      onPress={() =>
+                        Alert.alert(
+                          'Cerrar pedido',
+                          'Se cierra el pedido y se libera la mesa asociada.',
+                          [
+                            { text: 'Cancelar', style: 'cancel' },
+                            {
+                              text: 'Cerrar',
+                              onPress: () =>
+                                void run(async () => {
+                                  await api.closeOrder(order.id);
+                                }),
+                            },
+                          ],
+                        )
+                      }
+                    />
+                  ) : null}
                   <PrimaryButton
                     title="Aplicar descuento"
                     variant="amber"
@@ -234,6 +304,30 @@ export default function OrderDetailScreen() {
                       ])
                     }
                   />
+                  {canDelete ? (
+                    <PrimaryButton
+                      title="Eliminar pedido"
+                      variant="danger"
+                      onPress={() =>
+                        Alert.alert(
+                          'Eliminar pedido',
+                          'Esta acción borra el pedido. ¿Continuar?',
+                          [
+                            { text: 'Cancelar', style: 'cancel' },
+                            {
+                              text: 'Eliminar',
+                              style: 'destructive',
+                              onPress: () =>
+                                void run(async () => {
+                                  await api.deleteOrder(order.id);
+                                  router.back();
+                                }),
+                            },
+                          ],
+                        )
+                      }
+                    />
+                  ) : null}
                 </View>
 
                 <SectionLabel>Cambiar estado</SectionLabel>
@@ -288,32 +382,108 @@ export default function OrderDetailScreen() {
               onChangeText={setQty}
               keyboardType="number-pad"
             />
+            <Field
+              label="Observaciones"
+              value={itemObs}
+              onChangeText={setItemObs}
+              placeholder="Sin cebolla, extra salsa…"
+            />
             <ScrollView style={{ maxHeight: 320 }}>
-              {products.map((p) => (
-                <Pressable
-                  key={p.id}
-                  style={styles.pickRow}
-                  onPress={() =>
-                    void run(async () => {
-                      await api.addOrderItem(Number(id), {
-                        product_id: p.id,
-                        quantity: Math.max(1, Number(qty) || 1),
-                      });
-                      setAddOpen(false);
-                      setQty('1');
-                    })
-                  }
-                >
-                  <AppText weight="semibold" style={{ flex: 1 }}>
-                    {p.name}
-                  </AppText>
-                  <AppText weight="bold" style={{ color: colors.teal600 }}>
-                    ${Number(p.price).toFixed(2)}
-                  </AppText>
-                </Pressable>
-              ))}
+              {products.map((p) => {
+                const out = isOutOfStock(p);
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={[styles.pickRow, out && { opacity: 0.45 }]}
+                    disabled={out || busy}
+                    onPress={() =>
+                      void run(async () => {
+                        await api.addOrderItem(Number(id), {
+                          product_id: p.id,
+                          quantity: Math.max(1, Number(qty) || 1),
+                          ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
+                        });
+                        setAddOpen(false);
+                        setQty('1');
+                        setItemObs('');
+                      })
+                    }
+                  >
+                    <AppText weight="semibold" style={{ flex: 1 }}>
+                      {p.name}
+                      {out ? ' (sin stock)' : ''}
+                    </AppText>
+                    <AppText weight="bold" style={{ color: colors.teal600 }}>
+                      ${Number(p.price).toFixed(2)}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
             <PrimaryButton title="Cerrar" variant="ghost" onPress={() => setAddOpen(false)} />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={replaceOpen} animationType="slide" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            <AppText weight="bold" style={styles.modalTitle}>
+              Reemplazar ítem
+            </AppText>
+            <Field
+              label="Cantidad"
+              value={qty}
+              onChangeText={setQty}
+              keyboardType="number-pad"
+            />
+            <Field
+              label="Observaciones"
+              value={itemObs}
+              onChangeText={setItemObs}
+              placeholder="Opcional"
+            />
+            <ScrollView style={{ maxHeight: 320 }}>
+              {products.map((p) => {
+                const out = isOutOfStock(p);
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={[styles.pickRow, out && { opacity: 0.45 }]}
+                    disabled={out || busy || replaceItemId == null}
+                    onPress={() =>
+                      void run(async () => {
+                        if (replaceItemId == null) return;
+                        await api.replaceOrderItem(Number(id), {
+                          order_item_id: replaceItemId,
+                          product_id: p.id,
+                          quantity: Math.max(1, Number(qty) || 1),
+                          ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
+                        });
+                        setReplaceOpen(false);
+                        setReplaceItemId(null);
+                      })
+                    }
+                  >
+                    <AppText weight="semibold" style={{ flex: 1 }}>
+                      {p.name}
+                      {out ? ' (sin stock)' : ''}
+                    </AppText>
+                    <AppText weight="bold" style={{ color: colors.teal600 }}>
+                      ${Number(p.price).toFixed(2)}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <PrimaryButton
+              title="Cerrar"
+              variant="ghost"
+              onPress={() => {
+                setReplaceOpen(false);
+                setReplaceItemId(null);
+              }}
+            />
           </View>
         </View>
       </Modal>
@@ -377,6 +547,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.gray100,
   },
+  itemActions: { gap: 8, alignItems: 'flex-end' },
   actions: { gap: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modalBg: {

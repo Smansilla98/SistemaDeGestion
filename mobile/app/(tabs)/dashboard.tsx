@@ -59,7 +59,7 @@ function ActionGrid({ actions }: { actions: QuickAction[] }) {
 }
 
 export default function DashboardScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -180,14 +180,6 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.body}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
       >
-        <View style={styles.topRow}>
-          <Pressable onPress={() => void logout()}>
-            <AppText weight="bold" style={styles.logout}>
-              Cerrar sesión
-            </AppText>
-          </Pressable>
-        </View>
-
         {queueSize > 0 ? (
           <Pressable
             style={styles.offlineBanner}
@@ -503,7 +495,7 @@ const styles = StyleSheet.create({
   },
   offlineText: { color: '#92400e', fontSize: 13, flex: 1 },
   err: { color: colors.danger, marginBottom: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  grid: { flexDirection: 'column', gap: 10 },
   section: {
     fontSize: 12,
     color: colors.gray500,

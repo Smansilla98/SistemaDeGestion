@@ -41,13 +41,16 @@ export default function CajaScreen() {
     sales_total: number;
     payments_count: number;
     expected_amount?: number;
+    open_sessions?: CashSessionRow[];
   } | null>(null);
   const [registers, setRegisters] = useState<Array<{ id: number; name: string }>>([]);
   const [registerId, setRegisterId] = useState<number | null>(null);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [sessions, setSessions] = useState<CashSessionRow[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [initial, setInitial] = useState('0');
   const [finalAmount, setFinalAmount] = useState('');
+  const [closeNotes, setCloseNotes] = useState('');
   const [payTableId, setPayTableId] = useState<number | null>(null);
   const [payLines, setPayLines] = useState<PayLine[]>([{ payment_method: 'EFECTIVO', amount: '' }]);
   const [error, setError] = useState<string | null>(null);
@@ -57,28 +60,36 @@ export default function CajaScreen() {
   const [movType, setMovType] = useState<'INGRESO' | 'EGRESO'>('INGRESO');
   const [movAmount, setMovAmount] = useState('');
   const [movDesc, setMovDesc] = useState('');
+  const [movRef, setMovRef] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const [s, r, t, sess] = await Promise.all([
-        api.cashSummary(),
+        api.cashSummary(activeSessionId ?? undefined),
         api.cashRegisters(),
         api.tables(),
         api.cashSessions().catch(() => [] as CashSessionRow[]),
       ]);
       setSummary(s);
       setRegisters(Array.isArray(r) ? r : []);
-      if (!registerId && r?.[0]) setRegisterId(r[0].id);
+      setRegisterId((prev) => prev ?? r?.[0]?.id ?? null);
       setTables((Array.isArray(t) ? t : []).filter((x) => x.status === 'OCUPADA'));
       setSessions(Array.isArray(sess) ? sess : []);
+      const open = s.open_sessions ?? [];
+      setActiveSessionId((prev) => {
+        if (prev && open.some((o) => o.id === prev)) return prev;
+        if (open[0]) return open[0].id;
+        const sid = (s.session as { id?: number } | null)?.id;
+        return typeof sid === 'number' ? sid : null;
+      });
       if (s.expected_amount != null) setFinalAmount(String(s.expected_amount));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error caja');
     } finally {
       setLoading(false);
     }
-  }, [registerId]);
+  }, [activeSessionId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -112,8 +123,10 @@ export default function CajaScreen() {
       return;
     }
     try {
-      await api.closeCash(value);
+      await api.closeCash(value, closeNotes.trim() || undefined, activeSessionId ?? undefined);
       setMsg('Caja cerrada');
+      setCloseNotes('');
+      setActiveSessionId(null);
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo cerrar');
@@ -150,16 +163,21 @@ export default function CajaScreen() {
         type: movType,
         amount,
         description: movDesc.trim(),
+        reference: movRef.trim() || undefined,
+        session_id: activeSessionId ?? undefined,
       });
       setMsg(`${movType} registrado`);
       setMovOpen(false);
       setMovAmount('');
       setMovDesc('');
+      setMovRef('');
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Movimiento falló');
     }
   };
+
+  const openSessions = summary?.open_sessions ?? [];
 
   if (loading) {
     return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
@@ -187,6 +205,21 @@ export default function CajaScreen() {
         <SectionLabel>Sesión actual</SectionLabel>
         {summary?.session ? (
           <Card>
+            {openSessions.length > 1 ? (
+              <>
+                <AppText weight="semibold">Sesiones abiertas</AppText>
+                <View style={styles.chips}>
+                  {openSessions.map((s) => (
+                    <Chip
+                      key={s.id}
+                      label={s.register ?? `#${s.id}`}
+                      selected={activeSessionId === s.id}
+                      onPress={() => setActiveSessionId(s.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
             <AppText weight="bold">Caja abierta</AppText>
             <AppText style={styles.meta}>
               {(summary.session as { cash_register?: { name?: string } }).cash_register?.name ??
@@ -204,6 +237,12 @@ export default function CajaScreen() {
                   keyboardType="decimal-pad"
                   value={finalAmount}
                   onChangeText={setFinalAmount}
+                />
+                <Field
+                  label="Notas de cierre (opcional)"
+                  value={closeNotes}
+                  onChangeText={setCloseNotes}
+                  placeholder="Observaciones al cerrar"
                 />
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
@@ -348,6 +387,12 @@ export default function CajaScreen() {
               value={movDesc}
               onChangeText={setMovDesc}
               placeholder="Ej. Retiro, propina, etc."
+            />
+            <Field
+              label="Referencia (opcional)"
+              value={movRef}
+              onChangeText={setMovRef}
+              placeholder="Ej. Recibo Nº 001"
             />
             <PrimaryButton title="Guardar" onPress={() => void saveMovement()} />
             <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setMovOpen(false)} />

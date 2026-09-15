@@ -8,9 +8,15 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import { downloadAndShare } from '../../src/api/download';
-import type { ProductsReport, SalesReport, StaffReport } from '../../src/api/types';
+import type {
+  CashSessionRow,
+  ProductsReport,
+  SalesReport,
+  StaffReport,
+} from '../../src/api/types';
 import { colors, space } from '../../src/theme';
 import {
   AppText,
@@ -23,7 +29,7 @@ import {
   SectionLabel,
 } from '../../src/ui/primitives';
 
-type Tab = 'ventas' | 'productos' | 'mozos';
+type Tab = 'ventas' | 'productos' | 'mozos' | 'caja';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -47,6 +53,7 @@ export default function AdminReportsScreen() {
   const [sales, setSales] = useState<SalesReport | null>(null);
   const [products, setProducts] = useState<ProductsReport | null>(null);
   const [staff, setStaff] = useState<StaffReport | null>(null);
+  const [sessions, setSessions] = useState<CashSessionRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -54,14 +61,16 @@ export default function AdminReportsScreen() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [s, p, st] = await Promise.all([
+      const [s, p, st, sess] = await Promise.all([
         api.reportsSales(from, to),
         api.reportsProducts(from, to),
         api.reportsStaff(from, to),
+        api.cashSessions().catch(() => [] as CashSessionRow[]),
       ]);
       setSales(s);
       setProducts(p);
       setStaff(st);
+      setSessions(Array.isArray(sess) ? sess : []);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error reportes');
     } finally {
@@ -104,17 +113,22 @@ export default function AdminReportsScreen() {
             onPress={() => setTab('productos')}
           />
           <Chip label="Mozos" selected={tab === 'mozos'} onPress={() => setTab('mozos')} />
+          <Chip label="Caja" selected={tab === 'caja'} onPress={() => setTab('caja')} />
         </View>
 
-        <Field label="Desde (YYYY-MM-DD)" value={from} onChangeText={setFrom} />
-        <Field label="Hasta (YYYY-MM-DD)" value={to} onChangeText={setTo} />
-        <PrimaryButton
-          title="Consultar"
-          onPress={() => {
-            setLoading(true);
-            void load();
-          }}
-        />
+        {tab !== 'caja' ? (
+          <>
+            <Field label="Desde (YYYY-MM-DD)" value={from} onChangeText={setFrom} />
+            <Field label="Hasta (YYYY-MM-DD)" value={to} onChangeText={setTo} />
+            <PrimaryButton
+              title="Consultar"
+              onPress={() => {
+                setLoading(true);
+                void load();
+              }}
+            />
+          </>
+        ) : null}
 
         {error ? (
           <AppText weight="medium" style={styles.err}>
@@ -238,6 +252,41 @@ export default function AdminReportsScreen() {
                 void exportFile(`/reports/staff/export?${qs(from, to)}`, 'mozos.xlsx')
               }
             />
+          </>
+        ) : null}
+
+        {!loading && tab === 'caja' ? (
+          <>
+            <SectionLabel>Sesiones de caja</SectionLabel>
+            {sessions.length === 0 ? (
+              <AppText style={styles.meta}>Sin sesiones recientes</AppText>
+            ) : (
+              sessions.slice(0, 20).map((s) => (
+                <Card key={s.id} style={{ marginBottom: 8 }}>
+                  <View style={styles.row}>
+                    <AppText weight="bold" style={{ flex: 1 }}>
+                      {s.register ?? `Sesión #${s.id}`}
+                    </AppText>
+                    <Badge label={s.status} />
+                  </View>
+                  <AppText style={styles.meta}>
+                    {s.user ? `${s.user} · ` : ''}
+                    Inicial ${Number(s.initial_amount ?? 0).toFixed(0)}
+                    {s.final_amount != null
+                      ? ` · Final $${Number(s.final_amount).toFixed(0)}`
+                      : ''}
+                  </AppText>
+                  {s.opened_at ? (
+                    <AppText style={styles.meta}>{String(s.opened_at).slice(0, 16)}</AppText>
+                  ) : null}
+                  <PrimaryButton
+                    title="Ver detalle"
+                    variant="ghost"
+                    onPress={() => router.push(`/cash/${s.id}` as Href)}
+                  />
+                </Card>
+              ))
+            )}
           </>
         ) : null}
       </ScrollView>

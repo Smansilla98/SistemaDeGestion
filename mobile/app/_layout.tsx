@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { homeHrefForRole } from '../src/auth/permissions';
 import { colors, font } from '../src/theme';
+import { AppTopbar } from '../src/ui/AppTopbar';
 import { useOutfitFonts } from '../src/ui/fonts';
 import { LinearGradientFallback } from '../src/ui/gradient';
 
@@ -63,6 +64,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function Shell({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const segments = useSegments();
+  const onLogin = segments[0] === 'login';
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.gray50 }}>
+      {user && !onLogin ? <AppTopbar /> : null}
+      <View style={{ flex: 1 }}>{children}</View>
+    </View>
+  );
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -70,35 +84,41 @@ export default function RootLayout() {
         <StatusBar barStyle="light-content" backgroundColor={colors.teal900} />
         <AuthProvider>
           <AuthGate>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                headerTitleStyle: { fontFamily: font.bold },
-                contentStyle: { backgroundColor: colors.gray50 },
-              }}
-            >
-              <Stack.Screen name="login" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="order/[id]" options={{ ...stackHeader, title: 'Pedido' }} />
-              <Stack.Screen name="table/[id]" options={{ ...stackHeader, title: 'Mesa' }} />
-              <Stack.Screen name="tables/map" />
-              <Stack.Screen name="cash/[id]" options={{ ...stackHeader, title: 'Sesión de caja' }} />
-              <Stack.Screen name="products/index" />
-              <Stack.Screen name="products/new" />
-              <Stack.Screen name="products/[id]" />
-              <Stack.Screen name="users/index" />
-              <Stack.Screen name="users/new" />
-              <Stack.Screen name="admin/index" />
-              <Stack.Screen name="admin/categories" />
-              <Stack.Screen name="admin/sectors" />
-              <Stack.Screen name="admin/discounts" />
-              <Stack.Screen name="admin/clients" />
-              <Stack.Screen name="admin/reports" />
-              <Stack.Screen name="admin/events" />
-              <Stack.Screen name="admin/recurring" />
-              <Stack.Screen name="admin/expenses" />
-              <Stack.Screen name="admin/notifications" />
-            </Stack>
+            <Shell>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  headerTitleStyle: { fontFamily: font.bold },
+                  contentStyle: { backgroundColor: colors.gray50 },
+                }}
+              >
+                <Stack.Screen name="login" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="order/[id]" options={{ ...stackHeader, title: 'Pedido' }} />
+                <Stack.Screen name="table/[id]" options={{ ...stackHeader, title: 'Mesa' }} />
+                <Stack.Screen name="tables/map" />
+                <Stack.Screen name="tables/edit" />
+                <Stack.Screen name="tables/reserve" />
+                <Stack.Screen name="cash/[id]" options={{ ...stackHeader, title: 'Sesión de caja' }} />
+                <Stack.Screen name="products/index" />
+                <Stack.Screen name="products/new" />
+                <Stack.Screen name="products/[id]" />
+                <Stack.Screen name="users/index" />
+                <Stack.Screen name="users/new" />
+                <Stack.Screen name="users/[id]" />
+                <Stack.Screen name="admin/index" />
+                <Stack.Screen name="admin/categories" />
+                <Stack.Screen name="admin/sectors" />
+                <Stack.Screen name="admin/discounts" />
+                <Stack.Screen name="admin/clients" />
+                <Stack.Screen name="admin/reports" />
+                <Stack.Screen name="admin/events" />
+                <Stack.Screen name="admin/recurring" />
+                <Stack.Screen name="admin/expenses" />
+                <Stack.Screen name="admin/notifications" />
+                <Stack.Screen name="admin/permissions" />
+              </Stack>
+            </Shell>
           </AuthGate>
         </AuthProvider>
       </SafeAreaProvider>
