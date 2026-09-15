@@ -18,17 +18,13 @@
 
 ## EAS_PROJECT_ID (obligatorio para prod)
 
-1. En `mobile/`: `npx eas-cli login` y `npx eas init`
-2. Copiar el `projectId` generado a `.env` / secrets:
-   ```bash
-   eas secret:create --name EAS_PROJECT_ID --value <uuid-del-proyecto>
-   ```
-3. También setear la API de producción:
-   ```bash
-   eas secret:create --name EXPO_PUBLIC_API_URL --value https://conurbaniabar.up.railway.app/api
-   ```
-4. `app.config.ts` lee `EAS_PROJECT_ID` (hay fallback UUID solo para no romper builds locales; **no** usar el fallback en store).
-5. Opcional: campo `owner` en `app.config.ts` si el proyecto pertenece a una org Expo.
+Proyecto: [@smansilla/conurbania](https://expo.dev/accounts/smansilla/projects/conurbania)  
+ID: `8079310e-3205-4c1e-88d3-22964fb97c60` (en `app.config.ts` + `mobile/.env`).
+
+Si hay que recrear:
+1. Quitar `extra.eas.projectId` (o el UUID `0000…`) de la config
+2. `npx eas-cli init --account smansilla --force`
+3. `eas env:create --name EAS_PROJECT_ID --value <uuid> --environment production`
 
 ## Push (FCM / APNs)
 

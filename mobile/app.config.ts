@@ -11,12 +11,12 @@ const apiUrls: Record<string, string> = {
 };
 
 /**
- * EAS_PROJECT_ID: setear con `eas init` y/o secret EAS.
- * El fallback UUID evita crashear builds locales; en producción EAS debe inyectar el real.
- * Ver docs/STORE_CHECKLIST.md.
+ * Project ID real de @smansilla/conurbania (eas init).
+ * Override con EAS_PROJECT_ID en .env / EAS secrets si hace falta.
  */
 const easProjectId =
-  process.env.EAS_PROJECT_ID ?? '00000000-0000-0000-0000-000000000000';
+  (process.env.EAS_PROJECT_ID ?? '').trim() ||
+  '8079310e-3205-4c1e-88d3-22964fb97c60';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -27,12 +27,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'conurbania',
   userInterfaceStyle: 'light',
   icon: './assets/icon.png',
-  // owner: 'tu-cuenta-expo', // opcional: setear si el proyecto EAS tiene owner
+  owner: 'smansilla',
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.conurbania.app',
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
+      ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {

@@ -11,7 +11,9 @@
         "simulator": false
       },
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
     },
     "preview": {
@@ -23,7 +25,9 @@
         "simulator": false
       },
       "env": {
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
     },
     "production": {
@@ -36,7 +40,9 @@
       },
       "env": {
         "APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       },
       "autoIncrement": true
     },
@@ -50,7 +56,9 @@
       },
       "env": {
         "APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://conurbaniabar.up.railway.app/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
     }
   },
