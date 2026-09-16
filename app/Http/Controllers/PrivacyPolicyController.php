@@ -31,7 +31,7 @@ class PrivacyPolicyController extends Controller
             'appName' => 'Conurbania',
             'packageName' => 'com.conurbania.app',
             'developerName' => 'Santi Mansilla',
-            'contactEmail' => 'santeemansilla@gmail.com',
+            'contactEmail' => 'samansilla.998@gmail.com',
             'effectiveDate' => '16 de septiembre de 2026',
             'lastUpdated' => '16 de septiembre de 2026',
             'webUrl' => rtrim((string) config('app.url'), '/').'/privacidad',
