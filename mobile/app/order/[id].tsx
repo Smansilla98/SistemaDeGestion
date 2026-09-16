@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -13,17 +12,22 @@ import { api, ApiError } from '../../src/api/client';
 import type { DiscountTypeRow, OrderRow, ProductRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeAdminHub, hasPermission, isAdminRole } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
+import { fx } from '../../src/theme';
 import {
   AppText,
-  Badge,
-  Card,
   Chip,
   Field,
-  PageHeader,
   PrimaryButton,
-  SectionLabel,
 } from '../../src/ui/primitives';
+import {
+  FadeIn,
+  FxHeader,
+  HeroMetric,
+  OrderSkeleton,
+  StatusDot,
+  Surface,
+  SwipeAction,
+} from '../../src/ui/fintech';
 
 const STATUS_FLOW = [
   'ABIERTO',
@@ -155,19 +159,24 @@ export default function OrderDetailScreen() {
     }
   };
 
-  if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
+  if (loading && !order) {
+    return (
+      <View style={styles.root}>
+        <FxHeader title="Pedido" onBack={() => router.back()} />
+        <OrderSkeleton />
+      </View>
+    );
   }
 
   return (
     <View style={styles.root}>
-      <PageHeader
+      <FxHeader
         title={order?.number ?? 'Pedido'}
-        subtitle={order ? `Estado · ${order.status}` : 'Detalle'}
-        icon="receipt"
+        subtitle="Detalle"
+        onBack={() => router.back()}
+        right={order ? <StatusDot status={order.status} /> : null}
       />
-      <ScrollView contentContainerStyle={styles.body}>
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         {error ? (
           <AppText weight="medium" style={styles.err}>
             {error}
@@ -175,47 +184,60 @@ export default function OrderDetailScreen() {
         ) : null}
 
         {order ? (
-          <>
-            <Card style={{ marginTop: 12 }}>
-              <View style={styles.rowBetween}>
-                <Badge label={order.status} />
-                <AppText weight="bold" style={styles.total}>
-                  ${Number(order.total ?? 0).toFixed(2)}
-                </AppText>
-              </View>
-              {Number(order.discount ?? 0) > 0 ? (
-                <AppText style={styles.meta}>
-                  Subtotal ${Number(order.subtotal ?? 0).toFixed(2)} · Desc. $
-                  {Number(order.discount).toFixed(2)}
-                </AppText>
-              ) : null}
+          <FadeIn>
+            <Surface style={styles.hero}>
+              <HeroMetric
+                label="Total"
+                value={`$${Number(order.total ?? 0).toFixed(2)}`}
+                hint={
+                  Number(order.discount ?? 0) > 0
+                    ? `Subtotal $${Number(order.subtotal ?? 0).toFixed(2)} · Desc. $${Number(order.discount).toFixed(2)}`
+                    : `${(order.items ?? []).length} ítem(s)`
+                }
+                mono
+              />
+            </Surface>
 
-              <SectionLabel>Ítems</SectionLabel>
-              {(order.items ?? []).map((it) => (
-                <View key={it.id} style={styles.item}>
-                  <View style={{ flex: 1 }}>
-                    <AppText weight="semibold">
-                      {it.quantity}× {itemLabel(it)}
-                    </AppText>
-                    {it.observations ? (
-                      <AppText style={styles.meta}>Obs: {it.observations}</AppText>
-                    ) : null}
-                    {it.unit_price != null ? (
-                      <AppText style={styles.meta}>
-                        ${Number(it.unit_price).toFixed(2)} c/u
+            <AppText weight="semibold" style={styles.section}>
+              Ítems
+            </AppText>
+            {(order.items ?? []).map((it) => {
+              const line = (
+                <Surface style={styles.itemCard} padded>
+                  <View style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <AppText weight="semibold" style={styles.itemTitle}>
+                        {it.quantity}× {itemLabel(it)}
                       </AppText>
-                    ) : null}
-                  </View>
-                  {it.status ? <Badge label={it.status} /> : null}
-                  {canWrite && !locked ? (
-                    <View style={styles.itemActions}>
-                      <Pressable onPress={() => void openReplace(it.id)}>
-                        <AppText weight="bold" style={{ color: colors.teal600, fontSize: 12 }}>
-                          Cambiar
+                      {it.observations ? (
+                        <AppText style={styles.meta}>Obs: {it.observations}</AppText>
+                      ) : null}
+                      {it.unit_price != null ? (
+                        <AppText style={styles.meta}>
+                          ${Number(it.unit_price).toFixed(2)} c/u
                         </AppText>
-                      </Pressable>
-                      <Pressable
-                        onPress={() =>
+                      ) : null}
+                    </View>
+                    {it.status ? <StatusDot status={it.status} size="sm" /> : null}
+                  </View>
+                </Surface>
+              );
+
+              if (!canWrite || locked) return <View key={it.id}>{line}</View>;
+
+              return (
+                <View key={it.id} style={{ marginBottom: 8 }}>
+                  <SwipeAction
+                    rightActions={[
+                      {
+                        label: 'Cambiar',
+                        tone: 'brand',
+                        onPress: () => void openReplace(it.id),
+                      },
+                      {
+                        label: 'Quitar',
+                        tone: 'danger',
+                        onPress: () =>
                           Alert.alert('Quitar ítem', `¿Eliminar ${itemLabel(it)}?`, [
                             { text: 'Cancelar', style: 'cancel' },
                             {
@@ -226,25 +248,24 @@ export default function OrderDetailScreen() {
                                   await api.removeOrderItems(order.id, [it.id]);
                                 }),
                             },
-                          ])
-                        }
-                      >
-                        <AppText weight="bold" style={{ color: colors.danger, fontSize: 12 }}>
-                          Quitar
-                        </AppText>
-                      </Pressable>
-                    </View>
-                  ) : null}
+                          ]),
+                      },
+                    ]}
+                  >
+                    {line}
+                  </SwipeAction>
                 </View>
-              ))}
-              {(order.items ?? []).length === 0 ? (
-                <AppText style={styles.meta}>Sin ítems</AppText>
-              ) : null}
-            </Card>
+              );
+            })}
+            {(order.items ?? []).length === 0 ? (
+              <AppText style={styles.meta}>Sin ítems</AppText>
+            ) : null}
 
             {canWrite && !locked ? (
               <>
-                <SectionLabel>Acciones</SectionLabel>
+                <AppText weight="semibold" style={styles.section}>
+                  Acciones
+                </AppText>
                 <View style={styles.actions}>
                   <PrimaryButton title="Agregar producto" icon="add" onPress={() => void openAdd()} />
                   {order.status === 'ABIERTO' ? (
@@ -330,7 +351,9 @@ export default function OrderDetailScreen() {
                   ) : null}
                 </View>
 
-                <SectionLabel>Cambiar estado</SectionLabel>
+                <AppText weight="semibold" style={styles.section}>
+                  Estado
+                </AppText>
                 <View style={styles.chips}>
                   {STATUS_FLOW.map((s) => (
                     <Chip
@@ -346,31 +369,35 @@ export default function OrderDetailScreen() {
                   ))}
                 </View>
 
-                <SectionLabel>Notas</SectionLabel>
-                <Field
-                  label="Observaciones"
-                  value={notes}
-                  onChangeText={setNotes}
-                  placeholder="Notas del pedido"
-                  multiline
-                />
-                <PrimaryButton
-                  title="Guardar notas"
-                  variant="ghost"
-                  loading={busy}
-                  onPress={() =>
-                    void run(async () => {
-                      await api.updateOrder(order.id, { observations: notes });
-                    })
-                  }
-                />
+                <AppText weight="semibold" style={styles.section}>
+                  Notas
+                </AppText>
+                <Surface>
+                  <Field
+                    label="Observaciones"
+                    value={notes}
+                    onChangeText={setNotes}
+                    placeholder="Notas del pedido"
+                    multiline
+                  />
+                  <PrimaryButton
+                    title="Guardar notas"
+                    variant="ghost"
+                    loading={busy}
+                    onPress={() =>
+                      void run(async () => {
+                        await api.updateOrder(order.id, { observations: notes });
+                      })
+                    }
+                  />
+                </Surface>
               </>
             ) : null}
-          </>
+          </FadeIn>
         ) : null}
       </ScrollView>
 
-      <Modal visible={addOpen} animationType="slide" transparent>
+      <Modal visible={addOpen} animationType="fade" transparent>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
             <AppText weight="bold" style={styles.modalTitle}>
@@ -409,11 +436,11 @@ export default function OrderDetailScreen() {
                       })
                     }
                   >
-                    <AppText weight="semibold" style={{ flex: 1 }}>
+                    <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
                       {p.name}
                       {out ? ' (sin stock)' : ''}
                     </AppText>
-                    <AppText weight="bold" style={{ color: colors.teal600 }}>
+                    <AppText weight="bold" style={{ color: fx.brand }}>
                       ${Number(p.price).toFixed(2)}
                     </AppText>
                   </Pressable>
@@ -425,7 +452,7 @@ export default function OrderDetailScreen() {
         </View>
       </Modal>
 
-      <Modal visible={replaceOpen} animationType="slide" transparent>
+      <Modal visible={replaceOpen} animationType="fade" transparent>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
             <AppText weight="bold" style={styles.modalTitle}>
@@ -465,11 +492,11 @@ export default function OrderDetailScreen() {
                       })
                     }
                   >
-                    <AppText weight="semibold" style={{ flex: 1 }}>
+                    <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
                       {p.name}
                       {out ? ' (sin stock)' : ''}
                     </AppText>
-                    <AppText weight="bold" style={{ color: colors.teal600 }}>
+                    <AppText weight="bold" style={{ color: fx.brand }}>
                       ${Number(p.price).toFixed(2)}
                     </AppText>
                   </Pressable>
@@ -488,7 +515,7 @@ export default function OrderDetailScreen() {
         </View>
       </Modal>
 
-      <Modal visible={discountOpen} animationType="slide" transparent>
+      <Modal visible={discountOpen} animationType="fade" transparent>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
             <AppText weight="bold" style={styles.modalTitle}>
@@ -504,7 +531,9 @@ export default function OrderDetailScreen() {
                   })
                 }
               >
-                <AppText weight="semibold">Quitar descuento</AppText>
+                <AppText weight="semibold" style={{ color: fx.ink }}>
+                  Quitar descuento
+                </AppText>
               </Pressable>
               {discounts.map((d) => (
                 <Pressable
@@ -517,7 +546,7 @@ export default function OrderDetailScreen() {
                     })
                   }
                 >
-                  <AppText weight="semibold" style={{ flex: 1 }}>
+                  <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
                     {d.name}
                   </AppText>
                   <AppText weight="bold">{Number(d.percentage)}%</AppText>
@@ -533,43 +562,42 @@ export default function OrderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, paddingBottom: 48, gap: 4 },
-  err: { color: colors.danger, marginTop: 8 },
-  total: { fontSize: 22, color: colors.teal600 },
-  meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray100,
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: { paddingHorizontal: fx.space.md, paddingBottom: 48, gap: 4 },
+  err: { color: fx.danger, marginBottom: 8 },
+  hero: { paddingVertical: fx.space.lg, marginBottom: fx.space.sm },
+  section: {
+    marginTop: fx.space.md,
+    marginBottom: fx.space.sm,
+    fontSize: fx.type.caption,
+    color: fx.inkMuted,
   },
-  itemActions: { gap: 8, alignItems: 'flex-end' },
+  itemCard: { marginBottom: 0 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  itemTitle: { fontSize: 15, color: fx.ink },
+  meta: { color: fx.inkFaint, fontSize: 12, marginTop: 4 },
   actions: { gap: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(3,26,22,0.35)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
+    backgroundColor: fx.surface,
+    borderTopLeftRadius: fx.radius.lg,
+    borderTopRightRadius: fx.radius.lg,
+    padding: fx.space.lg,
     maxHeight: '80%',
     gap: 8,
   },
-  modalTitle: { fontSize: 18, marginBottom: 4 },
+  modalTitle: { fontSize: 18, marginBottom: 4, color: fx.ink },
   pickRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: fx.hairline,
     gap: 8,
   },
 });

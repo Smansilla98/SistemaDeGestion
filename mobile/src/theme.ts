@@ -94,3 +94,71 @@ export function statusTone(status: string): { fg: string; bg: string } {
   if (['AJUSTE'].includes(s)) return { fg: '#1e40af', bg: colors.blueBg };
   return { fg: colors.gray700, bg: colors.gray100 };
 }
+
+/**
+ * Prototipo UX fintech (MercadoPago/Prex-inspired).
+ * Convive con tokens web-parity de arriba — no los reemplaza.
+ * Marca = teal500; neutros + un acento de estado (punto, no relleno).
+ */
+export const fx = {
+  brand: colors.teal500,
+  brandSoft: colors.teal50,
+  brandInk: colors.teal800,
+  canvas: '#F2F5F4',
+  surface: colors.white,
+  ink: colors.gray900,
+  inkMuted: colors.gray500,
+  inkFaint: colors.gray400,
+  hairline: 'rgba(19, 26, 24, 0.06)',
+  success: colors.green,
+  warning: colors.amber,
+  danger: colors.danger,
+  space: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  radius: {
+    sm: 10,
+    md: 16,
+    lg: 20,
+    pill: 999,
+  },
+  type: {
+    hero: 36,
+    title: 22,
+    body: 15,
+    caption: 12,
+    micro: 11,
+  },
+  shadow: {
+    color: '#031a16',
+    opacity: 0.06,
+    radius: 12,
+    offset: { width: 0, height: 4 } as const,
+    elevation: 2,
+  },
+  motion: {
+    /** ms — micro-interacciones cortas */
+    fast: 160,
+    in: 220,
+  },
+} as const;
+
+/** Estado como punto + label (sin badges de color saturados). */
+export function statusDot(status: string): { color: string; label: string } {
+  const s = status.toUpperCase();
+  const label = s.replace(/_/g, ' ');
+  if (['LIBRE', 'LISTO', 'ENTREGADO', 'CERRADO', 'OK', 'ABIERTA'].includes(s)) {
+    return { color: fx.success, label };
+  }
+  if (['OCUPADA', 'ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'RESERVADA', 'BAJO'].includes(s)) {
+    return { color: fx.warning, label };
+  }
+  if (['ANULADO', 'CANCELADO'].includes(s)) {
+    return { color: fx.danger, label };
+  }
+  return { color: fx.inkFaint, label };
+}

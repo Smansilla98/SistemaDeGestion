@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,17 +14,16 @@ import type { DashboardPayload } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
 import { flushOfflineQueue, getQueueSize } from '../../src/offline/queue';
-import { colors, radius, space } from '../../src/theme';
+import { fx } from '../../src/theme';
+import { AppText, PrimaryButton } from '../../src/ui/primitives';
 import {
-  Amount,
-  AppText,
-  Badge,
-  Card,
-  PageHeader,
-  PrimaryButton,
-  SectionLabel,
-  StatTile,
-} from '../../src/ui/primitives';
+  DashboardSkeleton,
+  FadeIn,
+  FxHeader,
+  HeroMetric,
+  StatusDot,
+  Surface,
+} from '../../src/ui/fintech';
 
 type QuickAction = {
   key: string;
@@ -33,24 +31,23 @@ type QuickAction = {
   icon: keyof typeof Ionicons.glyphMap;
   href: Href;
   show: boolean;
-  variant?: 'primary' | 'ghost' | 'amber';
 };
 
-function ActionGrid({ actions }: { actions: QuickAction[] }) {
+function ActionRow({ actions }: { actions: QuickAction[] }) {
   const router = useRouter();
-  const visible = actions.filter((a) => a.show);
+  const visible = actions.filter((a) => a.show).slice(0, 6);
   return (
-    <View style={styles.actionGrid}>
+    <View style={styles.actionRow}>
       {visible.map((a) => (
         <Pressable
           key={a.key}
-          style={styles.actionBtn}
+          style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
           onPress={() => router.push(a.href)}
         >
           <View style={styles.actionIcon}>
-            <Ionicons name={a.icon} size={20} color={colors.teal500} />
+            <Ionicons name={a.icon} size={18} color={fx.brand} />
           </View>
-          <AppText weight="semibold" style={styles.actionLabel} numberOfLines={2}>
+          <AppText weight="medium" style={styles.actionLabel} numberOfLines={1}>
             {a.title}
           </AppText>
         </Pressable>
@@ -101,85 +98,66 @@ export default function DashboardScreen() {
     {
       key: 'admin',
       title: 'Admin',
-      icon: 'settings',
+      icon: 'settings-outline',
       href: '/admin' as Href,
       show: canSeeAdminHub(user),
     },
     {
-      key: 'product-new',
-      title: 'Nuevo producto',
-      icon: 'add-circle',
-      href: '/products/new' as Href,
-      show: isAdmin || isSuper,
-    },
-    {
       key: 'products',
       title: 'Productos',
-      icon: 'pricetags',
+      icon: 'pricetag-outline',
       href: '/products' as Href,
       show: hasPermission(user, 'products.read') && isManagerLayer,
     },
     {
       key: 'stock',
-      title: 'Ver stock',
-      icon: 'cube',
+      title: 'Stock',
+      icon: 'cube-outline',
       href: '/(tabs)/stock' as Href,
       show: hasPermission(user, 'stock.read'),
     },
     {
       key: 'cash',
-      title: 'Gestionar cajas',
-      icon: 'cash',
+      title: 'Caja',
+      icon: 'wallet-outline',
       href: '/(tabs)/caja' as Href,
       show: hasPermission(user, 'cash.read'),
     },
     {
-      key: 'users',
-      title: 'Usuarios',
-      icon: 'people',
-      href: '/users' as Href,
-      show: hasPermission(user, 'users.read'),
-    },
-    {
       key: 'mesas',
       title: 'Mesas',
-      icon: 'grid',
+      icon: 'grid-outline',
       href: '/(tabs)/mesas' as Href,
       show: hasPermission(user, 'tables.read'),
     },
     {
-      key: 'pedidos',
-      title: 'Pedidos',
-      icon: 'receipt',
-      href: '/(tabs)/pedidos' as Href,
-      show: hasPermission(user, 'orders.read'),
-    },
-    {
-      key: 'cocina',
-      title: 'Cocina',
-      icon: 'flame',
-      href: '/(tabs)/cocina' as Href,
-      show: hasPermission(user, 'kitchen.read'),
-    },
-    {
       key: 'pedido',
-      title: 'Nuevo pedido',
-      icon: 'cart',
+      title: 'Nuevo',
+      icon: 'add-outline',
       href: '/(tabs)/pedido' as Href,
       show: hasPermission(user, 'orders.write'),
     },
   ];
 
+  const heroValue = isManagerLayer
+    ? `$${Number(mgmt?.ventas_hoy ?? 0).toFixed(0)}`
+    : `$${Number(ops?.ventas_sesion ?? 0).toFixed(0)}`;
+  const heroHint = isManagerLayer
+    ? mgmt?.tiene_sesion_abierta
+      ? `Sesión · $${Number(mgmt.ventas_sesion).toFixed(0)}`
+      : `${insights?.today_orders ?? 0} pedidos hoy`
+    : 'Ventas de la sesión';
+
   return (
     <View style={styles.root}>
-      <PageHeader
-        title="Conurbania"
+      <FxHeader
+        title="Hola"
         subtitle={`${user?.name ?? ''} · ${user?.role ?? ''}`}
-        bi="house-door"
       />
       <ScrollView
         contentContainerStyle={styles.body}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
+        showsVerticalScrollIndicator={false}
       >
         {queueSize > 0 ? (
           <Pressable
@@ -191,285 +169,196 @@ export default function DashboardScreen() {
               })();
             }}
           >
-            <Ionicons name="cloud-offline-outline" size={16} color="#92400e" />
+            <Ionicons name="cloud-offline-outline" size={16} color={fx.warning} />
             <AppText weight="medium" style={styles.offlineText}>
-              {queueSize} acción{queueSize === 1 ? '' : 'es'} pendiente
-              {queueSize === 1 ? '' : 's'} sin conexión · Tocá para reintentar
+              {queueSize} pendiente{queueSize === 1 ? '' : 's'} · Reintentar
             </AppText>
           </Pressable>
         ) : null}
 
-        {error && (
+        {error ? (
           <AppText weight="medium" style={styles.err}>
             {error}
           </AppText>
-        )}
-        {loading && <ActivityIndicator color={colors.teal500} />}
+        ) : null}
 
-        {/* ADMIN / SUPERADMIN: cards como PWA mobile */}
-        {isManagerLayer && mgmt && (
-          <>
-            <Pressable onPress={() => router.push('/(tabs)/stock' as Href)}>
-              <Card
-                style={[
-                  styles.wideCard,
-                  mgmt.low_stock_products > 0 ? styles.cardAmber : styles.cardTeal,
-                ]}
-              >
-                <AppText weight="semibold" style={styles.cardLabel}>
-                  Stock bajo
-                </AppText>
-                <AppText weight="bold" style={styles.cardValue}>
-                  {mgmt.low_stock_products}{' '}
-                  <AppText weight="medium" style={styles.cardSmall}>
-                    / {mgmt.stock_ok_products} ok
-                  </AppText>
-                </AppText>
-                <AppText style={styles.cardSub}>
-                  {mgmt.low_stock_products > 0
-                    ? 'Hay productos por debajo del mínimo'
-                    : 'Sin alertas de stock bajo'}
-                </AppText>
-              </Card>
-            </Pressable>
-
-            <Pressable onPress={() => router.push('/(tabs)/caja' as Href)}>
-              <Card style={[styles.wideCard, styles.cardTeal]}>
-                <AppText weight="semibold" style={styles.cardLabel}>
-                  Cajas abiertas ahora
-                </AppText>
-                <AppText weight="bold" style={styles.cardValue}>
-                  {mgmt.open_cash_sessions}
-                </AppText>
-                <AppText style={styles.cardSub}>
-                  {(mgmt.open_cash_session_labels ?? []).length
-                    ? (mgmt.open_cash_session_labels ?? []).join(' · ')
-                    : 'Ninguna sesión abierta'}
-                </AppText>
-              </Card>
-            </Pressable>
-
-            <Card style={[styles.wideCard, styles.cardTeal]}>
-              <AppText weight="semibold" style={styles.cardLabel}>
-                Ventas del día
-              </AppText>
-              <Amount value={mgmt.ventas_hoy} style={styles.cardValueLg} />
-              <AppText style={styles.cardSub}>
-                {mgmt.tiene_sesion_abierta
-                  ? `Sesión: $${Number(mgmt.ventas_sesion).toFixed(0)}`
-                  : `${insights?.today_orders ?? 0} pedidos hoy`}
-              </AppText>
-            </Card>
-
-            <SectionLabel>Acciones rápidas</SectionLabel>
-            <ActionGrid actions={adminActions} />
-          </>
-        )}
-
-        {/* Operativo siempre visible debajo / o solo si no manager */}
-        {ops && !isManagerLayer && (
-          <View style={styles.grid}>
-            <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} bi="table" />
-            <StatTile label="Mesas ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} bi="people" />
-            <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} bi="receipt" />
-            <StatTile
-              label="Ventas sesión"
-              value={`$${Number(ops.ventas_sesion).toFixed(0)}`}
-              bi="cash-coin"
-              mono
-            />
-          </View>
-        )}
-
-        {ops && isManagerLayer && (
-          <>
-            <SectionLabel>Operación en vivo</SectionLabel>
-            <View style={styles.grid}>
-              <StatTile label="Mesas libres" value={ops.mesas_libres} accent={colors.green} bi="table" />
-              <StatTile label="Ocupadas" value={ops.mesas_ocupadas} accent={colors.amber} bi="people" />
-              <StatTile label="Pedidos activos" value={ops.pedidos_pendientes} bi="receipt" />
-              <StatTile
-                label="Pedidos hoy"
-                value={insights?.today_orders ?? 0}
-                bi="calendar"
+        {loading && !data ? (
+          <DashboardSkeleton />
+        ) : (
+          <FadeIn>
+            <Surface style={styles.heroCard}>
+              <HeroMetric
+                label={isManagerLayer ? 'Ventas del día' : 'Ventas sesión'}
+                value={heroValue}
+                hint={heroHint}
+                mono
               />
-            </View>
-          </>
-        )}
+            </Surface>
 
-        {insights && isManagerLayer && (
-          <>
-            {(insights.recent_orders?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <View style={styles.rowBetween}>
-                  <AppText weight="bold" style={styles.section}>
+            {ops ? (
+              <View style={styles.metricsRow}>
+                <Surface style={styles.metricHalf}>
+                  <HeroMetric
+                    label="Libres"
+                    value={ops.mesas_libres}
+                    hint="Mesas"
+                    style={{ fontSize: 28, lineHeight: 32 }}
+                  />
+                </Surface>
+                <Surface style={styles.metricHalf}>
+                  <HeroMetric
+                    label="Ocupadas"
+                    value={ops.mesas_ocupadas}
+                    hint="En salón"
+                    style={{ fontSize: 28, lineHeight: 32 }}
+                  />
+                </Surface>
+              </View>
+            ) : null}
+
+            {ops ? (
+              <Surface>
+                <View style={styles.inlineStat}>
+                  <AppText style={styles.inlineLabel}>Pedidos activos</AppText>
+                  <AppText weight="bold" style={styles.inlineValue}>
+                    {ops.pedidos_pendientes}
+                  </AppText>
+                </View>
+                {isManagerLayer && mgmt ? (
+                  <View style={[styles.inlineStat, styles.inlineBorder]}>
+                    <AppText style={styles.inlineLabel}>Stock bajo</AppText>
+                    <AppText weight="bold" style={styles.inlineValue}>
+                      {mgmt.low_stock_products}
+                      <AppText style={styles.inlineMuted}>
+                        {' '}
+                        / {mgmt.stock_ok_products} ok
+                      </AppText>
+                    </AppText>
+                  </View>
+                ) : null}
+                {isManagerLayer && mgmt ? (
+                  <View style={[styles.inlineStat, styles.inlineBorder]}>
+                    <AppText style={styles.inlineLabel}>Cajas abiertas</AppText>
+                    <AppText weight="bold" style={styles.inlineValue}>
+                      {mgmt.open_cash_sessions}
+                    </AppText>
+                  </View>
+                ) : null}
+              </Surface>
+            ) : null}
+
+            {(isManagerLayer || !isManagerLayer) && (
+              <>
+                <AppText weight="semibold" style={styles.section}>
+                  Accesos
+                </AppText>
+                <ActionRow
+                  actions={
+                    isManagerLayer
+                      ? adminActions
+                      : [
+                          {
+                            key: 'mesas',
+                            title: 'Mesas',
+                            icon: 'grid-outline',
+                            href: '/(tabs)/mesas' as Href,
+                            show: hasPermission(user, 'tables.read'),
+                          },
+                          {
+                            key: 'stock',
+                            title: 'Stock',
+                            icon: 'cube-outline',
+                            href: '/(tabs)/stock' as Href,
+                            show: hasPermission(user, 'stock.read'),
+                          },
+                          {
+                            key: 'cash',
+                            title: 'Caja',
+                            icon: 'wallet-outline',
+                            href: '/(tabs)/caja' as Href,
+                            show: hasPermission(user, 'cash.read'),
+                          },
+                          {
+                            key: 'pedido',
+                            title: 'Nuevo',
+                            icon: 'add-outline',
+                            href: '/(tabs)/pedido' as Href,
+                            show: hasPermission(user, 'orders.write'),
+                          },
+                        ]
+                  }
+                />
+              </>
+            )}
+
+            {insights && isManagerLayer && (insights.recent_orders?.length ?? 0) > 0 ? (
+              <Surface padded={false} style={{ marginTop: fx.space.sm }}>
+                <View style={styles.listHead}>
+                  <AppText weight="semibold" style={styles.sectionIn}>
                     Pedidos recientes
                   </AppText>
                   <Pressable onPress={() => router.push('/(tabs)/pedidos' as Href)}>
-                    <AppText weight="semibold" style={{ color: colors.teal600 }}>
+                    <AppText weight="medium" style={styles.link}>
                       Ver todos
                     </AppText>
                   </Pressable>
                 </View>
-                {insights.recent_orders.slice(0, 5).map((o) => (
+                {insights.recent_orders.slice(0, 5).map((o, idx) => (
                   <Pressable
                     key={o.id}
-                    style={styles.listRow}
+                    style={[styles.listRow, idx > 0 && styles.listHairline]}
                     onPress={() => router.push(`/order/${o.id}` as Href)}
                   >
                     <View style={{ flex: 1 }}>
-                      <AppText weight="semibold">{o.number}</AppText>
+                      <AppText weight="semibold" style={styles.listTitle}>
+                        {o.number}
+                      </AppText>
                       <AppText style={styles.meta}>
-                        Mesa {o.table ?? '—'} · {o.waiter ?? ''}
+                        Mesa {o.table ?? '—'}
+                        {o.waiter ? ` · ${o.waiter}` : ''}
                       </AppText>
                     </View>
-                    <Badge label={o.status} />
+                    <StatusDot status={o.status} size="sm" />
                   </Pressable>
                 ))}
-              </Card>
-            )}
+              </Surface>
+            ) : null}
 
-            {(insights.active_tables?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <View style={styles.rowBetween}>
-                  <AppText weight="bold" style={styles.section}>
-                    Mesas activas
+            {insights && isManagerLayer && (insights.sales_by_waiter?.length ?? 0) > 0 ? (
+              <Surface padded={false}>
+                <View style={styles.listHead}>
+                  <AppText weight="semibold" style={styles.sectionIn}>
+                    Ventas por mozo
                   </AppText>
-                  <Pressable onPress={() => router.push('/(tabs)/mesas' as Href)}>
-                    <AppText weight="semibold" style={{ color: colors.teal600 }}>
-                      Ver todas
-                    </AppText>
-                  </Pressable>
                 </View>
-                <View style={styles.chipWrap}>
-                  {insights.active_tables.map((t) => (
-                    <View key={t.id} style={styles.tableChip}>
-                      <AppText weight="bold">{t.number}</AppText>
-                      {t.waiter ? (
-                        <AppText style={styles.meta} numberOfLines={1}>
-                          {t.waiter}
-                        </AppText>
-                      ) : null}
-                    </View>
-                  ))}
-                </View>
-              </Card>
-            )}
-
-            {(insights.top_products?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <AppText weight="bold" style={styles.section}>
-                  Top productos hoy
-                </AppText>
-                {insights.top_products.map((p) => (
-                  <View key={p.name} style={styles.listRow}>
-                    <AppText weight="medium" style={{ flex: 1 }}>
-                      {p.name}
-                    </AppText>
-                    <AppText weight="bold" style={{ color: colors.teal600 }}>
-                      ×{p.total_quantity}
-                    </AppText>
-                  </View>
-                ))}
-              </Card>
-            )}
-
-            {(insights.sales_by_waiter?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <AppText weight="bold" style={styles.section}>
-                  Ventas por mozo
-                </AppText>
-                {insights.sales_by_waiter.map((w) => (
-                  <View key={w.name} style={styles.listRow}>
-                    <AppText weight="medium" style={{ flex: 1 }}>
+                {insights.sales_by_waiter.map((w, idx) => (
+                  <View
+                    key={w.name}
+                    style={[styles.listRow, idx > 0 && styles.listHairline]}
+                  >
+                    <AppText weight="medium" style={{ flex: 1, color: fx.ink }}>
                       {w.name}
                     </AppText>
-                    <Amount value={w.total_sales} />
-                  </View>
-                ))}
-              </Card>
-            )}
-
-            {(insights.income_by_method?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <AppText weight="bold" style={styles.section}>
-                  Ingresos por método
-                </AppText>
-                {insights.income_by_method.map((m) => (
-                  <View key={m.payment_method} style={styles.listRow}>
-                    <Badge label={m.payment_method} />
-                    <Amount value={m.total} />
-                  </View>
-                ))}
-              </Card>
-            )}
-
-            {(insights.low_stock_list?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <View style={styles.rowBetween}>
-                  <AppText weight="bold" style={styles.section}>
-                    Stock bajo
-                  </AppText>
-                  <Pressable onPress={() => router.push('/(tabs)/stock' as Href)}>
-                    <AppText weight="semibold" style={{ color: colors.amber }}>
-                      Ir a stock
-                    </AppText>
-                  </Pressable>
-                </View>
-                {insights.low_stock_list.map((p) => (
-                  <View key={p.id} style={styles.listRow}>
-                    <AppText weight="medium" style={{ flex: 1 }}>
-                      {p.name}
-                    </AppText>
-                    <AppText style={{ color: colors.amber }}>
-                      {p.current_stock}/{p.stock_minimum}
+                    <AppText weight="bold" style={styles.amount}>
+                      ${Number(w.total_sales).toFixed(0)}
                     </AppText>
                   </View>
                 ))}
-              </Card>
-            )}
+              </Surface>
+            ) : null}
 
-            {(mgmt?.recent_stock_movements?.length ?? 0) > 0 && (
-              <Card style={{ marginTop: space.md }}>
-                <AppText weight="bold" style={styles.section}>
-                  Últimos movimientos
-                </AppText>
-                {(mgmt?.recent_stock_movements ?? []).slice(0, 5).map((m) => (
-                  <AppText key={m.id} style={styles.mov}>
-                    {m.type} · {m.product} · x{m.quantity}
-                  </AppText>
-                ))}
-              </Card>
-            )}
-          </>
-        )}
-
-        {!isManagerLayer && (
-          <View style={styles.actions}>
-            {hasPermission(user, 'tables.read') && (
-              <PrimaryButton
-                title="Ir a mesas"
-                icon="grid"
-                onPress={() => router.push('/(tabs)/mesas' as const)}
-              />
-            )}
-            {hasPermission(user, 'stock.read') && (
-              <PrimaryButton
-                title="Stock"
-                icon="cube-outline"
-                variant="ghost"
-                onPress={() => router.push('/(tabs)/stock' as never)}
-              />
-            )}
-            {hasPermission(user, 'cash.read') && (
-              <PrimaryButton
-                title="Caja"
-                icon="cash-outline"
-                variant="ghost"
-                onPress={() => router.push('/(tabs)/caja' as const)}
-              />
-            )}
-          </View>
+            {!isManagerLayer ? (
+              <View style={styles.cta}>
+                {hasPermission(user, 'tables.read') ? (
+                  <PrimaryButton
+                    title="Ir a mesas"
+                    icon="grid-outline"
+                    onPress={() => router.push('/(tabs)/mesas' as const)}
+                  />
+                ) : null}
+              </View>
+            ) : null}
+          </FadeIn>
         )}
       </ScrollView>
     </View>
@@ -477,85 +366,95 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, paddingBottom: 48 },
-  topRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 },
-  logout: { color: colors.teal600 },
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: {
+    paddingHorizontal: fx.space.md,
+    paddingBottom: 48,
+    gap: fx.space.md,
+  },
   offlineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.amberBg,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#fde68a',
+    backgroundColor: fx.surface,
+    borderRadius: fx.radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  offlineText: { color: '#92400e', fontSize: 13, flex: 1 },
-  err: { color: colors.danger, marginBottom: 8 },
-  grid: { flexDirection: 'column', gap: 10 },
+  offlineText: { color: fx.inkMuted, fontSize: 13, flex: 1 },
+  err: { color: fx.danger },
+  heroCard: {
+    paddingVertical: fx.space.lg,
+  },
+  metricsRow: { flexDirection: 'row', gap: fx.space.sm },
+  metricHalf: { flex: 1 },
+  inlineStat: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  inlineBorder: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
+  },
+  inlineLabel: { fontSize: fx.type.caption, color: fx.inkMuted },
+  inlineValue: { fontSize: 18, color: fx.ink },
+  inlineMuted: { fontSize: 13, color: fx.inkFaint, fontWeight: '400' },
   section: {
-    fontSize: 12,
-    color: colors.gray500,
-    textTransform: 'uppercase',
-    marginBottom: 8,
+    fontSize: fx.type.caption,
+    color: fx.inkMuted,
+    marginBottom: -4,
   },
-  wideCard: { marginBottom: 10 },
-  cardTeal: { borderColor: colors.teal100, backgroundColor: colors.teal50 },
-  cardAmber: { borderColor: colors.amberBg, backgroundColor: colors.amberBg },
-  cardLabel: { color: colors.gray600, fontSize: 12, textTransform: 'uppercase' },
-  cardValue: { fontSize: 28, color: colors.gray900, marginTop: 4 },
-  cardValueLg: { fontSize: 32, color: colors.teal600, marginTop: 4 },
-  cardSmall: { fontSize: 14, color: colors.gray500 },
-  cardSub: { color: colors.gray600, marginTop: 4, fontSize: 13 },
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sectionIn: { fontSize: fx.type.body, color: fx.ink },
+  actionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   actionBtn: {
     width: '30%',
-    minWidth: 100,
-    minHeight: 92,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.gray100,
-    padding: 10,
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    minWidth: 96,
+    backgroundColor: fx.surface,
+    borderRadius: fx.radius.md,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    gap: 8,
   },
   actionIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.md,
-    backgroundColor: colors.teal50,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: fx.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionLabel: { fontSize: 12, color: colors.gray800 },
-  rowBetween: {
+  actionLabel: { fontSize: 12, color: fx.inkMuted },
+  listHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    paddingHorizontal: fx.space.md,
+    paddingTop: fx.space.md,
+    paddingBottom: 4,
   },
+  link: { color: fx.brand, fontSize: 13 },
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray100,
+    gap: 10,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 14,
   },
-  meta: { color: colors.gray500, fontSize: 12, marginTop: 2 },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tableChip: {
-    minWidth: 72,
-    padding: 10,
-    borderRadius: radius.md,
-    backgroundColor: colors.amberBg,
-    borderWidth: 1,
-    borderColor: '#fde68a',
+  listHairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
   },
-  mov: { color: colors.gray600, fontSize: 12, marginTop: 4 },
-  actions: { marginTop: space.lg, gap: 10 },
+  listTitle: { fontSize: 15, color: fx.ink },
+  meta: { color: fx.inkFaint, fontSize: 12, marginTop: 2 },
+  amount: { fontSize: 15, color: fx.ink, fontVariant: ['tabular-nums'] },
+  cta: { marginTop: fx.space.sm, gap: 10 },
 });

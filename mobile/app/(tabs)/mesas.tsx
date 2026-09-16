@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -15,14 +16,16 @@ import { api, ApiError } from '../../src/api/client';
 import type { CatalogSector, TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
-import { AppText, Badge, Chip, PageHeader, PrimaryButton } from '../../src/ui/primitives';
-
-function statusColor(status: string) {
-  if (status === 'OCUPADA') return colors.amber;
-  if (status === 'LIBRE') return colors.green;
-  return colors.gray500;
-}
+import { fx } from '../../src/theme';
+import { AppText, Chip, PrimaryButton } from '../../src/ui/primitives';
+import {
+  FadeIn,
+  FxHeader,
+  MesasSkeleton,
+  StatusDot,
+  Surface,
+  SwipeAction,
+} from '../../src/ui/fintech';
 
 export default function MesasScreen() {
   const { user } = useAuth();
@@ -73,7 +76,10 @@ export default function MesasScreen() {
     [tables],
   );
 
-  const visible = tables.filter((t) => statusFilter === 'TODAS' || t.status === statusFilter);
+  const visible = useMemo(
+    () => tables.filter((t) => statusFilter === 'TODAS' || t.status === statusFilter),
+    [tables, statusFilter],
+  );
 
   const occupy = async (t: TableRow) => {
     setBusyId(t.id);
@@ -152,19 +158,98 @@ export default function MesasScreen() {
     Alert.alert(`Mesa ${t.number}`, t.sector ? `Sector: ${t.sector}` : undefined, buttons);
   };
 
+  const swipeFor = (t: TableRow) => {
+    const left: Array<{ label: string; onPress: () => void; tone?: 'brand' | 'danger' | 'neutral' }> = [];
+    const right: Array<{ label: string; onPress: () => void; tone?: 'brand' | 'danger' | 'neutral' }> = [];
+
+    if (t.status === 'LIBRE' && canOccupy) {
+      left.push({ label: 'Ocupar', onPress: () => void occupy(t), tone: 'brand' });
+    }
+    if (t.status === 'OCUPADA' && canOccupy) {
+      left.push({
+        label: 'Pedido',
+        onPress: () =>
+          router.push({ pathname: '/(tabs)/pedido', params: { tableId: String(t.id) } }),
+        tone: 'brand',
+      });
+      right.push({ label: 'Liberar', onPress: () => void free(t), tone: 'danger' });
+    }
+    if (t.status === 'OCUPADA' && canPay) {
+      right.push({
+        label: 'Cobrar',
+        onPress: () =>
+          router.push({ pathname: '/(tabs)/caja', params: { tableId: String(t.id) } } as never),
+        tone: 'neutral',
+      });
+    }
+    return { left, right };
+  };
+
+  const renderItem = ({ item: t }: { item: TableRow }) => {
+    const { left, right } = swipeFor(t);
+    return (
+      <View style={styles.itemWrap}>
+        <SwipeAction leftActions={left} rightActions={right}>
+          <Surface
+            style={styles.card}
+            onPress={() => router.push(`/table/${t.id}` as Href)}
+          >
+            <Pressable
+              onLongPress={() => showActions(t)}
+              delayLongPress={280}
+              style={styles.cardInner}
+            >
+              <View style={styles.cardTop}>
+                <AppText weight="bold" style={styles.num}>
+                  {t.number}
+                </AppText>
+                {busyId === t.id ? (
+                  <ActivityIndicator size="small" color={fx.brand} />
+                ) : (
+                  <StatusDot status={t.status} />
+                )}
+              </View>
+              <AppText style={styles.cap}>
+                {t.capacity ? `${t.capacity} pers.` : '—'}
+                {t.sector ? ` · ${t.sector}` : ''}
+              </AppText>
+            </Pressable>
+          </Surface>
+        </SwipeAction>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.root}>
-      <PageHeader title="Mesas" subtitle={user?.name} bi="table" />
-      <View style={styles.top}>
-        <View style={styles.filters}>
-          {(['TODAS', 'LIBRE', 'OCUPADA', 'RESERVADA'] as const).map((f) => (
-            <Chip key={f} label={f} selected={statusFilter === f} onPress={() => setStatusFilter(f)} />
-          ))}
-        </View>
+      <FxHeader
+        title="Mesas"
+        subtitle={user?.name ?? undefined}
+        right={
+          <Pressable
+            onPress={() => router.push('/tables/map' as Href)}
+            hitSlop={8}
+            style={styles.mapChip}
+          >
+            <AppText weight="semibold" style={styles.mapChipText}>
+              Mapa
+            </AppText>
+          </Pressable>
+        }
+      />
+
+      <View style={styles.filters}>
+        {(['TODAS', 'LIBRE', 'OCUPADA', 'RESERVADA'] as const).map((f) => (
+          <Chip key={f} label={f} selected={statusFilter === f} onPress={() => setStatusFilter(f)} />
+        ))}
       </View>
 
       {sectors.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sectorRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.sectorRow}
+        >
           <Chip label="Todos" selected={sectorId == null} onPress={() => setSectorId(null)} />
           {sectors.map((s) => (
             <Chip
@@ -177,66 +262,53 @@ export default function MesasScreen() {
         </ScrollView>
       ) : null}
 
-      <View style={styles.mapBtn}>
-        <PrimaryButton
-          title="Mapa del salón"
-          icon="map-outline"
-          variant="ghost"
-          onPress={() => router.push('/tables/map' as Href)}
-        />
-      </View>
-
       {error ? (
         <AppText weight="medium" style={styles.error}>
           {error}
         </AppText>
       ) : null}
 
-      {loading ? (
-        <ActivityIndicator color={colors.teal500} style={{ marginTop: 40 }} />
+      {loading && tables.length === 0 ? (
+        <MesasSkeleton />
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.grid}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-        >
-          {visible.map((t) => (
-            <Pressable
-              key={t.id}
-              style={[styles.chip, { borderColor: statusColor(t.status) }]}
-              onPress={() => router.push(`/table/${t.id}` as Href)}
-              onLongPress={() => showActions(t)}
-              disabled={busyId === t.id}
-            >
-              <AppText weight="bold" style={styles.chipNum}>
-                {t.number}
-              </AppText>
-              <Badge label={t.status} />
-              {t.sector ? (
-                <AppText style={styles.sector}>{t.sector}</AppText>
-              ) : null}
-              {busyId === t.id && <ActivityIndicator size="small" color={colors.teal500} />}
-            </Pressable>
-          ))}
-          {visible.length === 0 && (
-            <AppText style={styles.empty}>No hay mesas</AppText>
-          )}
-        </ScrollView>
+        <FadeIn style={{ flex: 1 }}>
+          <FlatList
+            data={visible}
+            keyExtractor={(t) => String(t.id)}
+            numColumns={2}
+            columnWrapperStyle={styles.cols}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={false} onRefresh={() => void load()} />
+            }
+            ListEmptyComponent={
+              <AppText style={styles.empty}>No hay mesas</AppText>
+            }
+            ListFooterComponent={
+              <AppText style={styles.hint}>Deslizá para acción rápida · Mantener para más</AppText>
+            }
+            renderItem={renderItem}
+            initialNumToRender={12}
+            windowSize={7}
+            removeClippedSubviews
+          />
+        </FadeIn>
       )}
 
-      <AppText style={styles.hint}>Mantener pulsado para acciones</AppText>
-
-      <Modal visible={!!transferFrom} animationType="slide" transparent>
+      <Modal visible={!!transferFrom} animationType="fade" transparent>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
-            <AppText weight="bold" style={{ fontSize: 18 }}>
+            <AppText weight="bold" style={{ fontSize: 18, color: fx.ink }}>
               Transferir mesa {transferFrom?.number}
             </AppText>
-            <AppText style={styles.sector}>Elegí una mesa libre</AppText>
+            <AppText style={styles.cap}>Elegí una mesa libre</AppText>
             <ScrollView style={{ maxHeight: 320 }}>
               {freeTables.map((t) => (
                 <Pressable key={t.id} style={styles.pickRow} onPress={() => void doTransfer(t)}>
-                  <AppText weight="bold">Mesa {t.number}</AppText>
-                  {t.sector ? <AppText style={styles.sector}>{t.sector}</AppText> : null}
+                  <AppText weight="bold" style={{ color: fx.ink }}>
+                    Mesa {t.number}
+                  </AppText>
+                  {t.sector ? <AppText style={styles.cap}>{t.sector}</AppText> : null}
                 </Pressable>
               ))}
               {freeTables.length === 0 ? (
@@ -252,54 +324,61 @@ export default function MesasScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  top: {
-    paddingHorizontal: space.md,
-    paddingVertical: 10,
+  root: { flex: 1, backgroundColor: fx.canvas },
+  filters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: fx.space.md,
+    paddingBottom: 8,
+  },
+  sectorRow: { paddingHorizontal: fx.space.md, paddingBottom: 8, gap: 8 },
+  mapChip: {
+    backgroundColor: fx.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: fx.radius.pill,
+  },
+  mapChipText: { color: fx.brand, fontSize: 13 },
+  error: { color: fx.danger, paddingHorizontal: fx.space.md },
+  list: { paddingHorizontal: fx.space.md, paddingBottom: 32, gap: 0 },
+  cols: { gap: fx.space.sm, marginBottom: fx.space.sm },
+  itemWrap: { flex: 1 },
+  card: { minHeight: 104 },
+  cardInner: { gap: 10 },
+  cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    alignItems: 'flex-start',
   },
-  filters: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1 },
-  logout: { color: colors.teal600 },
-  error: { color: colors.danger, padding: 12 },
-  sectorRow: { paddingHorizontal: space.md, paddingVertical: 8, gap: 8 },
-  mapBtn: { paddingHorizontal: space.md, paddingBottom: 4 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 16 },
-  chip: {
-    width: '30%',
-    minWidth: 100,
-    minHeight: 100,
-    borderWidth: 2,
-    borderRadius: radius.xl,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-    gap: 6,
+  num: {
+    fontSize: 28,
+    color: fx.ink,
+    letterSpacing: -0.8,
   },
-  chipNum: { fontSize: 24, color: colors.gray900 },
-  sector: { fontSize: 11, color: colors.gray500 },
-  empty: { color: colors.gray600, padding: 24 },
-  hint: { textAlign: 'center', color: colors.gray400, fontSize: 12, paddingBottom: 12 },
+  cap: { fontSize: 12, color: fx.inkFaint },
+  empty: { color: fx.inkMuted, padding: 24, textAlign: 'center' },
+  hint: {
+    textAlign: 'center',
+    color: fx.inkFaint,
+    fontSize: 11,
+    paddingVertical: 16,
+  },
   modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(3,26,22,0.35)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
+    backgroundColor: fx.surface,
+    borderTopLeftRadius: fx.radius.lg,
+    borderTopRightRadius: fx.radius.lg,
+    padding: fx.space.lg,
     gap: 8,
   },
   pickRow: {
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: fx.hairline,
   },
 });
