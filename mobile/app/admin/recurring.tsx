@@ -3,29 +3,25 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
-  Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { RecurringRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
+import { fx } from '../../src/theme';
 import {
   AppText,
   Badge,
-  Card,
   Chip,
   Field,
-  PageHeader,
   PrimaryButton,
-  SectionLabel,
 } from '../../src/ui/primitives';
+import { FxHeader, ModalSheet, Surface } from '../../src/ui/fintech';
 
 const DAYS = [
   { key: 'MONDAY', label: 'Lun' },
@@ -182,209 +178,209 @@ export default function AdminRecurringScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Recurrentes" subtitle="Actividades semanales" icon="repeat" />
-      <View style={{ padding: space.md }}>
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
-        {canWrite ? (
-          <>
-            <SectionLabel>Nueva actividad</SectionLabel>
-            <Field
-              label="Nombre"
-              value={form.name}
-              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-            />
-            <AppText weight="semibold" style={styles.fieldHint}>
-              Día de la semana
-            </AppText>
-            <View style={styles.chips}>
-              {DAYS.map((d) => (
-                <Chip
-                  key={d.key}
-                  label={d.label}
-                  selected={form.day_of_week === d.key}
-                  onPress={() => setForm((f) => ({ ...f, day_of_week: d.key }))}
-                />
-              ))}
-            </View>
-            <Field
-              label="Inicio (HH:MM)"
-              value={form.start_time}
-              onChangeText={(v) => setForm((f) => ({ ...f, start_time: v }))}
-            />
-            <Field
-              label="Fin (HH:MM)"
-              value={form.end_time}
-              onChangeText={(v) => setForm((f) => ({ ...f, end_time: v }))}
-            />
-            <Field
-              label="Descripción"
-              value={form.description}
-              onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-              multiline
-            />
-            <Field
-              label="Asistencia esperada"
-              value={form.expected_attendance}
-              onChangeText={(v) => setForm((f) => ({ ...f, expected_attendance: v }))}
-              keyboardType="number-pad"
-            />
-            <Field
-              label="Inicio vigencia (YYYY-MM-DD)"
-              value={form.start_date}
-              onChangeText={(v) => setForm((f) => ({ ...f, start_date: v }))}
-              placeholder="Opcional"
-            />
-            <Field
-              label="Fin vigencia (YYYY-MM-DD)"
-              value={form.end_date}
-              onChangeText={(v) => setForm((f) => ({ ...f, end_date: v }))}
-              placeholder="Opcional"
-            />
-            <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
-          </>
-        ) : null}
-        {error ? (
-          <AppText weight="medium" style={styles.err}>
-            {error}
-          </AppText>
-        ) : null}
-      </View>
-      {loading ? (
-        <ActivityIndicator color={colors.teal500} />
+      <FxHeader title="Recurrentes" subtitle="Actividades semanales" onBack={() => router.back()} />
+      {loading && rows.length === 0 ? (
+        <ActivityIndicator color={fx.brand} style={{ marginTop: 32 }} />
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(e) => String(e.id)}
-          contentContainerStyle={{ padding: space.md }}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-          ListEmptyComponent={
-            <AppText style={{ textAlign: 'center', color: colors.gray500 }}>
-              Sin actividades
-            </AppText>
+          ListEmptyComponent={<AppText style={styles.empty}>Sin actividades</AppText>}
+          ListHeaderComponent={
+            <View style={styles.headerBlock}>
+              {canWrite ? (
+                <Surface style={styles.formCard}>
+                  <AppText weight="semibold" style={styles.section}>
+                    Nueva actividad
+                  </AppText>
+                  <Field
+                    label="Nombre"
+                    value={form.name}
+                    onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+                  />
+                  <AppText weight="semibold" style={styles.fieldHint}>
+                    Día de la semana
+                  </AppText>
+                  <View style={styles.chips}>
+                    {DAYS.map((d) => (
+                      <Chip
+                        key={d.key}
+                        label={d.label}
+                        selected={form.day_of_week === d.key}
+                        onPress={() => setForm((f) => ({ ...f, day_of_week: d.key }))}
+                      />
+                    ))}
+                  </View>
+                  <Field
+                    label="Inicio (HH:MM)"
+                    value={form.start_time}
+                    onChangeText={(v) => setForm((f) => ({ ...f, start_time: v }))}
+                  />
+                  <Field
+                    label="Fin (HH:MM)"
+                    value={form.end_time}
+                    onChangeText={(v) => setForm((f) => ({ ...f, end_time: v }))}
+                  />
+                  <Field
+                    label="Descripción"
+                    value={form.description}
+                    onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+                    multiline
+                  />
+                  <Field
+                    label="Asistencia esperada"
+                    value={form.expected_attendance}
+                    onChangeText={(v) => setForm((f) => ({ ...f, expected_attendance: v }))}
+                    keyboardType="number-pad"
+                  />
+                  <Field
+                    label="Inicio vigencia (YYYY-MM-DD)"
+                    value={form.start_date}
+                    onChangeText={(v) => setForm((f) => ({ ...f, start_date: v }))}
+                    placeholder="Opcional"
+                  />
+                  <Field
+                    label="Fin vigencia (YYYY-MM-DD)"
+                    value={form.end_date}
+                    onChangeText={(v) => setForm((f) => ({ ...f, end_date: v }))}
+                    placeholder="Opcional"
+                  />
+                  <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
+                </Surface>
+              ) : null}
+              {error ? (
+                <AppText weight="medium" style={styles.err}>
+                  {error}
+                </AppText>
+              ) : null}
+              <AppText weight="semibold" style={styles.section}>
+                Listado
+              </AppText>
+            </View>
           }
-          renderItem={({ item }) => (
-            <Pressable onPress={() => (canWrite ? openEdit(item) : undefined)}>
-              <Card style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
-                  <AppText weight="bold" style={{ flex: 1 }}>
+          renderItem={({ item, index }) => (
+            <Surface
+              padded={false}
+              style={[styles.itemCard, index > 0 && styles.itemGap]}
+              onPress={canWrite ? () => openEdit(item) : undefined}
+            >
+              <View style={styles.row}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText weight="semibold" style={styles.itemTitle}>
                     {item.name}
                   </AppText>
-                  <Badge label={item.is_active === false ? 'INACTIVO' : dayLabel(item.day_of_week)} />
+                  <AppText style={styles.meta}>
+                    {item.start_time}
+                    {item.end_time ? ` – ${item.end_time}` : ''}
+                  </AppText>
                 </View>
-                <AppText style={styles.meta}>
-                  {item.start_time}
-                  {item.end_time ? ` – ${item.end_time}` : ''}
-                </AppText>
-              </Card>
-            </Pressable>
+                <Badge label={item.is_active === false ? 'INACTIVO' : dayLabel(item.day_of_week)} />
+                {canWrite ? <Ionicons name="chevron-forward" size={16} color={fx.inkFaint} /> : null}
+              </View>
+            </Surface>
           )}
         />
       )}
 
-      <Modal visible={!!editing} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <AppText weight="bold" style={{ fontSize: 18, marginBottom: 8 }}>
-                Editar actividad
-              </AppText>
-              <Field
-                label="Nombre"
-                value={editForm.name}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
-              />
-              <AppText weight="semibold" style={styles.fieldHint}>
-                Día de la semana
-              </AppText>
-              <View style={styles.chips}>
-                {DAYS.map((d) => (
-                  <Chip
-                    key={d.key}
-                    label={d.label}
-                    selected={editForm.day_of_week === d.key}
-                    onPress={() => setEditForm((f) => ({ ...f, day_of_week: d.key }))}
-                  />
-                ))}
-              </View>
-              <Field
-                label="Inicio (HH:MM)"
-                value={editForm.start_time}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, start_time: v }))}
-              />
-              <Field
-                label="Fin (HH:MM)"
-                value={editForm.end_time}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, end_time: v }))}
-              />
-              <Field
-                label="Descripción"
-                value={editForm.description}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
-                multiline
-              />
-              <Field
-                label="Asistencia esperada"
-                value={editForm.expected_attendance}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, expected_attendance: v }))}
-                keyboardType="number-pad"
-              />
-              <Field
-                label="Inicio vigencia (YYYY-MM-DD)"
-                value={editForm.start_date}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, start_date: v }))}
-              />
-              <Field
-                label="Fin vigencia (YYYY-MM-DD)"
-                value={editForm.end_date}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, end_date: v }))}
-              />
-              <View style={styles.chips}>
-                <Chip
-                  label="Activo"
-                  selected={editForm.is_active}
-                  onPress={() => setEditForm((f) => ({ ...f, is_active: true }))}
-                />
-                <Chip
-                  label="Inactivo"
-                  selected={!editForm.is_active}
-                  onPress={() => setEditForm((f) => ({ ...f, is_active: false }))}
-                />
-              </View>
-              <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
-              {editing ? (
-                <PrimaryButton
-                  title="Eliminar"
-                  variant="danger"
-                  onPress={() => remove(editing)}
-                />
-              ) : null}
-              <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setEditing(null)} />
-            </ScrollView>
-          </View>
+      <ModalSheet
+        visible={!!editing}
+        title="Editar actividad"
+        onClose={() => setEditing(null)}
+        maxHeight="90%"
+      >
+        <Field
+          label="Nombre"
+          value={editForm.name}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
+        />
+        <AppText weight="semibold" style={styles.fieldHint}>
+          Día de la semana
+        </AppText>
+        <View style={styles.chips}>
+          {DAYS.map((d) => (
+            <Chip
+              key={d.key}
+              label={d.label}
+              selected={editForm.day_of_week === d.key}
+              onPress={() => setEditForm((f) => ({ ...f, day_of_week: d.key }))}
+            />
+          ))}
         </View>
-      </Modal>
+        <Field
+          label="Inicio (HH:MM)"
+          value={editForm.start_time}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, start_time: v }))}
+        />
+        <Field
+          label="Fin (HH:MM)"
+          value={editForm.end_time}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, end_time: v }))}
+        />
+        <Field
+          label="Descripción"
+          value={editForm.description}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+          multiline
+        />
+        <Field
+          label="Asistencia esperada"
+          value={editForm.expected_attendance}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, expected_attendance: v }))}
+          keyboardType="number-pad"
+        />
+        <Field
+          label="Inicio vigencia (YYYY-MM-DD)"
+          value={editForm.start_date}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, start_date: v }))}
+        />
+        <Field
+          label="Fin vigencia (YYYY-MM-DD)"
+          value={editForm.end_date}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, end_date: v }))}
+        />
+        <View style={styles.chips}>
+          <Chip
+            label="Activo"
+            selected={editForm.is_active}
+            onPress={() => setEditForm((f) => ({ ...f, is_active: true }))}
+          />
+          <Chip
+            label="Inactivo"
+            selected={!editForm.is_active}
+            onPress={() => setEditForm((f) => ({ ...f, is_active: false }))}
+          />
+        </View>
+        <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
+        {editing ? (
+          <PrimaryButton title="Eliminar" variant="danger" onPress={() => remove(editing)} />
+        ) : null}
+      </ModalSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  err: { color: colors.danger, marginTop: 8 },
-  meta: { color: colors.gray500, marginTop: 4 },
-  fieldHint: { color: colors.gray600, marginBottom: 6, fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+  root: { flex: 1, backgroundColor: fx.canvas },
+  list: { paddingHorizontal: fx.space.md, paddingBottom: 56, flexGrow: 1 },
+  headerBlock: { gap: 12, marginBottom: 8 },
+  formCard: { gap: 4 },
+  section: { fontSize: 13, color: fx.inkMuted, marginBottom: 4 },
+  fieldHint: { color: fx.inkMuted, marginBottom: 6, fontSize: 13 },
+  err: { color: fx.danger },
+  empty: { textAlign: 'center', color: fx.inkMuted, marginTop: 24 },
+  itemCard: { overflow: 'hidden' },
+  itemGap: { marginTop: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 16,
   },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
-    maxHeight: '90%',
-    gap: 8,
-  },
+  itemTitle: { fontSize: 16, color: fx.ink },
+  meta: { color: fx.inkMuted, fontSize: 13 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 4 },
 });

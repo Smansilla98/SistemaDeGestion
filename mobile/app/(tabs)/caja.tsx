@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,21 +9,22 @@ import {
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { CashSessionRow, TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
+import { fx } from '../../src/theme';
+import { formatDateDMY } from '../../src/ui/formatDate';
+import { AppText, Chip, Field, PrimaryButton } from '../../src/ui/primitives';
 import {
-  AppText,
-  Badge,
-  Card,
-  Chip,
-  Field,
-  PageHeader,
-  PrimaryButton,
-  SectionLabel,
-} from '../../src/ui/primitives';
+  FadeIn,
+  FxHeader,
+  HeroMetric,
+  ModalSheet,
+  StatusDot,
+  Surface,
+} from '../../src/ui/fintech';
 
 const METHODS = ['EFECTIVO', 'DEBITO', 'CREDITO', 'TRANSFERENCIA', 'QR', 'OTRO'] as const;
 
@@ -180,243 +180,290 @@ export default function CajaScreen() {
   const openSessions = summary?.open_sessions ?? [];
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
+    return (
+      <View style={styles.root}>
+        <FxHeader title="Caja" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={fx.brand} />
+      </View>
+    );
   }
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={{ paddingBottom: 48 }}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-    >
-      <PageHeader title="Caja" subtitle="Sesión, cobros y movimientos" bi="cash-coin" />
-      <View style={{ padding: space.lg, gap: 6 }}>
-        {error ? (
-          <AppText weight="medium" style={styles.err}>
-            {error}
-          </AppText>
-        ) : null}
-        {msg ? (
-          <AppText weight="medium" style={styles.ok}>
-            {msg}
-          </AppText>
-        ) : null}
+    <View style={styles.root}>
+      <FxHeader title="Caja" subtitle="Sesión y cobros" />
+      <ScrollView
+        contentContainerStyle={styles.body}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
+        showsVerticalScrollIndicator={false}
+      >
+        <FadeIn>
+          <View style={styles.content}>
+            {error ? (
+              <AppText weight="medium" style={styles.err}>
+                {error}
+              </AppText>
+            ) : null}
+            {msg ? (
+              <AppText weight="medium" style={styles.ok}>
+                {msg}
+              </AppText>
+            ) : null}
 
-        <SectionLabel>Sesión actual</SectionLabel>
-        {summary?.session ? (
-          <Card>
-            {openSessions.length > 1 ? (
-              <>
-                <AppText weight="semibold">Sesiones abiertas</AppText>
+            {summary?.session ? (
+              <Surface style={styles.heroPad}>
+                <HeroMetric
+                  label="Ventas de la sesión"
+                  value={`$${Number(summary.sales_total).toFixed(0)}`}
+                  hint={`${summary.payments_count} pagos · Esperado $${Number(summary.expected_amount ?? 0).toFixed(0)}`}
+                  mono
+                />
+                {openSessions.length > 1 ? (
+                  <View style={styles.chips}>
+                    {openSessions.map((s) => (
+                      <Chip
+                        key={s.id}
+                        label={s.register ?? `#${s.id}`}
+                        selected={activeSessionId === s.id}
+                        onPress={() => setActiveSessionId(s.id)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+                <AppText style={styles.meta}>
+                  {(summary.session as { cash_register?: { name?: string } }).cash_register?.name ??
+                    'Sesión abierta'}
+                </AppText>
+                {canWrite ? (
+                  <View style={styles.blockGap}>
+                    <Field
+                      label="Monto final contado"
+                      keyboardType="decimal-pad"
+                      value={finalAmount}
+                      onChangeText={setFinalAmount}
+                    />
+                    <Field
+                      label="Notas de cierre (opcional)"
+                      value={closeNotes}
+                      onChangeText={setCloseNotes}
+                      placeholder="Observaciones al cerrar"
+                    />
+                    <View style={styles.row}>
+                      <View style={{ flex: 1 }}>
+                        <PrimaryButton
+                          title="Movimiento"
+                          variant="ghost"
+                          onPress={() => setMovOpen(true)}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <PrimaryButton
+                          title="Cerrar caja"
+                          variant="danger"
+                          onPress={() => void close()}
+                        />
+                      </View>
+                    </View>
+                    {activeSessionId ? (
+                      <PrimaryButton
+                        title="Ver órdenes de la sesión"
+                        variant="outline"
+                        icon="receipt-outline"
+                        onPress={() => router.push(`/cash/${activeSessionId}` as Href)}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
+              </Surface>
+            ) : (
+              <Surface>
+                <AppText weight="bold" style={styles.blockTitle}>
+                  No hay caja abierta
+                </AppText>
+                {canWrite ? (
+                  <View style={styles.blockGap}>
+                    <AppText style={styles.section}>Elegir caja</AppText>
+                    <View style={styles.chips}>
+                      {registers.map((r) => (
+                        <Chip
+                          key={r.id}
+                          label={r.name}
+                          selected={registerId === r.id}
+                          onPress={() => setRegisterId(r.id)}
+                        />
+                      ))}
+                    </View>
+                    <Field
+                      label="Monto inicial"
+                      keyboardType="decimal-pad"
+                      value={initial}
+                      onChangeText={setInitial}
+                    />
+                    <PrimaryButton title="Abrir caja" onPress={() => void openCash()} />
+                  </View>
+                ) : null}
+              </Surface>
+            )}
+
+            {canWrite && summary?.session ? (
+              <Surface>
+                <AppText weight="bold" style={styles.blockTitle}>
+                  Cobrar mesa
+                </AppText>
                 <View style={styles.chips}>
-                  {openSessions.map((s) => (
+                  {tables.map((t) => (
                     <Chip
-                      key={s.id}
-                      label={s.register ?? `#${s.id}`}
-                      selected={activeSessionId === s.id}
-                      onPress={() => setActiveSessionId(s.id)}
+                      key={t.id}
+                      label={`Mesa ${t.number}`}
+                      selected={payTableId === t.id}
+                      onPress={() => setPayTableId(t.id)}
                     />
                   ))}
                 </View>
-              </>
-            ) : null}
-            <AppText weight="bold">Caja abierta</AppText>
-            <AppText style={styles.meta}>
-              {(summary.session as { cash_register?: { name?: string } }).cash_register?.name ??
-                'Sesión'}
-            </AppText>
-            <AppText>Ventas ${Number(summary.sales_total).toFixed(2)}</AppText>
-            <AppText>{summary.payments_count} pagos</AppText>
-            <AppText weight="semibold">
-              Esperado ${Number(summary.expected_amount ?? 0).toFixed(2)}
-            </AppText>
-            {canWrite ? (
-              <>
-                <Field
-                  label="Monto final contado"
-                  keyboardType="decimal-pad"
-                  value={finalAmount}
-                  onChangeText={setFinalAmount}
-                />
-                <Field
-                  label="Notas de cierre (opcional)"
-                  value={closeNotes}
-                  onChangeText={setCloseNotes}
-                  placeholder="Observaciones al cerrar"
-                />
-                <View style={styles.row}>
-                  <View style={{ flex: 1 }}>
-                    <PrimaryButton title="Movimiento" variant="ghost" onPress={() => setMovOpen(true)} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <PrimaryButton title="Cerrar caja" variant="danger" onPress={() => void close()} />
-                  </View>
-                </View>
-              </>
-            ) : null}
-          </Card>
-        ) : (
-          <Card>
-            <AppText>No hay caja abierta</AppText>
-            {canWrite ? (
-              <>
-                <SectionLabel>Elegir caja</SectionLabel>
-                <View style={styles.chips}>
-                  {registers.map((r) => (
-                    <Chip
-                      key={r.id}
-                      label={r.name}
-                      selected={registerId === r.id}
-                      onPress={() => setRegisterId(r.id)}
-                    />
-                  ))}
-                </View>
-                <Field
-                  label="Monto inicial"
-                  keyboardType="decimal-pad"
-                  value={initial}
-                  onChangeText={setInitial}
-                />
-                <PrimaryButton title="Abrir caja" onPress={() => void openCash()} />
-              </>
-            ) : null}
-          </Card>
-        )}
-
-        {canWrite && summary?.session ? (
-          <>
-            <SectionLabel>Cobrar mesa (multi-pago)</SectionLabel>
-            <View style={styles.chips}>
-              {tables.map((t) => (
-                <Chip
-                  key={t.id}
-                  label={String(t.number)}
-                  selected={payTableId === t.id}
-                  onPress={() => setPayTableId(t.id)}
-                />
-              ))}
-            </View>
-            {payLines.map((line, idx) => (
-              <Card key={idx} style={{ marginBottom: 8 }}>
-                <View style={styles.chips}>
-                  {METHODS.map((m) => (
-                    <Chip
-                      key={m}
-                      label={m}
-                      selected={line.payment_method === m}
-                      onPress={() =>
+                {tables.length === 0 ? (
+                  <AppText style={styles.meta}>No hay mesas ocupadas</AppText>
+                ) : null}
+                {payLines.map((line, idx) => (
+                  <View key={idx} style={styles.payBlock}>
+                    <View style={styles.chips}>
+                      {METHODS.map((m) => (
+                        <Chip
+                          key={m}
+                          label={m}
+                          selected={line.payment_method === m}
+                          onPress={() =>
+                            setPayLines((prev) =>
+                              prev.map((p, i) => (i === idx ? { ...p, payment_method: m } : p)),
+                            )
+                          }
+                        />
+                      ))}
+                    </View>
+                    <Field
+                      label="Monto"
+                      keyboardType="decimal-pad"
+                      value={line.amount}
+                      onChangeText={(v) =>
                         setPayLines((prev) =>
-                          prev.map((p, i) => (i === idx ? { ...p, payment_method: m } : p)),
+                          prev.map((p, i) => (i === idx ? { ...p, amount: v } : p)),
                         )
                       }
                     />
-                  ))}
-                </View>
-                <Field
-                  label="Monto"
-                  keyboardType="decimal-pad"
-                  value={line.amount}
-                  onChangeText={(v) =>
-                    setPayLines((prev) =>
-                      prev.map((p, i) => (i === idx ? { ...p, amount: v } : p)),
-                    )
+                  </View>
+                ))}
+                <PrimaryButton
+                  title="Agregar método"
+                  variant="ghost"
+                  onPress={() =>
+                    setPayLines((prev) => [...prev, { payment_method: 'EFECTIVO', amount: '' }])
                   }
                 />
-              </Card>
-            ))}
-            <PrimaryButton
-              title="Agregar método"
-              variant="ghost"
-              onPress={() =>
-                setPayLines((prev) => [...prev, { payment_method: 'EFECTIVO', amount: '' }])
-              }
-            />
-            <PrimaryButton title="Cobrar" onPress={() => void pay()} disabled={!payTableId} />
-          </>
-        ) : null}
+                <PrimaryButton title="Cobrar" onPress={() => void pay()} disabled={!payTableId} />
+              </Surface>
+            ) : null}
 
-        <SectionLabel>Sesiones recientes</SectionLabel>
-        {sessions.map((s) => (
-          <Pressable key={s.id} onPress={() => router.push(`/cash/${s.id}` as Href)}>
-            <Card style={{ marginBottom: 8 }}>
-              <View style={styles.rowBetween}>
-                <AppText weight="bold">{s.register ?? `Sesión #${s.id}`}</AppText>
-                <Badge label={s.status} />
-              </View>
-              <AppText style={styles.meta}>
-                {s.user ?? '—'} · Ini ${Number(s.initial_amount).toFixed(0)}
-                {s.final_amount != null ? ` · Fin $${Number(s.final_amount).toFixed(0)}` : ''}
-              </AppText>
-              <AppText style={styles.meta}>{s.opened_at?.slice(0, 16) ?? ''}</AppText>
-            </Card>
-          </Pressable>
-        ))}
-        {sessions.length === 0 ? (
-          <AppText style={styles.meta}>Sin sesiones</AppText>
-        ) : null}
-      </View>
-
-      <Modal visible={movOpen} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <AppText weight="bold" style={{ fontSize: 18 }}>
-              Movimiento de caja
+            <AppText weight="semibold" style={styles.section}>
+              Sesiones recientes
             </AppText>
-            <View style={styles.chips}>
-              <Chip
-                label="INGRESO"
-                selected={movType === 'INGRESO'}
-                onPress={() => setMovType('INGRESO')}
-                tone={colors.green}
-              />
-              <Chip
-                label="EGRESO"
-                selected={movType === 'EGRESO'}
-                onPress={() => setMovType('EGRESO')}
-                tone={colors.danger}
-              />
-            </View>
-            <Field
-              label="Monto"
-              keyboardType="decimal-pad"
-              value={movAmount}
-              onChangeText={setMovAmount}
-            />
-            <Field
-              label="Descripción"
-              value={movDesc}
-              onChangeText={setMovDesc}
-              placeholder="Ej. Retiro, propina, etc."
-            />
-            <Field
-              label="Referencia (opcional)"
-              value={movRef}
-              onChangeText={setMovRef}
-              placeholder="Ej. Recibo Nº 001"
-            />
-            <PrimaryButton title="Guardar" onPress={() => void saveMovement()} />
-            <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setMovOpen(false)} />
+            <Surface padded={false}>
+              {sessions.map((s, idx) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => router.push(`/cash/${s.id}` as Href)}
+                  style={[styles.sessionRow, idx > 0 && styles.hairline]}
+                >
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <AppText weight="bold" style={styles.sessionDate}>
+                      {formatDateDMY(s.opened_at)}
+                    </AppText>
+                    <StatusDot status={s.status} size="sm" />
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={fx.inkFaint} />
+                </Pressable>
+              ))}
+              {sessions.length === 0 ? (
+                <AppText style={[styles.meta, { padding: fx.space.md }]}>Sin sesiones</AppText>
+              ) : null}
+            </Surface>
           </View>
+        </FadeIn>
+      </ScrollView>
+
+      <ModalSheet
+        visible={movOpen}
+        title="Movimiento de caja"
+        onClose={() => setMovOpen(false)}
+      >
+        <View style={styles.chips}>
+          <Chip
+            label="INGRESO"
+            selected={movType === 'INGRESO'}
+            onPress={() => setMovType('INGRESO')}
+            tone={fx.success}
+          />
+          <Chip
+            label="EGRESO"
+            selected={movType === 'EGRESO'}
+            onPress={() => setMovType('EGRESO')}
+            tone={fx.danger}
+          />
         </View>
-      </Modal>
-    </ScrollView>
+        <Field
+          label="Monto"
+          keyboardType="decimal-pad"
+          value={movAmount}
+          onChangeText={setMovAmount}
+        />
+        <Field
+          label="Descripción"
+          value={movDesc}
+          onChangeText={setMovDesc}
+          placeholder="Ej. Retiro, propina, etc."
+        />
+        <Field
+          label="Referencia (opcional)"
+          value={movRef}
+          onChangeText={setMovRef}
+          placeholder="Ej. Recibo Nº 001"
+        />
+        <PrimaryButton title="Guardar" onPress={() => void saveMovement()} />
+      </ModalSheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  err: { color: colors.danger },
-  ok: { color: colors.green },
-  meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },
-  row: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
-    gap: 8,
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: { paddingHorizontal: fx.space.md, paddingBottom: 56 },
+  content: { gap: 20 },
+  err: { color: fx.danger },
+  ok: { color: fx.success },
+  heroPad: { paddingVertical: 8 },
+  meta: { color: fx.inkFaint, fontSize: 13, marginTop: 8 },
+  blockTitle: { fontSize: 17, color: fx.ink, marginBottom: 12 },
+  blockGap: { gap: 12, marginTop: 12 },
+  section: {
+    fontSize: 13,
+    color: fx.inkMuted,
+    marginBottom: -4,
+  },
+  row: { flexDirection: 'row', gap: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginVertical: 8 },
+  payBlock: {
+    marginBottom: 12,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 18,
+    gap: 12,
+  },
+  sessionDate: { fontSize: 18, color: fx.ink, letterSpacing: -0.3 },
+  hairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
   },
 });

@@ -3,27 +3,19 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
-  Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { ClientRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
-import {
-  AppText,
-  Card,
-  Field,
-  PageHeader,
-  PrimaryButton,
-  SectionLabel,
-} from '../../src/ui/primitives';
+import { fx } from '../../src/theme';
+import { AppText, Field, PrimaryButton } from '../../src/ui/primitives';
+import { FxHeader, ModalSheet, Surface } from '../../src/ui/fintech';
 
 const emptyForm = () => ({
   name: '',
@@ -143,136 +135,145 @@ export default function AdminClientsScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Clientes" subtitle="Agenda" icon="people" />
-      <View style={{ padding: space.md }}>
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
-        {canWrite ? (
-          <>
-            <SectionLabel>Nuevo cliente</SectionLabel>
-            <Field
-              label="Nombre"
-              value={form.name}
-              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-            />
-            <Field
-              label="Teléfono"
-              value={form.phone}
-              onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
-              keyboardType="phone-pad"
-            />
-            <Field
-              label="Email"
-              value={form.email}
-              onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <Field
-              label="Notas"
-              value={form.notes}
-              onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
-              multiline
-            />
-            <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
-          </>
-        ) : null}
-        {error ? (
-          <AppText weight="medium" style={styles.err}>
-            {error}
-          </AppText>
-        ) : null}
-      </View>
-      {loading ? (
-        <ActivityIndicator color={colors.teal500} />
+      <FxHeader title="Clientes" subtitle="Agenda" onBack={() => router.back()} />
+      {loading && rows.length === 0 ? (
+        <ActivityIndicator color={fx.brand} style={{ marginTop: 32 }} />
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(c) => String(c.id)}
-          contentContainerStyle={{ padding: space.md }}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
           ListEmptyComponent={
-            <AppText style={{ textAlign: 'center', color: colors.gray500 }}>Sin clientes</AppText>
+            <AppText style={styles.empty}>Sin clientes</AppText>
           }
-          renderItem={({ item }) => (
-            <Pressable onPress={() => (canWrite ? openEdit(item) : undefined)}>
-              <Card style={{ marginBottom: 8 }}>
-                <AppText weight="bold">{item.name}</AppText>
-                {item.phone ? <AppText style={styles.meta}>{item.phone}</AppText> : null}
-                {item.email ? <AppText style={styles.meta}>{item.email}</AppText> : null}
-                {item.notes ? (
-                  <AppText style={styles.meta} numberOfLines={2}>
-                    {item.notes}
+          ListHeaderComponent={
+            <View style={styles.headerBlock}>
+              {canWrite ? (
+                <Surface style={styles.formCard}>
+                  <AppText weight="semibold" style={styles.section}>
+                    Nuevo cliente
                   </AppText>
-                ) : null}
-              </Card>
-            </Pressable>
+                  <Field
+                    label="Nombre"
+                    value={form.name}
+                    onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+                  />
+                  <Field
+                    label="Teléfono"
+                    value={form.phone}
+                    onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    keyboardType="phone-pad"
+                  />
+                  <Field
+                    label="Email"
+                    value={form.email}
+                    onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <Field
+                    label="Notas"
+                    value={form.notes}
+                    onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
+                    multiline
+                  />
+                  <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
+                </Surface>
+              ) : null}
+              {error ? (
+                <AppText weight="medium" style={styles.err}>
+                  {error}
+                </AppText>
+              ) : null}
+              <AppText weight="semibold" style={styles.section}>
+                Listado
+              </AppText>
+            </View>
+          }
+          renderItem={({ item, index }) => (
+            <Surface
+              padded={false}
+              style={[styles.itemCard, index > 0 && styles.itemGap]}
+              onPress={canWrite ? () => openEdit(item) : undefined}
+            >
+              <View style={styles.row}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText weight="semibold" style={styles.itemTitle}>
+                    {item.name}
+                  </AppText>
+                  {item.phone ? <AppText style={styles.meta}>{item.phone}</AppText> : null}
+                  {item.email ? <AppText style={styles.meta}>{item.email}</AppText> : null}
+                  {item.notes ? (
+                    <AppText style={styles.meta} numberOfLines={2}>
+                      {item.notes}
+                    </AppText>
+                  ) : null}
+                </View>
+                {canWrite ? <Ionicons name="chevron-forward" size={16} color={fx.inkFaint} /> : null}
+              </View>
+            </Surface>
           )}
         />
       )}
 
-      <Modal visible={!!editing} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <AppText weight="bold" style={{ fontSize: 18, marginBottom: 8 }}>
-                Editar cliente
-              </AppText>
-              <Field
-                label="Nombre"
-                value={editForm.name}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
-              />
-              <Field
-                label="Teléfono"
-                value={editForm.phone}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, phone: v }))}
-                keyboardType="phone-pad"
-              />
-              <Field
-                label="Email"
-                value={editForm.email}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, email: v }))}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <Field
-                label="Notas"
-                value={editForm.notes}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, notes: v }))}
-                multiline
-              />
-              <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
-              {editing ? (
-                <PrimaryButton
-                  title="Eliminar"
-                  variant="danger"
-                  onPress={() => remove(editing)}
-                />
-              ) : null}
-              <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setEditing(null)} />
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <ModalSheet
+        visible={!!editing}
+        title="Editar cliente"
+        onClose={() => setEditing(null)}
+        maxHeight="90%"
+      >
+        <Field
+          label="Nombre"
+          value={editForm.name}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
+        />
+        <Field
+          label="Teléfono"
+          value={editForm.phone}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, phone: v }))}
+          keyboardType="phone-pad"
+        />
+        <Field
+          label="Email"
+          value={editForm.email}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, email: v }))}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <Field
+          label="Notas"
+          value={editForm.notes}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, notes: v }))}
+          multiline
+        />
+        <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
+        {editing ? (
+          <PrimaryButton title="Eliminar" variant="danger" onPress={() => remove(editing)} />
+        ) : null}
+      </ModalSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  err: { color: colors.danger, marginTop: 8 },
-  meta: { color: colors.gray500, marginTop: 4, fontSize: 13 },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+  root: { flex: 1, backgroundColor: fx.canvas },
+  list: { paddingHorizontal: fx.space.md, paddingBottom: 56, flexGrow: 1 },
+  headerBlock: { gap: 12, marginBottom: 8 },
+  formCard: { gap: 4 },
+  section: { fontSize: 13, color: fx.inkMuted, marginBottom: 4 },
+  err: { color: fx.danger },
+  empty: { textAlign: 'center', color: fx.inkMuted, marginTop: 24 },
+  itemCard: { overflow: 'hidden' },
+  itemGap: { marginTop: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 16,
   },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
-    maxHeight: '90%',
-    gap: 8,
-  },
+  itemTitle: { fontSize: 16, color: fx.ink },
+  meta: { color: fx.inkMuted, fontSize: 13 },
 });

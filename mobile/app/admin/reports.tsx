@@ -17,17 +17,15 @@ import type {
   SalesReport,
   StaffReport,
 } from '../../src/api/types';
-import { colors, space } from '../../src/theme';
+import { fx } from '../../src/theme';
 import {
   AppText,
   Badge,
-  Card,
   Chip,
   Field,
-  PageHeader,
   PrimaryButton,
-  SectionLabel,
 } from '../../src/ui/primitives';
+import { FxHeader, HeroMetric, Surface } from '../../src/ui/fintech';
 
 type Tab = 'ventas' | 'productos' | 'mozos' | 'caja';
 
@@ -98,13 +96,12 @@ export default function AdminReportsScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Reportes" subtitle="Ventas, productos y mozos" icon="bar-chart" />
+      <FxHeader title="Reportes" subtitle="Ventas, productos y mozos" onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
       >
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
-
         <View style={styles.tabs}>
           <Chip label="Ventas" selected={tab === 'ventas'} onPress={() => setTab('ventas')} />
           <Chip
@@ -117,7 +114,7 @@ export default function AdminReportsScreen() {
         </View>
 
         {tab !== 'caja' ? (
-          <>
+          <Surface style={styles.formCard}>
             <Field label="Desde (YYYY-MM-DD)" value={from} onChangeText={setFrom} />
             <Field label="Hasta (YYYY-MM-DD)" value={to} onChangeText={setTo} />
             <PrimaryButton
@@ -127,7 +124,7 @@ export default function AdminReportsScreen() {
                 void load();
               }}
             />
-          </>
+          </Surface>
         ) : null}
 
         {error ? (
@@ -135,36 +132,48 @@ export default function AdminReportsScreen() {
             {error}
           </AppText>
         ) : null}
-        {loading ? <ActivityIndicator color={colors.teal500} /> : null}
+        {loading ? <ActivityIndicator color={fx.brand} /> : null}
 
         {!loading && tab === 'ventas' && sales ? (
-          <>
-            <Card>
-              <AppText weight="bold" style={styles.big}>
-                ${Number(sales.total_sales).toFixed(0)}
-              </AppText>
-              <AppText style={styles.meta}>
-                {sales.total_orders} pedidos · {sales.date_from} → {sales.date_to}
-              </AppText>
-            </Card>
-            <SectionLabel>Por método</SectionLabel>
-            {sales.sales_by_method.map((m) => (
-              <Card key={m.payment_method} style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
+          <View style={styles.block}>
+            <Surface style={styles.heroPad}>
+              <HeroMetric
+                label="Total ventas"
+                value={`$${Number(sales.total_sales).toFixed(0)}`}
+                hint={`${sales.total_orders} pedidos · ${sales.date_from} → ${sales.date_to}`}
+                mono
+              />
+            </Surface>
+            <AppText weight="semibold" style={styles.section}>
+              Por método
+            </AppText>
+            <Surface padded={false}>
+              {sales.sales_by_method.map((m, idx) => (
+                <View key={m.payment_method} style={[styles.listRow, idx > 0 && styles.hairline]}>
                   <Badge label={m.payment_method} />
-                  <AppText weight="bold">${Number(m.total).toFixed(0)}</AppText>
+                  <AppText weight="bold" style={styles.amount}>
+                    ${Number(m.total).toFixed(0)}
+                  </AppText>
                 </View>
-              </Card>
-            ))}
-            <SectionLabel>Por día</SectionLabel>
-            {sales.sales_by_day.slice(-14).map((d) => (
-              <View key={d.day} style={styles.dayRow}>
-                <AppText style={{ flex: 1 }}>{d.day}</AppText>
-                <AppText style={styles.meta}>{d.count} ped.</AppText>
-                <AppText weight="bold">${Number(d.total).toFixed(0)}</AppText>
-              </View>
-            ))}
-            <SectionLabel>Exportar</SectionLabel>
+              ))}
+            </Surface>
+            <AppText weight="semibold" style={styles.section}>
+              Por día
+            </AppText>
+            <Surface padded={false}>
+              {sales.sales_by_day.slice(-14).map((d, idx) => (
+                <View key={d.day} style={[styles.listRow, idx > 0 && styles.hairline]}>
+                  <AppText style={{ flex: 1, color: fx.ink }}>{d.day}</AppText>
+                  <AppText style={styles.meta}>{d.count} ped.</AppText>
+                  <AppText weight="bold" style={styles.amount}>
+                    ${Number(d.total).toFixed(0)}
+                  </AppText>
+                </View>
+              ))}
+            </Surface>
+            <AppText weight="semibold" style={styles.section}>
+              Exportar
+            </AppText>
             <PrimaryButton
               title="Excel ventas"
               icon="download-outline"
@@ -175,42 +184,48 @@ export default function AdminReportsScreen() {
             />
             <PrimaryButton
               title="PDF ventas"
-              variant="ghost"
+              variant="outline"
               icon="document-outline"
               loading={exporting}
               onPress={() =>
                 void exportFile(`/reports/sales/export-pdf?${qs(from, to)}`, 'ventas.pdf')
               }
             />
-          </>
+          </View>
         ) : null}
 
         {!loading && tab === 'productos' && products ? (
-          <>
+          <View style={styles.block}>
             <AppText style={styles.meta}>
               {products.date_from} → {products.date_to}
             </AppText>
-            <SectionLabel>Top productos</SectionLabel>
+            <AppText weight="semibold" style={styles.section}>
+              Top productos
+            </AppText>
             {products.top_products.length === 0 ? (
               <AppText style={styles.meta}>Sin datos en el período</AppText>
             ) : (
-              products.top_products.map((p) => (
-                <Card key={p.id} style={{ marginBottom: 8 }}>
-                  <View style={styles.row}>
-                    <AppText weight="bold" style={{ flex: 1 }}>
-                      {p.name}
-                    </AppText>
-                    <AppText weight="bold" style={{ color: colors.teal600 }}>
+              <Surface padded={false}>
+                {products.top_products.map((p, idx) => (
+                  <View key={p.id} style={[styles.listRow, idx > 0 && styles.hairline]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText weight="semibold" style={styles.itemTitle}>
+                        {p.name}
+                      </AppText>
+                      <AppText style={styles.meta}>
+                        ${Number(p.total_revenue).toFixed(0)} ingresos
+                      </AppText>
+                    </View>
+                    <AppText weight="bold" style={styles.brandAmount}>
                       ×{p.total_quantity}
                     </AppText>
                   </View>
-                  <AppText style={styles.meta}>
-                    ${Number(p.total_revenue).toFixed(0)} ingresos
-                  </AppText>
-                </Card>
-              ))
+                ))}
+              </Surface>
             )}
-            <SectionLabel>Exportar</SectionLabel>
+            <AppText weight="semibold" style={styles.section}>
+              Exportar
+            </AppText>
             <PrimaryButton
               title="Excel productos"
               icon="download-outline"
@@ -219,31 +234,39 @@ export default function AdminReportsScreen() {
                 void exportFile(`/reports/products/export?${qs(from, to)}`, 'productos.xlsx')
               }
             />
-          </>
+          </View>
         ) : null}
 
         {!loading && tab === 'mozos' && staff ? (
-          <>
+          <View style={styles.block}>
             <AppText style={styles.meta}>
               {staff.date_from} → {staff.date_to}
             </AppText>
-            <SectionLabel>Ventas por mozo</SectionLabel>
+            <AppText weight="semibold" style={styles.section}>
+              Ventas por mozo
+            </AppText>
             {staff.sales_by_staff.length === 0 ? (
               <AppText style={styles.meta}>Sin datos en el período</AppText>
             ) : (
-              staff.sales_by_staff.map((w) => (
-                <Card key={w.id} style={{ marginBottom: 8 }}>
-                  <View style={styles.row}>
-                    <AppText weight="bold" style={{ flex: 1 }}>
-                      {w.name}
+              <Surface padded={false}>
+                {staff.sales_by_staff.map((w, idx) => (
+                  <View key={w.id} style={[styles.listRow, idx > 0 && styles.hairline]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText weight="semibold" style={styles.itemTitle}>
+                        {w.name}
+                      </AppText>
+                      <AppText style={styles.meta}>{w.total_orders} pedidos</AppText>
+                    </View>
+                    <AppText weight="bold" style={styles.amount}>
+                      ${Number(w.total_sales).toFixed(0)}
                     </AppText>
-                    <AppText weight="bold">${Number(w.total_sales).toFixed(0)}</AppText>
                   </View>
-                  <AppText style={styles.meta}>{w.total_orders} pedidos</AppText>
-                </Card>
-              ))
+                ))}
+              </Surface>
             )}
-            <SectionLabel>Exportar</SectionLabel>
+            <AppText weight="semibold" style={styles.section}>
+              Exportar
+            </AppText>
             <PrimaryButton
               title="Excel mozos"
               icon="download-outline"
@@ -252,42 +275,48 @@ export default function AdminReportsScreen() {
                 void exportFile(`/reports/staff/export?${qs(from, to)}`, 'mozos.xlsx')
               }
             />
-          </>
+          </View>
         ) : null}
 
         {!loading && tab === 'caja' ? (
-          <>
-            <SectionLabel>Sesiones de caja</SectionLabel>
+          <View style={styles.block}>
+            <AppText weight="semibold" style={styles.section}>
+              Sesiones de caja
+            </AppText>
             {sessions.length === 0 ? (
               <AppText style={styles.meta}>Sin sesiones recientes</AppText>
             ) : (
-              sessions.slice(0, 20).map((s) => (
-                <Card key={s.id} style={{ marginBottom: 8 }}>
-                  <View style={styles.row}>
-                    <AppText weight="bold" style={{ flex: 1 }}>
-                      {s.register ?? `Sesión #${s.id}`}
-                    </AppText>
+              sessions.slice(0, 20).map((s, idx) => (
+                <Surface key={s.id} padded={false} style={idx > 0 ? styles.itemGap : undefined}>
+                  <View style={styles.listRow}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <AppText weight="semibold" style={styles.itemTitle}>
+                        {s.register ?? `Sesión #${s.id}`}
+                      </AppText>
+                      <AppText style={styles.meta}>
+                        {s.user ? `${s.user} · ` : ''}
+                        Inicial ${Number(s.initial_amount ?? 0).toFixed(0)}
+                        {s.final_amount != null
+                          ? ` · Final $${Number(s.final_amount).toFixed(0)}`
+                          : ''}
+                      </AppText>
+                      {s.opened_at ? (
+                        <AppText style={styles.meta}>{String(s.opened_at).slice(0, 16)}</AppText>
+                      ) : null}
+                    </View>
                     <Badge label={s.status} />
                   </View>
-                  <AppText style={styles.meta}>
-                    {s.user ? `${s.user} · ` : ''}
-                    Inicial ${Number(s.initial_amount ?? 0).toFixed(0)}
-                    {s.final_amount != null
-                      ? ` · Final $${Number(s.final_amount).toFixed(0)}`
-                      : ''}
-                  </AppText>
-                  {s.opened_at ? (
-                    <AppText style={styles.meta}>{String(s.opened_at).slice(0, 16)}</AppText>
-                  ) : null}
-                  <PrimaryButton
-                    title="Ver detalle"
-                    variant="ghost"
-                    onPress={() => router.push(`/cash/${s.id}` as Href)}
-                  />
-                </Card>
+                  <View style={styles.itemActions}>
+                    <PrimaryButton
+                      title="Ver detalle"
+                      variant="outline"
+                      onPress={() => router.push(`/cash/${s.id}` as Href)}
+                    />
+                  </View>
+                </Surface>
               ))
             )}
-          </>
+          </View>
         ) : null}
       </ScrollView>
     </View>
@@ -295,19 +324,33 @@ export default function AdminReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, paddingBottom: 48, gap: 8 },
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: {
+    paddingHorizontal: fx.space.md,
+    paddingBottom: 56,
+    gap: 16,
+  },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  err: { color: colors.danger },
-  big: { fontSize: 32, color: colors.teal600 },
-  meta: { color: colors.gray500, marginTop: 4 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dayRow: {
+  formCard: { gap: 4 },
+  block: { gap: 12 },
+  heroPad: { paddingVertical: 8 },
+  section: { fontSize: 13, color: fx.inkMuted, marginTop: 4 },
+  err: { color: fx.danger },
+  meta: { color: fx.inkMuted, fontSize: 13 },
+  listRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    gap: 10,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 16,
   },
+  hairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
+  },
+  itemTitle: { fontSize: 15, color: fx.ink },
+  amount: { fontSize: 15, color: fx.ink, fontVariant: ['tabular-nums'] },
+  brandAmount: { fontSize: 16, color: fx.brand },
+  itemGap: { marginTop: 12 },
+  itemActions: { paddingHorizontal: fx.space.md, paddingBottom: 14 },
 });

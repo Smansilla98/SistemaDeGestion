@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { fx } from '../../theme';
 import { AppText } from '../primitives';
 
-/** Header liviano fintech — sin degradé pesado. */
+/** Header liviano — más aire vertical y gap entre marca / título / acción. */
 export function FxHeader({
   title,
   subtitle,
@@ -40,7 +40,7 @@ export function FxHeader({
             </AppText>
           ) : null}
         </View>
-        {right ?? <View style={{ width: 36 }} />}
+        {right ? <View style={styles.rightSlot}>{right}</View> : null}
       </View>
     </View>
   );
@@ -50,33 +50,46 @@ const styles = StyleSheet.create({
   wrap: {
     backgroundColor: fx.canvas,
     paddingHorizontal: fx.space.md,
-    paddingTop: fx.space.sm,
+    paddingTop: fx.space.lg,
     paddingBottom: fx.space.md,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
   back: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: fx.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandMark: {
-    width: 8,
-    height: 28,
-    borderRadius: 4,
+    width: 6,
+    height: 36,
+    borderRadius: 3,
     backgroundColor: fx.brand,
   },
-  titles: { flex: 1 },
+  titles: {
+    flex: 1,
+    gap: 4,
+    paddingVertical: 2,
+  },
   title: {
-    fontSize: fx.type.title,
+    fontSize: 26,
     color: fx.ink,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
+    lineHeight: 30,
   },
   sub: {
-    fontSize: fx.type.caption,
+    fontSize: 13,
     color: fx.inkMuted,
-    marginTop: 2,
+    lineHeight: 18,
+  },
+  rightSlot: {
+    marginLeft: 4,
+    paddingLeft: 8,
   },
 });

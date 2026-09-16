@@ -40,6 +40,32 @@ export function canSeeTab(
   }
 }
 
+type TabKey = 'dashboard' | 'mesas' | 'pedido' | 'pedidos' | 'cocina' | 'caja' | 'stock';
+
+/**
+ * Bottom nav por rol — pocos accesos claros.
+ * Mozos: Pedidos · Mesas · Caja. El resto desde Accesos / pantallas internas.
+ */
+export function isPrimaryTab(
+  user: ApiUser | null | undefined,
+  tab: TabKey,
+): boolean {
+  if (!canSeeTab(user, tab)) return false;
+  const role = user?.role ?? '';
+
+  const primary: TabKey[] =
+    role === 'MOZO'
+      ? ['pedidos', 'mesas', 'caja']
+      : role === 'COCINA'
+        ? ['cocina', 'pedidos']
+        : role === 'CAJERO'
+          ? ['caja', 'mesas', 'pedidos']
+          : /* ADMIN / SUPERADMIN / GERENTE / ENCARGADO / default */
+            ['dashboard', 'mesas', 'pedidos', 'caja'];
+
+  return primary.includes(tab);
+}
+
 /** Ruta inicial post-login (paridad operativa con web). */
 export function homeHrefForRole(role?: string): Href {
   switch (role) {
@@ -47,11 +73,13 @@ export function homeHrefForRole(role?: string): Href {
       return '/(tabs)/cocina';
     case 'CAJERO':
       return '/(tabs)/caja';
+    case 'MOZO':
+      return '/(tabs)/mesas';
     case 'ADMIN':
     case 'SUPERADMIN':
     case 'GERENTE':
       return '/(tabs)/dashboard' as Href;
     default:
-      return '/(tabs)/dashboard' as Href;
+      return '/(tabs)/mesas' as Href;
   }
 }

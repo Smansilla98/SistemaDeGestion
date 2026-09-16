@@ -4,8 +4,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission, isAdminRole } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
-import { AppText, Chip, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { fx } from '../../src/theme';
+import { AppText, Chip, PrimaryButton } from '../../src/ui/primitives';
+import { FxHeader, Surface } from '../../src/ui/fintech';
 
 type UserListRow = {
   id: number;
@@ -126,10 +127,11 @@ export default function PermissionsScreen() {
   if (!canRead) {
     return (
       <View style={styles.root}>
-        <PageHeader title="Permisos" subtitle="Sin acceso" icon="lock-closed" />
-        <View style={{ padding: space.lg }}>
-          <AppText>Solo ADMIN/SUPERADMIN con users.read</AppText>
-          <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
+        <FxHeader title="Permisos" subtitle="Sin acceso" onBack={() => router.back()} />
+        <View style={styles.body}>
+          <Surface>
+            <AppText style={styles.locked}>Solo ADMIN/SUPERADMIN con users.read</AppText>
+          </Surface>
         </View>
       </View>
     );
@@ -137,9 +139,14 @@ export default function PermissionsScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Matriz de permisos" subtitle="Por usuario o por rol" icon="key" />
+      <FxHeader
+        title="Matriz de permisos"
+        subtitle="Por usuario o por rol"
+        onBack={() => router.back()}
+      />
       <ScrollView
         contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={false}
@@ -150,7 +157,6 @@ export default function PermissionsScreen() {
           />
         }
       >
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
         <View style={styles.tabs}>
           <Chip label="Por usuario" selected={tab === 'users'} onPress={() => setTab('users')} />
           <Chip label="Por rol" selected={tab === 'roles'} onPress={() => setTab('roles')} />
@@ -160,7 +166,11 @@ export default function PermissionsScreen() {
         {info ? <AppText style={styles.ok}>{info}</AppText> : null}
 
         {tab === 'users' ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
             {users.map((u) => (
               <Chip
                 key={u.id}
@@ -171,7 +181,11 @@ export default function PermissionsScreen() {
             ))}
           </ScrollView>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
             {roles.map((r) => (
               <Chip
                 key={r}
@@ -184,17 +198,23 @@ export default function PermissionsScreen() {
         )}
 
         {loading ? (
-          <AppText>Cargando…</AppText>
+          <AppText style={styles.meta}>Cargando…</AppText>
         ) : (
           modules.map((mod) => (
-            <View key={mod.key} style={styles.module}>
-              <AppText weight="bold" style={styles.modTitle}>
-                {mod.label}
-              </AppText>
-              {mod.actions.map((action) => {
+            <Surface key={mod.key} padded={false} style={styles.module}>
+              <View style={styles.modHead}>
+                <AppText weight="semibold" style={styles.modTitle}>
+                  {mod.label}
+                </AppText>
+              </View>
+              {mod.actions.map((action, idx) => {
                 const key = `${mod.key}.${action}`;
                 return (
-                  <Pressable key={key} style={styles.permRow} onPress={() => toggle(key)}>
+                  <Pressable
+                    key={key}
+                    style={[styles.permRow, idx > 0 && styles.hairline]}
+                    onPress={() => toggle(key)}
+                  >
                     <AppText style={styles.permLabel}>
                       {actionLabels[action] ?? action}
                     </AppText>
@@ -202,12 +222,12 @@ export default function PermissionsScreen() {
                       value={!!matrix[key]}
                       onValueChange={() => toggle(key)}
                       disabled={!canWrite}
-                      trackColor={{ true: colors.teal500, false: colors.gray200 }}
+                      trackColor={{ true: fx.brand, false: fx.hairline }}
                     />
                   </Pressable>
                 );
               })}
-            </View>
+            </Surface>
           ))
         )}
 
@@ -220,26 +240,35 @@ export default function PermissionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, gap: 10, paddingBottom: 48 },
-  tabs: { flexDirection: 'row', gap: 8 },
-  row: { gap: 8, paddingVertical: 4 },
-  err: { color: colors.danger },
-  ok: { color: colors.green },
-  module: {
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.gray100,
-    padding: space.md,
-    gap: 6,
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: {
+    paddingHorizontal: fx.space.md,
+    gap: 14,
+    paddingBottom: 56,
   },
-  modTitle: { color: colors.teal700, fontSize: 13, letterSpacing: 0.2 },
+  locked: { color: fx.inkMuted, fontSize: 15, lineHeight: 22 },
+  tabs: { flexDirection: 'row', gap: 8 },
+  chipRow: { gap: 8, paddingVertical: 4 },
+  err: { color: fx.danger },
+  ok: { color: fx.success },
+  meta: { color: fx.inkMuted },
+  module: { overflow: 'hidden' },
+  modHead: {
+    paddingHorizontal: fx.space.md,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
+  modTitle: { color: fx.inkMuted, fontSize: 13 },
   permRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 12,
   },
-  permLabel: { color: colors.gray800, flex: 1, paddingRight: 8 },
+  hairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
+  },
+  permLabel: { color: fx.ink, flex: 1, paddingRight: 8, fontSize: 15 },
 });

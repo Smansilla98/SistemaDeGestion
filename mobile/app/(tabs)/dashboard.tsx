@@ -35,7 +35,7 @@ type QuickAction = {
 
 function ActionRow({ actions }: { actions: QuickAction[] }) {
   const router = useRouter();
-  const visible = actions.filter((a) => a.show).slice(0, 6);
+  const visible = actions.filter((a) => a.show);
   return (
     <View style={styles.actionRow}>
       {visible.map((a) => (
@@ -45,9 +45,9 @@ function ActionRow({ actions }: { actions: QuickAction[] }) {
           onPress={() => router.push(a.href)}
         >
           <View style={styles.actionIcon}>
-            <Ionicons name={a.icon} size={18} color={fx.brand} />
+            <Ionicons name={a.icon} size={24} color={fx.brand} />
           </View>
-          <AppText weight="medium" style={styles.actionLabel} numberOfLines={1}>
+          <AppText weight="semibold" style={styles.actionLabel} numberOfLines={2}>
             {a.title}
           </AppText>
         </Pressable>
@@ -110,13 +110,6 @@ export default function DashboardScreen() {
       show: hasPermission(user, 'products.read') && isManagerLayer,
     },
     {
-      key: 'stock',
-      title: 'Stock',
-      icon: 'cube-outline',
-      href: '/(tabs)/stock' as Href,
-      show: hasPermission(user, 'stock.read'),
-    },
-    {
       key: 'cash',
       title: 'Caja',
       icon: 'wallet-outline',
@@ -137,6 +130,20 @@ export default function DashboardScreen() {
       href: '/(tabs)/pedido' as Href,
       show: hasPermission(user, 'orders.write'),
     },
+    {
+      key: 'pedidos',
+      title: 'Pedidos',
+      icon: 'receipt-outline',
+      href: '/(tabs)/pedidos' as Href,
+      show: hasPermission(user, 'orders.read'),
+    },
+    {
+      key: 'cocina',
+      title: 'Cocina',
+      icon: 'restaurant-outline',
+      href: '/(tabs)/cocina' as Href,
+      show: hasPermission(user, 'kitchen.read'),
+    },
   ];
 
   const heroValue = isManagerLayer
@@ -152,7 +159,7 @@ export default function DashboardScreen() {
     <View style={styles.root}>
       <FxHeader
         title="Hola"
-        subtitle={`${user?.name ?? ''} · ${user?.role ?? ''}`}
+        subtitle={user?.name ?? user?.username ?? undefined}
       />
       <ScrollView
         contentContainerStyle={styles.body}
@@ -186,6 +193,7 @@ export default function DashboardScreen() {
           <DashboardSkeleton />
         ) : (
           <FadeIn>
+            <View style={styles.content}>
             <Surface style={styles.heroCard}>
               <HeroMetric
                 label={isManagerLayer ? 'Ventas del día' : 'Ventas sesión'}
@@ -217,25 +225,13 @@ export default function DashboardScreen() {
             ) : null}
 
             {ops ? (
-              <Surface>
+              <Surface style={styles.statsCard}>
                 <View style={styles.inlineStat}>
                   <AppText style={styles.inlineLabel}>Pedidos activos</AppText>
                   <AppText weight="bold" style={styles.inlineValue}>
                     {ops.pedidos_pendientes}
                   </AppText>
                 </View>
-                {isManagerLayer && mgmt ? (
-                  <View style={[styles.inlineStat, styles.inlineBorder]}>
-                    <AppText style={styles.inlineLabel}>Stock bajo</AppText>
-                    <AppText weight="bold" style={styles.inlineValue}>
-                      {mgmt.low_stock_products}
-                      <AppText style={styles.inlineMuted}>
-                        {' '}
-                        / {mgmt.stock_ok_products} ok
-                      </AppText>
-                    </AppText>
-                  </View>
-                ) : null}
                 {isManagerLayer && mgmt ? (
                   <View style={[styles.inlineStat, styles.inlineBorder]}>
                     <AppText style={styles.inlineLabel}>Cajas abiertas</AppText>
@@ -247,57 +243,60 @@ export default function DashboardScreen() {
               </Surface>
             ) : null}
 
-            {(isManagerLayer || !isManagerLayer) && (
-              <>
-                <AppText weight="semibold" style={styles.section}>
-                  Accesos
-                </AppText>
-                <ActionRow
-                  actions={
-                    isManagerLayer
-                      ? adminActions
-                      : [
-                          {
-                            key: 'mesas',
-                            title: 'Mesas',
-                            icon: 'grid-outline',
-                            href: '/(tabs)/mesas' as Href,
-                            show: hasPermission(user, 'tables.read'),
-                          },
-                          {
-                            key: 'stock',
-                            title: 'Stock',
-                            icon: 'cube-outline',
-                            href: '/(tabs)/stock' as Href,
-                            show: hasPermission(user, 'stock.read'),
-                          },
-                          {
-                            key: 'cash',
-                            title: 'Caja',
-                            icon: 'wallet-outline',
-                            href: '/(tabs)/caja' as Href,
-                            show: hasPermission(user, 'cash.read'),
-                          },
-                          {
-                            key: 'pedido',
-                            title: 'Nuevo',
-                            icon: 'add-outline',
-                            href: '/(tabs)/pedido' as Href,
-                            show: hasPermission(user, 'orders.write'),
-                          },
-                        ]
-                  }
-                />
-              </>
-            )}
+            <AppText weight="semibold" style={styles.section}>
+              Accesos
+            </AppText>
+            <ActionRow
+              actions={
+                isManagerLayer
+                  ? adminActions
+                  : [
+                      {
+                        key: 'mesas',
+                        title: 'Mesas',
+                        icon: 'grid-outline',
+                        href: '/(tabs)/mesas' as Href,
+                        show: hasPermission(user, 'tables.read'),
+                      },
+                      {
+                        key: 'cash',
+                        title: 'Caja',
+                        icon: 'wallet-outline',
+                        href: '/(tabs)/caja' as Href,
+                        show: hasPermission(user, 'cash.read'),
+                      },
+                      {
+                        key: 'pedido',
+                        title: 'Nuevo',
+                        icon: 'add-outline',
+                        href: '/(tabs)/pedido' as Href,
+                        show: hasPermission(user, 'orders.write'),
+                      },
+                      {
+                        key: 'pedidos',
+                        title: 'Pedidos',
+                        icon: 'receipt-outline',
+                        href: '/(tabs)/pedidos' as Href,
+                        show: hasPermission(user, 'orders.read'),
+                      },
+                      {
+                        key: 'cocina',
+                        title: 'Cocina',
+                        icon: 'restaurant-outline',
+                        href: '/(tabs)/cocina' as Href,
+                        show: hasPermission(user, 'kitchen.read'),
+                      },
+                    ]
+              }
+            />
 
             {insights && isManagerLayer && (insights.recent_orders?.length ?? 0) > 0 ? (
-              <Surface padded={false} style={{ marginTop: fx.space.sm }}>
+              <Surface padded={false} style={styles.blockCard}>
                 <View style={styles.listHead}>
                   <AppText weight="semibold" style={styles.sectionIn}>
                     Pedidos recientes
                   </AppText>
-                  <Pressable onPress={() => router.push('/(tabs)/pedidos' as Href)}>
+                  <Pressable onPress={() => router.push('/(tabs)/pedidos' as Href)} hitSlop={12}>
                     <AppText weight="medium" style={styles.link}>
                       Ver todos
                     </AppText>
@@ -325,7 +324,7 @@ export default function DashboardScreen() {
             ) : null}
 
             {insights && isManagerLayer && (insights.sales_by_waiter?.length ?? 0) > 0 ? (
-              <Surface padded={false}>
+              <Surface padded={false} style={styles.blockCard}>
                 <View style={styles.listHead}>
                   <AppText weight="semibold" style={styles.sectionIn}>
                     Ventas por mozo
@@ -358,6 +357,7 @@ export default function DashboardScreen() {
                 ) : null}
               </View>
             ) : null}
+            </View>
           </FadeIn>
         )}
       </ScrollView>
@@ -369,8 +369,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: fx.canvas },
   body: {
     paddingHorizontal: fx.space.md,
-    paddingBottom: 48,
-    gap: fx.space.md,
+    paddingBottom: 56,
+  },
+  /** Bloque desde ventas hacia abajo — aire amplio (usuarios 60+). */
+  content: {
+    gap: 22,
+    paddingTop: 4,
   },
   offlineBanner: {
     flexDirection: 'row',
@@ -379,82 +383,96 @@ const styles = StyleSheet.create({
     backgroundColor: fx.surface,
     borderRadius: fx.radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    marginBottom: 16,
   },
   offlineText: { color: fx.inkMuted, fontSize: 13, flex: 1 },
-  err: { color: fx.danger },
+  err: { color: fx.danger, marginBottom: 12 },
   heroCard: {
-    paddingVertical: fx.space.lg,
+    paddingVertical: 22,
+    paddingHorizontal: 4,
   },
-  metricsRow: { flexDirection: 'row', gap: fx.space.sm },
-  metricHalf: { flex: 1 },
+  metricsRow: { flexDirection: 'row', gap: 16 },
+  metricHalf: { flex: 1, paddingVertical: 8 },
+  statsCard: {
+    paddingVertical: 8,
+  },
   inlineStat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 12,
   },
   inlineBorder: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 4,
+    paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: fx.hairline,
   },
-  inlineLabel: { fontSize: fx.type.caption, color: fx.inkMuted },
-  inlineValue: { fontSize: 18, color: fx.ink },
-  inlineMuted: { fontSize: 13, color: fx.inkFaint, fontWeight: '400' },
+  inlineLabel: { fontSize: 14, color: fx.inkMuted },
+  inlineValue: { fontSize: 20, color: fx.ink },
+  inlineMuted: { fontSize: 14, color: fx.inkFaint, fontWeight: '400' },
   section: {
-    fontSize: fx.type.caption,
+    fontSize: 13,
     color: fx.inkMuted,
-    marginBottom: -4,
+    marginTop: 8,
+    marginBottom: 2,
   },
   sectionIn: { fontSize: fx.type.body, color: fx.ink },
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 16,
   },
   actionBtn: {
-    width: '30%',
-    minWidth: 96,
+    width: '47%',
+    minHeight: 104,
     backgroundColor: fx.surface,
     borderRadius: fx.radius.md,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 12,
   },
   actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: fx.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionLabel: { fontSize: 12, color: fx.inkMuted },
+  actionLabel: {
+    fontSize: 15,
+    color: fx.ink,
+    textAlign: 'center',
+  },
+  blockCard: {
+    marginTop: 4,
+  },
   listHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: fx.space.md,
-    paddingTop: fx.space.md,
-    paddingBottom: 4,
+    paddingTop: fx.space.lg,
+    paddingBottom: 8,
   },
-  link: { color: fx.brand, fontSize: 13 },
+  link: { color: fx.brand, fontSize: 14 },
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     paddingHorizontal: fx.space.md,
-    paddingVertical: 14,
+    paddingVertical: 18,
   },
   listHairline: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: fx.hairline,
   },
-  listTitle: { fontSize: 15, color: fx.ink },
-  meta: { color: fx.inkFaint, fontSize: 12, marginTop: 2 },
-  amount: { fontSize: 15, color: fx.ink, fontVariant: ['tabular-nums'] },
-  cta: { marginTop: fx.space.sm, gap: 10 },
+  listTitle: { fontSize: 16, color: fx.ink },
+  meta: { color: fx.inkFaint, fontSize: 13, marginTop: 4 },
+  amount: { fontSize: 16, color: fx.ink, fontVariant: ['tabular-nums'] },
+  cta: { marginTop: fx.space.md, gap: 14 },
 });

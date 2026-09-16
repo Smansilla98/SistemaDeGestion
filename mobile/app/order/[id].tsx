@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   FadeIn,
   FxHeader,
   HeroMetric,
+  ModalSheet,
   OrderSkeleton,
   StatusDot,
   Surface,
@@ -397,166 +397,140 @@ export default function OrderDetailScreen() {
         ) : null}
       </ScrollView>
 
-      <Modal visible={addOpen} animationType="fade" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <AppText weight="bold" style={styles.modalTitle}>
-              Agregar producto
-            </AppText>
-            <Field
-              label="Cantidad"
-              value={qty}
-              onChangeText={setQty}
-              keyboardType="number-pad"
-            />
-            <Field
-              label="Observaciones"
-              value={itemObs}
-              onChangeText={setItemObs}
-              placeholder="Sin cebolla, extra salsa…"
-            />
-            <ScrollView style={{ maxHeight: 320 }}>
-              {products.map((p) => {
-                const out = isOutOfStock(p);
-                return (
-                  <Pressable
-                    key={p.id}
-                    style={[styles.pickRow, out && { opacity: 0.45 }]}
-                    disabled={out || busy}
-                    onPress={() =>
-                      void run(async () => {
-                        await api.addOrderItem(Number(id), {
-                          product_id: p.id,
-                          quantity: Math.max(1, Number(qty) || 1),
-                          ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
-                        });
-                        setAddOpen(false);
-                        setQty('1');
-                        setItemObs('');
-                      })
-                    }
-                  >
-                    <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
-                      {p.name}
-                      {out ? ' (sin stock)' : ''}
-                    </AppText>
-                    <AppText weight="bold" style={{ color: fx.brand }}>
-                      ${Number(p.price).toFixed(2)}
-                    </AppText>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-            <PrimaryButton title="Cerrar" variant="ghost" onPress={() => setAddOpen(false)} />
-          </View>
-        </View>
-      </Modal>
+      <ModalSheet visible={addOpen} title="Agregar producto" onClose={() => setAddOpen(false)}>
+        <Field
+          label="Cantidad"
+          value={qty}
+          onChangeText={setQty}
+          keyboardType="number-pad"
+        />
+        <Field
+          label="Observaciones"
+          value={itemObs}
+          onChangeText={setItemObs}
+          placeholder="Sin cebolla, extra salsa…"
+        />
+        {products.map((p) => {
+          const out = isOutOfStock(p);
+          return (
+            <Pressable
+              key={p.id}
+              style={[styles.pickRow, out && { opacity: 0.45 }]}
+              disabled={out || busy}
+              onPress={() =>
+                void run(async () => {
+                  await api.addOrderItem(Number(id), {
+                    product_id: p.id,
+                    quantity: Math.max(1, Number(qty) || 1),
+                    ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
+                  });
+                  setAddOpen(false);
+                  setQty('1');
+                  setItemObs('');
+                })
+              }
+            >
+              <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
+                {p.name}
+                {out ? ' (sin stock)' : ''}
+              </AppText>
+              <AppText weight="bold" style={{ color: fx.brand }}>
+                ${Number(p.price).toFixed(2)}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </ModalSheet>
 
-      <Modal visible={replaceOpen} animationType="fade" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <AppText weight="bold" style={styles.modalTitle}>
-              Reemplazar ítem
-            </AppText>
-            <Field
-              label="Cantidad"
-              value={qty}
-              onChangeText={setQty}
-              keyboardType="number-pad"
-            />
-            <Field
-              label="Observaciones"
-              value={itemObs}
-              onChangeText={setItemObs}
-              placeholder="Opcional"
-            />
-            <ScrollView style={{ maxHeight: 320 }}>
-              {products.map((p) => {
-                const out = isOutOfStock(p);
-                return (
-                  <Pressable
-                    key={p.id}
-                    style={[styles.pickRow, out && { opacity: 0.45 }]}
-                    disabled={out || busy || replaceItemId == null}
-                    onPress={() =>
-                      void run(async () => {
-                        if (replaceItemId == null) return;
-                        await api.replaceOrderItem(Number(id), {
-                          order_item_id: replaceItemId,
-                          product_id: p.id,
-                          quantity: Math.max(1, Number(qty) || 1),
-                          ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
-                        });
-                        setReplaceOpen(false);
-                        setReplaceItemId(null);
-                      })
-                    }
-                  >
-                    <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
-                      {p.name}
-                      {out ? ' (sin stock)' : ''}
-                    </AppText>
-                    <AppText weight="bold" style={{ color: fx.brand }}>
-                      ${Number(p.price).toFixed(2)}
-                    </AppText>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-            <PrimaryButton
-              title="Cerrar"
-              variant="ghost"
-              onPress={() => {
-                setReplaceOpen(false);
-                setReplaceItemId(null);
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+      <ModalSheet
+        visible={replaceOpen}
+        title="Reemplazar ítem"
+        onClose={() => {
+          setReplaceOpen(false);
+          setReplaceItemId(null);
+        }}
+      >
+        <Field
+          label="Cantidad"
+          value={qty}
+          onChangeText={setQty}
+          keyboardType="number-pad"
+        />
+        <Field
+          label="Observaciones"
+          value={itemObs}
+          onChangeText={setItemObs}
+          placeholder="Opcional"
+        />
+        {products.map((p) => {
+          const out = isOutOfStock(p);
+          return (
+            <Pressable
+              key={p.id}
+              style={[styles.pickRow, out && { opacity: 0.45 }]}
+              disabled={out || busy || replaceItemId == null}
+              onPress={() =>
+                void run(async () => {
+                  if (replaceItemId == null) return;
+                  await api.replaceOrderItem(Number(id), {
+                    order_item_id: replaceItemId,
+                    product_id: p.id,
+                    quantity: Math.max(1, Number(qty) || 1),
+                    ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
+                  });
+                  setReplaceOpen(false);
+                  setReplaceItemId(null);
+                })
+              }
+            >
+              <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
+                {p.name}
+                {out ? ' (sin stock)' : ''}
+              </AppText>
+              <AppText weight="bold" style={{ color: fx.brand }}>
+                ${Number(p.price).toFixed(2)}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </ModalSheet>
 
-      <Modal visible={discountOpen} animationType="fade" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <AppText weight="bold" style={styles.modalTitle}>
-              Tipo de descuento
+      <ModalSheet
+        visible={discountOpen}
+        title="Tipo de descuento"
+        onClose={() => setDiscountOpen(false)}
+      >
+        <Pressable
+          style={styles.pickRow}
+          onPress={() =>
+            void run(async () => {
+              await api.applyDiscount(Number(id), null, 'Sin descuento');
+              setDiscountOpen(false);
+            })
+          }
+        >
+          <AppText weight="semibold" style={{ color: fx.ink }}>
+            Quitar descuento
+          </AppText>
+        </Pressable>
+        {discounts.map((d) => (
+          <Pressable
+            key={d.id}
+            style={styles.pickRow}
+            onPress={() =>
+              void run(async () => {
+                await api.applyDiscount(Number(id), d.id);
+                setDiscountOpen(false);
+              })
+            }
+          >
+            <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
+              {d.name}
             </AppText>
-            <ScrollView style={{ maxHeight: 320 }}>
-              <Pressable
-                style={styles.pickRow}
-                onPress={() =>
-                  void run(async () => {
-                    await api.applyDiscount(Number(id), null, 'Sin descuento');
-                    setDiscountOpen(false);
-                  })
-                }
-              >
-                <AppText weight="semibold" style={{ color: fx.ink }}>
-                  Quitar descuento
-                </AppText>
-              </Pressable>
-              {discounts.map((d) => (
-                <Pressable
-                  key={d.id}
-                  style={styles.pickRow}
-                  onPress={() =>
-                    void run(async () => {
-                      await api.applyDiscount(Number(id), d.id);
-                      setDiscountOpen(false);
-                    })
-                  }
-                >
-                  <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
-                    {d.name}
-                  </AppText>
-                  <AppText weight="bold">{Number(d.percentage)}%</AppText>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <PrimaryButton title="Cerrar" variant="ghost" onPress={() => setDiscountOpen(false)} />
-          </View>
-        </View>
-      </Modal>
+            <AppText weight="bold">{Number(d.percentage)}%</AppText>
+          </Pressable>
+        ))}
+      </ModalSheet>
     </View>
   );
 }
@@ -578,20 +552,6 @@ const styles = StyleSheet.create({
   meta: { color: fx.inkFaint, fontSize: 12, marginTop: 4 },
   actions: { gap: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(3,26,22,0.35)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: fx.surface,
-    borderTopLeftRadius: fx.radius.lg,
-    borderTopRightRadius: fx.radius.lg,
-    padding: fx.space.lg,
-    maxHeight: '80%',
-    gap: 8,
-  },
-  modalTitle: { fontSize: 18, marginBottom: 4, color: fx.ink },
   pickRow: {
     flexDirection: 'row',
     alignItems: 'center',

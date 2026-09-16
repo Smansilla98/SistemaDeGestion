@@ -3,25 +3,24 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
-import type { CatalogSector, TableRow } from '../../src/api/types';
+import type { TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
-import { AppText, Chip, PrimaryButton } from '../../src/ui/primitives';
+import { AppText, Chip } from '../../src/ui/primitives';
 import {
   FadeIn,
   FxHeader,
   MesasSkeleton,
+  ModalSheet,
   StatusDot,
   Surface,
   SwipeAction,
@@ -34,35 +33,23 @@ export default function MesasScreen() {
   const canPay = hasPermission(user, 'cash.write');
 
   const [tables, setTables] = useState<TableRow[]>([]);
-  const [sectors, setSectors] = useState<CatalogSector[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<'TODAS' | 'LIBRE' | 'OCUPADA' | 'RESERVADA'>('TODAS');
-  const [sectorId, setSectorId] = useState<number | null>(null);
   const [transferFrom, setTransferFrom] = useState<TableRow | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [rows, layout] = await Promise.all([
-        api.tables(sectorId ?? undefined),
-        api.tablesLayout(sectorId ?? undefined).catch(() => null),
-      ]);
+      const rows = await api.tables();
       setTables(Array.isArray(rows) ? rows : []);
-      const secs = (layout?.sectors ?? []).map((s) => ({
-        id: s.id,
-        name: s.name,
-        description: null,
-        is_active: true,
-      }));
-      setSectors(secs);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar mesas');
     } finally {
       setLoading(false);
     }
-  }, [sectorId]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -155,7 +142,7 @@ export default function MesasScreen() {
       });
     }
     buttons.push({ text: 'Cancelar', style: 'cancel' });
-    Alert.alert(`Mesa ${t.number}`, t.sector ? `Sector: ${t.sector}` : undefined, buttons);
+    Alert.alert(`Mesa ${t.number}`, undefined, buttons);
   };
 
   const swipeFor = (t: TableRow) => {
@@ -190,15 +177,8 @@ export default function MesasScreen() {
     return (
       <View style={styles.itemWrap}>
         <SwipeAction leftActions={left} rightActions={right}>
-          <Surface
-            style={styles.card}
-            onPress={() => router.push(`/table/${t.id}` as Href)}
-          >
-            <Pressable
-              onLongPress={() => showActions(t)}
-              delayLongPress={280}
-              style={styles.cardInner}
-            >
+          <Surface style={styles.card} onPress={() => showActions(t)}>
+            <View style={styles.cardInner}>
               <View style={styles.cardTop}>
                 <AppText weight="bold" style={styles.num}>
                   {t.number}
@@ -211,9 +191,8 @@ export default function MesasScreen() {
               </View>
               <AppText style={styles.cap}>
                 {t.capacity ? `${t.capacity} pers.` : '—'}
-                {t.sector ? ` · ${t.sector}` : ''}
               </AppText>
-            </Pressable>
+            </View>
           </Surface>
         </SwipeAction>
       </View>
@@ -222,45 +201,13 @@ export default function MesasScreen() {
 
   return (
     <View style={styles.root}>
-      <FxHeader
-        title="Mesas"
-        subtitle={user?.name ?? undefined}
-        right={
-          <Pressable
-            onPress={() => router.push('/tables/map' as Href)}
-            hitSlop={8}
-            style={styles.mapChip}
-          >
-            <AppText weight="semibold" style={styles.mapChipText}>
-              Mapa
-            </AppText>
-          </Pressable>
-        }
-      />
+      <FxHeader title="Mesas" subtitle={user?.name ?? undefined} />
 
       <View style={styles.filters}>
         {(['TODAS', 'LIBRE', 'OCUPADA', 'RESERVADA'] as const).map((f) => (
           <Chip key={f} label={f} selected={statusFilter === f} onPress={() => setStatusFilter(f)} />
         ))}
       </View>
-
-      {sectors.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.sectorRow}
-        >
-          <Chip label="Todos" selected={sectorId == null} onPress={() => setSectorId(null)} />
-          {sectors.map((s) => (
-            <Chip
-              key={s.id}
-              label={s.name}
-              selected={sectorId === s.id}
-              onPress={() => setSectorId(s.id)}
-            />
-          ))}
-        </ScrollView>
-      ) : null}
 
       {error ? (
         <AppText weight="medium" style={styles.error}>
@@ -285,7 +232,7 @@ export default function MesasScreen() {
               <AppText style={styles.empty}>No hay mesas</AppText>
             }
             ListFooterComponent={
-              <AppText style={styles.hint}>Deslizá para acción rápida · Mantener para más</AppText>
+              <AppText style={styles.hint}>Tocá una mesa para ver acciones · Deslizá para atajos</AppText>
             }
             renderItem={renderItem}
             initialNumToRender={12}
@@ -295,30 +242,23 @@ export default function MesasScreen() {
         </FadeIn>
       )}
 
-      <Modal visible={!!transferFrom} animationType="fade" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <AppText weight="bold" style={{ fontSize: 18, color: fx.ink }}>
-              Transferir mesa {transferFrom?.number}
+      <ModalSheet
+        visible={!!transferFrom}
+        title={`Transferir mesa ${transferFrom?.number ?? ''}`}
+        onClose={() => setTransferFrom(null)}
+      >
+        <AppText style={styles.cap}>Elegí una mesa libre</AppText>
+        {freeTables.map((t) => (
+          <Pressable key={t.id} style={styles.pickRow} onPress={() => void doTransfer(t)}>
+            <AppText weight="bold" style={{ color: fx.ink, fontSize: 17 }}>
+              Mesa {t.number}
             </AppText>
-            <AppText style={styles.cap}>Elegí una mesa libre</AppText>
-            <ScrollView style={{ maxHeight: 320 }}>
-              {freeTables.map((t) => (
-                <Pressable key={t.id} style={styles.pickRow} onPress={() => void doTransfer(t)}>
-                  <AppText weight="bold" style={{ color: fx.ink }}>
-                    Mesa {t.number}
-                  </AppText>
-                  {t.sector ? <AppText style={styles.cap}>{t.sector}</AppText> : null}
-                </Pressable>
-              ))}
-              {freeTables.length === 0 ? (
-                <AppText style={styles.empty}>No hay mesas libres</AppText>
-              ) : null}
-            </ScrollView>
-            <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setTransferFrom(null)} />
-          </View>
-        </View>
-      </Modal>
+          </Pressable>
+        ))}
+        {freeTables.length === 0 ? (
+          <AppText style={styles.empty}>No hay mesas libres</AppText>
+        ) : null}
+      </ModalSheet>
     </View>
   );
 }
@@ -330,21 +270,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     paddingHorizontal: fx.space.md,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
-  sectorRow: { paddingHorizontal: fx.space.md, paddingBottom: 8, gap: 8 },
-  mapChip: {
-    backgroundColor: fx.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: fx.radius.pill,
-  },
-  mapChipText: { color: fx.brand, fontSize: 13 },
   error: { color: fx.danger, paddingHorizontal: fx.space.md },
   list: { paddingHorizontal: fx.space.md, paddingBottom: 32, gap: 0 },
-  cols: { gap: fx.space.sm, marginBottom: fx.space.sm },
+  cols: { gap: 14, marginBottom: 14 },
   itemWrap: { flex: 1 },
-  card: { minHeight: 104 },
+  card: { minHeight: 110 },
   cardInner: { gap: 10 },
   cardTop: {
     flexDirection: 'row',
@@ -356,28 +288,16 @@ const styles = StyleSheet.create({
     color: fx.ink,
     letterSpacing: -0.8,
   },
-  cap: { fontSize: 12, color: fx.inkFaint },
+  cap: { fontSize: 13, color: fx.inkFaint },
   empty: { color: fx.inkMuted, padding: 24, textAlign: 'center' },
   hint: {
     textAlign: 'center',
     color: fx.inkFaint,
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 16,
   },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(3,26,22,0.35)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: fx.surface,
-    borderTopLeftRadius: fx.radius.lg,
-    borderTopRightRadius: fx.radius.lg,
-    padding: fx.space.lg,
-    gap: 8,
-  },
   pickRow: {
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: fx.hairline,
   },

@@ -56,6 +56,7 @@ use App\Http\Controllers\CashRegister\CashRegisterController;
 use App\Http\Controllers\InteractiveTutorialController;
 use App\Http\Controllers\Kitchen\KitchenController;
 use App\Http\Controllers\Order\OrderController;
+use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\Table\TableController;
 
 /*
@@ -63,6 +64,9 @@ use App\Http\Controllers\Table\TableController;
 | Rutas de Autenticación
 |--------------------------------------------------------------------------
 */
+
+Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
+Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

@@ -1,19 +1,31 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { CashSessionDetail } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, space } from '../../src/theme';
+import { fx } from '../../src/theme';
+import { formatDateDMY } from '../../src/ui/formatDate';
+import { AppText, PrimaryButton } from '../../src/ui/primitives';
 import {
-  AppText,
-  Badge,
-  Card,
-  PageHeader,
-  PrimaryButton,
-  SectionLabel,
-} from '../../src/ui/primitives';
+  FadeIn,
+  FxHeader,
+  HeroMetric,
+  OrderSkeleton,
+  StatusDot,
+  Surface,
+} from '../../src/ui/fintech';
 
 export default function CashSessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -68,10 +80,6 @@ export default function CashSessionDetailScreen() {
     ]);
   };
 
-  if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
-  }
-
   const session = data?.session as {
     status?: string;
     cash_register?: { name?: string };
@@ -81,18 +89,30 @@ export default function CashSessionDetailScreen() {
     opened_at?: string;
   } | undefined;
 
+  if (loading && !data) {
+    return (
+      <View style={styles.root}>
+        <FxHeader title="Sesión" onBack={() => router.back()} />
+        <OrderSkeleton />
+      </View>
+    );
+  }
+
+  const orders = data?.sales_detail ?? [];
+
   return (
     <View style={styles.root}>
-      <PageHeader
+      <FxHeader
         title={session?.cash_register?.name ?? `Sesión #${id}`}
-        subtitle={session?.status}
-        icon="cash"
+        subtitle={formatDateDMY(session?.opened_at)}
+        onBack={() => router.back()}
+        right={session?.status ? <StatusDot status={session.status} /> : null}
       />
       <ScrollView
         contentContainerStyle={styles.body}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
+        showsVerticalScrollIndicator={false}
       >
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
         {error ? (
           <AppText weight="medium" style={styles.err}>
             {error}
@@ -100,97 +120,152 @@ export default function CashSessionDetailScreen() {
         ) : null}
 
         {data ? (
-          <>
-            <Card>
-              {session?.status ? <Badge label={session.status} /> : null}
-              <AppText style={styles.meta}>Cajero: {session?.user?.name ?? '—'}</AppText>
-              <AppText>Inicial ${Number(session?.initial_amount ?? 0).toFixed(2)}</AppText>
-              {session?.final_amount != null ? (
-                <AppText>Final ${Number(session.final_amount).toFixed(2)}</AppText>
-              ) : null}
-              <AppText weight="bold" style={styles.total}>
-                Esperado ${Number(data.expected_amount).toFixed(2)}
-              </AppText>
-              <AppText style={styles.meta}>
-                Ventas ${Number(data.sales_total).toFixed(2)} · Ing ${Number(data.ingresos).toFixed(2)} ·
-                Egr ${Number(data.egresos).toFixed(2)}
-              </AppText>
-            </Card>
-
-            <SectionLabel>Detalle de ventas</SectionLabel>
-            {(data.sales_detail ?? []).map((order) => (
-              <Card key={order.id} style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
-                  <AppText weight="bold">{order.number ?? `Pedido #${order.id}`}</AppText>
-                  <AppText weight="bold">${Number(order.total).toFixed(2)}</AppText>
-                </View>
+          <FadeIn>
+            <View style={styles.content}>
+              <Surface style={styles.heroPad}>
+                <HeroMetric
+                  label="Total esperado"
+                  value={`$${Number(data.expected_amount).toFixed(2)}`}
+                  hint={`Ventas $${Number(data.sales_total).toFixed(0)} · Ing $${Number(data.ingresos).toFixed(0)} · Egr $${Number(data.egresos).toFixed(0)}`}
+                  mono
+                />
                 <AppText style={styles.meta}>
-                  {order.table != null ? `Mesa ${order.table}` : 'Pedido rápido'}
-                  {order.user ? ` · ${order.user}` : ''}
+                  Cajero: {session?.user?.name ?? '—'}
+                  {' · '}Ini ${Number(session?.initial_amount ?? 0).toFixed(0)}
+                  {session?.final_amount != null
+                    ? ` · Fin $${Number(session.final_amount).toFixed(0)}`
+                    : ''}
                 </AppText>
-                {order.items.map((item) => (
-                  <AppText key={item.id} style={styles.itemLine}>
-                    {item.quantity}× {item.product ?? 'Producto'} · $
-                    {Number(item.subtotal).toFixed(2)}
-                  </AppText>
+              </Surface>
+
+              <AppText weight="semibold" style={styles.section}>
+                Órdenes de la sesión
+              </AppText>
+              <Surface padded={false}>
+                {orders.map((order, idx) => (
+                  <Pressable
+                    key={order.id}
+                    onPress={() => router.push(`/order/${order.id}` as Href)}
+                    style={[styles.listRow, idx > 0 && styles.hairline]}
+                  >
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <AppText weight="semibold" style={styles.listTitle}>
+                        {order.number ?? `Pedido #${order.id}`}
+                      </AppText>
+                      <AppText style={styles.meta}>
+                        {order.table != null ? `Mesa ${order.table}` : 'Pedido rápido'}
+                        {order.user ? ` · ${order.user}` : ''}
+                        {order.created_at ? ` · ${formatDateDMY(order.created_at)}` : ''}
+                      </AppText>
+                      {order.items.slice(0, 3).map((item) => (
+                        <AppText key={item.id} style={styles.itemLine}>
+                          {item.quantity}× {item.product ?? 'Producto'}
+                        </AppText>
+                      ))}
+                      {order.items.length > 3 ? (
+                        <AppText style={styles.meta}>+{order.items.length - 3} más</AppText>
+                      ) : null}
+                    </View>
+                    <View style={styles.listRight}>
+                      <AppText weight="bold" style={styles.amount}>
+                        ${Number(order.total).toFixed(2)}
+                      </AppText>
+                      <Ionicons name="chevron-forward" size={16} color={fx.inkFaint} />
+                    </View>
+                  </Pressable>
                 ))}
-              </Card>
-            ))}
-            {(data.sales_detail ?? []).length === 0 ? (
-              <AppText style={styles.meta}>Sin detalle de ventas</AppText>
-            ) : null}
-
-            <SectionLabel>Pagos</SectionLabel>
-            {data.payments.map((p) => (
-              <Card key={p.id} style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
-                  <Badge label={p.payment_method} />
-                  <AppText weight="bold">${Number(p.amount).toFixed(2)}</AppText>
-                </View>
-                <AppText style={styles.meta}>
-                  {p.order_number ?? '—'} · Mesa {p.table ?? '—'}
-                </AppText>
-              </Card>
-            ))}
-            {data.payments.length === 0 ? (
-              <AppText style={styles.meta}>Sin pagos</AppText>
-            ) : null}
-
-            <SectionLabel>Movimientos</SectionLabel>
-            {data.movements.map((m) => (
-              <Card key={m.id} style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
-                  <Badge label={m.type} />
-                  <AppText weight="bold">${Number(m.amount).toFixed(2)}</AppText>
-                </View>
-                <AppText style={styles.meta}>{m.description}</AppText>
-                {m.reference ? <AppText style={styles.meta}>Ref: {m.reference}</AppText> : null}
-                {canWrite && m.can_delete ? (
-                  <PrimaryButton
-                    title={busyId === m.id ? 'Eliminando…' : 'Eliminar'}
-                    variant="danger"
-                    onPress={() => deleteMovement(m.id)}
-                    disabled={busyId === m.id}
-                  />
+                {orders.length === 0 ? (
+                  <AppText style={[styles.meta, { padding: fx.space.md }]}>
+                    Sin órdenes en esta sesión
+                  </AppText>
                 ) : null}
-              </Card>
-            ))}
-            {data.movements.length === 0 ? (
-              <AppText style={styles.meta}>Sin movimientos</AppText>
-            ) : null}
-          </>
-        ) : null}
+              </Surface>
+
+              <AppText weight="semibold" style={styles.section}>
+                Pagos
+              </AppText>
+              <Surface padded={false}>
+                {data.payments.map((p, idx) => (
+                  <View key={p.id} style={[styles.listRow, idx > 0 && styles.hairline]}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <StatusDot status={p.payment_method} size="sm" />
+                      <AppText style={styles.meta}>
+                        {p.order_number ?? '—'} · Mesa {p.table ?? '—'}
+                      </AppText>
+                    </View>
+                    <AppText weight="bold" style={styles.amount}>
+                      ${Number(p.amount).toFixed(2)}
+                    </AppText>
+                  </View>
+                ))}
+                {data.payments.length === 0 ? (
+                  <AppText style={[styles.meta, { padding: fx.space.md }]}>Sin pagos</AppText>
+                ) : null}
+              </Surface>
+
+              <AppText weight="semibold" style={styles.section}>
+                Movimientos
+              </AppText>
+              <Surface padded={false}>
+                {data.movements.map((m, idx) => (
+                  <View key={m.id} style={[styles.listRow, idx > 0 && styles.hairline]}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <StatusDot status={m.type} size="sm" />
+                      <AppText style={styles.meta}>{m.description}</AppText>
+                      {m.reference ? (
+                        <AppText style={styles.meta}>Ref: {m.reference}</AppText>
+                      ) : null}
+                      {canWrite && m.can_delete ? (
+                        <PrimaryButton
+                          title={busyId === m.id ? 'Eliminando…' : 'Eliminar'}
+                          variant="danger"
+                          onPress={() => deleteMovement(m.id)}
+                          disabled={busyId === m.id}
+                        />
+                      ) : null}
+                    </View>
+                    <AppText weight="bold" style={styles.amount}>
+                      ${Number(m.amount).toFixed(2)}
+                    </AppText>
+                  </View>
+                ))}
+                {data.movements.length === 0 ? (
+                  <AppText style={[styles.meta, { padding: fx.space.md }]}>
+                    Sin movimientos
+                  </AppText>
+                ) : null}
+              </Surface>
+            </View>
+          </FadeIn>
+        ) : (
+          <ActivityIndicator color={fx.brand} />
+        )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, paddingBottom: 48, gap: 6 },
-  err: { color: colors.danger },
-  meta: { color: colors.gray500, fontSize: 13, marginTop: 4 },
-  itemLine: { color: colors.gray700, fontSize: 13, marginTop: 4 },
-  total: { fontSize: 22, color: colors.teal600, marginTop: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: { paddingHorizontal: fx.space.md, paddingBottom: 56 },
+  content: { gap: 20 },
+  err: { color: fx.danger, marginBottom: 8 },
+  heroPad: { paddingVertical: 8 },
+  meta: { color: fx.inkFaint, fontSize: 13 },
+  itemLine: { color: fx.inkMuted, fontSize: 13 },
+  section: { fontSize: 13, color: fx.inkMuted, marginBottom: -8 },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 16,
+  },
+  listRight: { alignItems: 'flex-end', gap: 6 },
+  listTitle: { fontSize: 16, color: fx.ink },
+  amount: { fontSize: 16, color: fx.ink },
+  hairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: fx.hairline,
+  },
 });

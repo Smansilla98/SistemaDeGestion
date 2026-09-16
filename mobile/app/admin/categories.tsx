@@ -3,29 +3,25 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
-  Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { CatalogCategory } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
+import { fx } from '../../src/theme';
 import {
   AppText,
   Badge,
-  Card,
   Chip,
   Field,
-  PageHeader,
   PrimaryButton,
-  SectionLabel,
 } from '../../src/ui/primitives';
+import { FxHeader, ModalSheet, Surface } from '../../src/ui/fintech';
 
 const emptyForm = () => ({
   name: '',
@@ -118,62 +114,76 @@ export default function AdminCategoriesScreen() {
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Categorías" subtitle="Catálogo" icon="folder" />
-      <View style={{ padding: space.md }}>
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
-        {canWrite ? (
-          <>
-            <SectionLabel>Nueva categoría</SectionLabel>
-            <Field
-              label="Nombre"
-              value={form.name}
-              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-              placeholder="Ej. Bebidas"
-            />
-            <Field
-              label="Descripción"
-              value={form.description}
-              onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-              multiline
-            />
-            <Field
-              label="Orden"
-              value={form.display_order}
-              onChangeText={(v) => setForm((f) => ({ ...f, display_order: v }))}
-              keyboardType="number-pad"
-            />
-            <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
-          </>
-        ) : null}
-        {error ? (
-          <AppText weight="medium" style={styles.err}>
-            {error}
-          </AppText>
-        ) : null}
-      </View>
-      {loading ? (
-        <ActivityIndicator color={colors.teal500} />
+      <FxHeader title="Categorías" subtitle="Catálogo" onBack={() => router.back()} />
+      {loading && rows.length === 0 ? (
+        <ActivityIndicator color={fx.brand} style={{ marginTop: 32 }} />
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(c) => String(c.id)}
-          contentContainerStyle={{ padding: space.md }}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => (canWrite ? openEdit(item) : undefined)}>
-              <Card style={{ marginBottom: 8 }}>
-                <View style={styles.row}>
-                  <AppText weight="bold" style={{ flex: 1 }}>
+          ListHeaderComponent={
+            <View style={styles.headerBlock}>
+              {canWrite ? (
+                <Surface style={styles.formCard}>
+                  <AppText weight="semibold" style={styles.section}>
+                    Nueva categoría
+                  </AppText>
+                  <Field
+                    label="Nombre"
+                    value={form.name}
+                    onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+                    placeholder="Ej. Bebidas"
+                  />
+                  <Field
+                    label="Descripción"
+                    value={form.description}
+                    onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+                    multiline
+                  />
+                  <Field
+                    label="Orden"
+                    value={form.display_order}
+                    onChangeText={(v) => setForm((f) => ({ ...f, display_order: v }))}
+                    keyboardType="number-pad"
+                  />
+                  <PrimaryButton title="Crear" loading={busy} onPress={() => void create()} />
+                </Surface>
+              ) : null}
+              {error ? (
+                <AppText weight="medium" style={styles.err}>
+                  {error}
+                </AppText>
+              ) : null}
+              <AppText weight="semibold" style={styles.section}>
+                Listado
+              </AppText>
+            </View>
+          }
+          renderItem={({ item, index }) => (
+            <Surface
+              padded={false}
+              style={[styles.itemCard, index > 0 && styles.itemGap]}
+              onPress={canWrite ? () => openEdit(item) : undefined}
+            >
+              <View style={styles.row}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText weight="semibold" style={styles.itemTitle}>
                     {item.name}
                   </AppText>
-                  <Badge label={item.is_active === false ? 'INACTIVO' : 'ACTIVO'} />
+                  {item.description ? (
+                    <AppText style={styles.meta} numberOfLines={2}>
+                      {item.description}
+                    </AppText>
+                  ) : null}
                 </View>
-                {item.description ? (
-                  <AppText style={styles.meta} numberOfLines={2}>
-                    {item.description}
-                  </AppText>
-                ) : null}
-                {canWrite ? (
+                <Badge label={item.is_active === false ? 'INACTIVO' : 'ACTIVO'} />
+                {canWrite ? <Ionicons name="chevron-forward" size={16} color={fx.inkFaint} /> : null}
+              </View>
+              {canWrite ? (
+                <View style={styles.itemActions}>
                   <PrimaryButton
                     title="Eliminar"
                     variant="danger"
@@ -196,76 +206,72 @@ export default function AdminCategoriesScreen() {
                       ])
                     }
                   />
-                ) : null}
-              </Card>
-            </Pressable>
+                </View>
+              ) : null}
+            </Surface>
           )}
         />
       )}
 
-      <Modal visible={!!editing} animationType="slide" transparent>
-        <View style={styles.modalBg}>
-          <View style={styles.modalCard}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <AppText weight="bold" style={{ fontSize: 18, marginBottom: 8 }}>
-                Editar categoría
-              </AppText>
-              <Field
-                label="Nombre"
-                value={editForm.name}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
-              />
-              <Field
-                label="Descripción"
-                value={editForm.description}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
-                multiline
-              />
-              <Field
-                label="Orden"
-                value={editForm.display_order}
-                onChangeText={(v) => setEditForm((f) => ({ ...f, display_order: v }))}
-                keyboardType="number-pad"
-              />
-              <View style={styles.chips}>
-                <Chip
-                  label="Activo"
-                  selected={editForm.is_active}
-                  onPress={() => setEditForm((f) => ({ ...f, is_active: true }))}
-                />
-                <Chip
-                  label="Inactivo"
-                  selected={!editForm.is_active}
-                  onPress={() => setEditForm((f) => ({ ...f, is_active: false }))}
-                />
-              </View>
-              <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
-              <PrimaryButton title="Cancelar" variant="ghost" onPress={() => setEditing(null)} />
-            </ScrollView>
-          </View>
+      <ModalSheet
+        visible={!!editing}
+        title="Editar categoría"
+        onClose={() => setEditing(null)}
+        maxHeight="90%"
+      >
+        <Field
+          label="Nombre"
+          value={editForm.name}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, name: v }))}
+        />
+        <Field
+          label="Descripción"
+          value={editForm.description}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+          multiline
+        />
+        <Field
+          label="Orden"
+          value={editForm.display_order}
+          onChangeText={(v) => setEditForm((f) => ({ ...f, display_order: v }))}
+          keyboardType="number-pad"
+        />
+        <View style={styles.chips}>
+          <Chip
+            label="Activo"
+            selected={editForm.is_active}
+            onPress={() => setEditForm((f) => ({ ...f, is_active: true }))}
+          />
+          <Chip
+            label="Inactivo"
+            selected={!editForm.is_active}
+            onPress={() => setEditForm((f) => ({ ...f, is_active: false }))}
+          />
         </View>
-      </Modal>
+        <PrimaryButton title="Guardar" loading={busy} onPress={() => void saveEdit()} />
+      </ModalSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  err: { color: colors.danger, marginTop: 8 },
-  meta: { color: colors.gray500, marginTop: 4, marginBottom: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+  root: { flex: 1, backgroundColor: fx.canvas },
+  list: { paddingHorizontal: fx.space.md, paddingBottom: 56 },
+  headerBlock: { gap: 12, marginBottom: 8 },
+  formCard: { gap: 4 },
+  section: { fontSize: 13, color: fx.inkMuted, marginBottom: 4 },
+  err: { color: fx.danger },
+  itemCard: { overflow: 'hidden' },
+  itemGap: { marginTop: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: fx.space.md,
+    paddingVertical: 16,
   },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space.lg,
-    maxHeight: '90%',
-    gap: 8,
-  },
+  itemTitle: { fontSize: 16, color: fx.ink },
+  meta: { color: fx.inkMuted, fontSize: 13 },
+  itemActions: { paddingHorizontal: fx.space.md, paddingBottom: 14 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

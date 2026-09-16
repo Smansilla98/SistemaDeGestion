@@ -37,7 +37,7 @@ Si hay que recrear:
 - [ ] `APP_ENV=production` y `EXPO_PUBLIC_API_URL=https://conurbaniabar.up.railway.app/api`
 - [ ] `EAS_PROJECT_ID` real (no el UUID `00000000-…`)
 - [ ] Sin secretos de servidor en el binario
-- [ ] Privacy policy URL
+- [ ] Privacy policy URL: `https://conurbaniabar.up.railway.app/privacidad` (PDF: `/privacidad.pdf`)
 - [ ] Capturas por dispositivo
 - [ ] Push: FCM (Android) / APNs (iOS) configurados
 - [ ] Version `1.0.0` + autoIncrement EAS

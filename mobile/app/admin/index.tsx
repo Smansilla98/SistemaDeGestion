@@ -1,17 +1,18 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
-import { AppIcon } from '../../src/ui/icons';
-import { AppText, PageHeader, PrimaryButton } from '../../src/ui/primitives';
+import { fx } from '../../src/theme';
+import { AppText } from '../../src/ui/primitives';
+import { FadeIn, FxHeader, Surface } from '../../src/ui/fintech';
 
 type Link = {
   title: string;
   subtitle: string;
   href: Href;
-  bi: string;
+  icon: keyof typeof Ionicons.glyphMap;
   show: boolean;
 };
 
@@ -22,10 +23,11 @@ export default function AdminHubScreen() {
   if (!canSeeAdminHub(user)) {
     return (
       <View style={styles.root}>
-        <PageHeader title="Admin" subtitle="Sin acceso" bi="lock-closed" />
-        <View style={{ padding: space.lg }}>
-          <AppText>No tenés permisos para el hub de administración.</AppText>
-          <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
+        <FxHeader title="Admin" subtitle="Sin acceso" onBack={() => router.back()} />
+        <View style={styles.body}>
+          <Surface>
+            <AppText style={styles.locked}>No tenés permisos para el hub de administración.</AppText>
+          </Surface>
         </View>
       </View>
     );
@@ -36,119 +38,163 @@ export default function AdminHubScreen() {
       title: 'Categorías',
       subtitle: 'Catálogo de productos',
       href: '/admin/categories' as Href,
-      bi: 'folder',
+      icon: 'folder-outline',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Sectores',
       subtitle: 'Zonas de mesas',
       href: '/admin/sectors' as Href,
-      bi: 'map',
+      icon: 'map-outline',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Descuentos',
       subtitle: 'Tipos de descuento',
       href: '/admin/discounts' as Href,
-      bi: 'percent',
+      icon: 'pricetag-outline',
       show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
     },
     {
       title: 'Clientes',
       subtitle: 'Agenda de clientes',
       href: '/admin/clients' as Href,
-      bi: 'people',
+      icon: 'people-outline',
       show: hasPermission(user, 'clients.read') || hasPermission(user, 'clients.write'),
     },
     {
       title: 'Reportes',
       subtitle: 'Ventas del período',
       href: '/admin/reports' as Href,
-      bi: 'graph-up',
+      icon: 'bar-chart-outline',
       show: hasPermission(user, 'reports.read'),
     },
     {
       title: 'Eventos',
       subtitle: 'Eventos y agenda',
       href: '/admin/events' as Href,
-      bi: 'calendar',
+      icon: 'calendar-outline',
       show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
     },
     {
       title: 'Recurrentes',
       subtitle: 'Actividades semanales',
       href: '/admin/recurring' as Href,
-      bi: 'repeat',
+      icon: 'repeat-outline',
       show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
     },
     {
       title: 'Gastos fijos',
       subtitle: 'Gastos e ingresos fijos',
       href: '/admin/expenses' as Href,
-      bi: 'wallet',
+      icon: 'wallet-outline',
       show: hasPermission(user, 'expenses.read') || hasPermission(user, 'expenses.write'),
     },
     {
       title: 'Notificaciones',
       subtitle: 'Alertas del sistema',
       href: '/admin/notifications' as Href,
-      bi: 'bell',
+      icon: 'notifications-outline',
       show: true,
     },
     {
       title: 'Matriz de permisos',
       subtitle: 'Overrides por usuario y rol',
       href: '/admin/permissions' as Href,
-      bi: 'key',
+      icon: 'key-outline',
       show: hasPermission(user, 'users.read') || hasPermission(user, 'users.write'),
     },
   ];
 
+  const visible = links.filter((l) => l.show);
+
   return (
     <View style={styles.root}>
-      <PageHeader title="Administración" subtitle="Catálogo, reportes y más" bi="gear" />
-      <ScrollView contentContainerStyle={styles.body}>
-        <PrimaryButton title="Volver" variant="ghost" onPress={() => router.back()} />
-        <View style={styles.grid}>
-          {links
-            .filter((l) => l.show)
-            .map((l) => (
-              <Pressable key={l.title} style={styles.card} onPress={() => router.push(l.href)}>
+      <FxHeader
+        title="Administración"
+        subtitle="Catálogo, reportes y más"
+        onBack={() => router.back()}
+      />
+      <ScrollView
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+      >
+        <FadeIn>
+          <AppText weight="semibold" style={styles.section}>
+            Módulos
+          </AppText>
+          <View style={styles.grid}>
+            {visible.map((l) => (
+              <Pressable
+                key={l.title}
+                style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push(l.href)}
+              >
                 <View style={styles.iconWrap}>
-                  <AppIcon bi={l.bi} size={22} color={colors.teal500} />
+                  <Ionicons name={l.icon} size={24} color={fx.brand} />
                 </View>
-                <AppText weight="bold">{l.title}</AppText>
-                <AppText style={styles.sub}>{l.subtitle}</AppText>
+                <AppText weight="semibold" style={styles.cardTitle} numberOfLines={2}>
+                  {l.title}
+                </AppText>
+                <AppText style={styles.sub} numberOfLines={2}>
+                  {l.subtitle}
+                </AppText>
               </Pressable>
             ))}
-        </View>
+          </View>
+        </FadeIn>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  body: { padding: space.lg, paddingBottom: 48 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  root: { flex: 1, backgroundColor: fx.canvas },
+  body: {
+    paddingHorizontal: fx.space.md,
+    paddingBottom: 56,
+  },
+  locked: { color: fx.inkMuted, fontSize: 15, lineHeight: 22 },
+  section: {
+    fontSize: 13,
+    color: fx.inkMuted,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
   card: {
     width: '47%',
-    minHeight: 110,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.gray100,
-    padding: space.md,
-    gap: 4,
+    minHeight: 104,
+    backgroundColor: fx.surface,
+    borderRadius: fx.radius.md,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.teal50,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: fx.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  sub: { color: colors.gray500, fontSize: 12 },
+  cardTitle: {
+    fontSize: 15,
+    color: fx.ink,
+    textAlign: 'center',
+  },
+  sub: {
+    color: fx.inkFaint,
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
 });

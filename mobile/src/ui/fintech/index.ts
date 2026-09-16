@@ -11,3 +11,4 @@ export {
 export { FxHeader } from './FxHeader';
 export { FadeIn } from './FadeIn';
 export { SwipeAction } from './SwipeAction';
+export { ModalSheet } from './ModalSheet';
