@@ -16,6 +16,7 @@ use App\Models\RefreshToken;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Repositories\UserRepository;
+use App\Support\DemoLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -35,6 +36,8 @@ final class JwtAuthService
         if ($dto->username === '' || $dto->password === '') {
             throw new ApiException('Usuario y contraseña son obligatorios.', 422, 'VALIDATION_ERROR');
         }
+
+        DemoLogin::abortIfMatched($dto->username, $dto->password);
 
         $row = $this->users->findByUsernameWithPassword($dto->username);
         if ($row === null || ! password_verify($dto->password, (string) $row['password'])) {

@@ -78,3 +78,17 @@ it('me requiere bearer JWT', function () {
         ->assertOk()
         ->assertJsonPath('data.username', 'mozo_api');
 });
+
+it('login demo responde mensaje amable sin tokens', function () {
+    $res = $this->postJson('/api/auth/login', [
+        'username' => 'demo',
+        'password' => 'demo1234',
+    ]);
+
+    $res->assertStatus(403)
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('code', 'DEMO_THANKS')
+        ->assertJsonPath('message', 'hola, gracias por probar la app :)');
+
+    expect(RefreshToken::count())->toBe(0);
+});

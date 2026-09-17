@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\DemoLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -60,6 +61,15 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $credentials = $request->validated();
+
+        if (DemoLogin::matches(
+            (string) ($credentials['username'] ?? ''),
+            (string) ($credentials['password'] ?? '')
+        )) {
+            return back()
+                ->with('success', DemoLogin::message())
+                ->onlyInput('username');
+        }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();

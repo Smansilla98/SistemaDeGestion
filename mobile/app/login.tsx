@@ -38,15 +38,22 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [friendly, setFriendly] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const onSubmit = async () => {
     setError(null);
+    setFriendly(false);
     setBusy(true);
     try {
       await login(username, password);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo iniciar sesión');
+      if (e instanceof ApiError && e.code === 'DEMO_THANKS') {
+        setFriendly(true);
+        setError(e.message);
+      } else {
+        setError(e instanceof ApiError ? e.message : 'No se pudo iniciar sesión');
+      }
     } finally {
       setBusy(false);
     }
@@ -153,7 +160,10 @@ export default function LoginScreen() {
             </View>
 
             {(error || offlineHint) && (
-              <AppText weight="medium" style={styles.error}>
+              <AppText
+                weight="medium"
+                style={[styles.error, friendly && styles.friendly]}
+              >
                 {error ?? offlineHint}
               </AppText>
             )}
@@ -258,6 +268,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
     fontSize: 14,
+  },
+  friendly: {
+    color: colors.teal600,
   },
   cta: {
     marginTop: 18,
