@@ -134,6 +134,8 @@ export default function LoginScreen() {
                 ref={passwordRef}
                 style={[styles.input, styles.passwordInput]}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Tu contraseña"

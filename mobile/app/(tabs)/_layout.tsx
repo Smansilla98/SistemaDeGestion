@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/auth/AuthContext';
 import { isPrimaryTab } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
@@ -41,14 +42,18 @@ function tabIcon(
  */
 export default function TabsLayout() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
+          // Alto fijo + paddingBottom fijo ignoraba la barra de gestos de
+          // Android/el home indicator de iOS — los últimos tabs quedaban
+          // tapados y no se podían tocar. Sumamos el inset real acá.
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 6,
           borderTopColor: fx.hairline,
           backgroundColor: fx.surface,

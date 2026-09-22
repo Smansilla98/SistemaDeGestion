@@ -1,5 +1,6 @@
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fx } from '../../theme';
 import { AppText } from '../primitives';
 
@@ -19,11 +20,13 @@ export function ModalSheet({
   children: React.ReactNode;
   maxHeight?: `${number}%` | number;
 }) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.bg}>
         <Pressable style={styles.dismiss} onPress={onClose} accessibilityLabel="Cerrar" />
-        <View style={[styles.sheet, { maxHeight }]}>
+        <View style={[styles.sheet, { maxHeight, paddingBottom: 8 + insets.bottom }]}>
           <View style={styles.handle} />
           <View style={styles.head}>
             <AppText weight="bold" style={styles.title} numberOfLines={1}>
@@ -47,7 +50,14 @@ export function ModalSheet({
           >
             {children}
           </ScrollView>
-          <Pressable onPress={onClose} style={styles.closeBar} accessibilityRole="button">
+          {/* El botón "Cerrar" es lo último tocable de la barra inferior — si
+              el teléfono tiene gestos de navegación, sin el inset de acá
+              queda justo debajo de esa franja y no registra el toque. */}
+          <Pressable
+            onPress={onClose}
+            style={[styles.closeBar, { marginBottom: fx.space.md + insets.bottom }]}
+            accessibilityRole="button"
+          >
             <AppText weight="semibold" style={styles.closeBarText}>
               Cerrar
             </AppText>
