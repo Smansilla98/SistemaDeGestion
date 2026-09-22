@@ -175,15 +175,46 @@ class OrderService
             throw new \RuntimeException('Faltan migraciones (table_sessions).');
         }
 
-        $session = $this->openTableSession($table, $userId);
-        $table->update([
-            'status' => Table::STATUS_OCUPADA,
-            'current_session_id' => $session->id,
-        ]);
+        DB::transaction(function () use ($table, $userId) {
+            $session = $this->openTableSession($table, $userId);
+
+            $table->update([
+                'status' => Table::STATUS_OCUPADA,
+                'current_session_id' => $session->id,
+            ]);
+        });
     }
 
+    /**
+     * Sesión ABIERTA de la mesa: reusa la que ya exista antes de crear otra.
+     *
+     * tables.status/current_session_id es un puntero cacheado que puede
+     * desincronizarse (ej: la mesa se liberó sin cerrar bien la sesión)
+     * mientras table_sessions, la fuente de verdad, todavía tiene una fila
+     * ABIERTA huérfana para esa mesa. Sin este chequeo, el índice único
+     * table_sessions_one_open_per_table rechaza el insert con un 500 crudo
+     * en vez de dejar ocupar la mesa. lockForUpdate evita que dos toques de
+     * "Ocupar mesa" simultáneos creen cada uno la suya y uno de los dos
+     * reviente igual — requiere que el caller ya esté dentro de una
+     * transacción (ambos call sites lo están).
+     */
     private function openTableSession(Table $table, int $userId): TableSession
     {
+        $existingOpenSession = TableSession::where('table_id', $table->id)
+            ->where('status', TableSession::STATUS_ABIERTA)
+            ->orderByDesc('started_at')
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingOpenSession) {
+            Log::warning('Mesa desincronizada: reusando sesión ABIERTA huérfana en vez de crear otra', [
+                'table_id' => $table->id,
+                'session_id' => $existingOpenSession->id,
+            ]);
+
+            return $existingOpenSession;
+        }
+
         return TableSession::create([
             'restaurant_id' => $table->restaurant_id,
             'table_id' => $table->id,

@@ -10,6 +10,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, ApiError } from '../../src/api/client';
 import type { TableDetail, TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -30,6 +31,7 @@ export default function TableDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const canWrite = hasPermission(user, 'tables.write');
   const canPay = hasPermission(user, 'cash.write');
   const canOrder = hasPermission(user, 'orders.write');
@@ -108,7 +110,7 @@ export default function TableDetailScreen() {
         right={table ? <StatusDot status={table.status} /> : null}
       />
       <ScrollView
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[styles.body, { paddingBottom: 56 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
         showsVerticalScrollIndicator={false}
       >

@@ -12,10 +12,12 @@ use App\Models\Table;
 use App\Models\TableSession;
 use App\Services\OrderService;
 use App\Services\TableService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 final class TableOpsController extends Controller
 {
@@ -173,7 +175,7 @@ final class TableOpsController extends Controller
         try {
             $orders->ensureTableReadyForOrder($table, (int) $request->user()->id);
         } catch (\Throwable $e) {
-            return ApiResponse::error($e->getMessage(), 422, 'OCCUPY_ERROR');
+            return ApiResponse::error($this->safeErrorMessage($e, 'occupy'), 422, 'OCCUPY_ERROR');
         }
 
         return ApiResponse::success($table->fresh(['sector', 'currentSession.waiter'])->toArray(), 200, 'Mesa ocupada');
@@ -291,7 +293,7 @@ final class TableOpsController extends Controller
                 ]);
             });
         } catch (\Throwable $e) {
-            return ApiResponse::error($e->getMessage(), 422, 'TRANSFER_ERROR');
+            return ApiResponse::error($this->safeErrorMessage($e, 'transfer'), 422, 'TRANSFER_ERROR');
         }
 
         return ApiResponse::success([
@@ -522,7 +524,7 @@ final class TableOpsController extends Controller
         try {
             $result = $tables->processTablePayment($table, $validated, (int) $request->user()->id);
         } catch (\Throwable $e) {
-            return ApiResponse::error($e->getMessage(), 422, 'PAY_ERROR');
+            return ApiResponse::error($this->safeErrorMessage($e, 'pay'), 422, 'PAY_ERROR');
         }
 
         if (! ($result['success'] ?? false)) {
@@ -542,5 +544,33 @@ final class TableOpsController extends Controller
         }
 
         return (int) $rid;
+    }
+
+    /**
+     * Mensaje seguro para mostrarle al usuario ante una excepción.
+     *
+     * QueryException hereda de RuntimeException, así que un catch(\Throwable)
+     * ingenuo termina devolviendo SQL crudo (nombre de tabla, constraint,
+     * hasta valores) al cliente cuando algo como un unique index falla — antes
+     * pasaba con "Ocupar mesa". Solo las excepciones de negocio que este
+     * código tira a propósito (RuntimeException simple, con un mensaje en
+     * español pensado para mostrarse) llegan tal cual; cualquier otra cosa
+     * (QueryException, Error, lo que sea) se loguea completa y al usuario le
+     * llega un mensaje genérico.
+     */
+    private function safeErrorMessage(\Throwable $e, string $context): string
+    {
+        $isSafeToShow = ! ($e instanceof QueryException) && $e instanceof \RuntimeException;
+
+        if (! $isSafeToShow) {
+            Log::error("Error inesperado en {$context}", [
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return 'Ocurrió un error inesperado. Reintentá en un momento o avisá a soporte.';
+        }
+
+        return $e->getMessage();
     }
 }

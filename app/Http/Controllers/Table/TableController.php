@@ -231,13 +231,11 @@ class TableController extends Controller
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al crear pedido desde mesa', ['error' => $e->getMessage()]);
+            Log::error('Error al crear pedido desde mesa', ['error' => $e->getMessage(), 'exception' => $e::class]);
 
             return response()->json([
                 'success' => false,
-                'message' => $e instanceof \RuntimeException
-                    ? $e->getMessage()
-                    : 'No pudimos abrir el pedido. Reintentá en unos segundos.',
+                'message' => $this->safeErrorMessage($e, 'No pudimos abrir el pedido. Reintentá en unos segundos.'),
             ], 422);
         }
     }
@@ -417,14 +415,13 @@ class TableController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al crear pedido desde mesa', [
                 'error' => $e->getMessage(),
+                'exception' => $e::class,
                 'user_id' => auth()->id(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => $e instanceof \RuntimeException
-                    ? $e->getMessage()
-                    : 'No pudimos abrir el pedido. Reintentá en unos segundos.',
+                'message' => $this->safeErrorMessage($e, 'No pudimos abrir el pedido. Reintentá en unos segundos.'),
             ], 500);
         }
     }
@@ -653,21 +650,49 @@ class TableController extends Controller
                 }
 
                 try {
-                    $session = TableSession::create([
-                        'restaurant_id' => $table->restaurant_id,
-                        'table_id' => $table->id,
-                        'waiter_id' => $validated['waiter_id'],
-                        'opened_by_user_id' => auth()->id(),
-                        'started_at' => now(),
-                        'status' => TableSession::STATUS_ABIERTA,
-                    ]);
+                    // tables.current_session_id puede quedar desincronizado (ej: la
+                    // mesa se liberó sin cerrar bien la sesión) mientras
+                    // table_sessions, la fuente de verdad, todavía tiene una fila
+                    // ABIERTA huérfana para esta mesa. Reusar esa sesión en vez de
+                    // crear otra — si no, el índice único
+                    // table_sessions_one_open_per_table rechaza el insert.
+                    $session = DB::transaction(function () use ($table, $validated) {
+                        $existingOpenSession = TableSession::where('table_id', $table->id)
+                            ->where('status', TableSession::STATUS_ABIERTA)
+                            ->orderByDesc('started_at')
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($existingOpenSession) {
+                            Log::warning('Mesa desincronizada: reusando sesión ABIERTA huérfana en vez de crear otra', [
+                                'table_id' => $table->id,
+                                'session_id' => $existingOpenSession->id,
+                            ]);
+
+                            return $existingOpenSession;
+                        }
+
+                        return TableSession::create([
+                            'restaurant_id' => $table->restaurant_id,
+                            'table_id' => $table->id,
+                            'waiter_id' => $validated['waiter_id'],
+                            'opened_by_user_id' => auth()->id(),
+                            'started_at' => now(),
+                            'status' => TableSession::STATUS_ABIERTA,
+                        ]);
+                    });
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
-                    // Si falla la creación de sesión, registrar error pero permitir continuar
-                    Log::error('Error al crear sesión de mesa: '.$e->getMessage());
+                    // Nunca mostrarle al usuario el mensaje crudo de la excepción
+                    // (puede ser SQL con nombres de tabla/constraint) — se loguea
+                    // completo y se muestra un mensaje genérico.
+                    Log::error('Error al crear sesión de mesa: '.$e->getMessage(), [
+                        'exception' => $e::class,
+                        'table_id' => $table->id,
+                    ]);
 
                     return redirect()->route('tables.index')
-                        ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: '.$e->getMessage());
+                        ->with('error', 'No se pudo abrir la mesa. Reintentá en un momento o avisá a soporte.');
                 }
             }
             $table->update([
@@ -860,7 +885,7 @@ class TableController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió un error al procesar el pago: '.$e->getMessage(),
+                    'message' => 'Ocurrió un error al procesar el pago. '.$this->safeErrorMessage($e, 'Reintentá en un momento o avisá a soporte.'),
                 ], 500);
             }
 
@@ -1149,4 +1174,23 @@ class TableController extends Controller
 
     // (el método "Mostrar todos los pedidos de una mesa" fue reemplazado por
     //  "Mostrar pedidos de la sesión actual de una mesa (no histórico)")
+
+    /**
+     * Mensaje seguro para mostrarle al usuario ante una excepción.
+     *
+     * QueryException hereda de RuntimeException, así que un chequeo
+     * `$e instanceof \RuntimeException` a secas (como se usaba en varios
+     * catch de este controlador) termina mostrando SQL crudo — nombre de
+     * tabla, constraint, hasta valores — cuando algo como un unique index
+     * falla. Solo las excepciones de negocio que este código tira a
+     * propósito (RuntimeException simple, con mensaje en español pensado
+     * para mostrarse) llegan tal cual; cualquier otra cosa se loguea
+     * completa y al usuario le llega un mensaje genérico.
+     */
+    private function safeErrorMessage(\Throwable $e, string $fallback): string
+    {
+        $isSafeToShow = ! ($e instanceof \Illuminate\Database\QueryException) && $e instanceof \RuntimeException;
+
+        return $isSafeToShow ? $e->getMessage() : $fallback;
+    }
 }
