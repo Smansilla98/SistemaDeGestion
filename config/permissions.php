@@ -24,6 +24,7 @@ return [
         ['key' => 'fixed-expenses', 'label' => 'Gastos Fijos', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'reports', 'label' => 'Reportes', 'actions' => ['view', 'export']],
         ['key' => 'configuration', 'label' => 'Configuración', 'actions' => ['view', 'update']],
+        ['key' => 'payment-methods', 'label' => 'Medios de cobro', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'tutorials', 'label' => 'Tutoriales', 'actions' => ['view', 'create', 'update', 'delete']],
     ],
 
@@ -61,6 +62,7 @@ return [
             'fixed-expenses.view' => false, 'fixed-expenses.create' => false, 'fixed-expenses.update' => false, 'fixed-expenses.delete' => false,
             'reports.view' => false, 'reports.export' => false,
             'configuration.view' => true, 'configuration.update' => true,
+            'payment-methods.view' => true, 'payment-methods.create' => true, 'payment-methods.update' => true, 'payment-methods.delete' => true,
             'tutorials.view' => true, 'tutorials.create' => true, 'tutorials.update' => true, 'tutorials.delete' => true,
         ],
         'CAJERO' => [
@@ -74,7 +76,7 @@ return [
             'users.view' => false, 'printers.view' => false,
             'events.view' => false, 'recurring-activities.view' => true,
             'fixed-expenses.view' => true, 'reports.view' => true, 'reports.export' => true,
-            'configuration.view' => false, 'tutorials.view' => true,
+            'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
         ],
         'MOZO' => [
             'dashboard.view' => true,
@@ -89,7 +91,7 @@ return [
             'stock_mozo.create' => false,
             'users.view' => false, 'printers.view' => false,
             'events.view' => false, 'recurring-activities.view' => true,
-            'fixed-expenses.view' => false, 'reports.view' => false, 'configuration.view' => false, 'tutorials.view' => true,
+            'fixed-expenses.view' => false, 'reports.view' => false, 'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
         ],
         'COCINA' => [
             'dashboard.view' => true,
@@ -97,7 +99,7 @@ return [
             'cash-register.view' => false, 'discount-types.view' => false, 'sectors.view' => false, 'categories.view' => false,
             'products.view' => true, 'stock.view' => false, 'users.view' => false, 'printers.view' => false,
             'events.view' => false, 'recurring-activities.view' => false,
-            'fixed-expenses.view' => false, 'reports.view' => false, 'configuration.view' => false, 'tutorials.view' => true,
+            'fixed-expenses.view' => false, 'reports.view' => false, 'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
         ],
         'SUPERVISOR' => [
             'dashboard.view' => true,
@@ -106,7 +108,7 @@ return [
             'discount-types.view' => false, 'sectors.view' => false, 'categories.view' => false,
             'products.view' => true, 'stock.view' => true, 'users.view' => false, 'printers.view' => false,
             'events.view' => true, 'recurring-activities.view' => true,
-            'fixed-expenses.view' => false, 'reports.view' => true, 'configuration.view' => false, 'tutorials.view' => true,
+            'fixed-expenses.view' => false, 'reports.view' => true, 'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
         ],
         'ENCARGADO' => [
             'dashboard.view' => true,
@@ -117,7 +119,7 @@ return [
             'stock.view' => true, 'stock.create' => true,
             'users.view' => false, 'printers.view' => false,
             'events.view' => false, 'recurring-activities.view' => true,
-            'fixed-expenses.view' => false, 'reports.view' => true, 'configuration.view' => false, 'tutorials.view' => true,
+            'fixed-expenses.view' => false, 'reports.view' => true, 'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
         ],
     ],
 ];

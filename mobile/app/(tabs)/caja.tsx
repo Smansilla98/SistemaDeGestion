@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,7 +12,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
-import type { CashSessionRow, TableRow } from '../../src/api/types';
+import type { CashSessionRow, PaymentMethodConfig, TableRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
@@ -26,9 +27,7 @@ import {
   Surface,
 } from '../../src/ui/fintech';
 
-const METHODS = ['EFECTIVO', 'DEBITO', 'CREDITO', 'TRANSFERENCIA', 'QR', 'OTRO'] as const;
-
-type PayLine = { payment_method: (typeof METHODS)[number]; amount: string };
+type PayLine = { payment_method: string; amount: string };
 
 export default function CajaScreen() {
   const { user } = useAuth();
@@ -41,6 +40,7 @@ export default function CajaScreen() {
     sales_total: number;
     payments_count: number;
     expected_amount?: number;
+    payment_breakdown?: Record<string, number>;
     open_sessions?: CashSessionRow[];
   } | null>(null);
   const [registers, setRegisters] = useState<Array<{ id: number; name: string }>>([]);
@@ -52,6 +52,7 @@ export default function CajaScreen() {
   const [finalAmount, setFinalAmount] = useState('');
   const [closeNotes, setCloseNotes] = useState('');
   const [payTableId, setPayTableId] = useState<number | null>(null);
+  const [methods, setMethods] = useState<PaymentMethodConfig[]>([]);
   const [payLines, setPayLines] = useState<PayLine[]>([{ payment_method: 'EFECTIVO', amount: '' }]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -65,17 +66,24 @@ export default function CajaScreen() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, t, sess] = await Promise.all([
+      const [s, r, t, sess, pm] = await Promise.all([
         api.cashSummary(activeSessionId ?? undefined),
         api.cashRegisters(),
         api.tables(),
         api.cashSessions().catch(() => [] as CashSessionRow[]),
+        api.paymentMethodsActive().catch(() => [] as PaymentMethodConfig[]),
       ]);
       setSummary(s);
       setRegisters(Array.isArray(r) ? r : []);
       setRegisterId((prev) => prev ?? r?.[0]?.id ?? null);
       setTables((Array.isArray(t) ? t : []).filter((x) => x.status === 'OCUPADA'));
       setSessions(Array.isArray(sess) ? sess : []);
+      setMethods(Array.isArray(pm) ? pm : []);
+      setPayLines((prev) => {
+        if (prev.length !== 1 || prev[0].amount) return prev;
+        const first = pm[0]?.type ?? 'EFECTIVO';
+        return [{ payment_method: first, amount: '' }];
+      });
       const open = s.open_sessions ?? [];
       setActiveSessionId((prev) => {
         if (prev && open.some((o) => o.id === prev)) return prev;
@@ -145,7 +153,7 @@ export default function CajaScreen() {
     try {
       await api.payTable(payTableId, payments);
       setMsg('Mesa cobrada');
-      setPayLines([{ payment_method: 'EFECTIVO', amount: '' }]);
+      setPayLines([{ payment_method: methods[0]?.type ?? 'EFECTIVO', amount: '' }]);
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Cobro falló');
@@ -214,9 +222,18 @@ export default function CajaScreen() {
                 <HeroMetric
                   label="Ventas de la sesión"
                   value={`$${Number(summary.sales_total).toFixed(0)}`}
-                  hint={`${summary.payments_count} pagos · Esperado $${Number(summary.expected_amount ?? 0).toFixed(0)}`}
+                  hint={`${summary.payments_count} pagos · Efectivo esperado $${Number(summary.expected_amount ?? 0).toFixed(0)}`}
                   mono
                 />
+                {summary.payment_breakdown && Object.keys(summary.payment_breakdown).length > 0 ? (
+                  <View style={styles.breakdownRow}>
+                    {Object.entries(summary.payment_breakdown).map(([method, amount]) => (
+                      <AppText key={method} style={styles.meta}>
+                        {method}: ${Number(amount).toFixed(0)}
+                      </AppText>
+                    ))}
+                  </View>
+                ) : null}
                 {openSessions.length > 1 ? (
                   <View style={styles.chips}>
                     {openSessions.map((s) => (
@@ -322,39 +339,84 @@ export default function CajaScreen() {
                 {tables.length === 0 ? (
                   <AppText style={styles.meta}>No hay mesas ocupadas</AppText>
                 ) : null}
-                {payLines.map((line, idx) => (
-                  <View key={idx} style={styles.payBlock}>
-                    <View style={styles.chips}>
-                      {METHODS.map((m) => (
-                        <Chip
-                          key={m}
-                          label={m}
-                          selected={line.payment_method === m}
-                          onPress={() =>
-                            setPayLines((prev) =>
-                              prev.map((p, i) => (i === idx ? { ...p, payment_method: m } : p)),
-                            )
-                          }
-                        />
-                      ))}
+                {payLines.map((line, idx) => {
+                  const config = methods.find((m) => m.type === line.payment_method);
+                  return (
+                    <View key={idx} style={styles.payBlock}>
+                      <View style={styles.chips}>
+                        {methods.map((m) => (
+                          <Chip
+                            key={m.type}
+                            label={m.label}
+                            selected={line.payment_method === m.type}
+                            onPress={() =>
+                              setPayLines((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, payment_method: m.type } : p)),
+                              )
+                            }
+                          />
+                        ))}
+                      </View>
+                      {config?.type === 'TRANSFERENCIA' &&
+                      (config.alias || config.cvu || config.cbu) ? (
+                        <Surface style={styles.transferDetail}>
+                          {config.alias ? (
+                            <AppText style={styles.transferLine}>Alias: {config.alias}</AppText>
+                          ) : null}
+                          {config.cvu ? (
+                            <AppText style={styles.transferLine}>CVU: {config.cvu}</AppText>
+                          ) : null}
+                          {config.cbu ? (
+                            <AppText style={styles.transferLine}>CBU: {config.cbu}</AppText>
+                          ) : null}
+                          {config.account_holder ? (
+                            <AppText style={styles.transferLine}>Titular: {config.account_holder}</AppText>
+                          ) : null}
+                          {config.instructions ? (
+                            <AppText style={styles.meta}>{config.instructions}</AppText>
+                          ) : null}
+                        </Surface>
+                      ) : null}
+                      {config?.type === 'QR' ? (
+                        <Surface style={styles.transferDetail}>
+                          {config.qr_image_url ? (
+                            <Image
+                              source={{ uri: config.qr_image_url }}
+                              style={styles.qrImage}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <AppText style={styles.meta}>
+                              No hay QR cargado — configuralo desde la web (Configuración → Medios de
+                              cobro).
+                            </AppText>
+                          )}
+                          {config.instructions ? (
+                            <AppText style={styles.meta}>{config.instructions}</AppText>
+                          ) : null}
+                        </Surface>
+                      ) : null}
+                      <Field
+                        label="Monto"
+                        keyboardType="decimal-pad"
+                        value={line.amount}
+                        onChangeText={(v) =>
+                          setPayLines((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, amount: v } : p)),
+                          )
+                        }
+                      />
                     </View>
-                    <Field
-                      label="Monto"
-                      keyboardType="decimal-pad"
-                      value={line.amount}
-                      onChangeText={(v) =>
-                        setPayLines((prev) =>
-                          prev.map((p, i) => (i === idx ? { ...p, amount: v } : p)),
-                        )
-                      }
-                    />
-                  </View>
-                ))}
+                  );
+                })}
                 <PrimaryButton
                   title="Agregar método"
                   variant="ghost"
                   onPress={() =>
-                    setPayLines((prev) => [...prev, { payment_method: 'EFECTIVO', amount: '' }])
+                    setPayLines((prev) => [
+                      ...prev,
+                      { payment_method: methods[0]?.type ?? 'EFECTIVO', amount: '' },
+                    ])
                   }
                 />
                 <PrimaryButton title="Cobrar" onPress={() => void pay()} disabled={!payTableId} />
@@ -454,6 +516,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: fx.hairline,
   },
+  transferDetail: { marginBottom: 12, gap: 4 },
+  breakdownRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 },
+  transferLine: { fontSize: 14, color: fx.ink },
+  qrImage: { width: '100%', height: 180, marginBottom: 8 },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',

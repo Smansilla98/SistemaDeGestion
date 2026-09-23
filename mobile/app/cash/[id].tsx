@@ -124,11 +124,20 @@ export default function CashSessionDetailScreen() {
             <View style={styles.content}>
               <Surface style={styles.heroPad}>
                 <HeroMetric
-                  label="Total esperado"
+                  label="Efectivo esperado"
                   value={`$${Number(data.expected_amount).toFixed(2)}`}
-                  hint={`Ventas $${Number(data.sales_total).toFixed(0)} · Ing $${Number(data.ingresos).toFixed(0)} · Egr $${Number(data.egresos).toFixed(0)}`}
+                  hint={`Ventas totales $${Number(data.sales_total).toFixed(0)} · Ing $${Number(data.ingresos).toFixed(0)} · Egr $${Number(data.egresos).toFixed(0)}`}
                   mono
                 />
+                {data.payment_breakdown && Object.keys(data.payment_breakdown).length > 0 ? (
+                  <View style={styles.breakdownRow}>
+                    {Object.entries(data.payment_breakdown).map(([method, amount]) => (
+                      <AppText key={method} style={styles.meta}>
+                        {method}: ${Number(amount).toFixed(0)}
+                      </AppText>
+                    ))}
+                  </View>
+                ) : null}
                 <AppText style={styles.meta}>
                   Cajero: {session?.user?.name ?? '—'}
                   {' · '}Ini ${Number(session?.initial_amount ?? 0).toFixed(0)}
@@ -252,6 +261,7 @@ const styles = StyleSheet.create({
   err: { color: fx.danger, marginBottom: 8 },
   heroPad: { paddingVertical: 8 },
   meta: { color: fx.inkFaint, fontSize: 13 },
+  breakdownRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 },
   itemLine: { color: fx.inkMuted, fontSize: 13 },
   section: { fontSize: 13, color: fx.inkMuted, marginBottom: -8 },
   listRow: {

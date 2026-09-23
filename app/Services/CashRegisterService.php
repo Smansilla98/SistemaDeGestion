@@ -63,9 +63,29 @@ class CashRegisterService
     }
 
     /**
-     * Calcular monto esperado según ventas
+     * Desglose de ventas por método de pago (para mostrar en el cierre de
+     * caja separado del efectivo — ver payments.payment_method). Solo
+     * EFECTIVO entra al cálculo de `expected_amount`; el resto se muestra
+     * de forma informativa, nunca se suma al efectivo físico esperado.
+     *
+     * @return array<string, float>
      */
-    private function calculateExpectedAmount(CashRegisterSession $session): float
+    public function paymentBreakdown(CashRegisterSession $session): array
+    {
+        return Payment::where('cash_register_session_id', $session->id)
+            ->selectRaw('payment_method, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->pluck('total', 'payment_method')
+            ->map(fn ($v) => (float) $v)
+            ->all();
+    }
+
+    /**
+     * Calcular monto esperado según ventas — solo EFECTIVO (más movimientos
+     * manuales). Pública para que las pantallas de resumen de caja usen el
+     * mismo cálculo que el cierre real, en vez de reimplementarlo aparte.
+     */
+    public function calculateExpectedAmount(CashRegisterSession $session): float
     {
         // Sumar todos los pagos en efectivo de la sesión
         $payments = Payment::where('cash_register_session_id', $session->id)

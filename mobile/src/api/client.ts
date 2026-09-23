@@ -10,6 +10,7 @@ import type {
   DiscountTypeRow,
   NotificationRow,
   OrderRow,
+  PaymentMethodConfig,
   ProductRow,
   ProductsReport,
   SalesReport,
@@ -576,6 +577,7 @@ export const api = {
       sales_total: number;
       payments_count: number;
       expected_amount?: number;
+      payment_breakdown?: Record<string, number>;
       open_sessions?: CashSessionRow[];
     }>(`/cash/summary${q}`);
   },
@@ -611,6 +613,11 @@ export const api = {
 
   cashSessions: () =>
     apiRequest<CashSessionRow[]>('/cash/sessions').then((d) => asList<CashSessionRow>(d)),
+
+  paymentMethodsActive: () =>
+    apiRequest<PaymentMethodConfig[]>('/payment-method-configurations/active').then((d) =>
+      asList<PaymentMethodConfig>(d),
+    ),
 
   cashSessionDetail: (sessionId: number) =>
     apiRequest<CashSessionDetail>(`/cash/sessions/${sessionId}`),

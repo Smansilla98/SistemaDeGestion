@@ -98,6 +98,29 @@
         background: #bee3f8;
         color: #2c5282;
     }
+
+    .payment-method-detail {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .payment-method-detail .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0;
+    }
+
+    .payment-method-detail img {
+        max-height: 160px;
+        display: block;
+        margin: 0 auto 0.5rem;
+        border-radius: 8px;
+    }
 </style>
 
 <div class="row mb-4">
@@ -246,24 +269,91 @@ let totalAmount = {{ $totalAmount }};
 let currentDiscount = {{ $totalDiscount }};
 let paymentCounter = 0;
 
-const paymentMethodOptions = {
-    // MÓDULO 4: Métodos de pago completos incluyendo QR y MIXTO
-    'EFECTIVO': { icon: 'bi-cash', label: 'Efectivo', color: '#28a745' },
-    'DEBITO': { icon: 'bi-credit-card', label: 'Tarjeta Débito', color: '#007bff' },
-    'CREDITO': { icon: 'bi-credit-card-2-front', label: 'Tarjeta Crédito', color: '#6f42c1' },
-    'TRANSFERENCIA': { icon: 'bi-bank', label: 'Transferencia', color: '#17a2b8' },
-    'QR': { icon: 'bi-qr-code', label: 'QR', color: '#fd7e14' },
-    'MIXTO': { icon: 'bi-wallet2', label: 'Mixto', color: '#6c757d' },
-    'TRANSFERENCIA': { icon: 'bi-bank', label: 'Transferencia', color: '#17a2b8' }
+// Íconos por tipo — el resto (label, alias/CVU/QR/instrucciones) viene
+// configurado desde "Configuración → Medios de cobro" (paymentMethodConfigs).
+const methodIcons = {
+    'EFECTIVO': 'bi-cash',
+    'DEBITO': 'bi-credit-card',
+    'CREDITO': 'bi-credit-card-2-front',
+    'TRANSFERENCIA': 'bi-bank',
+    'QR': 'bi-qr-code',
 };
+
+// Medios activos configurados por el restaurante (fallback a los 4 clásicos
+// si todavía no configuró nada — ver PaymentMethodConfigurationService::active).
+const paymentMethodConfigs = @json($activeMethods->map(fn ($m) => [
+    'type' => $m->type,
+    'label' => $m->label,
+    'alias' => $m->alias,
+    'cvu' => $m->cvu,
+    'cbu' => $m->cbu,
+    'account_holder' => $m->account_holder,
+    'cuit' => $m->cuit,
+    'qr_image_url' => $m->qr_image_url,
+    'instructions' => $m->instructions,
+]));
+
+const paymentMethodOptions = {};
+paymentMethodConfigs.forEach((cfg) => {
+    paymentMethodOptions[cfg.type] = { icon: methodIcons[cfg.type] || 'bi-wallet2', label: cfg.label, color: '#1e8081' };
+});
+if (Object.keys(paymentMethodOptions).length === 0) {
+    // Nunca debería pasar (el backend siempre manda al menos los 4 clásicos),
+    // pero por las dudas no dejamos el selector vacío.
+    paymentMethodOptions['EFECTIVO'] = { icon: 'bi-cash', label: 'Efectivo', color: '#28a745' };
+}
+
+function configFor(type) {
+    return paymentMethodConfigs.find((c) => c.type === type) || null;
+}
+
+function copyToClipboard(text, label) {
+    navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({ icon: 'success', title: `${label} copiado`, timer: 1200, showConfirmButton: false });
+    }).catch(() => {
+        Swal.fire({ icon: 'error', title: 'No se pudo copiar', text: 'Copialo manualmente.' });
+    });
+}
+
+function renderMethodDetail(method) {
+    const cfg = configFor(method);
+    if (!cfg || (method !== 'TRANSFERENCIA' && method !== 'QR')) return '';
+
+    if (method === 'TRANSFERENCIA') {
+        if (!cfg.alias && !cfg.cvu && !cfg.cbu) return '';
+        return `
+            <div class="payment-method-detail">
+                ${cfg.alias ? `<div class="detail-row"><span><strong>Alias:</strong> ${cfg.alias}</span><button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('${cfg.alias}', 'Alias')">Copiar</button></div>` : ''}
+                ${cfg.cvu ? `<div class="detail-row"><span><strong>CVU:</strong> ${cfg.cvu}</span><button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('${cfg.cvu}', 'CVU')">Copiar</button></div>` : ''}
+                ${cfg.cbu ? `<div class="detail-row"><span><strong>CBU:</strong> ${cfg.cbu}</span><button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('${cfg.cbu}', 'CBU')">Copiar</button></div>` : ''}
+                ${cfg.account_holder ? `<div class="detail-row"><span><strong>Titular:</strong> ${cfg.account_holder}</span></div>` : ''}
+                ${cfg.instructions ? `<div class="detail-row"><small class="text-muted">${cfg.instructions}</small></div>` : ''}
+            </div>`;
+    }
+
+    if (method === 'QR') {
+        if (!cfg.qr_image_url) return '<div class="payment-method-detail text-muted small">No hay un QR cargado — configuralo en Configuración → Medios de cobro.</div>';
+        return `
+            <div class="payment-method-detail text-center">
+                <img src="${cfg.qr_image_url}" alt="QR">
+                ${cfg.instructions ? `<div class="small text-muted">${cfg.instructions}</div>` : '<div class="small text-muted">Escaneá el código para realizar el pago</div>'}
+            </div>`;
+    }
+
+    return '';
+}
+
+function defaultMethod() {
+    return paymentMethodConfigs.find((c) => c.type === 'EFECTIVO') ? 'EFECTIVO' : (paymentMethodConfigs[0]?.type || 'EFECTIVO');
+}
 
 function addPaymentMethod() {
     paymentCounter++;
     const paymentId = `payment_${paymentCounter}`;
-    
+
     paymentMethods.push({
         id: paymentId,
-        method: 'EFECTIVO',
+        method: defaultMethod(),
         amount: 0,
         operation_number: '',
         notes: ''
@@ -304,7 +394,7 @@ function splitEqually() {
             paymentCounter++;
             paymentMethods.push({
                 id: `payment_${paymentCounter}`,
-                method: 'EFECTIVO',
+                method: defaultMethod(),
                 amount: i === n - 1 ? lastPart : part,
                 operation_number: '',
                 notes: `Parte ${i + 1} de ${n}`
@@ -326,7 +416,7 @@ function addRemainingAmount() {
     paymentCounter++;
     paymentMethods.push({
         id: `payment_${paymentCounter}`,
-        method: 'EFECTIVO',
+        method: defaultMethod(),
         amount: remaining,
         operation_number: '',
         notes: 'Restante'
@@ -342,6 +432,9 @@ function updatePaymentMethod(paymentId, field, value) {
             payment.amount = parseFloat(value) || 0;
         } else {
             payment[field] = value;
+        }
+        if (field === 'method') {
+            renderPayments();
         }
         updatePaymentSummary();
     }
@@ -369,10 +462,11 @@ function renderPayments() {
                 <div class="mb-3">
                     <label class="form-label">Método de Pago</label>
                     <select class="form-select" onchange="updatePaymentMethod('${payment.id}', 'method', this.value)">
-                        ${Object.entries(paymentMethodOptions).map(([key, info]) => 
+                        ${Object.entries(paymentMethodOptions).map(([key, info]) =>
                             `<option value="${key}" ${payment.method === key ? 'selected' : ''}>${info.label}</option>`
                         ).join('')}
                     </select>
+                    ${renderMethodDetail(payment.method)}
                 </div>
 
                 <div class="mb-3">

@@ -15,6 +15,7 @@ use App\Controllers\Api\DeviceController;
 use App\Controllers\Api\KitchenOpsController;
 use App\Controllers\Api\OrderController;
 use App\Controllers\Api\OrderOpsController;
+use App\Controllers\Api\PaymentMethodOpsController;
 use App\Controllers\Api\PermissionOpsController;
 use App\Controllers\Api\ProductController;
 use App\Controllers\Api\StockOpsController;
@@ -95,6 +96,13 @@ final class ApiRouter
             ['methods' => ['POST'], 'uri' => 'cash/session/close', 'action' => [CashOpsController::class, 'close'], 'middleware' => array_merge($jwt, ['permission:cash.write'])],
             ['methods' => ['POST'], 'uri' => 'cash/movements', 'action' => [CashOpsController::class, 'storeMovement'], 'middleware' => array_merge($jwt, ['permission:cash.write'])],
             ['methods' => ['DELETE'], 'uri' => 'cash/movements/{id}', 'action' => [CashOpsController::class, 'destroyMovement'], 'middleware' => array_merge($jwt, ['permission:cash.write'])],
+
+            ['methods' => ['GET'], 'uri' => 'payment-method-configurations', 'action' => [PaymentMethodOpsController::class, 'index'], 'middleware' => array_merge($jwt, ['permission:payment-methods.write'])],
+            ['methods' => ['GET'], 'uri' => 'payment-method-configurations/active', 'action' => [PaymentMethodOpsController::class, 'active'], 'middleware' => array_merge($jwt, ['permission:payment-methods.read'])],
+            ['methods' => ['POST'], 'uri' => 'payment-method-configurations', 'action' => [PaymentMethodOpsController::class, 'store'], 'middleware' => array_merge($jwt, ['permission:payment-methods.write'])],
+            ['methods' => ['PUT', 'PATCH'], 'uri' => 'payment-method-configurations/{id}', 'action' => [PaymentMethodOpsController::class, 'update'], 'middleware' => array_merge($jwt, ['permission:payment-methods.write'])],
+            ['methods' => ['DELETE'], 'uri' => 'payment-method-configurations/{id}', 'action' => [PaymentMethodOpsController::class, 'destroy'], 'middleware' => array_merge($jwt, ['permission:payment-methods.write'])],
+            ['methods' => ['POST'], 'uri' => 'payment-method-configurations/{id}/qr-image', 'action' => [PaymentMethodOpsController::class, 'uploadQrImage'], 'middleware' => array_merge($jwt, ['permission:payment-methods.write'])],
 
             ['methods' => ['GET'], 'uri' => 'dashboard', 'action' => [DashboardOpsController::class, 'show'], 'middleware' => array_merge($jwt, ['permission:dashboard.read'])],
 

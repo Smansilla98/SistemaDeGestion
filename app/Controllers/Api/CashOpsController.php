@@ -166,7 +166,7 @@ final class CashOpsController extends Controller
         return ApiResponse::success($session->toArray(), 201, 'Caja abierta');
     }
 
-    public function summary(Request $request): JsonResponse
+    public function summary(Request $request, CashRegisterService $cash): JsonResponse
     {
         $restaurantId = $this->requireRestaurantId($request);
         if ($restaurantId instanceof JsonResponse) {
@@ -218,15 +218,20 @@ final class CashOpsController extends Controller
         $payments = $session->payments();
         $sales = (float) (clone $payments)->sum('amount');
         $count = (clone $payments)->count();
-        $ingresos = (float) $session->cashMovements()->where('type', 'INGRESO')->sum('amount');
-        $egresos = (float) $session->cashMovements()->where('type', 'EGRESO')->sum('amount');
-        $expected = (float) $session->initial_amount + $sales + $ingresos - $egresos;
+        // expected_amount refleja SOLO efectivo (+ movimientos manuales) — el
+        // mismo cálculo que closeSession(), para que lo que se muestra acá
+        // antes de cerrar coincida con lo que pasa al cerrar de verdad. Los
+        // pagos con tarjeta/transferencia/QR NO son efectivo físico en la
+        // caja y no deben sumarse a este número aunque sí sean parte de
+        // sales_total (ventas totales de la sesión).
+        $expected = $cash->calculateExpectedAmount($session);
 
         return ApiResponse::success([
             'session' => $session->load('cashRegister:id,name')->toArray(),
             'sales_total' => $sales,
             'payments_count' => $count,
             'expected_amount' => $expected,
+            'payment_breakdown' => $cash->paymentBreakdown($session),
             'open_sessions' => $openSessionsPayload,
         ]);
     }
@@ -249,13 +254,19 @@ final class CashOpsController extends Controller
             return ApiResponse::error('No hay sesión de caja abierta', 422, 'NO_OPEN_SESSION');
         }
 
+        $breakdown = $cash->paymentBreakdown($session);
+
         try {
             $closed = $cash->closeSession($session, $validated);
         } catch (\Throwable $e) {
             return ApiResponse::error($e->getMessage(), 422, 'CLOSE_CASH_ERROR');
         }
 
-        return ApiResponse::success($closed->toArray(), 200, 'Caja cerrada');
+        return ApiResponse::success(
+            $closed->toArray() + ['payment_breakdown' => $breakdown],
+            200,
+            'Caja cerrada'
+        );
     }
 
     public function sessions(Request $request): JsonResponse
@@ -285,7 +296,7 @@ final class CashOpsController extends Controller
         return ApiResponse::success($rows->values()->all());
     }
 
-    public function sessionDetail(Request $request, int $sessionId): JsonResponse
+    public function sessionDetail(Request $request, int $sessionId, CashRegisterService $cash): JsonResponse
     {
         $restaurantId = $this->requireRestaurantId($request);
         if ($restaurantId instanceof JsonResponse) {
@@ -304,7 +315,14 @@ final class CashOpsController extends Controller
         $sales = (float) $session->payments()->sum('amount');
         $ingresos = (float) $session->cashMovements()->where('type', 'INGRESO')->sum('amount');
         $egresos = (float) $session->cashMovements()->where('type', 'EGRESO')->sum('amount');
-        $expected = (float) $session->initial_amount + $sales + $ingresos - $egresos;
+        // Si ya está cerrada usamos el expected_amount que se guardó al cerrar
+        // (fuente de verdad histórica); si sigue abierta, se calcula en vivo.
+        // Ambos casos con el mismo método (solo EFECTIVO) — ver el porqué en
+        // CashRegisterService::calculateExpectedAmount().
+        $expected = $session->status === CashRegisterSession::STATUS_CERRADA && $session->expected_amount !== null
+            ? (float) $session->expected_amount
+            : $cash->calculateExpectedAmount($session);
+        $breakdown = $cash->paymentBreakdown($session);
 
         $user = $request->user();
         $orderIds = $session->payments()->whereNotNull('order_id')->pluck('order_id')->unique()->values();
@@ -338,6 +356,7 @@ final class CashOpsController extends Controller
             'ingresos' => $ingresos,
             'egresos' => $egresos,
             'expected_amount' => $expected,
+            'payment_breakdown' => $breakdown,
             'payments' => $session->payments->map(fn ($p) => [
                 'id' => $p->id,
                 'amount' => (float) $p->amount,

@@ -145,6 +145,20 @@ export type ClientRow = {
   notes?: string | null;
 };
 
+export type PaymentMethodConfig = {
+  id?: number;
+  type: 'EFECTIVO' | 'DEBITO' | 'CREDITO' | 'TRANSFERENCIA' | 'QR';
+  label: string;
+  is_active: boolean;
+  alias?: string | null;
+  cvu?: string | null;
+  cbu?: string | null;
+  account_holder?: string | null;
+  cuit?: string | null;
+  qr_image_url?: string | null;
+  instructions?: string | null;
+};
+
 export type CashSessionRow = {
   id: number;
   status: string;
@@ -162,6 +176,7 @@ export type CashSessionDetail = {
   ingresos: number;
   egresos: number;
   expected_amount: number;
+  payment_breakdown?: Record<string, number>;
   payments: Array<{
     id: number;
     amount: number;

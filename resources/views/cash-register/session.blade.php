@@ -48,8 +48,9 @@
     <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <h6>Monto Esperado</h6>
+                <h6>Efectivo esperado</h6>
                 <h3>${{ number_format($expectedAmount, 2) }}</h3>
+                <small class="text-white-50">Solo efectivo — no incluye tarjeta/transferencia/QR</small>
             </div>
         </div>
     </div>
@@ -62,6 +63,28 @@
         </div>
     </div>
 </div>
+
+@if(!empty($paymentBreakdown))
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Ventas por medio de pago</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    @foreach($paymentBreakdown as $method => $amount)
+                    <div class="col">
+                        <div class="text-muted small">{{ $method }}</div>
+                        <div class="fs-5 fw-bold">${{ number_format($amount, 2) }}</div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 @if($session->status === 'ABIERTA')
 <div class="row mb-4">
@@ -76,7 +99,7 @@
                     <div class="mb-3">
                         <label for="final_amount" class="form-label">Monto Final en Caja</label>
                         <input type="number" step="0.01" class="form-control" id="final_amount" name="final_amount" required min="0" value="{{ number_format($expectedAmount, 2, '.', '') }}">
-                        <small class="text-muted">Monto esperado: <strong>${{ number_format($expectedAmount, 2) }}</strong></small>
+                        <small class="text-muted">Efectivo esperado (sin tarjeta/transferencia/QR): <strong>${{ number_format($expectedAmount, 2) }}</strong></small>
                         <div id="differenceAlert" class="mt-2" style="display: none;"></div>
                     </div>
                     <div class="mb-3">

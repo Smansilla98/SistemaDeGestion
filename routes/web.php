@@ -451,6 +451,12 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
+
+        Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'index'])->name('index');
+            Route::post('/{type}', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'update'])->name('update');
+            Route::post('/{config}/disable', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'disable'])->name('disable');
+        });
     });
 
     /*

@@ -25,7 +25,8 @@ class TableController extends Controller
         private OrderService $orderService,
         private PrintService $printService,
         private StockService $stockService,
-        private TableService $tableService
+        private TableService $tableService,
+        private \App\Services\PaymentMethodConfigurationService $paymentMethods,
     ) {}
 
     /**
@@ -793,7 +794,9 @@ class TableController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems', 'discountTypes'));
+        $activeMethods = $this->paymentMethods->active((int) $table->restaurant_id)->values();
+
+        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems', 'discountTypes', 'activeMethods'));
     }
 
     /**
