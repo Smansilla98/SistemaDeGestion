@@ -281,17 +281,19 @@ const methodIcons = {
 
 // Medios activos configurados por el restaurante (fallback a los 4 clásicos
 // si todavía no configuró nada — ver PaymentMethodConfigurationService::active).
-const paymentMethodConfigs = @json($activeMethods->map(fn ($m) => [
-    'type' => $m->type,
-    'label' => $m->label,
-    'alias' => $m->alias,
-    'cvu' => $m->cvu,
-    'cbu' => $m->cbu,
-    'account_holder' => $m->account_holder,
-    'cuit' => $m->cuit,
-    'qr_image_url' => $m->qr_image_url,
-    'instructions' => $m->instructions,
-]));
+const paymentMethodConfigs = @json($activeMethods->map(function ($method) {
+    return [
+        'type' => $method->type,
+        'label' => $method->label,
+        'alias' => $method->alias,
+        'cvu' => $method->cvu,
+        'cbu' => $method->cbu,
+        'account_holder' => $method->account_holder,
+        'cuit' => $method->cuit,
+        'qr_image_url' => $method->qr_image_url,
+        'instructions' => $method->instructions,
+    ];
+}));
 
 const paymentMethodOptions = {};
 paymentMethodConfigs.forEach((cfg) => {
@@ -715,4 +717,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
-
