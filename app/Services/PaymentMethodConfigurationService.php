@@ -38,18 +38,22 @@ class PaymentMethodConfigurationService
 
         $labels = PaymentMethodConfiguration::defaultLabels();
 
-        return PaymentMethodConfiguration::newCollection([
+        $types = [
             PaymentMethodConfiguration::TYPE_EFECTIVO,
             PaymentMethodConfiguration::TYPE_DEBITO,
             PaymentMethodConfiguration::TYPE_CREDITO,
             PaymentMethodConfiguration::TYPE_TRANSFERENCIA,
-        ])->map(fn (string $type, int $i) => new PaymentMethodConfiguration([
+        ];
+
+        $models = collect($types)->map(fn (string $type, int $i) => new PaymentMethodConfiguration([
             'restaurant_id' => $restaurantId,
             'type' => $type,
             'label' => $labels[$type],
             'is_active' => true,
             'sort_order' => $i,
-        ]));
+        ]))->all();
+
+        return new Collection($models);
     }
 
     public function upsert(int $restaurantId, array $data): PaymentMethodConfiguration
