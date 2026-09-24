@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    @include('partials.favicon')
     <title>Reporte de Ventas {{ $dateFrom }} - {{ $dateTo }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; }

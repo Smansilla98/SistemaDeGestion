@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    @include('partials.favicon')
     <title>Política de Privacidad — {{ $appName }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #131a18; line-height: 1.45; }

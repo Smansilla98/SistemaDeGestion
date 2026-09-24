@@ -38,7 +38,7 @@ class PaymentMethodConfigurationService
 
         $labels = PaymentMethodConfiguration::defaultLabels();
 
-        return collect([
+        return PaymentMethodConfiguration::newCollection([
             PaymentMethodConfiguration::TYPE_EFECTIVO,
             PaymentMethodConfiguration::TYPE_DEBITO,
             PaymentMethodConfiguration::TYPE_CREDITO,

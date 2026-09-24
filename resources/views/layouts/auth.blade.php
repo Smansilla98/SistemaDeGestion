@@ -38,6 +38,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
+    @include('partials.favicon')
     @if($primaryFont !== $secondaryFont)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -325,4 +326,3 @@
     </script>
 </body>
 </html>
-

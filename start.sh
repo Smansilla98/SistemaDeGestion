@@ -51,6 +51,7 @@ echo ""
 
 # Esperar DB
 echo "=== Esperando base de datos ==="
+DB_READY=0
 for i in $(seq 1 30); do
     if php -r "
         try {
@@ -68,11 +69,17 @@ for i in $(seq 1 30); do
         }
     " 2>/dev/null; then
         echo "✓ Base de datos disponible"
+        DB_READY=1
         break
     fi
     echo "Intento $i/30..."
     sleep 2
 done
+
+if [ "$DB_READY" -ne 1 ]; then
+    echo "✗ La base de datos no estuvo disponible después de 30 intentos."
+    exit 1
+fi
 
 # Autoload fresco (Domain/, Jobs/, Support/, Controllers/Api)
 echo "=== Composer dump-autoload ==="
@@ -89,10 +96,7 @@ php artisan queue:restart 2>/dev/null || true
 
 # Migraciones (secuencias, centavos, refresh_tokens, device_tokens, etc.)
 echo "=== Ejecutando migraciones ==="
-php artisan migrate --force --no-interaction || {
-    echo "⚠️  ADVERTENCIA: Las migraciones fallaron. Verificá los logs."
-    echo "   El sistema puede funcionar con funcionalidad limitada."
-}
+php artisan migrate --force --no-interaction
 
 # Esquema crítico de cobro (enum de payments + audit_logs legacy)
 echo "=== Verificando esquema de cobro (payments/audit_logs) ==="

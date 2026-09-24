@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index,follow">
     <title>Política de Privacidad — {{ $appName }}</title>
+    @include('partials.favicon')
     <meta name="description" content="Política de privacidad de la aplicación {{ $appName }} ({{ $packageName }}). Uso responsable de datos del personal autorizado del restaurante.">
     <style>
         :root {
