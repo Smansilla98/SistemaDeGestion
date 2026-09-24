@@ -260,6 +260,23 @@
     </div>
 </div>
 
+@php
+    $paymentMethodConfigs = [];
+    foreach ($activeMethods as $method) {
+        $paymentMethodConfigs[] = [
+            'type' => $method->type,
+            'label' => $method->label,
+            'alias' => $method->alias,
+            'cvu' => $method->cvu,
+            'cbu' => $method->cbu,
+            'account_holder' => $method->account_holder,
+            'cuit' => $method->cuit,
+            'qr_image_url' => $method->qr_image_url,
+            'instructions' => $method->instructions,
+        ];
+    }
+@endphp
+
 @push('scripts')
 <script>
 let paymentMethods = [];
@@ -281,19 +298,7 @@ const methodIcons = {
 
 // Medios activos configurados por el restaurante (fallback a los 4 clásicos
 // si todavía no configuró nada — ver PaymentMethodConfigurationService::active).
-const paymentMethodConfigs = @json($activeMethods->map(function ($method) {
-    return [
-        'type' => $method->type,
-        'label' => $method->label,
-        'alias' => $method->alias,
-        'cvu' => $method->cvu,
-        'cbu' => $method->cbu,
-        'account_holder' => $method->account_holder,
-        'cuit' => $method->cuit,
-        'qr_image_url' => $method->qr_image_url,
-        'instructions' => $method->instructions,
-    ];
-}));
+const paymentMethodConfigs = @json($paymentMethodConfigs);
 
 const paymentMethodOptions = {};
 paymentMethodConfigs.forEach((cfg) => {
