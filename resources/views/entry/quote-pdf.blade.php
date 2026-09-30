@@ -23,7 +23,7 @@
 <body>
     <p class="kicker">PROPUESTA COMERCIAL MODULAR</p>
     <h1>{{ $quote['product'] }}</h1>
-    <p class="tag">{{ $quote['tagline'] }}</p>
+    <p class="tag">{{ $quote['tagline'] }}<br>{{ $quote['modules'] }}</p>
 
     <table class="meta">
         <tr><td class="k">De</td><td>{{ $quote['from'] }}</td></tr>

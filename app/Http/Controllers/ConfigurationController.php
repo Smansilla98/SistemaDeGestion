@@ -26,8 +26,8 @@ class ConfigurationController extends Controller
         $settings = $restaurant->settings ?? [];
         $logo = $settings['logo'] ?? null;
         $colors = $settings['colors'] ?? [
-            'primary' => '#1e8081',
-            'secondary' => '#22565e',
+            'primary' => '#d06a1f',
+            'secondary' => '#6b3a1e',
             'accent' => '#c94a2d',
         ];
         $fonts = $settings['fonts'] ?? [

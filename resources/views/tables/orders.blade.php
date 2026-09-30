@@ -158,7 +158,7 @@ document.querySelectorAll('[data-rtbl-expand]').forEach(function (btn) {
         icon: 'success',
         title: 'Éxito',
         text: '{{ session('success') }}',
-        confirmButtonColor: '#1e8081',
+        confirmButtonColor: '#d06a1f',
         confirmButtonText: 'Entendido'
     });
 @endif

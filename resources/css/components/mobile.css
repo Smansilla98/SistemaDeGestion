@@ -1,12 +1,12 @@
 /* Conurbania Mobile V2 — safe-area, bottom nav, dashboard */
 .m-app {
-  --m-bg: var(--t950, #031a16);
+  --m-bg: var(--t950, #1a0e0a);
   --m-surface: #051611;
-  --m-card: var(--t800, #0f3d32);
-  --m-header-from: var(--t700, #155240);
-  --m-header-to: var(--t800, #0f3d32);
-  --m-muted: var(--t200, #9fe1cb);
-  --m-accent: var(--t300, #5dcaa5);
+  --m-card: var(--t800, #4a2818);
+  --m-header-from: var(--t700, #6b3a1e);
+  --m-header-to: var(--t800, #4a2818);
+  --m-muted: var(--t200, #f6d3b0);
+  --m-accent: var(--t300, #f0b27a);
   --m-text: #ffffff;
   --m-nav-bg: #04120e;
   --m-nav-inactive: var(--g500, #6b7f7a);
@@ -14,7 +14,7 @@
   --m-warn-border: #712b13;
   --m-warn-text: #f5c4b3;
   --m-warn-icon: #f0997b;
-  --m-ok-bg: #1d9e75;
+  --m-ok-bg: #d06a1f;
   --m-ok-fg: #04342c;
   min-height: 100dvh;
   background: var(--m-bg);

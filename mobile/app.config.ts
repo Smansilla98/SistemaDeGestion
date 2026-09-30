@@ -20,7 +20,7 @@ const easProjectId =
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'Conurbania',
+  name: 'Al Toque',
   slug: 'conurbania',
   version: '1.0.0',
   orientation: 'portrait',
@@ -41,7 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
-      backgroundColor: '#1d9e75',
+      backgroundColor: '#d06a1f',
     },
   },
   plugins: [
@@ -51,14 +51,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#082822',
+        backgroundColor: '#24160f',
         image: './assets/splash-icon.png',
       },
     ],
     [
       'expo-notifications',
       {
-        color: '#1d9e75',
+        color: '#d06a1f',
       },
     ],
   ],

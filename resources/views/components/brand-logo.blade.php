@@ -35,6 +35,10 @@
         @if($variant !== 'compact')
             <span class="brand-logo-text">
                 <span class="brand-logo-name">{{ $brandName }}</span>
+                <span class="brand-logo-tag">{{ \App\Support\Branding::tagline() }}</span>
+                @if($variant === 'auth')
+                    <span class="brand-logo-modules">{{ \App\Support\Branding::modulesLine() }}</span>
+                @endif
             </span>
         @endif
     </div>

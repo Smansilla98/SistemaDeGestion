@@ -302,7 +302,7 @@ const paymentMethodConfigs = @json($paymentMethodConfigs);
 
 const paymentMethodOptions = {};
 paymentMethodConfigs.forEach((cfg) => {
-    paymentMethodOptions[cfg.type] = { icon: methodIcons[cfg.type] || 'bi-wallet2', label: cfg.label, color: '#1e8081' };
+    paymentMethodOptions[cfg.type] = { icon: methodIcons[cfg.type] || 'bi-wallet2', label: cfg.label, color: '#d06a1f' };
 });
 if (Object.keys(paymentMethodOptions).length === 0) {
     // Nunca debería pasar (el backend siempre manda al menos los 4 clásicos),
@@ -626,7 +626,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#1e8081',
+        confirmButtonColor: '#d06a1f',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, procesar pago',
         cancelButtonText: 'Cancelar'

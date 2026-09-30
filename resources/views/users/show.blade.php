@@ -24,7 +24,7 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-body text-center">
-                <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #1e8081, #22565e); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 700;">
+                <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #d06a1f, #6b3a1e); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 700;">
                     {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
                 <h4>{{ $user->name }}</h4>

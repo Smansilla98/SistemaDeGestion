@@ -31,8 +31,9 @@ final class CommercialQuote
         $until = $issued->copy()->addDays(30);
 
         return [
-            'product' => 'Conurbania',
-            'tagline' => 'Gestión del salón para la venta de comida',
+            'product' => 'Al Toque',
+            'tagline' => 'Gestión gastronómica simple.',
+            'modules' => 'Comandas · Mesas · Cocina · Caja · Stock',
             'from' => 'Santiago Mansilla — Desarrollador Fullstack',
             'issued_label' => $issued->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
             'valid_label' => $until->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),

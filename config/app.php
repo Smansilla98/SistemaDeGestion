@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Conurbania'),
+    'name' => env('APP_NAME', 'Al Toque'),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,8 +27,10 @@ return [
     */
 
     'brand' => [
-        'name' => env('APP_BRAND_NAME', env('APP_NAME', 'Conurbania')),
-        'logo' => env('APP_LOGO', 'logo.png'),
+        'name' => env('APP_BRAND_NAME', 'Al Toque'),
+        'tagline' => 'Gestión gastronómica simple.',
+        'modules' => 'Comandas · Mesas · Cocina · Caja · Stock',
+        'logo' => env('APP_LOGO', ''),
     ],
 
     /*

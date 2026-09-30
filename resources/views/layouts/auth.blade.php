@@ -5,11 +5,7 @@
         // Definir $colors y $fonts PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $restaurant = \App\Models\Restaurant::first();
         $settings = $restaurant?->settings ?? [];
-        $colors = $settings['colors'] ?? [
-            'primary' => '#1e8081',
-            'secondary' => '#22565e',
-            'accent' => '#c94a2d',
-        ];
+        $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
             'primary' => 'Inter',
             'secondary' => 'Roboto',
@@ -35,7 +31,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Login') - Sistema de Gestión de Restaurante</title>
+    <title>@yield('title', 'Login') - Al Toque</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -58,7 +54,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #262c3b;
+            --conurbania-dark: #1c1412;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -69,9 +65,9 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #262c3b 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #1c1412 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #262c3b;
+            --mosaic-text-primary: #1c1412;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             

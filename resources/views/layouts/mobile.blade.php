@@ -1,5 +1,5 @@
 {{--
-  Layout mobile ConurbaniaBa V2.
+  Layout mobile Al Toque.
   Se mantiene separado de layouts/app.blade.php a propósito:
   - Bottom navigation + safe-area (iOS notch)
   - Flujo PWA / detect.mobile distinto al sidebar desktop
@@ -14,11 +14,7 @@
         $role = $user?->role;
         $restaurant = $user ? \App\Models\Restaurant::find($user->restaurant_id) : null;
         $settings = $restaurant?->settings ?? [];
-        $colors = $settings['colors'] ?? [
-            'primary' => '#1d9e75',
-            'secondary' => '#155240',
-            'accent' => '#c94a2d',
-        ];
+        $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $roleLabels = [
             'SUPERADMIN' => 'Superadmin',
             'ADMIN' => 'Administrador',

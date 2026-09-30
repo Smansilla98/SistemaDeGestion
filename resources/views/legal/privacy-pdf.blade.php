@@ -8,9 +8,9 @@
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #131a18; line-height: 1.45; }
         h1 { font-size: 18px; margin: 0 0 8px; }
         h2 { font-size: 13px; margin: 16px 0 6px; }
-        .brand { color: #1d9e75; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .brand { color: #d06a1f; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
         .meta { color: #6b7f7a; font-size: 10px; margin-bottom: 12px; }
-        .callout { background: #edf9f4; border-left: 3px solid #1d9e75; padding: 8px 10px; margin: 10px 0 14px; }
+        .callout { background: #fdf6ee; border-left: 3px solid #d06a1f; padding: 8px 10px; margin: 10px 0 14px; }
         ul { margin: 4px 0 8px 16px; padding: 0; }
         li { margin: 3px 0; }
         p { margin: 0 0 8px; }

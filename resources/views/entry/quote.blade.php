@@ -112,6 +112,7 @@
         <p class="kicker">PROPUESTA COMERCIAL MODULAR</p>
         <h1>{{ $quote['product'] }}</h1>
         <p class="tag">{{ $quote['tagline'] }}</p>
+        <p class="tag">{{ $quote['modules'] }}</p>
 
         <dl class="meta">
             <dt>De</dt>

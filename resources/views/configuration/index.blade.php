@@ -55,14 +55,14 @@
                                        class="form-control form-control-color" 
                                        id="primary_color" 
                                        name="primary_color" 
-                                       value="{{ $colors['primary'] ?? '#1e8081' }}"
+                                       value="{{ $colors['primary'] ?? '#d06a1f' }}"
                                        title="Elige el color primario">
                                 <input type="text" 
                                        class="form-control" 
-                                       value="{{ $colors['primary'] ?? '#1e8081' }}"
+                                       value="{{ $colors['primary'] ?? '#d06a1f' }}"
                                        id="primary_color_text"
                                        pattern="^#[0-9A-Fa-f]{6}$"
-                                       placeholder="#1e8081">
+                                       placeholder="#d06a1f">
                             </div>
                             <small class="form-text text-muted">Color principal de la interfaz</small>
                         </div>
@@ -73,14 +73,14 @@
                                        class="form-control form-control-color" 
                                        id="secondary_color" 
                                        name="secondary_color" 
-                                       value="{{ $colors['secondary'] ?? '#22565e' }}"
+                                       value="{{ $colors['secondary'] ?? '#6b3a1e' }}"
                                        title="Elige el color secundario">
                                 <input type="text" 
                                        class="form-control" 
-                                       value="{{ $colors['secondary'] ?? '#22565e' }}"
+                                       value="{{ $colors['secondary'] ?? '#6b3a1e' }}"
                                        id="secondary_color_text"
                                        pattern="^#[0-9A-Fa-f]{6}$"
-                                       placeholder="#22565e">
+                                       placeholder="#6b3a1e">
                             </div>
                             <small class="form-text text-muted">Color secundario de la interfaz</small>
                         </div>
@@ -156,11 +156,11 @@
                 <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
             </div>
             <div class="card-body">
-                <div class="preview-box" style="border: 2px solid {{ $colors['primary'] ?? '#1e8081' }}; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
-                    <h6 style="color: {{ $colors['primary'] ?? '#1e8081' }}; font-family: {{ $fonts['primary'] ?? 'Inter' }};">
+                <div class="preview-box" style="border: 2px solid {{ $colors['primary'] ?? '#d06a1f' }}; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <h6 style="color: {{ $colors['primary'] ?? '#d06a1f' }}; font-family: {{ $fonts['primary'] ?? 'Inter' }};">
                         Texto Primario
                     </h6>
-                    <p style="color: {{ $colors['secondary'] ?? '#22565e' }}; font-family: {{ $fonts['secondary'] ?? 'Roboto' }};">
+                    <p style="color: {{ $colors['secondary'] ?? '#6b3a1e' }}; font-family: {{ $fonts['secondary'] ?? 'Roboto' }};">
                         Texto Secundario
                     </p>
                     <button class="btn btn-sm" style="background-color: {{ $colors['accent'] ?? '#c94a2d' }}; color: white; border: none;">

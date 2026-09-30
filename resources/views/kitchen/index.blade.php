@@ -505,8 +505,8 @@ document.addEventListener('change', async function(e) {
                 timer: 3000,
                 timerProgressBar: true,
                 background: '#e6ffed',
-                color: '#1e8081',
-                iconColor: '#1e8081',
+                color: '#d06a1f',
+                iconColor: '#d06a1f',
             });
             
             // Ocultar item entregado con animación
@@ -526,8 +526,8 @@ document.addEventListener('change', async function(e) {
                 timer: 2000,
                 timerProgressBar: true,
                 background: '#e6ffed',
-                color: '#1e8081',
-                iconColor: '#1e8081',
+                color: '#d06a1f',
+                iconColor: '#d06a1f',
             });
         }
         

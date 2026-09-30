@@ -17,5 +17,5 @@ export const APP_ENV = process.env.APP_ENV ?? extra.appEnv ?? 'development';
 
 if (__DEV__) {
   // eslint-disable-next-line no-console
-  console.log('[Conurbania] API_URL =', API_URL);
+  console.log('[Al Toque] API_URL =', API_URL);
 }

@@ -1,9 +1,9 @@
 /* Fallbacks de tema (runtime override en layouts/app.blade.php :root) */
 :root {
-  --conurbania-primary: #1e8081;
-  --conurbania-secondary: #22565e;
+  --conurbania-primary: #d06a1f;
+  --conurbania-secondary: #6b3a1e;
   --conurbania-accent: #c94a2d;
-  --conurbania-dark: #262c3b;
+  --conurbania-dark: #1c1412;
   --conurbania-medium: #7b7d84;
   --conurbania-light: #cfcecd;
   --conurbania-success: var(--conurbania-primary);
@@ -14,10 +14,10 @@
   --conurbania-info-end: var(--conurbania-secondary);
   --conurbania-danger: var(--conurbania-accent);
   --conurbania-danger-end: #e67e51;
-  --mosaic-bg: linear-gradient(135deg, var(--conurbania-primary) 0%, var(--conurbania-secondary) 50%, #262c3b 100%);
-  --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, var(--conurbania-secondary) 50%, var(--conurbania-primary) 100%);
+  --mosaic-bg: linear-gradient(135deg, var(--conurbania-primary) 0%, var(--conurbania-secondary) 50%, #1c1412 100%);
+  --mosaic-sidebar-bg: linear-gradient(180deg, #1c1412 0%, var(--conurbania-secondary) 50%, var(--conurbania-primary) 100%);
   --mosaic-card-bg: #ffffff;
-  --mosaic-text-primary: #262c3b;
+  --mosaic-text-primary: #1c1412;
   --mosaic-text-secondary: #7b7d84;
   --mosaic-border: #cfcecd;
   --conurbania-primary-10: rgba(30, 128, 129, 0.1);

@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,15 +16,12 @@ import { colors, font, fx, radius, space } from '../src/theme';
 import { AppText, Icon, PrimaryButton } from '../src/ui/primitives';
 import { AppGradient } from '../src/ui/gradient';
 
-/** Logo del local: resources/logo.png → assets/brand-logo.png (script blanco). */
-const brandLogo = require('../assets/brand-logo.png');
-
 /** Colores auth web (layouts/auth.blade.php) alineados al local. */
 const brand = {
-  primary: '#1e8081',
-  secondary: '#22565e',
-  dark: '#0a0c10',
-  ink: '#262c3b',
+  primary: '#d06a1f',
+  secondary: '#6b3a1e',
+  dark: '#1a0e0a',
+  ink: '#1c1412',
 } as const;
 
 export default function LoginScreen() {
@@ -91,15 +87,11 @@ export default function LoginScreen() {
           bounces
         >
           <View style={styles.hero}>
-            <Image
-              source={brandLogo}
-              style={styles.logo}
-              resizeMode="contain"
-              accessibilityLabel="Conurbania"
-            />
-            <AppText style={styles.brandName}>
-              Conurbania - Restaurante
+            <AppText weight="bold" style={styles.brandName} accessibilityLabel="Al Toque">
+              Al Toque
             </AppText>
+            <AppText style={styles.brandTag}>Gestión gastronómica simple.</AppText>
+            <AppText style={styles.brandModules}>Comandas · Mesas · Cocina · Caja · Stock</AppText>
           </View>
 
           <View style={styles.card}>
@@ -199,17 +191,23 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 160,
-    height: 160,
+    gap: 4,
   },
   brandName: {
     color: '#fff',
-    fontSize: 20,
-    letterSpacing: -0.4,
-    fontFamily: font.regular,
+    fontSize: 36,
+    letterSpacing: -0.6,
+  },
+  brandTag: {
+    color: 'rgba(255,255,255,0.88)',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  brandModules: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 6,
   },
   card: {
     backgroundColor: colors.white,

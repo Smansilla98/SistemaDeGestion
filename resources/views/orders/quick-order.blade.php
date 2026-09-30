@@ -433,7 +433,7 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
                         </a>
                     ` : ''}
                 `,
-                confirmButtonColor: '#1e8081',
+                confirmButtonColor: '#d06a1f',
                 timer: data.print_ok === false ? undefined : 2500,
                 showConfirmButton: data.print_ok === false
             });

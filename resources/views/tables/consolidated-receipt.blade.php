@@ -15,13 +15,13 @@
 
     .receipt-header {
         text-align: center;
-        border-bottom: 3px solid #1e8081;
+        border-bottom: 3px solid #d06a1f;
         padding-bottom: 1.5rem;
         margin-bottom: 2rem;
     }
 
     .receipt-header h1 {
-        background: linear-gradient(135deg, #1e8081, #22565e);
+        background: linear-gradient(135deg, #d06a1f, #6b3a1e);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -67,7 +67,7 @@
     }
 
     .items-table thead {
-        background: linear-gradient(135deg, #1e8081, #22565e);
+        background: linear-gradient(135deg, #d06a1f, #6b3a1e);
         color: white;
     }
 
@@ -109,12 +109,12 @@
     }
 
     .total-line.final {
-        border-top: 2px solid #1e8081;
+        border-top: 2px solid #d06a1f;
         margin-top: 0.5rem;
         padding-top: 1rem;
         font-size: 1.5rem;
         font-weight: 700;
-        color: #1e8081;
+        color: #d06a1f;
     }
 
     .orders-list {
@@ -127,7 +127,7 @@
     .order-badge {
         display: inline-block;
         padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #1e8081, #22565e);
+        background: linear-gradient(135deg, #d06a1f, #6b3a1e);
         color: white;
         border-radius: 20px;
         font-weight: 600;

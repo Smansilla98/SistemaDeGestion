@@ -1,4 +1,4 @@
-/* Estilos personalizados - Bootstrap 5 como base + Conurbania tokens */
+/* Estilos personalizados - Bootstrap 5 como base + tokens de Al Toque */
 @import 'conurbania.css';
 @import 'components/theme-fallbacks.css';
 @import 'components/layout-base.css';
@@ -15,8 +15,8 @@
 @import 'components/branding.css';
 
 :root {
-    --primary-color: #1d9e75;
-    --secondary-color: #155240;
+    --primary-color: #d06a1f;
+    --secondary-color: #6b3a1e;
 }
 
 body {

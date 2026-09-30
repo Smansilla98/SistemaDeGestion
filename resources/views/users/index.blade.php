@@ -68,7 +68,7 @@
                     <tr>
                         <td data-label="Nombre">
                             <div class="d-flex align-items-center justify-content-end">
-                                <div class="avatar-circle me-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1e8081, #22565e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
+                                <div class="avatar-circle me-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #d06a1f, #6b3a1e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
                                 <strong>{{ $user->name }}</strong>

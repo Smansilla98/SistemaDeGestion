@@ -1,10 +1,10 @@
 {
-  "name": "Sistema de Gestión",
-  "short_name": "Gestión",
+  "name": "Al Toque",
+  "short_name": "Al Toque",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e8081",
-  "theme_color": "#1e8081",
+  "background_color": "#d06a1f",
+  "theme_color": "#d06a1f",
   "orientation": "portrait-primary",
   "icons": [
     {

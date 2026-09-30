@@ -346,7 +346,7 @@
                         <div id="addItemsProductsAccordion">
                             @foreach($products as $categoryName => $categoryProducts)
                                 <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
-                                    <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
+                                    <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #d06a1f, #8f4e22); padding: 0.75rem 1rem; border-radius: 8px;">
                                         <h6 class="mb-0 text-white" style="font-weight: 700;">
                                             <i class="bi bi-tag-fill"></i> {{ $categoryName }}
                                         </h6>
@@ -462,7 +462,7 @@ async function updateItemStatusHandler(event) {
             title: '¿Cambiar estado?',
             text: `¿Marcar este item como ${statusLabels[newStatus]}?`,
             showCancelButton: true,
-            confirmButtonColor: '#1e8081',
+            confirmButtonColor: '#d06a1f',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, cambiar',
             cancelButtonText: 'Cancelar'
@@ -670,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon: 'success',
             title: 'Éxito',
             text: '{{ session('success') }}',
-            confirmButtonColor: '#1e8081',
+            confirmButtonColor: '#d06a1f',
             confirmButtonText: 'Entendido'
         });
     @endif
@@ -905,7 +905,7 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
                 ${lastAddedItemId ? '<p class="text-muted small"><i class="bi bi-printer"></i> Se abrió el ticket del último ítem para imprimir.</p>' : ''}
                 ${errorMessages.length > 0 ? `<p class="text-danger small">Errores: ${errorMessages.join(', ')}</p>` : ''}
             `,
-            confirmButtonColor: '#1e8081'
+            confirmButtonColor: '#d06a1f'
         }).then(() => {
             // Cerrar modal y recargar página
             const modal = bootstrap.Modal.getInstance(document.getElementById('addItemsModal'));
