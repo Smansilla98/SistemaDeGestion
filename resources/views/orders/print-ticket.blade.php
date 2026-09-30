@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    @include('partials.favicon')
     <title>Ticket - {{ $order->number }}</title>
     @include('partials.print-ticket-styles')
 </head>

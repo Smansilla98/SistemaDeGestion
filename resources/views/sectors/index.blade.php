@@ -19,7 +19,7 @@
 
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -34,26 +34,26 @@
                 <tbody>
                     @forelse($sectors as $sector)
                     <tr>
-                        <td>
+                        <td data-label="Nombre">
                             <strong>{{ $sector->name }}</strong>
                         </td>
-                        <td>
+                        <td data-label="Descripción">
                             {{ $sector->description ?? '-' }}
                         </td>
-                        <td>
+                        <td data-label="Mesas">
                             <span class="badge bg-info">{{ $sector->tables_count }}</span>
                         </td>
-                        <td>
+                        <td data-label="Subsectores">
                             <span class="badge bg-primary">{{ $sector->subsectors_count }}</span>
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             @if($sector->is_active)
                             <span class="badge bg-success">Activo</span>
                             @else
                             <span class="badge bg-secondary">Inactivo</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <div class="btn-group" role="group">
                                 <a href="{{ route('sectors.show', $sector) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                     <i class="bi bi-eye"></i>

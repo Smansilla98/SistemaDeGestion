@@ -1,0 +1,201 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Property App\\\\Models\\\\User\\:\\:\\$role \\('ADMIN'\\|'CAJERO'\\|'COCINA'\\|'MOZO'\\) does not accept 'SUPERADMIN'\\.$#"
+			count: 1
+			path: app/Console/Commands/PromoteUserToSuperadmin.php
+
+		-
+			message: "#^Dead catch \\- ReflectionException is never thrown in the try block\\.$#"
+			count: 1
+			path: app/Core/Container.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between mixed~'PDO' and 'PDO' will always evaluate to false\\.$#"
+			count: 1
+			path: app/Core/Container.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between object and null will always evaluate to false\\.$#"
+			count: 1
+			path: app/Core/Container.php
+
+		-
+			message: "#^Method App\\\\Exports\\\\OrdersExport\\:\\:query\\(\\) has invalid return type Laravel\\\\Scout\\\\Builder\\.$#"
+			count: 1
+			path: app/Exports/OrdersExport.php
+
+		-
+			message: "#^Method App\\\\Exports\\\\ProductsExport\\:\\:query\\(\\) has invalid return type Laravel\\\\Scout\\\\Builder\\.$#"
+			count: 1
+			path: app/Exports/ProductsExport.php
+
+		-
+			message: "#^Method App\\\\Exports\\\\SalesExport\\:\\:query\\(\\) has invalid return type Laravel\\\\Scout\\\\Builder\\.$#"
+			count: 1
+			path: app/Exports/SalesExport.php
+
+		-
+			message: "#^Constant order not found\\.$#"
+			count: 1
+			path: app/Http/Controllers/CashRegister/CashRegisterController.php
+
+		-
+			message: "#^Undefined variable\\: \\$request$#"
+			count: 3
+			path: app/Http/Controllers/CashRegister/CashRegisterController.php
+
+		-
+			message: "#^Call to static method warning\\(\\) on an unknown class Log\\.$#"
+			count: 1
+			path: app/Http/Controllers/Category/CategoryController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Product\\:\\:\\$current_stock\\.$#"
+			count: 2
+			path: app/Http/Controllers/Event/EventController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\FixedExpense\\:\\:\\$monthly_equivalent\\.$#"
+			count: 1
+			path: app/Http/Controllers/FixedExpense/FixedExpenseController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\FixedExpense\\:\\:\\$monthly_projected\\.$#"
+			count: 1
+			path: app/Http/Controllers/FixedExpense/FixedExpenseController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\CashRegisterSession\\:\\:\\$total_egresos\\.$#"
+			count: 1
+			path: app/Http/Controllers/Mobile/MobileCajaController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\CashRegisterSession\\:\\:\\$total_ingresos\\.$#"
+			count: 1
+			path: app/Http/Controllers/Mobile/MobileCajaController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\CashRegisterSession\\:\\:\\$total_payments\\.$#"
+			count: 1
+			path: app/Http/Controllers/Mobile/MobileCajaController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\User\\:\\:\\$unreadNotifications\\.$#"
+			count: 1
+			path: app/Http/Controllers/NotificationController.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Query\\\\Builder\\:\\:firstOrFail\\(\\)\\.$#"
+			count: 1
+			path: app/Http/Controllers/NotificationController.php
+
+		-
+			message: "#^Parameter \\#1 \\$num of function number_format expects float, string given\\.$#"
+			count: 2
+			path: app/Http/Controllers/Order/OrderController.php
+
+		-
+			message: "#^Call to static method warning\\(\\) on an unknown class Log\\.$#"
+			count: 1
+			path: app/Http/Controllers/Product/ProductController.php
+
+		-
+			message: "#^Call to static method warning\\(\\) on an unknown class Log\\.$#"
+			count: 1
+			path: app/Http/Controllers/Sector/SectorController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Product\\:\\:\\$current_stock\\.$#"
+			count: 1
+			path: app/Http/Controllers/Stock/StockController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Product\\:\\:\\$is_low_stock\\.$#"
+			count: 1
+			path: app/Http/Controllers/Stock/StockController.php
+
+		-
+			message: "#^Call to static method warning\\(\\) on an unknown class Log\\.$#"
+			count: 1
+			path: app/Http/Controllers/Stock/StockController.php
+
+		-
+			message: "#^Property App\\\\Http\\\\Controllers\\\\Table\\\\TableController\\:\\:\\$stockService is never read, only written\\.$#"
+			count: 1
+			path: app/Http/Controllers/Table/TableController.php
+
+		-
+			message: "#^Comparison operation \"\\!\\=\" between object\\|non\\-falsy\\-string and int\\<min, \\-1\\>\\|int\\<1, max\\> results in an error\\.$#"
+			count: 1
+			path: app/Http/Middleware/CheckRole.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: app/Http/Middleware/RedirectIfAuthenticated.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Livewire\\\\Mobile\\\\TomaPedido\\:\\:\\$mesas\\.$#"
+			count: 1
+			path: app/Livewire/Mobile/TomaPedido.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Livewire\\\\Mobile\\\\TomaPedido\\:\\:\\$productos\\.$#"
+			count: 1
+			path: app/Livewire/Mobile/TomaPedido.php
+
+		-
+			message: "#^Using nullsafe method call on non\\-nullable type Illuminate\\\\Http\\\\Request\\. Use \\-\\> instead\\.$#"
+			count: 1
+			path: app/Models/AuditLog.php
+
+		-
+			message: "#^PHPDoc tag @use contains generic type Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory\\<Database\\\\Factories\\\\UserFactory\\> but trait Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory is not generic\\.$#"
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: "#^PHPDoc tag @var for constant App\\\\Models\\\\User\\:\\:ROLE_SUPERADMIN with type array\\<int, string\\> is incompatible with value 'SUPERADMIN'\\.$#"
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between non\\-empty\\-string and false will always evaluate to false\\.$#"
+			count: 1
+			path: app/Services/JwtAuthService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\AuditLog\\:\\:\\$action\\.$#"
+			count: 1
+			path: app/Services/ModuleUsageService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\AuditLog\\:\\:\\$model_type\\.$#"
+			count: 1
+			path: app/Services/ModuleUsageService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\AuditLog\\:\\:\\$total\\.$#"
+			count: 1
+			path: app/Services/ModuleUsageService.php
+
+		-
+			message: "#^Access to protected property App\\\\Models\\\\AuditLog\\:\\:\\$changes\\.$#"
+			count: 1
+			path: app/Services/ModuleUsageService.php
+
+		-
+			message: "#^Property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$changes \\(array\\) on left side of \\?\\? is not nullable\\.$#"
+			count: 2
+			path: app/Services/ModuleUsageService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Product\\:\\:\\$pivot\\.$#"
+			count: 3
+			path: app/Services/StockService.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between non\\-empty\\-string and false will always evaluate to false\\.$#"
+			count: 2
+			path: app/Services/UserService.php

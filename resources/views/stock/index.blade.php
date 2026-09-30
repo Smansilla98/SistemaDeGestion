@@ -38,7 +38,7 @@
         </a>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -53,28 +53,28 @@
                 <tbody>
                     @forelse($products as $product)
                     <tr class="{{ $product->is_low_stock ? 'table-warning' : '' }}">
-                        <td><strong>{{ $product->name }}</strong></td>
-                        <td>
+                        <td data-label="Producto"><strong>{{ $product->name }}</strong></td>
+                        <td data-label="Categoría">
                             @if($product->category)
                                 {{ $product->category->name }}
                             @else
                                 <span class="text-muted">Sin categoría</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Stock Actual">
                             <span class="badge bg-{{ $product->current_stock <= $product->stock_minimum ? 'danger' : 'success' }}">
                                 {{ $product->current_stock }}
                             </span>
                         </td>
-                        <td>{{ $product->stock_minimum }}</td>
-                        <td>
+                        <td data-label="Stock Mínimo">{{ $product->stock_minimum }}</td>
+                        <td data-label="Estado">
                             @if($product->is_low_stock)
                             <x-badge tone="amber">Stock Bajo</x-badge>
                             @else
                             <x-badge tone="green">Normal</x-badge>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="" class="rtbl-actions">
                             <x-button size="sm" type="button" icon="bi-plus-circle" onclick="openMovementModal({{ $product->id }}, '{{ addslashes($product->name) }}')">
                                 Movimiento
                             </x-button>

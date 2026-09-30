@@ -1131,6 +1131,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const payload = {
                 observations: document.getElementById('newOrderObservations').value || null,
                 send_to_kitchen: document.getElementById('sendToKitchen').checked,
+                idempotency_key: (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID().replace(/-/g, '').slice(0, 26)
+                    : String(Date.now()) + Math.random().toString(36).slice(2, 10),
                 items: modalItems.map(i => ({
                     product_id: i.product_id,
                     quantity: i.quantity,
@@ -1170,18 +1173,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 Swal.fire({
-                    icon: 'success',
+                    icon: data.print_ok === false ? 'warning' : 'success',
                     title: data.added_to_existing ? 'Ítems agregados' : 'Pedido creado',
                     html: `
                         <p>${data.added_to_existing ? `Pedido <strong>${data.order_number}</strong>.` : `Pedido <strong>${data.order_number}</strong> creado exitosamente.`}</p>
-                        <p class="text-muted small">${data.message || (data.added_to_existing ? 'Se imprimieron solo los nuevos ítems en cocina.' : 'Se ha abierto el ticket de cocina para imprimir desde tu equipo.')}</p>
-                        ${data.kitchen_ticket_url ? `
-                            <div class="mt-3">
-                                <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-printer"></i> Ver Ticket Cocina
+                        <p class="text-muted small">${data.message || ''}</p>
+                        ${data.print_ok === false ? `<p class="text-warning small mb-2"><i class="bi bi-exclamation-triangle"></i> La impresora falló. Reimprimí desde el botón.</p>` : ''}
+                        <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                            ${data.kitchen_ticket_url ? `
+                                <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm ${data.print_ok === false ? 'btn-warning' : 'btn-outline-primary'}">
+                                    <i class="bi bi-printer"></i> ${data.print_ok === false ? 'Reimprimir cocina' : 'Ver Ticket Cocina'}
                                 </a>
-                            </div>
-                        ` : ''}
+                            ` : ''}
+                            ${data.comanda_url ? `
+                                <a href="${data.comanda_url}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-receipt"></i> Comanda
+                                </a>
+                            ` : ''}
+                        </div>
                     `,
                     confirmButtonColor: '#1e8081',
                     confirmButtonText: 'Entendido'

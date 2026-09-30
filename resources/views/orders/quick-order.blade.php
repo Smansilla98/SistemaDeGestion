@@ -103,60 +103,14 @@
                                     </div>
                                 </div>
                                 <div class="card-body quick-order-products-scroll">
-                                    <div id="quickOrderProductsAccordion">
-                                @foreach($products as $categoryName => $categoryProducts)
-                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryName) }}">
-                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
-                                            <h6 class="mb-0 text-white" style="font-weight: 700;">
-                                                <i class="bi bi-tag-fill"></i> {{ $categoryName }}
-                                            </h6>
-                                            <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
-                                        </div>
-                                        <div class="row g-2">
-                                            @foreach($categoryProducts as $product)
-                                                @php
-                                                    $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
-                                                    $isOutOfStock = $currentStock !== null && $currentStock <= 0;
-                                                    $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
-                                                @endphp
-                                                <div class="col-12 col-md-6 mb-2 product-item" 
-                                                     data-name="{{ strtolower($product->name) }}" 
-                                                     data-category-name="{{ strtolower($categoryName) }}"
-                                                     data-product-id="{{ $product->id }}">
-                                                    <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
-                                                        <div class="me-2 flex-grow-1">
-                                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                                <strong class="fs-6">{{ $product->name }}</strong>
-                                                                @if($isOutOfStock)
-                                                                    <span class="badge bg-danger" title="Sin stock disponible">
-                                                                        <i class="bi bi-x-circle-fill"></i> Sin Stock
-                                                                    </span>
-                                                                @elseif($isLowStock)
-                                                                    <span class="badge bg-warning" title="Stock bajo">
-                                                                        <i class="bi bi-exclamation-triangle-fill"></i> Stock: {{ $currentStock }}
-                                                                    </span>
-                                                                @endif
-                                                            </div>
-                                                            <div class="text-muted small mb-1">{{ $categoryName }}</div>
-                                                            <div class="fw-bold text-primary">${{ number_format($product->price, 2) }}</div>
-                                                        </div>
-                                                        <div class="d-flex flex-column align-items-end gap-1">
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-primary add-product-btn" 
-                                                                    data-product-id="{{ $product->id }}"
-                                                                    data-product-name="{{ $product->name }}"
-                                                                    data-product-price="{{ $product->price }}"
-                                                                    {{ $isOutOfStock ? 'disabled' : '' }}>
-                                                                <i class="bi bi-plus-circle"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
-                                    </div>
+                                    @include('orders.partials.product-picker', [
+                                        'products' => $products,
+                                        'searchId' => 'quickOrderProductSearch',
+                                        'addFn' => 'quickOrderAddProduct',
+                                        'colClass' => 'col-12 col-md-6 mb-2',
+                                        'sectionClass' => 'category-section-modal',
+                                        'showSearch' => false,
+                                    ])
                                 </div>
                             </div>
                         </div>
@@ -268,55 +222,31 @@ let quickOrderItems = [];
 let quickOrderItemCounter = 0;
 const currentUserIsAdmin = @json(auth()->user()->canManageOrdersLikeAdmin());
 
-// Búsqueda de productos
-document.getElementById('quickOrderProductSearch')?.addEventListener('input', function() {
-    filterQuickOrderProducts(this.value.toLowerCase().trim());
-});
-
-function filterQuickOrderProducts(term) {
-    document.querySelectorAll('#quickOrderProductsAccordion .category-section-modal').forEach(section => {
-        let hasVisibleProducts = false;
-        
-        section.querySelectorAll('.product-item').forEach(item => {
-            const name = item.dataset.name || '';
-            const categoryName = item.dataset.categoryName || '';
-            
-            if (!term || name.includes(term) || categoryName.includes(term)) {
-                item.style.display = 'block';
-                hasVisibleProducts = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        section.style.display = hasVisibleProducts ? 'block' : 'none';
-    });
+// Búsqueda de productos: el partial product-picker escucha #quickOrderProductSearch
+function resetQuickOrderProductSearch() {
+    const input = document.getElementById('quickOrderProductSearch');
+    if (!input) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-// Agregar producto al pedido
-document.querySelectorAll('.add-product-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const productId = parseInt(this.dataset.productId);
-        const productName = this.dataset.productName;
-        const productPrice = parseFloat(this.dataset.productPrice);
-        
-        const existingItem = quickOrderItems.find(item => item.product_id === productId);
-        
-        if (existingItem) {
-            existingItem.quantity++;
-        } else {
-            quickOrderItems.push({
-                product_id: productId,
-                name: productName,
-                price: productPrice,
-                quantity: 1,
-                observations: ''
-            });
-        }
-        
-        renderQuickOrderItems();
-    });
-});
+function quickOrderAddProduct(productId, productName, productPrice) {
+    const existingItem = quickOrderItems.find(item => item.product_id === productId);
+
+    if (existingItem) {
+        existingItem.quantity++;
+    } else {
+        quickOrderItems.push({
+            product_id: productId,
+            name: productName,
+            price: productPrice,
+            quantity: 1,
+            observations: ''
+        });
+    }
+
+    renderQuickOrderItems();
+}
 
 // Renderizar items del pedido
 function renderQuickOrderItems() {
@@ -427,6 +357,9 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         customer_name: '',
         observations: document.getElementById('quickOrderObservations').value,
         send_to_kitchen: document.getElementById('quickOrderSendToKitchen').checked,
+        idempotency_key: (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID().replace(/-/g, '').slice(0, 26)
+            : String(Date.now()) + Math.random().toString(36).slice(2, 10),
         items: items
     };
 
@@ -490,12 +423,19 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             }
 
             Swal.fire({
-                icon: 'success',
-                title: '¡Pedido creado!',
-                text: data.message,
+                icon: data.print_ok === false ? 'warning' : 'success',
+                title: data.print_ok === false ? 'Pedido creado (revisá impresora)' : '¡Pedido creado!',
+                html: `
+                    <p>${data.message || ''}</p>
+                    ${data.kitchen_ticket_url ? `
+                        <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm ${data.print_ok === false ? 'btn-warning' : 'btn-outline-primary'} mt-2">
+                            <i class="bi bi-printer"></i> ${data.print_ok === false ? 'Reimprimir' : 'Ver ticket'}
+                        </a>
+                    ` : ''}
+                `,
                 confirmButtonColor: '#1e8081',
-                timer: 2000,
-                showConfirmButton: false
+                timer: data.print_ok === false ? undefined : 2500,
+                showConfirmButton: data.print_ok === false
             });
             
             // Cerrar modal y limpiar
@@ -507,9 +447,8 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
             // Limpiar formulario
             quickOrderItems = [];
             document.getElementById('quickOrderObservations').value = '';
-            document.getElementById('quickOrderProductSearch').value = '';
             renderQuickOrderItems();
-            filterQuickOrderProducts('');
+            resetQuickOrderProductSearch();
             
             // Actualizar lista de pedidos después de un breve delay
             setTimeout(() => {
@@ -548,9 +487,8 @@ document.getElementById('newQuickOrderModal')?.addEventListener('hidden.bs.modal
     quickOrderItems = [];
     quickOrderItemCounter = 0;
     document.getElementById('quickOrderObservations').value = '';
-    document.getElementById('quickOrderProductSearch').value = '';
     renderQuickOrderItems();
-    filterQuickOrderProducts('');
+    resetQuickOrderProductSearch();
 });
 
 // ========== SISTEMA DE ACTUALIZACIÓN DINÁMICA DE PEDIDOS ==========

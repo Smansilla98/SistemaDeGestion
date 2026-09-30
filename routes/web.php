@@ -56,6 +56,7 @@ use App\Http\Controllers\CashRegister\CashRegisterController;
 use App\Http\Controllers\InteractiveTutorialController;
 use App\Http\Controllers\Kitchen\KitchenController;
 use App\Http\Controllers\Order\OrderController;
+use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\Table\TableController;
 
 /*
@@ -63,6 +64,9 @@ use App\Http\Controllers\Table\TableController;
 | Rutas de Autenticación
 |--------------------------------------------------------------------------
 */
+
+Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
+Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -173,6 +177,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/{order}/items/group/remove', [OrderController::class, 'removeItemGroup'])->name('items-group.remove');
         Route::post('/{order}/items/group/replace', [OrderController::class, 'replaceItemGroup'])->name('items-group.replace');
         Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{order}/discount', [OrderController::class, 'applyDiscount'])->name('discount.apply');
         Route::put('/items/{item}/status', [OrderController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/{order}/send-to-kitchen', [OrderController::class, 'sendToKitchen'])->name('send-to-kitchen');
         Route::post('/{order}/close', [OrderController::class, 'close'])->name('close');
@@ -198,6 +203,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     */
     Route::prefix('kitchen')->name('kitchen.')->middleware('role:COCINA,ADMIN')->group(function () {
         Route::get('/', [KitchenController::class, 'index'])->name('index');
+        Route::get('/board.json', [KitchenController::class, 'boardJson'])->name('board-json');
         Route::post('/items/{item}/status', [KitchenController::class, 'updateItemStatus'])->name('update-item-status');
         Route::post('/orders/{order}/ready', [KitchenController::class, 'markOrderReady'])->name('mark-ready');
         Route::put('/orders/{order}/status', [KitchenController::class, 'updateOrderStatus'])->name('update-order-status');
@@ -379,7 +385,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'index'])->name('index');
     });
 
-    Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,CAJERO')->group(function () {
+    Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,GERENTE,CAJERO')->group(function () {
         Route::get('/', [\App\Http\Controllers\Report\ReportController::class, 'index'])->name('index');
         Route::get('/sales', [\App\Http\Controllers\Report\ReportController::class, 'sales'])->name('sales');
         Route::get('/sales/export', [\App\Http\Controllers\Report\ReportController::class, 'exportSales'])->name('sales.export');
@@ -400,6 +406,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/create', [\App\Http\Controllers\User\UserController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\User\UserController::class, 'store'])->name('store');
         Route::get('/{user}', [\App\Http\Controllers\User\UserController::class, 'show'])->name('show');
+        Route::post('/{user}/reset-password', [\App\Http\Controllers\User\UserController::class, 'resetTemporaryPassword'])->name('reset-password');
         Route::get('/{user}/edit', [\App\Http\Controllers\User\UserController::class, 'edit'])->name('edit');
         Route::put('/{user}', [\App\Http\Controllers\User\UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [\App\Http\Controllers\User\UserController::class, 'destroy'])->name('destroy');
@@ -444,6 +451,12 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
+
+        Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'index'])->name('index');
+            Route::post('/{type}', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'update'])->name('update');
+            Route::post('/{config}/disable', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'disable'])->name('disable');
+        });
     });
 
     /*

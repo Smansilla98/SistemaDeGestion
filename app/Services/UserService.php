@@ -154,4 +154,51 @@ final class UserService
         $this->users->delete($id, $restaurantId);
         $this->logger->info('Usuario eliminado vía API', ['deleted_id' => $id, 'actor_id' => $actorId]);
     }
+
+    /**
+     * Genera contraseña temporal (solo superadmin, espejo web).
+     *
+     * @return array{user: array<string, mixed>, temporary_password: string}
+     */
+    public function resetTemporaryPassword(
+        int $id,
+        int $restaurantId,
+        int $actorId,
+        bool $actorIsSuperAdmin
+    ): array {
+        if (! $actorIsSuperAdmin) {
+            throw new InvalidArgumentException('Solo el superadmin puede generar contraseñas temporales');
+        }
+
+        if ($id === $actorId) {
+            throw new InvalidArgumentException('No podés regenerar la contraseña de tu propio usuario');
+        }
+
+        $existing = $this->users->findByIdForRestaurant($id, $restaurantId);
+        if ($existing === null) {
+            throw new InvalidArgumentException('Usuario no encontrado');
+        }
+
+        $chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $temporaryPassword = '';
+        for ($i = 0; $i < 12; $i++) {
+            $temporaryPassword .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+
+        $hash = password_hash($temporaryPassword, PASSWORD_DEFAULT);
+        if ($hash === false) {
+            throw new \RuntimeException('No se pudo generar el hash de contraseña');
+        }
+
+        $this->users->update($id, $restaurantId, ['password' => $hash]);
+        $this->logger->info('Contraseña temporal generada vía API', [
+            'user_id' => $id,
+            'actor_id' => $actorId,
+        ]);
+
+        return [
+            'user' => $this->getById($id, $restaurantId, false),
+            'temporary_password' => $temporaryPassword,
+        ];
+    }
 }

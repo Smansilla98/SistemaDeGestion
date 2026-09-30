@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    @include('partials.favicon')
     <title>Recibo - {{ $order->number }}</title>
     @include('partials.print-ticket-styles')
 </head>

@@ -1,0 +1,97 @@
+/* Pills de estado de mesa — reutilizados en tables/index y orders/create */
+.table-status-pill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: none;
+    line-height: 1.4;
+}
+
+.table-status-pill.table-status-libre { background: var(--t100, #d4f2e8); color: var(--t700, #155240); }
+.table-status-pill.table-status-ocupada { background: #e8f0ef; color: var(--g700, #2d3d39); }
+.table-status-pill.table-status-reservada { background: var(--t50, #edf9f4); color: var(--t600, #1d7a5c); }
+.table-status-pill:not(button) { cursor: default; }
+
+/* Selector de mesa embebido en Nuevo Pedido */
+.order-table-picker .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.order-table-picker .table-pick-card {
+    background: #fff;
+    border: 1.5px solid var(--g200, #d1ddd9);
+    border-radius: var(--rlg, 12px);
+    padding: 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.order-table-picker .table-pick-card:hover,
+.order-table-picker .table-pick-card.is-selected {
+    border-color: var(--t500, #1d9e75);
+    box-shadow: 0 0 0 2px var(--t100, #d4f2e8);
+}
+
+.order-table-picker .table-pick-number {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--g900, #131a18);
+}
+
+.order-table-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    background: var(--t50, #edf9f4);
+    color: var(--t900, #082822);
+    border-radius: var(--rlg, 12px);
+    padding: 0.65rem 0.9rem;
+}
+
+.order-qty-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.order-qty-stepper .btn {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.order-qty-stepper .qty-value {
+    min-width: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* tables/orders — columnas secundarias colapsables en mobile */
+@media (max-width: 768px) {
+    .rtbl-cards.rtbl-collapse-secondary td.rtbl-secondary {
+        display: none;
+    }
+
+    .rtbl-cards.rtbl-collapse-secondary tr.is-expanded td.rtbl-secondary {
+        display: flex;
+    }
+
+    .rtbl-cards .rtbl-expand-btn {
+        min-width: 36px;
+        min-height: 36px;
+    }
+}

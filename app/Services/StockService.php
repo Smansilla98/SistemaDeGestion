@@ -19,13 +19,20 @@ class StockService
     {
         return DB::transaction(function () use ($data) {
             $product = Product::findOrFail($data['product_id']);
-            $currentStock = $product->getCurrentStock($data['restaurant_id']);
+
+            // Actualizar o crear stock (lock para concurrencia)
+            $stock = Stock::where('restaurant_id', $data['restaurant_id'])
+                ->where('product_id', $data['product_id'])
+                ->lockForUpdate()
+                ->first();
+
+            $currentStock = $stock?->quantity ?? $product->getCurrentStock($data['restaurant_id']);
 
             // Calcular nuevo stock según el tipo
             $newStock = match ($data['type']) {
                 'ENTRADA' => $currentStock + $data['quantity'],
                 'SALIDA' => $currentStock - $data['quantity'],
-                'AJUSTE' => $data['quantity'], // En ajuste, quantity es el nuevo valor
+                'AJUSTE' => $data['quantity'],
                 default => throw new \Exception('Tipo de movimiento inválido'),
             };
 
@@ -33,7 +40,6 @@ class StockService
                 throw new \Exception('No se puede tener stock negativo');
             }
 
-            // Actualizar o crear stock
             Stock::updateOrCreate(
                 [
                     'restaurant_id' => $data['restaurant_id'],

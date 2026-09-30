@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
+    use Concerns\BelongsToRestaurant;
     use HasFactory;
 
     // Métodos de pago
@@ -27,6 +28,7 @@ class Payment extends Model
         'user_id',
         'payment_method',
         'amount',
+        'amount_cents',
         'reference',
         'operation_number',
         'notes',
@@ -34,7 +36,21 @@ class Payment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'amount_cents' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Payment $payment) {
+            if ($payment->isDirty('amount') && ! $payment->isDirty('amount_cents')) {
+                $payment->amount_cents = \App\Domain\Money\Money::fromDecimal($payment->amount ?? 0)->cents;
+            } elseif ($payment->isDirty('amount_cents') && ! $payment->isDirty('amount')) {
+                $payment->amount = round(((int) $payment->amount_cents) / 100, 2);
+            } elseif ($payment->amount !== null && $payment->amount_cents === null) {
+                $payment->amount_cents = \App\Domain\Money\Money::fromDecimal($payment->amount)->cents;
+            }
+        });
+    }
 
     /**
      * Relación: Un pago pertenece a un restaurante

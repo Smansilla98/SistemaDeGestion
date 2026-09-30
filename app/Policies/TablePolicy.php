@@ -7,12 +7,21 @@ use App\Models\User;
 
 class TablePolicy
 {
+    /** Roles que pueden ver el mapa de mesas. */
+    private const VIEW_ROLES = ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO', 'SUPERVISOR'];
+
+    /**
+     * Roles que pueden operar una mesa (abrir, cobrar y cerrar).
+     * CAJERO y SUPERVISOR estaban excluidos y recibían 403 al intentar cerrar mesas.
+     */
+    private const UPDATE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO', 'SUPERVISOR'];
+
     /**
      * Determinar si el usuario puede ver cualquier mesa
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO']);
+        return in_array($user->role, self::VIEW_ROLES);
     }
 
     /**
@@ -24,7 +33,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO']);
+        return in_array($user->role, self::VIEW_ROLES);
     }
 
     /**
@@ -44,7 +53,7 @@ class TablePolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO']);
+        return in_array($user->role, self::UPDATE_ROLES);
     }
 
     /**

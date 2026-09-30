@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    use Concerns\BelongsToRestaurant;
     use HasFactory;
 
     protected $fillable = [

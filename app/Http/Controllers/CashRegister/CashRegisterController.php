@@ -196,7 +196,12 @@ class CashRegisterController extends Controller
         $totalPayments = $session->payments()->sum('amount');
         $totalIngresos = $session->cashMovements()->where('type', 'INGRESO')->sum('amount');
         $totalEgresos = $session->cashMovements()->where('type', 'EGRESO')->sum('amount');
-        $expectedAmount = $session->initial_amount + $totalPayments + $totalIngresos - $totalEgresos;
+        // Solo EFECTIVO (+ movimientos manuales) — mismo cálculo que el cierre
+        // real, para no mostrar acá un "esperado" que después no coincide al
+        // cerrar. Los pagos con tarjeta/transferencia/QR no son efectivo
+        // físico; se muestran aparte en $paymentBreakdown.
+        $expectedAmount = $this->cashRegisterService->calculateExpectedAmount($session);
+        $paymentBreakdown = $this->cashRegisterService->paymentBreakdown($session);
 
         // Detalle de ventas: pedidos pagados en esta sesión con ítems y productos (con o sin stock)
         $orderIds = $session->payments()->whereNotNull('order_id')->pluck('order_id')->unique()->values();
@@ -205,7 +210,7 @@ class CashRegisterController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        return view('cash-register.session', compact('session', 'totalPayments', 'totalIngresos', 'totalEgresos', 'expectedAmount', 'salesDetail'));
+        return view('cash-register.session', compact('session', 'totalPayments', 'totalIngresos', 'totalEgresos', 'expectedAmount', 'paymentBreakdown', 'salesDetail'));
     }
 
     /**

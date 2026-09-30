@@ -173,6 +173,23 @@
     </div>
 </div>
 
+<!-- Medios de cobro -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Medios de cobro</h5>
+            </div>
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <p class="mb-0">Configurá el alias/CVU de transferencia y el QR que van a ver los mozos al cobrar una mesa.</p>
+                <a href="{{ route('configuration.payment-methods.index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-right"></i> Configurar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Mantenimiento del Sistema -->
 <div class="row">
     <div class="col-12">

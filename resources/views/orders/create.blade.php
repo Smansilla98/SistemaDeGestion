@@ -13,43 +13,14 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0">Seleccionar Productos</h5>
-                    <div class="input-group" style="max-width: 400px;">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" 
-                               class="form-control" 
-                               id="productSearch" 
-                               placeholder="🔍 Buscar producto..." 
-                               autocomplete="off">
-                    </div>
-                </div>
-            </div>
             <div class="card-body">
-                @foreach($products as $categoryName => $categoryProducts)
-                <div class="mb-4 category-section" data-category-name="{{ strtolower($categoryName) }}">
-                    <h5 class="border-bottom pb-2">{{ $categoryName }}</h5>
-                    <div class="row">
-                        @foreach($categoryProducts as $product)
-                        <div class="col-md-4 mb-3 product-item" 
-                             data-product-name="{{ strtolower($product->name) }}"
-                             data-category-name="{{ strtolower($categoryName) }}">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ $product->name }}</h6>
-                                    <p class="card-text text-muted small">{{ $product->description }}</p>
-                                    <p class="card-text"><strong>${{ number_format($product->price, 2) }}</strong></p>
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="addProduct({{ $product->id }}, '{{ $product->name }}', {{ $product->price }})">
-                                        <i class="bi bi-plus"></i> Agregar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endforeach
+                @include('orders.partials.product-picker', [
+                    'products' => $products,
+                    'searchId' => 'productSearch',
+                    'addFn' => 'addProduct',
+                    'colClass' => 'col-md-4 mb-3',
+                    'sectionClass' => 'category-section',
+                ])
             </div>
         </div>
     </div>
@@ -63,17 +34,10 @@
                 <form action="{{ route('orders.store') }}" method="POST" id="orderForm">
                     @csrf
                     
-                    <div class="mb-3">
-                        <label for="table_id" class="form-label">Mesa</label>
-                        <select class="form-select" id="table_id" name="table_id" required>
-                            <option value="">Seleccionar mesa</option>
-                            @foreach($tables as $table)
-                            <option value="{{ $table->id }}" {{ $selectedTable && $selectedTable->id === $table->id ? 'selected' : '' }}>
-                                {{ $table->number }} - {{ $table->status }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @include('orders.partials.table-selector', [
+                        'tables' => $tables,
+                        'selectedTable' => $selectedTable ?? null,
+                    ])
 
                     <div class="mb-3">
                         <label for="observations" class="form-label">Observaciones</label>
@@ -101,37 +65,55 @@
 </div>
 
 <script>
-// Búsqueda de productos
-document.getElementById('productSearch')?.addEventListener('input', function() {
-    filterProducts(this.value.toLowerCase().trim());
-});
+// Selector de mesa (chip fijo o mapa visual)
+(function initOrderTablePicker() {
+    const root = document.querySelector('[data-order-table-picker]');
+    if (!root) return;
 
-function filterProducts(searchTerm) {
-    const categorySections = document.querySelectorAll('.category-section');
-    
-    categorySections.forEach(section => {
-        let hasVisibleProducts = false;
-        const productItems = section.querySelectorAll('.product-item');
-        
-        productItems.forEach(item => {
-            const productName = item.dataset.productName || '';
-            const categoryName = item.dataset.categoryName || '';
-            
-            if (!searchTerm || 
-                productName.includes(searchTerm) || 
-                categoryName.includes(searchTerm)) {
-                item.style.display = 'block';
-                hasVisibleProducts = true;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        // Mostrar/ocultar la sección de categoría según si tiene productos visibles
-        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    const chipBlock = root.querySelector('[data-table-chip]');
+    const mapBlock = root.querySelector('[data-table-map]');
+    const changeBtn = root.querySelector('[data-change-table]');
+
+    function getActiveTableInput() {
+        return document.getElementById('table_id') || document.getElementById('table_id_map');
+    }
+
+    function selectTable(btn) {
+        root.querySelectorAll('[data-pick-table]').forEach(el => el.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+        const input = getActiveTableInput();
+        if (input) {
+            input.value = btn.dataset.tableId;
+            input.disabled = false;
+            input.name = 'table_id';
+            input.id = 'table_id';
+        }
+    }
+
+    root.querySelectorAll('[data-pick-table]').forEach(btn => {
+        btn.addEventListener('click', () => selectTable(btn));
     });
-}
 
+    changeBtn?.addEventListener('click', () => {
+        if (!chipBlock || !mapBlock) return;
+        chipBlock.classList.add('d-none');
+        const hidden = chipBlock.querySelector('#table_id');
+        if (hidden) {
+            hidden.removeAttribute('name');
+            hidden.disabled = true;
+            hidden.id = 'table_id_chip';
+        }
+        mapBlock.classList.remove('d-none');
+        const mapInput = mapBlock.querySelector('#table_id_map');
+        if (mapInput) {
+            mapInput.disabled = false;
+            mapInput.name = 'table_id';
+            mapInput.id = 'table_id';
+        }
+    });
+})();
+
+// Búsqueda de productos (product-picker partial)
 let orderItems = [];
 let itemCounter = 0;
 
@@ -156,9 +138,21 @@ function removeItem(itemId) {
 function updateQuantity(itemId, quantity) {
     const item = orderItems.find(i => i.id === itemId);
     if (item) {
-        item.quantity = parseInt(quantity) || 1;
+        item.quantity = Math.max(1, parseInt(quantity, 10) || 1);
         updateItemsList();
     }
+}
+
+function bumpQuantity(itemId, delta) {
+    const item = orderItems.find(i => i.id === itemId);
+    if (!item) return;
+    const next = (parseInt(item.quantity, 10) || 1) + delta;
+    if (next <= 0) {
+        removeItem(itemId);
+        return;
+    }
+    item.quantity = next;
+    updateItemsList();
 }
 
 function updateItemsList() {
@@ -190,15 +184,21 @@ function updateItemsList() {
                         <strong>${item.name}</strong><br>
                         <small class="text-muted">$${item.price.toFixed(2)} c/u</small>
                     </div>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})">
-                        <i class="bi bi-trash"></i>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})" aria-label="Quitar ${item.name}">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
                     </button>
                 </div>
-                <div class="mt-2">
-                    <label class="small">Cantidad:</label>
-                    <input type="number" class="form-control form-control-sm" 
-                           value="${item.quantity}" min="1" 
-                           onchange="updateQuantity(${item.id}, this.value)">
+                <div class="mt-2 d-flex align-items-center justify-content-between">
+                    <span class="small text-muted">Cantidad</span>
+                    <div class="order-qty-stepper">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bumpQuantity(${item.id}, -1)" aria-label="Restar">
+                            <i class="bi bi-dash" aria-hidden="true"></i>
+                        </button>
+                        <span class="qty-value" aria-live="polite">${item.quantity}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bumpQuantity(${item.id}, 1)" aria-label="Sumar">
+                            <i class="bi bi-plus" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mt-2 text-end">
                     <strong>Subtotal: $${itemTotal.toFixed(2)}</strong>
@@ -282,13 +282,33 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             throw new Error(data.message || 'No se pudo crear el pedido');
         }
         // Abrir ticket de cocina en ventana nueva; el usuario solo acepta en el diálogo de impresión
+        var printBlocked = false;
         if (data.kitchen_ticket_url && printWin && !printWin.closed) {
             printWin.location.href = data.kitchen_ticket_url;
             setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
         } else if (data.kitchen_ticket_url) {
             var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
-            if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
+            if (!w || w.closed) {
+                printBlocked = true;
+            } else {
+                setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
+            }
+        } else if (printWin === null || (printWin && printWin.closed)) {
+            printBlocked = !!data.kitchen_ticket_url;
         }
+
+        if (printBlocked && data.kitchen_ticket_url) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Pedido creado',
+                html: 'El pedido se creó, pero el navegador bloqueó la ventana de impresión.<br><br>' +
+                    '<a href="' + data.kitchen_ticket_url + '" target="_blank" rel="noopener" class="btn btn-sm btn-primary">' +
+                    '<i class="bi bi-printer"></i> Abrir ticket de cocina</a>',
+                confirmButtonColor: '#1e8081',
+                confirmButtonText: 'Continuar'
+            });
+        }
+
         window.location.href = data.redirect || '{{ url("/orders") }}/' + data.order_id;
     } catch (err) {
         try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {}

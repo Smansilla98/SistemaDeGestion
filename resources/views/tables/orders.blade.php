@@ -45,7 +45,7 @@
                     <p class="text-muted">Solo se muestran pedidos de la ocupación actual.</p>
                 </div>
                 @elseif($orders->count() > 0)
-                <div class="table-responsive">
+                <div class="table-responsive rtbl-cards rtbl-collapse-secondary">
                     <table class="table table-hover">
                         <thead>
                             <tr>
@@ -64,9 +64,9 @@
                         <tbody>
                             @foreach($orders as $order)
                             <tr>
-                                <td><strong>{{ $order->number }}</strong></td>
-                                <td>{{ $order->user->name }}</td>
-                                <td>
+                                <td data-label="Número"><strong>{{ $order->number }}</strong></td>
+                                <td data-label="Mozo">{{ $order->user->name }}</td>
+                                <td data-label="Estado">
                                     @php
                                         $displayStatus = $order->status === 'CERRADO'
                                             ? 'Se cierra la mesa'
@@ -75,20 +75,23 @@
                                     @endphp
                                     <span class="badge bg-{{ $badgeClass }}">{{ $displayStatus }}</span>
                                 </td>
-                                <td>{{ $order->items->count() }}</td>
-                                <td>${{ number_format($order->subtotal, 2) }}</td>
-                                <td>${{ number_format($order->discount, 2) }}</td>
-                                <td><strong>${{ number_format($order->total, 2) }}</strong></td>
-                                <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
+                                <td data-label="Items">{{ $order->items->count() }}</td>
+                                <td data-label="Subtotal">${{ number_format($order->subtotal, 2) }}</td>
+                                <td data-label="Descuento" class="rtbl-secondary">${{ number_format($order->discount, 2) }}</td>
+                                <td data-label="Total"><strong>${{ number_format($order->total, 2) }}</strong></td>
+                                <td data-label="Fecha Creación" class="rtbl-secondary">{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                                <td data-label="Fecha Cierre" class="rtbl-secondary">
                                     @if($order->closed_at)
                                         {{ $order->closed_at->format('d/m/Y H:i') }}
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="d-flex gap-2 flex-wrap">
+                                <td data-label="" class="rtbl-actions">
+                                    <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rtbl-expand-btn d-md-none" data-rtbl-expand aria-expanded="false" aria-label="Ver más detalles">
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
                                         <a href="{{ route('orders.show', $order) }}" class="btn btn-sm btn-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
@@ -135,6 +138,20 @@
 
 @push('scripts')
 <script>
+document.querySelectorAll('[data-rtbl-expand]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const row = btn.closest('tr');
+        if (!row) return;
+        const expanded = row.classList.toggle('is-expanded');
+        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('bi-chevron-down', !expanded);
+            icon.classList.toggle('bi-chevron-up', expanded);
+        }
+    });
+});
+
 // Mostrar alerta de éxito
 @if(session('success'))
     Swal.fire({

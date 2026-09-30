@@ -25,7 +25,8 @@ class TableController extends Controller
         private OrderService $orderService,
         private PrintService $printService,
         private StockService $stockService,
-        private TableService $tableService
+        private TableService $tableService,
+        private \App\Services\PaymentMethodConfigurationService $paymentMethods,
     ) {}
 
     /**
@@ -107,33 +108,29 @@ class TableController extends Controller
             abort(403, 'No tienes acceso a esta mesa');
         }
 
-        if ($table->status !== Table::STATUS_OCUPADA) {
+        // Sentar + pedir: si la mesa está libre, se ocupa y abre sesión acá
+        try {
+            $this->orderService->ensureTableReadyForOrder($table, (int) auth()->id());
+            $table->refresh();
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Solo se pueden tomar pedidos en mesas ocupadas.',
+                'message' => $e->getMessage() ?: 'No se pudo preparar la mesa.',
             ], 422);
         }
 
-        // MÓDULO 2: Validar que la mesa tenga sesión ABIERTA
-        if (! $table->current_session_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'La mesa no tiene una sesión activa. Marcar como ocupada primero.',
-            ], 422);
-        }
-
-        // Verificar que la sesión esté ABIERTA
         $session = TableSession::find($table->current_session_id);
         if (! $session || ! $session->isOpen()) {
             return response()->json([
                 'success' => false,
-                'message' => 'La sesión de la mesa no está abierta. No se pueden crear pedidos.',
+                'message' => 'No se pudo abrir la sesión de la mesa. Reintentá.',
             ], 422);
         }
 
         $validated = $request->validate([
             'observations' => 'nullable|string',
             'send_to_kitchen' => 'nullable|boolean',
+            'idempotency_key' => 'nullable|string|max:26',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -189,46 +186,57 @@ class TableController extends Controller
                 ]);
             }
 
-            // Pedido nuevo: crear y imprimir ticket completo
-            $data = [
+            // Pedido nuevo atómico (items en la misma transacción)
+            $order = $this->orderService->createOrder([
                 'restaurant_id' => auth()->user()->restaurant_id,
                 'table_id' => $table->id,
                 'user_id' => auth()->id(),
                 'observations' => $validated['observations'] ?? null,
                 'items' => $validated['items'],
-            ];
-            $order = $this->orderService->createOrder($data);
-
-            foreach ($data['items'] as $itemData) {
-                $this->orderService->addItem($order, $itemData);
-            }
+                'idempotency_key' => $validated['idempotency_key'] ?? null,
+                'ensure_table_occupied' => true,
+            ]);
 
             $order->load(['table', 'items.product', 'items.modifiers']);
 
+            $printOk = true;
             if ($validated['send_to_kitchen']) {
+                try {
+                    $this->orderService->sendToKitchen($order);
+                } catch (\Throwable $e) {
+                    Log::warning('sendToKitchen: '.$e->getMessage(), ['order_id' => $order->id]);
+                }
                 try {
                     $printer = $this->printService->getPrinterForKitchenTicket($order->restaurant_id);
                     if ($printer) {
                         $this->printService->printKitchenTicket($order, $printer);
+                        $order->forceFill(['kitchen_printed_at' => now()])->saveQuietly();
                     }
                 } catch (\Exception $e) {
+                    $printOk = false;
                     Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
+                    DB::afterCommit(fn () => \App\Jobs\PrintKitchenTicket::dispatch($order->id)->onQueue('printing'));
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado. Ticket enviado a la impresora.',
+                'message' => $printOk
+                    ? 'Pedido creado. Ticket enviado a la impresora.'
+                    : 'Pedido creado. La impresora falló: se reintentará; podés reimprimir desde el pedido.',
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'added_to_existing' => false,
+                'print_ok' => $printOk,
                 'kitchen_ticket_url' => route('orders.print.kitchen.auto', $order),
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al crear pedido desde mesa', ['error' => $e->getMessage(), 'exception' => $e::class]);
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $this->safeErrorMessage($e, 'No pudimos abrir el pedido. Reintentá en unos segundos.'),
             ], 422);
         }
     }
@@ -406,9 +414,15 @@ class TableController extends Controller
                 'comanda_url' => route('orders.print.comanda', $order),
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al crear pedido desde mesa', [
+                'error' => $e->getMessage(),
+                'exception' => $e::class,
+                'user_id' => auth()->id(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el pedido: '.$e->getMessage(),
+                'message' => $this->safeErrorMessage($e, 'No pudimos abrir el pedido. Reintentá en unos segundos.'),
             ], 500);
         }
     }
@@ -637,21 +651,49 @@ class TableController extends Controller
                 }
 
                 try {
-                    $session = TableSession::create([
-                        'restaurant_id' => $table->restaurant_id,
-                        'table_id' => $table->id,
-                        'waiter_id' => $validated['waiter_id'],
-                        'opened_by_user_id' => auth()->id(),
-                        'started_at' => now(),
-                        'status' => TableSession::STATUS_ABIERTA,
-                    ]);
+                    // tables.current_session_id puede quedar desincronizado (ej: la
+                    // mesa se liberó sin cerrar bien la sesión) mientras
+                    // table_sessions, la fuente de verdad, todavía tiene una fila
+                    // ABIERTA huérfana para esta mesa. Reusar esa sesión en vez de
+                    // crear otra — si no, el índice único
+                    // table_sessions_one_open_per_table rechaza el insert.
+                    $session = DB::transaction(function () use ($table, $validated) {
+                        $existingOpenSession = TableSession::where('table_id', $table->id)
+                            ->where('status', TableSession::STATUS_ABIERTA)
+                            ->orderByDesc('started_at')
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($existingOpenSession) {
+                            Log::warning('Mesa desincronizada: reusando sesión ABIERTA huérfana en vez de crear otra', [
+                                'table_id' => $table->id,
+                                'session_id' => $existingOpenSession->id,
+                            ]);
+
+                            return $existingOpenSession;
+                        }
+
+                        return TableSession::create([
+                            'restaurant_id' => $table->restaurant_id,
+                            'table_id' => $table->id,
+                            'waiter_id' => $validated['waiter_id'],
+                            'opened_by_user_id' => auth()->id(),
+                            'started_at' => now(),
+                            'status' => TableSession::STATUS_ABIERTA,
+                        ]);
+                    });
                     $table->current_session_id = $session->id;
                 } catch (\Exception $e) {
-                    // Si falla la creación de sesión, registrar error pero permitir continuar
-                    Log::error('Error al crear sesión de mesa: '.$e->getMessage());
+                    // Nunca mostrarle al usuario el mensaje crudo de la excepción
+                    // (puede ser SQL con nombres de tabla/constraint) — se loguea
+                    // completo y se muestra un mensaje genérico.
+                    Log::error('Error al crear sesión de mesa: '.$e->getMessage(), [
+                        'exception' => $e::class,
+                        'table_id' => $table->id,
+                    ]);
 
                     return redirect()->route('tables.index')
-                        ->with('error', 'Error al crear sesión de mesa. Verificá que las migraciones se hayan ejecutado correctamente. Error: '.$e->getMessage());
+                        ->with('error', 'No se pudo abrir la mesa. Reintentá en un momento o avisá a soporte.');
                 }
             }
             $table->update([
@@ -671,12 +713,15 @@ class TableController extends Controller
     {
         Gate::authorize('update', $table);
 
-        if ($table->status !== 'OCUPADA') {
-            return back()->with('error', 'La mesa no está ocupada');
-        }
+        // Auto-reparación: mesas OCUPADAS sin sesión y pedidos huérfanos quedaban
+        // imposibles de cerrar. Se reusa/crea la sesión y se adoptan esos pedidos.
+        $sessionId = $this->tableService->ensureSessionForClose($table);
+        $table->refresh();
 
-        if (! $table->current_session_id) {
-            return back()->with('error', 'La mesa no tiene una sesión activa para cerrar');
+        if (! $sessionId) {
+            return back()->with('error', $table->status === 'OCUPADA'
+                ? 'La mesa no tiene pedidos abiertos para cerrar'
+                : 'La mesa no está ocupada');
         }
 
         // Obtener todos los pedidos activos de la mesa
@@ -749,7 +794,9 @@ class TableController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems', 'discountTypes'));
+        $activeMethods = $this->paymentMethods->active((int) $table->restaurant_id)->values();
+
+        return view('tables.close-payment', compact('table', 'activeOrders', 'totalAmount', 'totalSubtotal', 'totalDiscount', 'allItems', 'discountTypes', 'activeMethods'));
     }
 
     /**
@@ -774,12 +821,15 @@ class TableController extends Controller
                 : redirect()->back()->with('error', $message)->withInput();
         };
 
-        if ($table->status !== 'OCUPADA') {
-            return $respond(false, 'La mesa no está ocupada');
-        }
+        // Misma auto-reparación que en showCloseTable: sin esto, una mesa OCUPADA
+        // con current_session_id nulo no se podía cobrar nunca.
+        $sessionId = $this->tableService->ensureSessionForClose($table);
+        $table->refresh();
 
-        if (! $table->current_session_id) {
-            return $respond(false, 'La mesa no tiene una sesión activa');
+        if (! $sessionId) {
+            return $respond(false, $table->status === 'OCUPADA'
+                ? 'La mesa no tiene pedidos abiertos para cerrar'
+                : 'La mesa no está ocupada');
         }
 
         try {
@@ -838,7 +888,7 @@ class TableController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió un error al procesar el pago: '.$e->getMessage(),
+                    'message' => 'Ocurrió un error al procesar el pago. '.$this->safeErrorMessage($e, 'Reintentá en un momento o avisá a soporte.'),
                 ], 500);
             }
 
@@ -1127,4 +1177,23 @@ class TableController extends Controller
 
     // (el método "Mostrar todos los pedidos de una mesa" fue reemplazado por
     //  "Mostrar pedidos de la sesión actual de una mesa (no histórico)")
+
+    /**
+     * Mensaje seguro para mostrarle al usuario ante una excepción.
+     *
+     * QueryException hereda de RuntimeException, así que un chequeo
+     * `$e instanceof \RuntimeException` a secas (como se usaba en varios
+     * catch de este controlador) termina mostrando SQL crudo — nombre de
+     * tabla, constraint, hasta valores — cuando algo como un unique index
+     * falla. Solo las excepciones de negocio que este código tira a
+     * propósito (RuntimeException simple, con mensaje en español pensado
+     * para mostrarse) llegan tal cual; cualquier otra cosa se loguea
+     * completa y al usuario le llega un mensaje genérico.
+     */
+    private function safeErrorMessage(\Throwable $e, string $fallback): string
+    {
+        $isSafeToShow = ! ($e instanceof \Illuminate\Database\QueryException) && $e instanceof \RuntimeException;
+
+        return $isSafeToShow ? $e->getMessage() : $fallback;
+    }
 }

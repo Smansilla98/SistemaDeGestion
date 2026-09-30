@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Table extends Model
 {
+    use Concerns\BelongsToRestaurant;
     use HasFactory;
 
     // Estados de la mesa

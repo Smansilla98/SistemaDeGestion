@@ -37,9 +37,39 @@ class NotificationService
             }
 
             Cache::put($notificationsKey, $notifications, now()->addMinutes(10));
+
+            // Push nativo (Expo) a mozo asignado + dispositivos del restaurante con rol MOZO
+            $this->dispatchExpoPushForOrderReady($order, $notification);
         } catch (\Exception $e) {
             Log::error('Error al notificar pedido listo: '.$e->getMessage());
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function dispatchExpoPushForOrderReady(Order $order, array $payload): void
+    {
+        $userIds = collect([$order->user_id])->filter()->all();
+
+        $tokens = \App\Models\DeviceToken::query()
+            ->where('restaurant_id', $order->restaurant_id)
+            ->when($userIds !== [], fn ($q) => $q->whereIn('user_id', $userIds))
+            ->pluck('token')
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($tokens === []) {
+            return;
+        }
+
+        \App\Jobs\SendExpoPushNotification::dispatch(
+            $tokens,
+            'Pedido listo',
+            'Mesa '.($payload['table_number'] ?? '?').' — '.$payload['order_number'],
+            ['type' => 'order_ready', 'order_id' => $order->id]
+        );
     }
 
     /**

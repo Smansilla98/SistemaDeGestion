@@ -66,7 +66,7 @@
         </div>
 
         <h5>Ventas por Método de Pago</h5>
-        <div class="table-responsive mb-4">
+        <div class="table-responsive rtbl-scroll mb-4">
             <table class="table">
                 <thead>
                     <tr>
@@ -86,7 +86,7 @@
         </div>
 
         <h5>Ventas por Día</h5>
-        <div class="table-responsive mb-4">
+        <div class="table-responsive rtbl-scroll mb-4">
             <table class="table">
                 <thead>
                     <tr>
@@ -109,7 +109,7 @@
         <hr class="my-4">
         <h5 class="mb-2"><i class="bi bi-cash-coin"></i> Caja — resumen simple</h5>
         <p class="text-muted small mb-3">Totales por sesión en el período. Para el detalle línea a línea usá <strong>Ver detalle</strong>.</p>
-        <div class="table-responsive mb-4">
+        <div class="table-responsive rtbl-scroll mb-4">
             <table class="table table-sm align-middle mb-0">
                 <thead class="table-light">
                     <tr>
@@ -230,7 +230,7 @@
                         <div class="col-auto"><span class="badge bg-primary">Cierre: ${{ number_format($session->final_amount, 2) }}</span></div>
                         @endif
                     </div>
-                    <div class="table-responsive">
+                    <div class="table-responsive rtbl-scroll">
                         <table class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                                 <tr>

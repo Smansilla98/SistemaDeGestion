@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Sistema de Gestión'),
+    'name' => env('APP_NAME', 'Conurbania'),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,8 +27,8 @@ return [
     */
 
     'brand' => [
-        'name' => env('APP_BRAND_NAME', env('APP_NAME', 'Sistema de Gestión')),
-        'logo' => env('APP_LOGO'),
+        'name' => env('APP_BRAND_NAME', env('APP_NAME', 'Conurbania')),
+        'logo' => env('APP_LOGO', 'logo.png'),
     ],
 
     /*

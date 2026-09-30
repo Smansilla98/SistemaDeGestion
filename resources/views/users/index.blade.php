@@ -50,7 +50,7 @@
 <div class="card">
     <div class="card-body">
         @if($users->count() > 0)
-        <div class="table-responsive">
+        <div class="table-responsive rtbl-cards">
             <table class="table table-hover">
                 <thead>
                     <tr>
@@ -66,16 +66,16 @@
                 <tbody>
                     @foreach($users as $user)
                     <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td data-label="Nombre">
+                            <div class="d-flex align-items-center justify-content-end">
                                 <div class="avatar-circle me-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1e8081, #22565e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
                                 <strong>{{ $user->name }}</strong>
                             </div>
                         </td>
-                        <td>{{ $user->username }}</td>
-                        <td>
+                        <td data-label="Usuario">{{ $user->username }}</td>
+                        <td data-label="Rol">
                             @php
                                 $roleColors = [
                                     'SUPERADMIN' => 'dark',
@@ -91,21 +91,21 @@
                             @endphp
                             <span class="badge bg-{{ $color }}">{{ $user->role }}</span>
                         </td>
-                        <td>
+                        <td data-label="Mesas Asignadas">
                             @if($user->role === 'MOZO')
                                 <span class="badge bg-info">{{ $user->table_sessions_as_waiter_count ?? 0 }} activas</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             @if($user->is_active)
                                 <span class="badge bg-success">Activo</span>
                             @else
                                 <span class="badge bg-secondary">Inactivo</span>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Último Acceso">
                             @php
                                 $lastLogin = null;
                                 if ($user->last_login_at) {
@@ -125,7 +125,7 @@
                                 <small class="text-muted">Nunca</small>
                             @endif
                         </td>
-                        <td class="text-end">
+                        <td data-label="" class="rtbl-actions text-end">
                             <div class="btn-group" role="group">
                                 <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-outline-info" title="Ver detalles">
                                     <i class="bi bi-eye"></i>

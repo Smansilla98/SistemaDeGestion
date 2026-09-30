@@ -23,9 +23,12 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'product_name_snapshot',
         'quantity',
         'unit_price',
+        'unit_price_cents',
         'subtotal',
+        'line_total_cents',
         'observations',
         'status',
     ];
@@ -33,7 +36,9 @@ class OrderItem extends Model
     protected $casts = [
         'quantity' => 'integer',
         'unit_price' => 'decimal:2',
+        'unit_price_cents' => 'integer',
         'subtotal' => 'decimal:2',
+        'line_total_cents' => 'integer',
     ];
 
     /**
@@ -78,9 +83,17 @@ class OrderItem extends Model
      */
     public function calculateSubtotal(): void
     {
-        $modifiersTotal = $this->modifiers()->sum('price_modifier');
-        $itemSubtotal = ($this->unit_price * $this->quantity) + ($modifiersTotal * $this->quantity);
+        $modifiersTotal = (float) $this->modifiers()->sum('price_modifier');
+        $unit = (float) $this->unit_price;
+        $qty = (int) $this->quantity;
+        $itemSubtotal = ($unit * $qty) + ($modifiersTotal * $qty);
         $this->subtotal = $itemSubtotal;
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('order_items', 'unit_price_cents')) {
+            $this->unit_price_cents = (int) round($unit * 100);
+            $this->line_total_cents = (int) round($itemSubtotal * 100);
+        }
+
         $this->save();
     }
 }

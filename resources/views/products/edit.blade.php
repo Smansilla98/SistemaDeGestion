@@ -58,7 +58,11 @@
                     </div>
 
                     @if($product->type === 'PRODUCT')
+                    @can('managePricing', App\Models\Product::class)
                     @include('products._pricing-fields', ['product' => $product])
+                    @else
+                    @include('products._sale-price-field', ['product' => $product])
+                    @endcan
                     @else
                     <div class="row">
                         <div class="col-md-6 mb-3">

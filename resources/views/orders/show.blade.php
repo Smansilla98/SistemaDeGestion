@@ -125,6 +125,33 @@
                         </tfoot>
                     </table>
                 </div>
+
+                @if(!in_array($order->status, ['CERRADO', 'CANCELADO'], true)
+                    && (auth()->user()->canManageOrdersLikeAdmin() || in_array(auth()->user()->role ?? '', ['GERENTE', 'ENCARGADO'], true)))
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="mb-2"><i class="bi bi-percent"></i> Descuento en cuenta abierta</h6>
+                    <form action="{{ route('orders.discount.apply', $order) }}" method="POST" class="row g-2 align-items-end">
+                        @csrf
+                        <input type="hidden" name="lock_version" value="{{ $order->lock_version ?? 0 }}">
+                        <div class="col-md-5">
+                            <label class="form-label small">Tipo</label>
+                            <select name="discount_type_id" class="form-select">
+                                <option value="">Sin descuento</option>
+                                @foreach($discountTypes ?? [] as $dt)
+                                    <option value="{{ $dt->id }}">{{ $dt->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Motivo (opcional)</label>
+                            <input type="text" name="reason" class="form-control" maxlength="255" placeholder="Cortesía, cliente frecuente…">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-outline-primary w-100">Aplicar</button>
+                        </div>
+                    </form>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -152,6 +179,7 @@
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status" value="ENTREGADO">
+                            <input type="hidden" name="lock_version" value="{{ $order->lock_version ?? 0 }}">
                             <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Se entrega el producto?')">
                                 <i class="bi bi-check-circle"></i> Se entrega el producto
                             </button>
