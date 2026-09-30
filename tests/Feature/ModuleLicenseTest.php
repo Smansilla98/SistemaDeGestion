@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\ModuleLicenseService;
+use App\Support\CommercialQuote;
 use App\Support\DemoEntry;
 use Tests\TestCase;
 
@@ -72,5 +73,23 @@ class ModuleLicenseTest extends TestCase
         $this->assertContains('reports', $offered);
         $this->assertNotContains('events', $offered);
         $this->assertNotContains('fixed-expenses', $offered);
+    }
+
+    public function test_el_presupuesto_suma_modulos_y_no_lleva_cliente(): void
+    {
+        $quotes = app(CommercialQuote::class);
+        $partial = $quotes->present(['tables', 'orders']);
+
+        $this->assertSame(4200, $partial['offer_usd']);
+        $this->assertSame(90, $partial['hosting_usd']);
+        $this->assertSame(2, $partial['count']);
+
+        $full = $quotes->present(null);
+        $this->assertSame(10900, $full['offer_usd']);
+        $this->assertSame(220, $full['hosting_usd']);
+        $keys = array_column($full['lines'], 'key');
+        $this->assertNotContains('events', $keys);
+        $this->assertNotContains('fixed-expenses', $keys);
+        $this->assertSame(['tables', 'orders'], $quotes->sanitizeKeys(['tables', 'orders', 'events', 'no-existe']));
     }
 }

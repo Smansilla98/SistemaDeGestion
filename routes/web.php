@@ -86,6 +86,8 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
     Route::post('/entrada/demo', [\App\Http\Controllers\Entry\EntryController::class, 'demo'])->name('entry.demo');
     Route::get('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'modules'])->name('entry.modules');
     Route::post('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'storeModules'])->name('entry.modules.store');
+    Route::get('/entrada/presupuesto', [\App\Http\Controllers\Entry\EntryController::class, 'quote'])->name('entry.quote');
+    Route::get('/entrada/presupuesto.pdf', [\App\Http\Controllers\Entry\EntryController::class, 'quotePdf'])->name('entry.quote.pdf');
 
     // Dashboard
     Route::get('/', function () {

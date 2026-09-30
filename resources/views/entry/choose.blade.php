@@ -23,7 +23,7 @@
             color: #1c2430;
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-        .wrap { width: min(720px, 100%); text-align: center; }
+        .wrap { width: min(920px, 100%); text-align: center; }
         h1 {
             margin: 0 0 28px;
             font-size: 22px;
@@ -68,6 +68,7 @@
         }
         .ico.demo { color: #c4843a; }
         .ico.cfg { color: #5b8fd4; }
+        .ico.quote { color: #1e8081; }
         .card strong {
             display: block;
             font-size: 15px;
@@ -110,6 +111,11 @@
                 <div class="ico cfg"><i class="bi bi-gear"></i></div>
                 <strong>Configurar módulos</strong>
                 <span>Elegí qué módulos se ven en esta visita.</span>
+            </a>
+            <a class="card" href="{{ route('entry.quote') }}">
+                <div class="ico quote"><i class="bi bi-file-earmark-text"></i></div>
+                <strong>Presupuesto</strong>
+                <span>Números de referencia, sin cliente. Todo se puede cambiar.</span>
             </a>
         </div>
         <form class="out" method="POST" action="{{ route('logout') }}">
