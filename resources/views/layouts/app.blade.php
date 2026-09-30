@@ -127,6 +127,22 @@
                 $canReports = $perm && $perm->allowed($navUser, 'reports.view');
                 $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
                 $canTutorials = $perm && $perm->allowed($navUser, 'tutorials.view');
+                $license = app(\App\Services\ModuleLicenseService::class);
+                $modOn = fn (string $key) => $license->enabledForUser($navUser, $key);
+                $canTables = $canTables && $modOn('tables');
+                $canOrders = $canOrders && $modOn('orders');
+                $canKitchen = $canKitchen && $modOn('kitchen');
+                $canCashRegister = $canCashRegister && $modOn('cash');
+                $canDiscountTypes = $canDiscountTypes && $modOn('catalog');
+                $canSectors = $canSectors && $modOn('tables');
+                $canCategories = $canCategories && $modOn('catalog');
+                $canProducts = $canProducts && $modOn('catalog');
+                $canStock = $canStock && $modOn('stock');
+                $canStockMozoIns = $canStockMozoIns && $modOn('stock');
+                $canEvents = $canEvents && $modOn('events');
+                $canRecurring = $canRecurring && $modOn('events');
+                $canFixedExpenses = $canFixedExpenses && $modOn('fixed-expenses');
+                $canReports = $canReports && $modOn('reports');
                 $navTablesCount = $canTables && $navUser && $navUser->restaurant_id ? \App\Models\Table::where('restaurant_id', $navUser->restaurant_id)->count() : 0;
                 $navPendingOrdersCount = $canOrders && $navUser && $navUser->restaurant_id ? \App\Models\Order::where('restaurant_id', $navUser->restaurant_id)->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])->count() : 0;
             @endphp

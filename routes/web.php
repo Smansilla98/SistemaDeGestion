@@ -80,7 +80,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'detect.mobile'])->group(function () {
+Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->group(function () {
+
+    Route::get('/entrada', [\App\Http\Controllers\Entry\EntryController::class, 'choose'])->name('entry.choose');
+    Route::post('/entrada/demo', [\App\Http\Controllers\Entry\EntryController::class, 'demo'])->name('entry.demo');
+    Route::get('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'modules'])->name('entry.modules');
+    Route::post('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'storeModules'])->name('entry.modules.store');
 
     // Dashboard
     Route::get('/', function () {
@@ -383,6 +388,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     */
     Route::prefix('module-usage')->name('module-usage.')->middleware('role:SUPERADMIN')->group(function () {
         Route::get('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'updateLicenses'])->name('update');
     });
 
     Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,GERENTE,CAJERO')->group(function () {

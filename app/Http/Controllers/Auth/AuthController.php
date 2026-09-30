@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\DemoEntry;
 use App\Support\DemoLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -79,8 +80,11 @@ class AuthController extends Controller
             // Actualizar último login
             $user->update(['last_login_at' => now()]);
 
-            // Redirigir según rol
-            return $this->redirectByRole($user->role);
+            if (DemoEntry::decides($user)) {
+                return redirect()->route('entry.choose');
+            }
+
+            return redirect()->route(DemoEntry::homeRoute($user));
         }
 
         return back()->withErrors([
@@ -99,19 +103,5 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
-    }
-
-    /**
-     * Redirigir según rol
-     */
-    private function redirectByRole(string $role): \Illuminate\Http\RedirectResponse
-    {
-        return match ($role) {
-            'ADMIN' => redirect()->route('dashboard'),
-            'MOZO' => redirect()->route('tables.index'),
-            'COCINA' => redirect()->route('kitchen.index'),
-            'CAJERO' => redirect()->route('cash-register.index'),
-            default => redirect()->route('dashboard'),
-        };
     }
 }

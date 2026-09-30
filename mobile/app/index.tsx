@@ -13,5 +13,5 @@ export default function Index() {
       </View>
     );
   }
-  return <Redirect href={user ? homeHrefForRole(user.role) : '/login'} />;
+  return <Redirect href={user ? homeHrefForRole(user) : '/login'} />;
 }

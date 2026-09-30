@@ -34,7 +34,7 @@ final class ApiRouter
      */
     public static function sharedRestRoutes(): array
     {
-        $jwt = ['jwt.auth', 'throttle:jwt-api'];
+        $jwt = ['jwt.auth', 'module.license', 'throttle:jwt-api'];
 
         return [
             ['methods' => ['GET'], 'uri' => 'products', 'action' => [ProductController::class, 'index'], 'middleware' => array_merge($jwt, ['permission:products.read'])],

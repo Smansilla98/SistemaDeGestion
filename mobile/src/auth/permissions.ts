@@ -8,6 +8,13 @@ export function hasPermission(user: ApiUser | null | undefined, permission: stri
   return perms.includes(permission);
 }
 
+/** Módulo vendible. Si el backend no manda el mapa, se considera habilitado. */
+export function hasModule(user: ApiUser | null | undefined, key: string): boolean {
+  if (!user?.modules) return true;
+  if (user.role === 'SUPERADMIN') return true;
+  return user.modules[key] !== false;
+}
+
 export function isAdminRole(role?: string): boolean {
   return role === 'ADMIN' || role === 'SUPERADMIN';
 }
@@ -25,16 +32,17 @@ export function canSeeTab(
     case 'dashboard':
       return hasPermission(user, 'dashboard.read');
     case 'mesas':
+      return hasPermission(user, 'tables.read') && hasModule(user, 'tables');
     case 'pedido':
-      return hasPermission(user, 'tables.read');
+      return hasPermission(user, 'tables.read') && hasModule(user, 'tables') && hasModule(user, 'orders');
     case 'pedidos':
-      return hasPermission(user, 'orders.read');
+      return hasPermission(user, 'orders.read') && hasModule(user, 'orders');
     case 'cocina':
-      return hasPermission(user, 'kitchen.read');
+      return hasPermission(user, 'kitchen.read') && hasModule(user, 'kitchen');
     case 'caja':
-      return hasPermission(user, 'cash.read');
+      return hasPermission(user, 'cash.read') && hasModule(user, 'cash');
     case 'stock':
-      return hasPermission(user, 'stock.read');
+      return hasPermission(user, 'stock.read') && hasModule(user, 'stock');
     default:
       return false;
   }
@@ -66,20 +74,31 @@ export function isPrimaryTab(
   return primary.includes(tab);
 }
 
-/** Ruta inicial post-login (paridad operativa con web). */
-export function homeHrefForRole(role?: string): Href {
-  switch (role) {
-    case 'COCINA':
-      return '/(tabs)/cocina';
-    case 'CAJERO':
-      return '/(tabs)/caja';
-    case 'MOZO':
-      return '/(tabs)/mesas';
-    case 'ADMIN':
-    case 'SUPERADMIN':
-    case 'GERENTE':
-      return '/(tabs)/dashboard' as Href;
-    default:
-      return '/(tabs)/mesas' as Href;
+const TAB_HREF: Record<TabKey, Href> = {
+  dashboard: '/(tabs)/dashboard' as Href,
+  mesas: '/(tabs)/mesas' as Href,
+  pedido: '/(tabs)/pedido' as Href,
+  pedidos: '/(tabs)/pedidos' as Href,
+  cocina: '/(tabs)/cocina' as Href,
+  caja: '/(tabs)/caja' as Href,
+  stock: '/(tabs)/stock' as Href,
+};
+
+/** Primera pantalla usable según rol y módulos licenciados. */
+export function homeHrefForRole(user: ApiUser | null | undefined): Href {
+  const role = user?.role ?? '';
+  const order: TabKey[] =
+    role === 'COCINA'
+      ? ['cocina', 'pedidos', 'dashboard']
+      : role === 'CAJERO'
+        ? ['caja', 'mesas', 'pedidos', 'dashboard']
+        : role === 'MOZO'
+          ? ['mesas', 'pedidos', 'caja', 'dashboard']
+          : ['dashboard', 'mesas', 'pedidos', 'caja'];
+
+  for (const tab of order) {
+    if (canSeeTab(user, tab)) return TAB_HREF[tab];
   }
+
+  return TAB_HREF.dashboard;
 }

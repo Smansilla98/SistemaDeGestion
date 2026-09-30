@@ -7,6 +7,8 @@ export type ApiUser = {
   restaurant_id: number | null;
   is_active: boolean;
   permissions?: string[];
+  /** Licencia vendible por restaurante. Ausente = todo habilitado. */
+  modules?: Record<string, boolean>;
 };
 
 export type AuthPayload = {

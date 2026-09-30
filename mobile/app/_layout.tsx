@@ -31,7 +31,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     SplashScreen.hideAsync().catch(() => {});
     const inAuth = segments[0] === 'login';
     if (!user && !inAuth) router.replace('/login');
-    if (user && inAuth) router.replace(homeHrefForRole(user.role));
+    if (user && inAuth) router.replace(homeHrefForRole(user));
   }, [user, loading, fontsReady, segments, router]);
 
   if (loading || !fontsReady) {

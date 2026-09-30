@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../src/api/client';
 import type { DashboardPayload } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
-import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
+import { canSeeAdminHub, hasModule, hasPermission } from '../../src/auth/permissions';
 import { flushOfflineQueue, getQueueSize } from '../../src/offline/queue';
 import { fx } from '../../src/theme';
 import { AppText, PrimaryButton } from '../../src/ui/primitives';
@@ -107,42 +107,42 @@ export default function DashboardScreen() {
       title: 'Productos',
       icon: 'pricetag-outline',
       href: '/products' as Href,
-      show: hasPermission(user, 'products.read') && isManagerLayer,
+      show: hasModule(user, 'catalog') && hasPermission(user, 'products.read') && isManagerLayer,
     },
     {
       key: 'cash',
       title: 'Caja',
       icon: 'wallet-outline',
       href: '/(tabs)/caja' as Href,
-      show: hasPermission(user, 'cash.read'),
+      show: hasModule(user, 'cash') && hasPermission(user, 'cash.read'),
     },
     {
       key: 'mesas',
       title: 'Mesas',
       icon: 'grid-outline',
       href: '/(tabs)/mesas' as Href,
-      show: hasPermission(user, 'tables.read'),
+      show: hasModule(user, 'tables') && hasPermission(user, 'tables.read'),
     },
     {
       key: 'pedido',
       title: 'Nuevo',
       icon: 'add-outline',
       href: '/(tabs)/pedido' as Href,
-      show: hasPermission(user, 'orders.write'),
+      show: hasModule(user, 'orders') && hasPermission(user, 'orders.write'),
     },
     {
       key: 'pedidos',
       title: 'Pedidos',
       icon: 'receipt-outline',
       href: '/(tabs)/pedidos' as Href,
-      show: hasPermission(user, 'orders.read'),
+      show: hasModule(user, 'orders') && hasPermission(user, 'orders.read'),
     },
     {
       key: 'cocina',
       title: 'Cocina',
       icon: 'restaurant-outline',
       href: '/(tabs)/cocina' as Href,
-      show: hasPermission(user, 'kitchen.read'),
+      show: hasModule(user, 'kitchen') && hasPermission(user, 'kitchen.read'),
     },
   ];
 
@@ -256,35 +256,35 @@ export default function DashboardScreen() {
                         title: 'Mesas',
                         icon: 'grid-outline',
                         href: '/(tabs)/mesas' as Href,
-                        show: hasPermission(user, 'tables.read'),
+                        show: hasModule(user, 'tables') && hasPermission(user, 'tables.read'),
                       },
                       {
                         key: 'cash',
                         title: 'Caja',
                         icon: 'wallet-outline',
                         href: '/(tabs)/caja' as Href,
-                        show: hasPermission(user, 'cash.read'),
+                        show: hasModule(user, 'cash') && hasPermission(user, 'cash.read'),
                       },
                       {
                         key: 'pedido',
                         title: 'Nuevo',
                         icon: 'add-outline',
                         href: '/(tabs)/pedido' as Href,
-                        show: hasPermission(user, 'orders.write'),
+                        show: hasModule(user, 'orders') && hasPermission(user, 'orders.write'),
                       },
                       {
                         key: 'pedidos',
                         title: 'Pedidos',
                         icon: 'receipt-outline',
                         href: '/(tabs)/pedidos' as Href,
-                        show: hasPermission(user, 'orders.read'),
+                        show: hasModule(user, 'orders') && hasPermission(user, 'orders.read'),
                       },
                       {
                         key: 'cocina',
                         title: 'Cocina',
                         icon: 'restaurant-outline',
                         href: '/(tabs)/cocina' as Href,
-                        show: hasPermission(user, 'kitchen.read'),
+                        show: hasModule(user, 'kitchen') && hasPermission(user, 'kitchen.read'),
                       },
                     ]
               }
@@ -296,11 +296,13 @@ export default function DashboardScreen() {
                   <AppText weight="semibold" style={styles.sectionIn}>
                     Pedidos recientes
                   </AppText>
-                  <Pressable onPress={() => router.push('/(tabs)/pedidos' as Href)} hitSlop={12}>
-                    <AppText weight="medium" style={styles.link}>
-                      Ver todos
-                    </AppText>
-                  </Pressable>
+                  {hasModule(user, 'orders') ? (
+                    <Pressable onPress={() => router.push('/(tabs)/pedidos' as Href)} hitSlop={12}>
+                      <AppText weight="medium" style={styles.link}>
+                        Ver todos
+                      </AppText>
+                    </Pressable>
+                  ) : null}
                 </View>
                 {insights.recent_orders.slice(0, 5).map((o, idx) => (
                   <Pressable
@@ -348,7 +350,7 @@ export default function DashboardScreen() {
 
             {!isManagerLayer ? (
               <View style={styles.cta}>
-                {hasPermission(user, 'tables.read') ? (
+                {hasModule(user, 'tables') && hasPermission(user, 'tables.read') ? (
                   <PrimaryButton
                     title="Ir a mesas"
                     icon="grid-outline"

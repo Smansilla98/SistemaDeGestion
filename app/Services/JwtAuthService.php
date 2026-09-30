@@ -199,6 +199,7 @@ final class JwtAuthService
             'restaurant_id' => $user->restaurant_id,
             'is_active' => (bool) $user->is_active,
             'permissions' => \App\Core\Rbac\RbacChecker::permissionsForRole($user->role),
+            'modules' => app(\App\Services\ModuleLicenseService::class)->mapFor($user->restaurant_id),
         ];
     }
 }

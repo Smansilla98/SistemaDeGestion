@@ -70,5 +70,7 @@ class Kernel extends HttpKernel
         'permission' => \App\Middleware\EnsurePermission::class,
         'session.timeout' => \App\Http\Middleware\CheckSessionTimeout::class,
         'detect.mobile' => \App\Http\Middleware\DetectMobile::class,
+        'module.license' => \App\Http\Middleware\EnsureLicensedModule::class,
+        'entry.choice' => \App\Http\Middleware\EnsureDemoEntryChosen::class,
     ];
 }
