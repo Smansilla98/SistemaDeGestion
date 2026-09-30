@@ -244,7 +244,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             icon: 'warning',
             title: 'Pedido vacío',
             text: 'Debes agregar al menos un item al pedido',
-            confirmButtonColor: '#d06a1f'
+            confirmButtonColor: '#4e8d99'
         });
         return;
     }
@@ -304,7 +304,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
                 html: 'El pedido se creó, pero el navegador bloqueó la ventana de impresión.<br><br>' +
                     '<a href="' + data.kitchen_ticket_url + '" target="_blank" rel="noopener" class="btn btn-sm btn-primary">' +
                     '<i class="bi bi-printer"></i> Abrir ticket de cocina</a>',
-                confirmButtonColor: '#d06a1f',
+                confirmButtonColor: '#4e8d99',
                 confirmButtonText: 'Continuar'
             });
         }
@@ -350,7 +350,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         icon: 'success',
         title: 'Éxito',
         text: '{{ session('success') }}',
-        confirmButtonColor: '#d06a1f',
+        confirmButtonColor: '#4e8d99',
         confirmButtonText: 'Entendido'
     });
 @endif

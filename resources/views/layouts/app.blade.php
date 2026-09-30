@@ -61,7 +61,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #1c1412;
+            --conurbania-dark: #16343b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -72,10 +72,10 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #1c1412 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #1c1412 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #16343b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #1c1412;
+            --mosaic-text-primary: #1a2326;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             --conurbania-primary-10: {{ $primaryRgba10 }};
@@ -406,8 +406,8 @@
                     timer: 4000,
                     timerProgressBar: true,
                     background: '#e6ffed',
-                    color: '#d06a1f',
-                    iconColor: '#d06a1f',
+                    color: '#4e8d99',
+                    iconColor: '#4e8d99',
                 });
             @endif
 
@@ -482,9 +482,9 @@
             const configs = {
                 success: {
                     icon: 'success',
-                    iconColor: '#d06a1f',
+                    iconColor: '#4e8d99',
                     background: '#e6ffed',
-                    color: '#d06a1f'
+                    color: '#4e8d99'
                 },
                 error: {
                     icon: 'error',
@@ -528,7 +528,7 @@
         };
         
         // Helper global para confirmaciones
-        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#d06a1f') {
+        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#4e8d99') {
             return Swal.fire({
                 icon: 'question',
                 title: title,

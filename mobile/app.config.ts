@@ -41,7 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
-      backgroundColor: '#d06a1f',
+      backgroundColor: '#4e8d99',
     },
   },
   plugins: [
@@ -51,14 +51,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#24160f',
+        backgroundColor: '#16343b',
         image: './assets/splash-icon.png',
       },
     ],
     [
       'expo-notifications',
       {
-        color: '#d06a1f',
+        color: '#4e8d99',
       },
     ],
   ],

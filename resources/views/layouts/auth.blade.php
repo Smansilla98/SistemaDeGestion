@@ -54,7 +54,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #1c1412;
+            --conurbania-dark: #16343b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -65,9 +65,9 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #1c1412 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #1c1412;
+            --mosaic-text-primary: #1a2326;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             
@@ -125,10 +125,11 @@
         .auth-logo {
             width: 80px;
             height: 80px;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
             background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             border-radius: 20px;
             padding: 1rem;
@@ -155,9 +156,26 @@
             margin-bottom: 0.5rem;
         }
 
+        .auth-tagline,
+        .auth-modules,
         .auth-subtitle {
             color: var(--mosaic-text-secondary);
             font-family: var(--font-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .auth-tagline {
+            font-size: 0.95rem;
+        }
+
+        .auth-modules {
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
+        }
+
+        .auth-subtitle {
+            margin-top: 0.85rem;
         }
 
         .form-label {
@@ -286,6 +304,8 @@
                                 <x-brand-logo :settings="$settings ?? null" variant="auth" max-height="64px" />
                             </div>
                             <h2 class="auth-title">{{ \App\Support\Branding::name() }}</h2>
+                            <p class="auth-tagline">{{ \App\Support\Branding::tagline() }}</p>
+                            <p class="auth-modules">{{ \App\Support\Branding::modulesLine() }}</p>
                             <p class="auth-subtitle">@yield('subtitle', 'Inicia sesión para continuar')</p>
                         </div>
 

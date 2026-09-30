@@ -13,7 +13,7 @@ type Props = {
  * Gradiente real alineado a conurbania.css (135deg).
  */
 export function AppGradient({ colors: stops, locations, style, children }: Props) {
-  const list = (stops.length >= 2 ? [...stops] : [stops[0] ?? '#24160f', '#6b3a1e']) as [
+  const list = (stops.length >= 2 ? [...stops] : [stops[0] ?? '#16343b', '#2a5c68']) as [
     string,
     string,
     ...string[],

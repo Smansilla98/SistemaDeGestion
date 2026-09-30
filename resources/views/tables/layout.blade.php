@@ -484,7 +484,7 @@ function saveLayout() {
             icon: 'warning',
             title: 'Sector Requerido',
             text: 'Debes seleccionar un sector primero',
-            confirmButtonColor: '#d06a1f',
+            confirmButtonColor: '#4e8d99',
             confirmButtonText: 'Entendido'
         });
         return;
@@ -572,7 +572,7 @@ function saveLayout() {
                 icon: 'success',
                 title: 'Éxito',
                 text: 'Layout guardado exitosamente',
-                confirmButtonColor: '#d06a1f',
+                confirmButtonColor: '#4e8d99',
                 confirmButtonText: 'Entendido',
                 timer: 1500,
                 timerProgressBar: true
@@ -705,7 +705,7 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
                 icon: 'error',
                 title: 'Acción no disponible',
                 text: 'No tenés acceso para cambiar el estado de la mesa.',
-                confirmButtonColor: '#d06a1f',
+                confirmButtonColor: '#4e8d99',
             });
         }
         return;

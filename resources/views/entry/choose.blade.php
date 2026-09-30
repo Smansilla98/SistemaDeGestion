@@ -68,7 +68,7 @@
         }
         .ico.demo { color: #c4843a; }
         .ico.cfg { color: #5b8fd4; }
-        .ico.quote { color: #d06a1f; }
+        .ico.quote { color: #4e8d99; }
         .card strong {
             display: block;
             font-size: 15px;

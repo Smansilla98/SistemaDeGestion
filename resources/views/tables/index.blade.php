@@ -55,9 +55,9 @@
         border: none;
         cursor: pointer;
     }
-    .table-status-pill.table-status-libre { background: var(--t100, #fbe8d4); color: var(--t700, #6b3a1e); }
+    .table-status-pill.table-status-libre { background: var(--t100, #e5f3f4); color: var(--t700, #2a5c68); }
     .table-status-pill.table-status-ocupada { background: #e8f0ef; color: var(--g700, #2d3d39); }
-    .table-status-pill.table-status-reservada { background: var(--t50, #fdf6ee); color: var(--t600, #8f4e22); }
+    .table-status-pill.table-status-reservada { background: var(--t50, #f4fafa); color: var(--t600, #3a7380); }
     .table-status-pill:not(button) { cursor: default; }
     .table-card-capacity {
         font-size: 0.875rem;
@@ -101,20 +101,20 @@
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     }
     .btn-reservar {
-        background: var(--t500, #d06a1f) !important;
+        background: var(--t500, #4e8d99) !important;
         color: white !important;
     }
     .btn-ocupar {
-        background: var(--t600, #8f4e22) !important;
+        background: var(--t600, #3a7380) !important;
         color: white !important;
     }
     .btn-pedido {
-        background: var(--t700, #6b3a1e) !important;
+        background: var(--t700, #2a5c68) !important;
         color: white !important;
     }
     .btn-ver-pedidos {
-        background: var(--t100, #fbe8d4) !important;
-        color: var(--t700, #6b3a1e) !important;
+        background: var(--t100, #e5f3f4) !important;
+        color: var(--t700, #2a5c68) !important;
     }
     .btn-cerrar {
         background: var(--g500, #6b7f7a) !important;
@@ -329,7 +329,7 @@
         }
         
         .modal-body::-webkit-scrollbar-thumb {
-            background: #d06a1f;
+            background: #4e8d99;
             border-radius: 3px;
         }
         
@@ -625,7 +625,7 @@
                                 @foreach($products as $categoryName => $categoryProducts)
                                     @php $categoryLabel = $categoryName ?: 'Sin categoría'; @endphp
                                     <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryLabel) }}">
-                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #d06a1f, #8f4e22); padding: 0.75rem 1rem; border-radius: 8px;">
+                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #4e8d99, #3a7380); padding: 0.75rem 1rem; border-radius: 8px;">
                                             <h6 class="mb-0 text-white" style="font-weight: 700;">
                                                 <i class="bi bi-tag-fill"></i> {{ $categoryLabel }}
                                             </h6>
@@ -733,7 +733,7 @@ function openChangeStatusModal(tableId, currentStatus, capacity) {
                 icon: 'error',
                 title: 'Acción no disponible',
                 text: 'No tenés acceso para cambiar el estado de la mesa.',
-                confirmButtonColor: '#d06a1f',
+                confirmButtonColor: '#4e8d99',
             });
         }
         return;
@@ -883,7 +883,7 @@ function editTable(tableId) {
         icon: 'info',
         title: 'Editar Mesa',
         text: 'Funcionalidad de edición de mesa ' + tableId + ' en desarrollo',
-        confirmButtonColor: '#d06a1f',
+        confirmButtonColor: '#4e8d99',
         confirmButtonText: 'Entendido'
     });
 }
@@ -894,7 +894,7 @@ function confirmCloseTable(tableId) {
         title: '¿Cerrar Mesa?',
         text: 'Se cerrarán todos los pedidos activos y se generará el recibo consolidado.',
         showCancelButton: true,
-        confirmButtonColor: '#d06a1f',
+        confirmButtonColor: '#4e8d99',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, cerrar mesa',
         cancelButtonText: 'Cancelar'
@@ -1122,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     icon: 'warning',
                     title: 'Pedido vacío',
                     text: 'Agregá al menos un producto.',
-                    confirmButtonColor: '#d06a1f'
+                    confirmButtonColor: '#4e8d99'
                 });
                 return;
             }
@@ -1192,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ` : ''}
                         </div>
                     `,
-                    confirmButtonColor: '#d06a1f',
+                    confirmButtonColor: '#4e8d99',
                     confirmButtonText: 'Entendido'
                 });
 
@@ -1245,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             position: 'top-end',
                             showConfirmButton: true,
                             confirmButtonText: 'Ver Pedidos',
-                            confirmButtonColor: '#d06a1f',
+                            confirmButtonColor: '#4e8d99',
                             timer: 10000,
                             timerProgressBar: true,
                             didOpen: (toast) => {

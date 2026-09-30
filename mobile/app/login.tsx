@@ -18,10 +18,10 @@ import { AppGradient } from '../src/ui/gradient';
 
 /** Colores auth web (layouts/auth.blade.php) alineados al local. */
 const brand = {
-  primary: '#d06a1f',
-  secondary: '#6b3a1e',
-  dark: '#1a0e0a',
-  ink: '#1c1412',
+  primary: '#4e8d99',
+  secondary: '#2a5c68',
+  dark: '#10262c',
+  ink: '#1a2326',
 } as const;
 
 export default function LoginScreen() {

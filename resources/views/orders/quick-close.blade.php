@@ -471,7 +471,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#d06a1f',
+        confirmButtonColor: '#4e8d99',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, procesar',
         cancelButtonText: 'Cancelar'
@@ -544,7 +544,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
                 icon: 'success',
                 title: '¡Pago procesado!',
                 text: data.message,
-                confirmButtonColor: '#d06a1f'
+                confirmButtonColor: '#4e8d99'
             }).then(() => {
                 // Abrir ticket si hay URL
                 if (data.print_url) {

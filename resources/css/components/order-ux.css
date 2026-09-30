@@ -13,9 +13,9 @@
     line-height: 1.4;
 }
 
-.table-status-pill.table-status-libre { background: var(--t100, #fbe8d4); color: var(--t700, #6b3a1e); }
+.table-status-pill.table-status-libre { background: var(--t100, #e5f3f4); color: var(--t700, #2a5c68); }
 .table-status-pill.table-status-ocupada { background: #e8f0ef; color: var(--g700, #2d3d39); }
-.table-status-pill.table-status-reservada { background: var(--t50, #fdf6ee); color: var(--t600, #8f4e22); }
+.table-status-pill.table-status-reservada { background: var(--t50, #f4fafa); color: var(--t600, #3a7380); }
 .table-status-pill:not(button) { cursor: default; }
 
 /* Selector de mesa embebido en Nuevo Pedido */
@@ -38,8 +38,8 @@
 
 .order-table-picker .table-pick-card:hover,
 .order-table-picker .table-pick-card.is-selected {
-    border-color: var(--t500, #d06a1f);
-    box-shadow: 0 0 0 2px var(--t100, #fbe8d4);
+    border-color: var(--t500, #4e8d99);
+    box-shadow: 0 0 0 2px var(--t100, #e5f3f4);
 }
 
 .order-table-picker .table-pick-number {
@@ -53,8 +53,8 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    background: var(--t50, #fdf6ee);
-    color: var(--t900, #24160f);
+    background: var(--t50, #f4fafa);
+    color: var(--t900, #16343b);
     border-radius: var(--rlg, 12px);
     padding: 0.65rem 0.9rem;
 }

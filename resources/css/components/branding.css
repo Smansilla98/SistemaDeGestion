@@ -63,7 +63,7 @@
     width: 64px;
     height: 64px;
     border-radius: 16px;
-    background: linear-gradient(135deg, var(--conurbania-primary, #d06a1f), var(--conurbania-secondary, #6b3a1e));
+    background: linear-gradient(135deg, var(--conurbania-primary, #4e8d99), var(--conurbania-secondary, #2a5c68));
     font-size: 1.75rem;
     margin: 0 auto;
 }
