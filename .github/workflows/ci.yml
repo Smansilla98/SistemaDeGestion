@@ -62,6 +62,13 @@ jobs:
       - name: Verificar formato de codigo (Pint)
         run: vendor/bin/pint --test
 
+      - name: Analisis estatico (PHPStan)
+        run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+      - name: Dependencias con vulnerabilidades conocidas (informativo)
+        # laravel/framework 10 ya no recibe parches: queda visible hasta migrar a 12.
+        run: composer audit --no-interaction || true
+
       - name: Esperar a MySQL
         run: |
           for i in $(seq 1 30); do
