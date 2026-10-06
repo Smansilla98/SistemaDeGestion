@@ -265,6 +265,7 @@ class DashboardStatsService
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_sales')
             ->limit(5)
+            ->toBase()
             ->get()
             ->map(fn ($r) => [
                 'name' => (string) $r->name,
@@ -279,6 +280,7 @@ class DashboardStatsService
             ->select('payment_method', DB::raw('SUM(amount) as total'))
             ->groupBy('payment_method')
             ->orderByDesc('total')
+            ->toBase()
             ->get()
             ->map(fn ($r) => [
                 'payment_method' => (string) $r->payment_method,

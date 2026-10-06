@@ -38,8 +38,8 @@ class AuditService
             }
 
             if (AuditLog::hasAuditColumn('ip_address')) {
-                $payload['ip_address'] = request()?->ip();
-                $payload['user_agent'] = request()?->userAgent();
+                $payload['ip_address'] = request()->ip();
+                $payload['user_agent'] = request()->userAgent();
             }
 
             if (AuditLog::hasAuditColumn('auditable_type')) {
@@ -47,7 +47,7 @@ class AuditService
                 $payload['auditable_id'] = $modelId;
                 $payload['event'] = $action;
                 $payload['new_values'] = $changes;
-                $payload['ip'] = request()?->ip();
+                $payload['ip'] = request()->ip();
             }
 
             return AuditLog::create($payload);

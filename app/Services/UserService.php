@@ -74,9 +74,6 @@ final class UserService
     {
         $email = $input['email'] ?? ($input['username'].'@restaurant.internal');
         $hash = password_hash((string) $input['password'], PASSWORD_DEFAULT);
-        if ($hash === false) {
-            throw new \RuntimeException('No se pudo generar el hash de contraseña');
-        }
 
         $row = $this->users->create([
             'restaurant_id' => $restaurantId,
@@ -121,9 +118,6 @@ final class UserService
 
         if (! empty($input['password'])) {
             $hash = password_hash((string) $input['password'], PASSWORD_DEFAULT);
-            if ($hash === false) {
-                throw new \RuntimeException('No se pudo generar el hash de contraseña');
-            }
             $data['password'] = $hash;
         }
 
@@ -186,9 +180,6 @@ final class UserService
         }
 
         $hash = password_hash($temporaryPassword, PASSWORD_DEFAULT);
-        if ($hash === false) {
-            throw new \RuntimeException('No se pudo generar el hash de contraseña');
-        }
 
         $this->users->update($id, $restaurantId, ['password' => $hash]);
         $this->logger->info('Contraseña temporal generada vía API', [

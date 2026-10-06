@@ -6,7 +6,6 @@ namespace App\Controllers\Api;
 
 use App\Controllers\Controller;
 use App\Core\ApiResponse;
-use App\Models\DiscountType;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableSession;
