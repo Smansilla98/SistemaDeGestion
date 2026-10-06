@@ -155,15 +155,18 @@ Se mantienen rutas anteriores (`tables`, `orders` parcial, `products` lectura ex
 
 ## Tests
 
-- Tests de la capa nueva (sin bootstrap completo de BD en algunos casos):  
-  `./vendor/bin/phpunit tests/Unit/ProductServiceTest.php tests/Unit/UserServiceTest.php`
-- Suite completa: `php artisan test` (requiere extensión PDO adecuada y base `testing` configurada en `.env` / `phpunit.xml`).
+Requiere **MySQL/MariaDB** con una base `testing` aparte (las migraciones no corren en SQLite).
+Guía completa, variables y qué cubre cada archivo: **[docs/TESTING.md](docs/TESTING.md)**.
 
-Se añadió `tests/CreatesApplication.php` para cumplir el contrato de `Illuminate\Foundation\Testing\TestCase`.
+```bash
+DB_DATABASE=testing DB_USERNAME=test DB_PASSWORD=test php artisan test
+```
 
 ## Calidad de código
 
 - Formato **PSR-12** con Laravel Pint: `./vendor/bin/pint`
+- Análisis estático: `vendor/bin/phpstan analyse` (también en el CI)
+- Vulnerabilidades: `composer audit`
 
 ## Flujo operativo (recordatorio)
 
