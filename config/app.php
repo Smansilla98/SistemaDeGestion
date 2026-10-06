@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Al Toque'),
 
     /*
+    | Elección de entrada (demo completo o recorrido por módulos) para admin y superadmin.
+    | Pensada para el demo público; una instalación de cliente la apaga.
+    */
+    'demo_entry' => (bool) env('DEMO_ENTRY_ENABLED', true),
+
+    /*
     |--------------------------------------------------------------------------
     | Branding
     |--------------------------------------------------------------------------

@@ -18,7 +18,9 @@ final class DemoEntry
 
     public static function decides(?User $user): bool
     {
-        if ($user === null) {
+        // Solo el demo pide elegir entrada; en una instalación de cliente se apaga con
+        // DEMO_ENTRY_ENABLED=false (por defecto sigue encendido, como hasta ahora).
+        if ($user === null || ! config('app.demo_entry', true)) {
             return false;
         }
 
