@@ -35,7 +35,7 @@ class StockTest extends TestCase
      */
     public function test_authenticated_user_can_view_stock_index(): void
     {
-        $response = $this->actingAs($this->user)->get(route('stock.index'));
+        $response = $this->actingAs($this->user)->withSession(['entry_mode' => 'demo'])->get(route('stock.index'));
 
         $response->assertStatus(200);
         $response->assertViewIs('stock.index');
@@ -67,7 +67,7 @@ class StockTest extends TestCase
             'quantity' => 10,
         ]);
 
-        $response = $this->actingAs($this->user)->post(route('stock.store-movement'), [
+        $response = $this->actingAs($this->user)->withSession(['entry_mode' => 'demo'])->post(route('stock.store-movement'), [
             'product_id' => $product->id,
             'type' => 'SALIDA',
             'quantity' => 3,

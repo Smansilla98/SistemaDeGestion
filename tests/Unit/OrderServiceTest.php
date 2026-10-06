@@ -55,12 +55,8 @@ class OrderServiceTest extends TestCase
             ],
         ];
 
+        // createOrder agrega los ítems de `items` (no hay que volver a sumarlos).
         $order = $this->orderService->createOrder($orderData);
-
-        foreach ($orderData['items'] as $itemData) {
-            $this->orderService->addItem($order, $itemData);
-        }
-
         $order->refresh();
 
         // Subtotal esperado: (100 * 2) + (50 * 1) = 250
