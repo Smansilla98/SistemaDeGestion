@@ -145,10 +145,6 @@ parameters:
 			count: 1
 			path: app/Livewire/Mobile/TomaPedido.php
 
-		-
-			message: "#^Using nullsafe method call on non\\-nullable type Illuminate\\\\Http\\\\Request\\. Use \\-\\> instead\\.$#"
-			count: 1
-			path: app/Models/AuditLog.php
 
 		-
 			message: "#^PHPDoc tag @use contains generic type Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory\\<Database\\\\Factories\\\\UserFactory\\> but trait Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory is not generic\\.$#"
@@ -195,7 +191,3 @@ parameters:
 			count: 3
 			path: app/Services/StockService.php
 
-		-
-			message: "#^Strict comparison using \\=\\=\\= between non\\-empty\\-string and false will always evaluate to false\\.$#"
-			count: 2
-			path: app/Services/UserService.php

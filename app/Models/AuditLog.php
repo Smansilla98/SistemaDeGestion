@@ -124,7 +124,7 @@ class AuditLog extends Model
                 $payload['old_values'] = $old;
                 $payload['new_values'] = $new;
                 $payload['reason'] = $reason;
-                $payload['ip'] = request()?->ip();
+                $payload['ip'] = request()->ip();
             }
 
             // Forma histórica: `action` suele ser NOT NULL sin default (SQLSTATE 1364)
@@ -136,8 +136,8 @@ class AuditLog extends Model
                 $payload['changes'] = $new ?? $old;
 
                 if (static::hasAuditColumn('ip_address')) {
-                    $payload['ip_address'] = request()?->ip();
-                    $payload['user_agent'] = request()?->userAgent();
+                    $payload['ip_address'] = request()->ip();
+                    $payload['user_agent'] = request()->userAgent();
                 }
             }
 
