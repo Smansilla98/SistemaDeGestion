@@ -58,9 +58,20 @@ class PaymentMethodConfigurationService
 
     public function upsert(int $restaurantId, array $data): PaymentMethodConfiguration
     {
+        $values = collect($data)->except(['type', 'restaurant_id', 'qr_image', 'remove_qr_image'])->all();
+        $existe = PaymentMethodConfiguration::query()
+            ->where('restaurant_id', $restaurantId)
+            ->where('type', $data['type'])
+            ->exists();
+        // La etiqueta es obligatoria en la tabla: si se crea sin una, se usa la del tipo
+        // (antes solo la ponían los controladores y cualquier otro llamador fallaba).
+        if (! $existe && empty($values['label'])) {
+            $values['label'] = PaymentMethodConfiguration::defaultLabels()[$data['type']] ?? (string) $data['type'];
+        }
+
         $config = PaymentMethodConfiguration::updateOrCreate(
             ['restaurant_id' => $restaurantId, 'type' => $data['type']],
-            collect($data)->except(['type', 'restaurant_id', 'qr_image'])->all()
+            $values
         );
 
         if (! empty($data['remove_qr_image']) && $config->qr_image_path) {
