@@ -4,80 +4,42 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use Illuminate\Support\Facades\DB;
 use PDO;
-use PDOException;
 use RuntimeException;
+use Throwable;
 
 /**
- * Conexión PDO centralizada (singleton) para la capa de repositorios.
- * Usa la misma configuración que Laravel (config/database.php) para no duplicar credenciales.
+ * PDO de la capa de repositorios.
+ *
+ * Es el MISMO PDO que usa Laravel (DB::connection()). Antes se abría una conexión
+ * aparte: los repositorios no veían lo que Eloquent hacía dentro de una transacción
+ * (ni en producción ni en los tests con RefreshDatabase) y una transacción de un lado
+ * no protegía al otro. Ahora comparten conexión, transacciones y configuración.
  */
 final class Database
 {
-    private static ?PDO $connection = null;
-
-    /**
-     * Obtiene la instancia única de PDO con prepared statements por defecto.
-     */
     public static function connection(): PDO
     {
-        if (self::$connection instanceof PDO) {
-            return self::$connection;
-        }
-
-        $default = (string) config('database.default', 'mysql');
-        $config = config("database.connections.{$default}");
-
-        if (! is_array($config)) {
-            throw new RuntimeException("No se encontró la conexión de base de datos [{$default}].");
-        }
-
-        $driver = $config['driver'] ?? 'mysql';
-
         try {
-            if ($driver === 'sqlite') {
-                $path = $config['database'] ?? database_path('database.sqlite');
-                $dsn = 'sqlite:'.$path;
-                $pdo = new PDO($dsn, null, null, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                ]);
-            } else {
-                $host = $config['host'] ?? '127.0.0.1';
-                $port = (string) ($config['port'] ?? '3306');
-                $database = $config['database'] ?? '';
-                $username = $config['username'] ?? '';
-                $password = $config['password'] ?? '';
-                $charset = $config['charset'] ?? 'utf8mb4';
-
-                $dsn = sprintf(
-                    'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                    $host,
-                    $port,
-                    $database,
-                    $charset
-                );
-
-                $pdo = new PDO($dsn, $username, $password, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false,
-                ]);
-            }
-        } catch (PDOException $e) {
+            $pdo = DB::connection()->getPdo();
+        } catch (Throwable $e) {
             throw new RuntimeException('Error al conectar con la base de datos: '.$e->getMessage(), 0, $e);
         }
 
-        self::$connection = $pdo;
+        // Los repositorios trabajan con arrays asociativos y excepciones. Laravel fija su
+        // propio modo de fetch por sentencia, así que este default no lo afecta.
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-        return self::$connection;
+        return $pdo;
     }
 
     /**
-     * Solo para pruebas: libera la conexión y permite volver a crearla.
+     * Compatibilidad: la conexión la administra Laravel (DB::purge / DB::reconnect).
      */
     public static function resetConnection(): void
     {
-        self::$connection = null;
+        DB::purge();
     }
 }
