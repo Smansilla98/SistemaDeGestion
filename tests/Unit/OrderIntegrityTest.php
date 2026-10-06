@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Domain\Numbering\SequenceGenerator;
 use App\Enums\OrderStatus;
 use App\Exceptions\InvalidOrderTransition;
 use App\Models\Order;
@@ -10,7 +9,6 @@ use App\Models\Restaurant;
 use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 

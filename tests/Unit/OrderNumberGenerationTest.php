@@ -44,10 +44,12 @@ class OrderNumberGenerationTest extends TestCase
         ]);
 
         $this->assertSame('ORD-'.$year.'-1001', $order->number);
-        $this->assertSame(1001, (int) DB::table('order_counters')
+        // La numeración vive en document_sequences (SequenceGenerator); order_counters es legado.
+        $this->assertSame(1002, (int) DB::table('document_sequences')
             ->where('restaurant_id', $restaurant->id)
-            ->where('year', $year)
-            ->value('last_seq'));
+            ->where('type', 'order')
+            ->where('period', $year)
+            ->value('next_value'));
     }
 
     public function test_two_restaurants_can_share_same_order_number_format(): void
