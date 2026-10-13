@@ -25,7 +25,7 @@ final class KitchenOpsController extends Controller
         $query = Order::query()
             ->where('restaurant_id', $restaurantId)
             ->whereIn('status', OrderStatus::kitchenBoard())
-            ->with(['table', 'table.sector', 'user', 'items.product', 'items.modifiers']);
+            ->with(['table', 'table.sector', 'subsectorItem', 'user', 'items.product', 'items.modifiers']);
 
         if ($request->filled('sector')) {
             $query->whereHas('table', fn ($q) => $q->where('sector_id', $request->integer('sector')));
@@ -39,6 +39,9 @@ final class KitchenOpsController extends Controller
             'status' => $order->status,
             'sent_at' => optional($order->sent_at ?? $order->created_at)->toIso8601String(),
             'table' => $order->table?->number,
+            'place' => $order->table
+                ? $order->table->displayName()
+                : ($order->subsectorItem?->name ?? ($order->customer_name ?: 'Barra')),
             'sector' => $order->table?->sector?->name,
             'waiter' => $order->user?->name,
             'observations' => $order->observations,
@@ -65,6 +68,7 @@ final class KitchenOpsController extends Controller
                 'LISTO' => $orders->where('status', OrderStatus::LISTO->value)->count(),
             ],
             'orders' => $payload->values()->all(),
+            'server_time' => now()->toIso8601String(),
         ]);
     }
 

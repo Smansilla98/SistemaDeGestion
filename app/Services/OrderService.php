@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductModifier;
 use App\Models\SubsectorItem;
 use App\Models\Table;
 use App\Models\TableSession;
@@ -247,9 +248,15 @@ class OrderService
         }
 
         $qty = (int) $itemData['quantity'];
-        $this->stockService->ensureStockForSale($order->restaurant_id, $product->id, $qty);
 
-        $unit = Money::fromDecimal($product->price);
+        $variant = $this->resolveVariant($product, $itemData);
+        $extras = $this->resolveExtras($product, $itemData);
+        $modifierIds = array_merge($variant ? [$variant->id] : [], $extras->pluck('id')->all());
+
+        $this->stockService->ensureStockForSale($order->restaurant_id, $product->id, $qty, $modifierIds);
+
+        // La variante define el precio de la línea; sin variante vale el del producto.
+        $unit = Money::fromDecimal($variant?->price ?? $product->price);
         $line = $unit->times($qty);
 
         $payload = [
@@ -263,7 +270,9 @@ class OrderService
         ];
 
         if (Schema::hasColumn('order_items', 'product_name_snapshot')) {
-            $payload['product_name_snapshot'] = $product->name;
+            $payload['product_name_snapshot'] = $variant
+                ? $product->name.' · '.$variant->name
+                : $product->name;
         }
         if (Schema::hasColumn('order_items', 'unit_price_cents')) {
             $payload['unit_price_cents'] = $unit->cents;
@@ -274,17 +283,25 @@ class OrderService
 
         $orderItem = OrderItem::create($payload);
 
-        if (isset($itemData['modifiers']) && is_array($itemData['modifiers'])) {
-            foreach ($itemData['modifiers'] as $modifierId) {
-                $modifier = $product->modifiers()->find($modifierId);
-                if ($modifier && $modifier->is_active) {
-                    $orderItem->modifiers()->create([
-                        'product_modifier_id' => $modifier->id,
-                        'name' => $modifier->name,
-                        'price_modifier' => $modifier->price_modifier,
-                    ]);
-                }
-            }
+        // El precio de la variante ya está en unit_price: se guarda con delta 0
+        // para que cocina y tickets la muestren sin volver a sumarla.
+        if ($variant) {
+            $orderItem->modifiers()->create([
+                'product_modifier_id' => $variant->id,
+                'name' => $variant->name,
+                'price_modifier' => 0,
+            ]);
+        }
+
+        foreach ($extras as $modifier) {
+            $orderItem->modifiers()->create([
+                'product_modifier_id' => $modifier->id,
+                'name' => $modifier->name,
+                'price_modifier' => $modifier->price_modifier,
+            ]);
+        }
+
+        if ($extras->isNotEmpty()) {
             $orderItem->calculateSubtotal();
         }
 
@@ -292,12 +309,57 @@ class OrderService
             $order->restaurant_id,
             $product->id,
             $qty,
-            $order->id
+            $order->id,
+            $modifierIds
         );
 
         $order->calculateTotal();
 
         return $orderItem;
+    }
+
+    /**
+     * Variante elegida para la línea. Si el producto tiene variantes activas, es obligatoria:
+     * sin ella no hay precio (una pizza no se vende sin sabor).
+     * Acepta variant_id o, por compatibilidad, el id de una variante dentro de modifiers[].
+     */
+    private function resolveVariant(Product $product, array $itemData): ?ProductModifier
+    {
+        $variants = $product->variants()->get();
+        if ($variants->isEmpty()) {
+            return null;
+        }
+
+        $candidates = array_map('intval', array_merge(
+            ! empty($itemData['variant_id']) ? [$itemData['variant_id']] : [],
+            is_array($itemData['modifiers'] ?? null) ? $itemData['modifiers'] : []
+        ));
+
+        $variant = $variants->first(fn (ProductModifier $v) => in_array((int) $v->id, $candidates, true));
+        if ($variant === null) {
+            throw new \RuntimeException("Elegí una variante para '{$product->name}'");
+        }
+
+        return $variant;
+    }
+
+    /**
+     * Extras opcionales de la línea (suman su delta al precio).
+     *
+     * @return \Illuminate\Support\Collection<int, ProductModifier>
+     */
+    private function resolveExtras(Product $product, array $itemData): \Illuminate\Support\Collection
+    {
+        $ids = is_array($itemData['modifiers'] ?? null) ? array_map('intval', $itemData['modifiers']) : [];
+        if ($ids === []) {
+            return collect();
+        }
+
+        return $product->modifiers()
+            ->whereIn('id', $ids)
+            ->where('is_active', true)
+            ->where('kind', '!=', ProductModifier::KIND_VARIANT)
+            ->get();
     }
 
     public function sendToKitchen(Order $order): Order
@@ -341,7 +403,8 @@ class OrderService
                     $order->restaurant_id,
                     $item->product_id,
                     (int) $item->quantity,
-                    $order->id
+                    $order->id,
+                    $item->productModifierIds()
                 );
                 $item->delete();
             }

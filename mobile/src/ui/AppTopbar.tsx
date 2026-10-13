@@ -46,10 +46,26 @@ export function AppTopbar() {
           <AppText weight="semibold" style={styles.brand}>
             Conurbania
           </AppText>
-          <View style={styles.rolePill}>
-            <AppText weight="semibold" style={styles.roleText}>
-              {user.role}
-            </AppText>
+          <View style={styles.pillRow}>
+            <View style={styles.rolePill}>
+              <AppText weight="semibold" style={styles.roleText}>
+                {user.role}
+              </AppText>
+            </View>
+            {(user.branches?.length ?? 0) > 1 ? (
+              <Pressable
+                onPress={() => router.push('/branch' as Href)}
+                accessibilityRole="button"
+                accessibilityLabel={`Sucursal ${user.restaurant_name ?? ''}. Tocar para cambiar`}
+                style={styles.branchPill}
+                hitSlop={8}
+              >
+                <AppIcon bi="shop" size={12} color={fx.brand} />
+                <AppText weight="semibold" style={styles.branchText} numberOfLines={1}>
+                  {user.restaurant_name ?? 'Sucursal'}
+                </AppText>
+              </Pressable>
+            ) : null}
           </View>
         </View>
 
@@ -110,6 +126,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: -0.2,
   },
+  pillRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  branchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+    backgroundColor: fx.brandSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: fx.radius.pill,
+  },
+  branchText: { color: fx.brand, fontSize: 11, flexShrink: 1 },
   rolePill: {
     alignSelf: 'flex-start',
     backgroundColor: fx.brand,

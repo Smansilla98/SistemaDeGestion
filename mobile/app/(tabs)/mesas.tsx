@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,10 +8,11 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
-import type { TableRow } from '../../src/api/types';
+import type { TableRow, TableSort } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { hasPermission } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
@@ -26,6 +27,15 @@ import {
   SwipeAction,
 } from '../../src/ui/fintech';
 
+const SORT_KEY = 'cx_tables_sort';
+
+/** Mismos criterios que la web (Table::sortOptions). */
+const SORTS: { key: TableSort; label: string }[] = [
+  { key: 'number', label: 'Número' },
+  { key: 'status', label: 'Ocupadas primero' },
+  { key: 'capacity', label: 'Capacidad' },
+];
+
 export default function MesasScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -38,18 +48,33 @@ export default function MesasScreen() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<'TODAS' | 'LIBRE' | 'OCUPADA' | 'RESERVADA'>('TODAS');
   const [transferFrom, setTransferFrom] = useState<TableRow | null>(null);
+  // null hasta leer la preferencia guardada: evita pedir las mesas dos veces.
+  const [sort, setSort] = useState<TableSort | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(SORT_KEY)
+      .then((saved) => setSort(SORTS.some((s) => s.key === saved) ? (saved as TableSort) : 'number'))
+      .catch(() => setSort('number'));
+  }, []);
+
+  const changeSort = (next: TableSort) => {
+    setSort(next);
+    void AsyncStorage.setItem(SORT_KEY, next).catch(() => {});
+  };
 
   const load = useCallback(async () => {
+    if (sort === null) return;
     setError(null);
     try {
-      const rows = await api.tables();
+      // El orden lo resuelve el servidor, con la misma regla que la web.
+      const rows = await api.tables(undefined, sort);
       setTables(Array.isArray(rows) ? rows : []);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar mesas');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sort]);
 
   useFocusEffect(
     useCallback(() => {
@@ -209,6 +234,13 @@ export default function MesasScreen() {
         ))}
       </View>
 
+      <View style={styles.sortRow}>
+        <AppText style={styles.sortLabel}>Ordenar por</AppText>
+        {SORTS.map((s) => (
+          <Chip key={s.key} label={s.label} selected={sort === s.key} onPress={() => changeSort(s.key)} />
+        ))}
+      </View>
+
       {error ? (
         <AppText weight="medium" style={styles.error}>
           {error}
@@ -272,6 +304,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: fx.space.md,
     paddingBottom: 12,
   },
+  sortRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: fx.space.md,
+    paddingBottom: 12,
+  },
+  sortLabel: { fontSize: 13, color: fx.inkMuted },
   error: { color: fx.danger, paddingHorizontal: fx.space.md },
   list: { paddingHorizontal: fx.space.md, paddingBottom: 32, gap: 0 },
   cols: { gap: 14, marginBottom: 14 },

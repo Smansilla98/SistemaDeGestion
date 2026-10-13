@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductModifier;
 use App\Models\Purchase;
 use App\Models\Stock;
 use App\Models\StockMovement;
@@ -131,35 +132,88 @@ class StockService
     }
 
     /**
+     * Qué se descuenta al vender una unidad-línea: receta o stock propio del producto base,
+     * más los insumos de la variante/extras elegidos (ej. Pizza + jamón y morrones).
+     * Si un mismo insumo aparece en ambos, se suma.
+     *
+     * @param  list<int>  $modifierIds  ids de product_modifiers elegidos en la línea
+     * @return array<int, array{product: Product, quantity: int, unit: string, from_recipe: bool}>
+     */
+    private function consumptionPlan(Product $product, int $quantity, array $modifierIds = []): array
+    {
+        $plan = [];
+        $add = function (Product $target, int $qty, string $unit, bool $fromRecipe) use (&$plan): void {
+            if ($qty <= 0) {
+                return;
+            }
+            if (isset($plan[$target->id])) {
+                $plan[$target->id]['quantity'] += $qty;
+
+                return;
+            }
+            $plan[$target->id] = ['product' => $target, 'quantity' => $qty, 'unit' => $unit, 'from_recipe' => $fromRecipe];
+        };
+
+        $product->loadMissing('ingredients');
+
+        if ($product->ingredients->isNotEmpty()) {
+            foreach ($product->ingredients as $ingredient) {
+                $add(
+                    $ingredient,
+                    (int) ($ingredient->pivot->quantity * $quantity),
+                    (string) ($ingredient->pivot->unit ?? $ingredient->unit ?? ''),
+                    true
+                );
+            }
+        } elseif ($product->has_stock) {
+            $add($product, $quantity, '', false);
+        }
+
+        if ($modifierIds !== []) {
+            $modifiers = ProductModifier::query()
+                ->where('product_id', $product->id)
+                ->whereIn('id', $modifierIds)
+                ->with('ingredients')
+                ->get();
+
+            foreach ($modifiers as $modifier) {
+                foreach ($modifier->ingredients as $ingredient) {
+                    $add($ingredient, (int) ($ingredient->pivot->quantity * $quantity), (string) ($ingredient->unit ?? ''), true);
+                }
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
      * Verificar que haya stock suficiente para vender (producto con has_stock o receta con insumos).
      * Lanza \Exception con mensaje claro si no alcanza.
+     *
+     * @param  list<int>  $modifierIds
      */
-    public function ensureStockForSale(int $restaurantId, int $productId, int $quantity): void
+    public function ensureStockForSale(int $restaurantId, int $productId, int $quantity, array $modifierIds = []): void
     {
         $product = Product::with('ingredients')->findOrFail($productId);
 
-        if ($product->hasRecipe()) {
-            foreach ($product->ingredients as $ingredient) {
-                $required = $ingredient->pivot->quantity * $quantity;
-                $current = $ingredient->getCurrentStock($restaurantId);
-                if ($current < $required) {
-                    $unit = $ingredient->pivot->unit ?? $ingredient->unit ?? '';
-                    throw new \Exception(
-                        "Stock insuficiente de '{$ingredient->name}'. Disponible: {$current} {$unit}, Necesario: {$required} {$unit}"
-                    );
-                }
+        foreach ($this->consumptionPlan($product, $quantity, $modifierIds) as $line) {
+            $target = $line['product'];
+            $required = $line['quantity'];
+            $current = $target->getCurrentStock($restaurantId);
+            if ($current >= $required) {
+                continue;
             }
 
-            return;
-        }
-
-        if ($product->has_stock) {
-            $current = $product->getCurrentStock($restaurantId);
-            if ($current < $quantity) {
+            if ($line['from_recipe']) {
+                $unit = $line['unit'];
                 throw new \Exception(
-                    "Stock insuficiente para '{$product->name}'. Disponible: {$current}, Solicitado: {$quantity}"
+                    "Stock insuficiente de '{$target->name}'. Disponible: {$current} {$unit}, Necesario: {$required} {$unit}"
                 );
             }
+
+            throw new \Exception(
+                "Stock insuficiente para '{$target->name}'. Disponible: {$current}, Solicitado: {$required}"
+            );
         }
     }
 
@@ -167,88 +221,48 @@ class StockService
      * Descontar stock por venta.
      * Si el producto tiene receta (insumos), descuenta de cada insumo.
      * Si no, y tiene has_stock, descuenta del producto.
+     * La variante/extras elegidos descuentan además sus propios insumos.
+     *
+     * @param  list<int>  $modifierIds
      */
-    public function deductStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null): void
+    public function deductStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null, array $modifierIds = []): void
     {
         $product = Product::with('ingredients')->findOrFail($productId);
 
-        if ($product->hasRecipe()) {
-            foreach ($product->ingredients as $ingredient) {
-                $toDeduct = (int) ($ingredient->pivot->quantity * $quantity);
-                if ($toDeduct <= 0) {
-                    continue;
-                }
-                $this->recordMovement([
-                    'restaurant_id' => $restaurantId,
-                    'product_id' => $ingredient->id,
-                    'user_id' => auth()->id(),
-                    'type' => 'SALIDA',
-                    'quantity' => $toDeduct,
-                    'reason' => 'Venta (receta: '.$product->name.')',
-                    'reference' => $orderId ? "order_{$orderId}" : null,
-                ]);
-            }
-
-            return;
+        foreach ($this->consumptionPlan($product, $quantity, $modifierIds) as $line) {
+            $this->recordMovement([
+                'restaurant_id' => $restaurantId,
+                'product_id' => $line['product']->id,
+                'user_id' => auth()->id(),
+                'type' => 'SALIDA',
+                'quantity' => $line['quantity'],
+                'reason' => $line['from_recipe'] ? 'Venta (receta: '.$product->name.')' : 'Venta',
+                'reference' => $orderId ? "order_{$orderId}" : null,
+            ]);
         }
-
-        if (! $product->has_stock) {
-            return;
-        }
-
-        $this->recordMovement([
-            'restaurant_id' => $restaurantId,
-            'product_id' => $productId,
-            'user_id' => auth()->id(),
-            'type' => 'SALIDA',
-            'quantity' => $quantity,
-            'reason' => 'Venta',
-            'reference' => $orderId ? "order_{$orderId}" : null,
-        ]);
     }
 
     /**
      * Reponer stock cuando se elimina/reemplaza un item de un pedido.
-     * Invierte la lógica de deductStockForSale (receta vs has_stock).
+     * Invierte la lógica de deductStockForSale (receta vs has_stock + variante).
+     *
+     * @param  list<int>  $modifierIds
      */
-    public function restoreStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null): void
+    public function restoreStockForSale(int $restaurantId, int $productId, int $quantity, ?int $orderId = null, array $modifierIds = []): void
     {
         $product = Product::with('ingredients')->findOrFail($productId);
 
-        if ($product->hasRecipe()) {
-            foreach ($product->ingredients as $ingredient) {
-                $toAdd = (int) ($ingredient->pivot->quantity * $quantity);
-                if ($toAdd <= 0) {
-                    continue;
-                }
-
-                $this->recordMovement([
-                    'restaurant_id' => $restaurantId,
-                    'product_id' => $ingredient->id,
-                    'user_id' => auth()->id(),
-                    'type' => 'ENTRADA',
-                    'quantity' => $toAdd,
-                    'reason' => 'Reversión venta (item eliminado/reemplazado)',
-                    'reference' => $orderId ? "order_{$orderId}" : null,
-                ]);
-            }
-
-            return;
+        foreach ($this->consumptionPlan($product, $quantity, $modifierIds) as $line) {
+            $this->recordMovement([
+                'restaurant_id' => $restaurantId,
+                'product_id' => $line['product']->id,
+                'user_id' => auth()->id(),
+                'type' => 'ENTRADA',
+                'quantity' => $line['quantity'],
+                'reason' => 'Reversión venta (item eliminado/reemplazado)',
+                'reference' => $orderId ? "order_{$orderId}" : null,
+            ]);
         }
-
-        if (! $product->has_stock) {
-            return;
-        }
-
-        $this->recordMovement([
-            'restaurant_id' => $restaurantId,
-            'product_id' => $productId,
-            'user_id' => auth()->id(),
-            'type' => 'ENTRADA',
-            'quantity' => $quantity,
-            'reason' => 'Reversión venta (item eliminado/reemplazado)',
-            'reference' => $orderId ? "order_{$orderId}" : null,
-        ]);
     }
 
     /**

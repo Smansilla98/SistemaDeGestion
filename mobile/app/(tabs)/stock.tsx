@@ -10,7 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { StockMovementRow, StockRow } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
@@ -33,7 +34,9 @@ type MovType = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
 
 export default function StockScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const canWrite = hasPermission(user, 'stock.write');
+  const canReset = hasPermission(user, 'stock.reset');
   const canMozoInsumo =
     hasPermission(user, 'stock_mozo.create') || hasPermission(user, 'stock.write');
   const isMozo = user?.role === 'MOZO';
@@ -179,6 +182,16 @@ export default function StockScreen() {
   return (
     <View style={styles.root}>
       <PageHeader title="Stock" subtitle="Consulta y movimientos" bi="box-seam" />
+      {canReset ? (
+        <View style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
+          <PrimaryButton
+            title="Puesta a punto"
+            variant="outline"
+            icon="flag-outline"
+            onPress={() => router.push('/stock/reset' as Href)}
+          />
+        </View>
+      ) : null}
       <View style={styles.tabs}>
         <Pressable style={[styles.tab, tab === 'productos' && styles.tabOn]} onPress={() => setTab('productos')}>
           <Text style={[styles.tabText, tab === 'productos' && styles.tabTextOn]}>Productos</Text>

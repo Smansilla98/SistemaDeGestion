@@ -28,14 +28,16 @@ final class ProductService
     {
         $filters = $this->sanitizeFilters($filters);
 
-        return $this->products->findAllByRestaurant($restaurantId, $filters);
+        return $this->withVariants($this->products->findAllByRestaurant($restaurantId, $filters));
     }
 
     public function paginateForRestaurant(int $restaurantId, array $filters, PaginationQueryDto $pagination): LengthAwarePaginator
     {
         $filters = $this->sanitizeFilters($filters);
         $total = $this->products->countByRestaurant($restaurantId, $filters);
-        $items = $this->products->findPageByRestaurant($restaurantId, $filters, $pagination->page, $pagination->perPage);
+        $items = $this->withVariants(
+            $this->products->findPageByRestaurant($restaurantId, $filters, $pagination->page, $pagination->perPage)
+        );
 
         return new LengthAwarePaginator(
             $items,
@@ -59,7 +61,31 @@ final class ProductService
             throw new InvalidArgumentException('Producto no encontrado');
         }
 
-        return $row;
+        return $this->withVariants([$row])[0];
+    }
+
+    /**
+     * Agrega a cada producto sus variantes activas (las que definen el precio al vender).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withVariants(array $rows): array
+    {
+        if ($rows === []) {
+            return $rows;
+        }
+
+        $variants = $this->products->findActiveVariantsByProductIds(
+            array_map('intval', array_column($rows, 'id'))
+        );
+
+        foreach ($rows as &$row) {
+            $row['variants'] = $variants[(int) $row['id']] ?? [];
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /**

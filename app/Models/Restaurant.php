@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Restaurant extends Model
@@ -11,6 +12,7 @@ class Restaurant extends Model
     use HasFactory;
 
     protected $fillable = [
+        'parent_id',
         'name',
         'address',
         'phone',
@@ -23,6 +25,30 @@ class Restaurant extends Model
         'settings' => 'array',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Relación: casa matriz de esta sucursal (null si es la matriz o un local único)
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * Relación: sucursales que dependen de este restaurante
+     */
+    public function branches(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * Id de la casa matriz del grupo (este mismo si no tiene padre).
+     */
+    public function groupRootId(): int
+    {
+        return (int) ($this->parent_id ?? $this->id);
+    }
 
     /**
      * Relación: Un restaurante tiene muchos usuarios

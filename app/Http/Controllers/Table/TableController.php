@@ -68,9 +68,11 @@ class TableController extends Controller
             }
         }
 
-        // Ordenar mesas por grupos numéricos (0-9, 10-19, etc.) y luego por número completo
+        // Orden elegido por el usuario (se recuerda en la sesión); por defecto, número natural.
+        $tableSort = Table::normalizeSort(request()->query('sort', session('tables_sort')));
+        session(['tables_sort' => $tableSort]);
         foreach ($sectors as $sector) {
-            $sector->setRelation('tables', Table::sortByNumericGroup($sector->tables));
+            $sector->setRelation('tables', Table::sortCollection($sector->tables, $tableSort));
         }
 
         // Usuarios disponibles para asignación en mesa (sin SUPERADMIN)
@@ -89,7 +91,7 @@ class TableController extends Controller
             ->get()
             ->groupBy('category.name');
 
-        return view('tables.index', compact('sectors', 'products', 'waiters'));
+        return view('tables.index', compact('sectors', 'products', 'waiters', 'tableSort'));
     }
 
     /**
@@ -133,6 +135,7 @@ class TableController extends Controller
             'idempotency_key' => 'nullable|string|max:26',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.observations' => 'nullable|string',
         ]);
@@ -327,6 +330,7 @@ class TableController extends Controller
             'send_to_kitchen' => 'nullable|boolean',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.observations' => 'nullable|string',
         ]);

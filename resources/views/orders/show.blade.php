@@ -276,10 +276,38 @@
                         </select>
                     </div>
 
+                    <div class="mb-3 d-none" id="replaceVariantGroup">
+                        <label class="form-label" for="replaceNewVariantId">Variante</label>
+                        <select name="new_variant_id" id="replaceNewVariantId" class="form-select"></select>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Cantidad</label>
                         <input type="number" name="quantity" id="replaceQuantity" class="form-control" min="1" value="1" required>
                     </div>
+                    @include('partials.variant-picker')
+                    <script>
+                    (function () {
+                        const product = document.getElementById('replaceNewProductId');
+                        const group = document.getElementById('replaceVariantGroup');
+                        const variant = document.getElementById('replaceNewVariantId');
+
+                        function syncVariants() {
+                            const options = AlToqueVariants.options(parseInt(product.value, 10));
+                            variant.replaceChildren();
+                            options.forEach((v) => {
+                                const option = document.createElement('option');
+                                option.value = v.id;
+                                option.textContent = `${v.name} — ${AlToqueVariants.money(v.price)}`;
+                                variant.appendChild(option);
+                            });
+                            group.classList.toggle('d-none', options.length === 0);
+                            variant.disabled = options.length === 0;
+                        }
+                        product.addEventListener('change', syncVariants);
+                        syncVariants();
+                    })();
+                    </script>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

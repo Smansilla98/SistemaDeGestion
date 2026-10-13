@@ -11,6 +11,7 @@ class RefreshToken extends Model
 {
     protected $fillable = [
         'user_id',
+        'restaurant_id',
         'token_hash',
         'expires_at',
         'revoked_at',

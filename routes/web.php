@@ -74,6 +74,12 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Elección de sucursal: paso posterior al login para quien opera más de una.
+Route::middleware('auth')->group(function () {
+    Route::get('/sucursal', [\App\Http\Controllers\Branch\BranchController::class, 'select'])->name('branch.select');
+    Route::post('/sucursal', [\App\Http\Controllers\Branch\BranchController::class, 'store'])->name('branch.store');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Rutas Protegidas
@@ -318,6 +324,12 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::put('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'update'])->name('update');
         Route::post('/{product}/ingredients', [\App\Http\Controllers\Product\ProductController::class, 'storeIngredient'])->name('ingredients.store');
         Route::delete('/{product}/ingredients/{ingredient}', [\App\Http\Controllers\Product\ProductController::class, 'destroyIngredient'])->name('ingredients.destroy');
+        Route::put('/{product}/serving', [\App\Http\Controllers\Product\ProductController::class, 'updateServing'])->name('serving.update');
+        Route::post('/{product}/variants', [\App\Http\Controllers\Product\ProductController::class, 'storeVariant'])->name('variants.store');
+        Route::put('/{product}/variants/{modifier}', [\App\Http\Controllers\Product\ProductController::class, 'updateVariant'])->name('variants.update');
+        Route::delete('/{product}/variants/{modifier}', [\App\Http\Controllers\Product\ProductController::class, 'destroyVariant'])->name('variants.destroy');
+        Route::post('/{product}/variants/{modifier}/ingredients', [\App\Http\Controllers\Product\ProductController::class, 'storeVariantIngredient'])->name('variants.ingredients.store');
+        Route::delete('/{product}/variants/{modifier}/ingredients/{ingredient}', [\App\Http\Controllers\Product\ProductController::class, 'destroyVariantIngredient'])->name('variants.ingredients.destroy');
         Route::delete('/{product}', [\App\Http\Controllers\Product\ProductController::class, 'destroy'])->name('destroy');
     });
 
@@ -331,6 +343,12 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/movements', [\App\Http\Controllers\Stock\StockController::class, 'movements'])->name('movements');
         Route::get('/movements/create', [\App\Http\Controllers\Stock\StockController::class, 'createMovement'])->name('create-movement');
         Route::post('/movements', [\App\Http\Controllers\Stock\StockController::class, 'storeMovement'])->name('store-movement');
+    });
+
+    // Puesta a punto: frena pedidos, baja lo activo y fija el stock real contado.
+    Route::prefix('stock/puesta-a-punto')->name('stock.reset.')->middleware('role:ADMIN,GERENTE,ENCARGADO')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Stock\StockResetController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Stock\StockResetController::class, 'store'])->name('store');
     });
 
     Route::prefix('stock')->name('stock.')->middleware('role:MOZO,ADMIN,GERENTE,SUPERADMIN')->group(function () {
@@ -457,6 +475,17 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
             Route::post('/{type}', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'update'])->name('update');
             Route::post('/{config}/disable', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'disable'])->name('disable');
         });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sucursales del grupo (solo ADMIN)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('branches')->name('branches.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Branch\BranchController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Branch\BranchController::class, 'create'])->name('create');
+        Route::put('/{branch}', [\App\Http\Controllers\Branch\BranchController::class, 'update'])->name('update');
     });
 
     /*

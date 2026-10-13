@@ -22,31 +22,18 @@ class KitchenController extends Controller
     }
 
     /**
-     * KDS: columnas ENVIADO / EN_PREPARACION / LISTO (alineadas con la vista).
+     * Pantalla de cocina: solo lectura. La vista se dibuja y se refresca sola desde boardJson.
      */
     public function index(Request $request)
     {
-        $restaurantId = auth()->user()->restaurant_id;
-
-        $query = Order::where('restaurant_id', $restaurantId)
-            ->whereIn('status', OrderStatus::kitchenBoard())
-            ->with(['table', 'table.sector', 'user', 'items.product', 'items.modifiers']);
-
-        if ($request->has('sector')) {
-            $query->whereHas('table', function ($q) use ($request) {
-                $q->where('sector_id', $request->sector);
-            });
-        }
-
-        $orders = $query->orderBy('created_at', 'asc')
-            ->get()
-            ->groupBy('status');
-
-        return view('kitchen.index', compact('orders'));
+        return view('kitchen.index', [
+            'boardUrl' => route('kitchen.board-json', $request->only('sector')),
+            'refreshSeconds' => 5,
+        ]);
     }
 
     /**
-     * Tablero KDS en JSON para refresh parcial (sin location.reload).
+     * Tablero completo en JSON (pedidos + ítems) para el refresco continuo de la pantalla.
      */
     public function boardJson(Request $request)
     {
@@ -54,9 +41,9 @@ class KitchenController extends Controller
 
         $query = Order::where('restaurant_id', $restaurantId)
             ->whereIn('status', OrderStatus::kitchenBoard())
-            ->with(['table', 'table.sector', 'user', 'items.product']);
+            ->with(['table', 'table.sector', 'subsectorItem', 'user', 'items.product', 'items.modifiers']);
 
-        if ($request->has('sector')) {
+        if ($request->filled('sector')) {
             $query->whereHas('table', function ($q) use ($request) {
                 $q->where('sector_id', $request->sector);
             });
@@ -71,17 +58,30 @@ class KitchenController extends Controller
                 'status' => $order->status,
                 'sent_at' => optional($order->sent_at ?? $order->created_at)->toIso8601String(),
                 'table' => $order->table?->number,
+                'place' => $order->table
+                    ? $order->table->displayName()
+                    : ($order->subsectorItem?->name ?? ($order->customer_name ?: 'Barra')),
                 'sector' => $order->table?->sector?->name,
                 'waiter' => $order->user?->name,
+                'observations' => $order->observations,
                 'items_count' => $order->items->count(),
                 'items_ready' => $order->items->where('status', 'LISTO')->count()
                     + $order->items->where('status', 'ENTREGADO')->count(),
+                'items' => $order->items->map(fn (OrderItem $item) => [
+                    'id' => $item->id,
+                    'name' => $item->product?->name ?? $item->product_name_snapshot,
+                    'quantity' => $item->quantity,
+                    'status' => $item->status,
+                    'observations' => $item->observations,
+                    'modifiers' => $item->modifiers->pluck('name')->values()->all(),
+                ])->values()->all(),
                 'updated_at' => $order->updated_at?->toIso8601String(),
             ];
         });
 
         return response()->json([
             'success' => true,
+            'server_time' => now()->toIso8601String(),
             'counts' => [
                 'ENVIADO' => $orders->where('status', 'ENVIADO')->count(),
                 'EN_PREPARACION' => $orders->where('status', 'EN_PREPARACION')->count(),

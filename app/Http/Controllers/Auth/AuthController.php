@@ -7,7 +7,9 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\BranchAccess;
 use App\Support\DemoLogin;
+use App\Support\HomeRoute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -79,8 +81,12 @@ class AuthController extends Controller
             // Actualizar último login
             $user->update(['last_login_at' => now()]);
 
-            // Redirigir según rol
-            return $this->redirectByRole($user->role);
+            // Quien opera más de una sucursal elige explícitamente antes de entrar.
+            if (app(BranchAccess::class)->requiresSelection($user)) {
+                return redirect()->route('branch.select');
+            }
+
+            return redirect()->route(HomeRoute::for($user));
         }
 
         return back()->withErrors([
@@ -99,19 +105,5 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
-    }
-
-    /**
-     * Redirigir según rol
-     */
-    private function redirectByRole(string $role): \Illuminate\Http\RedirectResponse
-    {
-        return match ($role) {
-            'ADMIN' => redirect()->route('dashboard'),
-            'MOZO' => redirect()->route('tables.index'),
-            'COCINA' => redirect()->route('kitchen.index'),
-            'CAJERO' => redirect()->route('cash-register.index'),
-            default => redirect()->route('dashboard'),
-        };
     }
 }

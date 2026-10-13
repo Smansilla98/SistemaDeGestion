@@ -214,6 +214,38 @@ class ProductRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Variantes activas (las que definen el precio al vender) agrupadas por producto.
+     *
+     * @param  list<int>  $productIds
+     * @return array<int, list<array{id:int, name:string, price:float}>>
+     */
+    public function findActiveVariantsByProductIds(array $productIds): array
+    {
+        if ($productIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, product_id, name, price FROM product_modifiers
+             WHERE product_id IN ({$placeholders}) AND kind = 'VARIANT' AND is_active = 1
+             ORDER BY sort_order ASC, name ASC"
+        );
+        $stmt->execute(array_values($productIds));
+
+        $grouped = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $grouped[(int) $row['product_id']][] = [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+                'price' => (float) $row['price'],
+            ];
+        }
+
+        return $grouped;
+    }
+
     private function likeEscape(string $value): string
     {
         return str_replace(['%', '_'], ['\\%', '\\_'], $value);

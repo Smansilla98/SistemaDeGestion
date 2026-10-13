@@ -12,6 +12,8 @@ type AuthState = {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
+  /** Elige (o cambia) la sucursal en la que se opera. */
+  selectBranch: (restaurantId: number) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -134,9 +136,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const selectBranch = useCallback(async (restaurantId: number) => {
+    const payload = await api.selectBranch(restaurantId, await getRefreshToken());
+    if (!payload.refresh_token) {
+      throw new ApiError('El servidor no devolvió refresh_token', 500);
+    }
+    await setTokens(payload.access_token, payload.refresh_token);
+    setUser(payload.user);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, offlineHint, login, logout, refreshMe }),
-    [user, loading, offlineHint, login, logout, refreshMe],
+    () => ({ user, loading, offlineHint, login, logout, refreshMe, selectBranch }),
+    [user, loading, offlineHint, login, logout, refreshMe, selectBranch],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,6 +7,7 @@ namespace App\Middleware;
 use App\Core\ApiResponse;
 use App\Core\JwtTokenService;
 use App\Models\User;
+use App\Support\BranchAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +43,18 @@ final class AuthenticateJwt
         }
 
         Auth::onceUsingId($user->id);
+
+        // Sucursal elegida en la app: viaja en el token y se revalida en cada request.
+        $authUser = Auth::user();
+        $branchId = (int) ($claims->restaurant_id ?? 0);
+        $branchSelected = ! empty($claims->branch_selected) && $branchId > 0
+            && $authUser instanceof User
+            && app(BranchAccess::class)->canAccess($authUser, $branchId);
+
+        if ($branchSelected) {
+            $authUser->useRestaurant($branchId);
+        }
+        $request->attributes->set('branch_selected', $branchSelected);
 
         return $next($request);
     }

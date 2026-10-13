@@ -95,6 +95,7 @@ final class OrderOpsController extends Controller
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|integer',
             'quantity' => 'required|integer|min:1',
             'observations' => 'nullable|string|max:500',
         ]);
@@ -282,6 +283,7 @@ final class OrderOpsController extends Controller
         $validated = $request->validate([
             'order_item_id' => 'required|integer',
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|integer',
             'quantity' => 'nullable|integer|min:1',
             'observations' => 'nullable|string|max:1000',
         ]);
@@ -308,6 +310,7 @@ final class OrderOpsController extends Controller
 
                 return $orders->addItem($order, [
                     'product_id' => $product->id,
+                    'variant_id' => $validated['variant_id'] ?? null,
                     'quantity' => $qty,
                     'observations' => $validated['observations'] ?? $oldItem->observations,
                 ]);

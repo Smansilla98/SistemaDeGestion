@@ -3,6 +3,7 @@
 @section('title', 'Pedido Rápido: ' . $order->number)
 
 @section('content')
+@include('partials.variant-picker')
 <div class="row mb-4">
     <div class="col-12">
         <a href="{{ route('orders.quick.index') }}" class="btn btn-secondary mb-2">
@@ -717,20 +718,21 @@ function filterAddItemsProducts(term) {
 
 // Agregar producto a la lista de items a agregar
 document.querySelectorAll('.add-product-to-order-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', async function() {
         const productId = parseInt(this.dataset.productId);
-        const productName = this.dataset.productName;
-        const productPrice = parseFloat(this.dataset.productPrice);
-        
-        const existingItem = addItemsList.find(item => item.product_id === productId);
+        const choice = await AlToqueVariants.resolve(productId, this.dataset.productName, parseFloat(this.dataset.productPrice));
+        if (!choice) return;
+
+        const existingItem = addItemsList.find(item => item.product_id === productId && item.variant_id === choice.variantId);
         
         if (existingItem) {
             existingItem.quantity++;
         } else {
             addItemsList.push({
                 product_id: productId,
-                name: productName,
-                price: productPrice,
+                variant_id: choice.variantId,
+                name: choice.name,
+                price: choice.price,
                 quantity: 1,
                 observations: ''
             });
@@ -857,6 +859,7 @@ document.getElementById('addItemsConfirmBtn')?.addEventListener('click', async f
                 },
                 body: JSON.stringify({
                     product_id: item.product_id,
+                    variant_id: item.variant_id || null,
                     quantity: item.quantity,
                     observations: item.observations || ''
                 })

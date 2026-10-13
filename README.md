@@ -97,6 +97,25 @@ Cabecera recomendada: `Accept: application/json`.
 
 Respuesta típica: `{ "success": true, "data": ... }` o errores de validación 422.
 
+### Sucursales, stock y cocina
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/api/auth/select-branch` | Elige la sucursal activa (`restaurant_id`); devuelve un par de tokens atado a ella. `login` y `me` informan `branches` y `requires_branch_selection` |
+| GET | `/api/tables?sort=` | Mesas en el mismo orden que la web: `number` (natural, por defecto), `status` o `capacity` |
+| GET/POST | `/api/stock/reset` | Puesta a punto: vista previa y ejecución (permiso `stock.reset`, confirmación `PUESTA A PUNTO`) |
+| GET | `/api/kitchen/board` | Tablero de cocina de solo lectura (pedidos + ítems + `server_time`) |
+
+Los ítems de pedido aceptan `variant_id`: si el producto tiene variantes activas es obligatorio y define el precio de la línea.
+`GET /api/products` devuelve `variants` en cada producto.
+
+### Cómo modelar la carta
+
+- **Pizza con sabores**: un producto `Pizza` con control de stock y una variante por sabor (Napolitana $20.000, Jamón y morrones $24.000).
+  Cada venta descuenta una pizza y, si la variante tiene insumos propios, también esos insumos.
+- **Trago por proporción**: producto `Fernet con coca`, medida del vaso 500 cc, receta 30% Fernet + 70% Coca.
+  Cada venta descuenta 150 y 350 de cada insumo (los insumos se llevan en la misma unidad que el vaso: ml/cc).
+
 ### Compatibilidad `/api/v1/*`
 
 Se mantienen rutas anteriores (`tables`, `orders` parcial, `products` lectura extendida) bajo `/api/v1/...`.

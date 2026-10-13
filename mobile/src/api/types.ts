@@ -4,9 +4,23 @@ export type ApiUser = {
   username: string;
   email?: string;
   role: string;
+  /** Sucursal en la que se está operando (la elegida, o la propia). */
   restaurant_id: number | null;
+  restaurant_name?: string | null;
+  home_restaurant_id?: number | null;
+  /** Sucursales que el usuario puede operar. Más de una = puede elegir. */
+  branches?: Branch[];
+  /** true hasta que el usuario elige sucursal en esta sesión. */
+  requires_branch_selection?: boolean;
   is_active: boolean;
   permissions?: string[];
+};
+
+export type Branch = {
+  id: number;
+  name: string;
+  address?: string | null;
+  is_main?: boolean;
 };
 
 export type AuthPayload = {
@@ -56,6 +70,44 @@ export type ProductRow = {
   unit?: string | null;
   cost_price?: number | string | null;
   supplier_id?: number | null;
+  /** Variantes que definen el precio (ej. sabores de pizza). Si hay, se elige una al pedir. */
+  variants?: ProductVariant[];
+};
+
+export type ProductVariant = {
+  id: number;
+  name: string;
+  price: number;
+};
+
+export type TableSort = 'number' | 'status' | 'capacity';
+
+export type StockResetPreview = {
+  active_orders: number;
+  active_orders_total_cents: number;
+  open_sessions: number;
+  busy_tables: number;
+  confirmation: string;
+  products: Array<{
+    id: number;
+    name: string;
+    type: string;
+    unit?: string | null;
+    current_stock: number;
+  }>;
+  history: StockResetResult[];
+};
+
+export type StockResetResult = {
+  id: number;
+  created_at?: string;
+  user?: string | null;
+  orders_cancelled: number;
+  orders_cancelled_total: number;
+  sessions_closed: number;
+  tables_freed: number;
+  products_adjusted: number;
+  notes?: string | null;
 };
 
 export type OrderItem = {

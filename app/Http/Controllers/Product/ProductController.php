@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Product;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductModifier;
 use App\Models\Sector;
 use App\Services\ProductPricingService;
+use App\Services\RecipeService;
 use App\Traits\Auditable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -190,7 +192,7 @@ class ProductController extends Controller
         Gate::authorize('update', $product);
 
         $restaurantId = auth()->user()->restaurant_id;
-        $product->load('ingredients');
+        $product->load(['ingredients', 'modifiers.ingredients']);
 
         $categories = Category::where('restaurant_id', $restaurantId)
             ->where('is_active', true)
@@ -212,36 +214,152 @@ class ProductController extends Controller
     }
 
     /**
-     * Agregar insumo a la receta del producto
+     * Agregar insumo a la receta del producto (cantidad fija o % del vaso)
      */
-    public function storeIngredient(Request $request, Product $product)
+    public function storeIngredient(Request $request, Product $product, RecipeService $recipes)
+    {
+        Gate::authorize('update', $product);
+
+        $validated = $request->validate([
+            'ingredient_id' => 'required|exists:products,id',
+            'mode' => 'nullable|in:quantity,percentage',
+            'quantity' => 'required_unless:mode,percentage|nullable|numeric|min:0.001',
+            'percentage' => 'required_if:mode,percentage|nullable|numeric|min:0.01|max:100',
+        ]);
+
+        $byPercentage = ($validated['mode'] ?? 'quantity') === 'percentage';
+
+        try {
+            $recipes->addIngredient(
+                $product,
+                Product::findOrFail($validated['ingredient_id']),
+                $byPercentage ? null : (int) round((float) $validated['quantity']),
+                $byPercentage ? (float) $validated['percentage'] : null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Insumo agregado a la receta.');
+    }
+
+    /**
+     * Medida del vaso para tragos armados por proporción
+     */
+    public function updateServing(Request $request, Product $product, RecipeService $recipes)
+    {
+        Gate::authorize('update', $product);
+
+        $validated = $request->validate([
+            'serving_size' => 'nullable|integer|min:1|max:100000',
+        ]);
+
+        try {
+            $recipes->setServingSize($product, isset($validated['serving_size']) ? (int) $validated['serving_size'] : null);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Medida del vaso actualizada. Las cantidades de la receta se recalcularon.');
+    }
+
+    /**
+     * Agregar variante (define precio) o extra (suma un recargo)
+     */
+    public function storeVariant(Request $request, Product $product)
     {
         Gate::authorize('update', $product);
 
         if ($product->type !== 'PRODUCT') {
-            return back()->with('error', 'Solo los productos vendibles pueden tener receta.');
+            return back()->with('error', 'Solo los productos vendibles pueden tener variantes.');
         }
 
         $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'kind' => 'required|in:VARIANT,EXTRA',
+            'price' => 'required|numeric|min:0|max:99999999',
+        ]);
+
+        $isVariant = $validated['kind'] === ProductModifier::KIND_VARIANT;
+
+        $product->modifiers()->create([
+            'name' => $validated['name'],
+            'kind' => $validated['kind'],
+            'price' => $isVariant ? $validated['price'] : null,
+            'price_modifier' => $isVariant ? 0 : $validated['price'],
+            'is_active' => true,
+            'sort_order' => (int) $product->modifiers()->max('sort_order') + 1,
+        ]);
+
+        return back()->with('success', $isVariant ? 'Variante agregada.' : 'Extra agregado.');
+    }
+
+    public function updateVariant(Request $request, Product $product, ProductModifier $modifier)
+    {
+        Gate::authorize('update', $product);
+        abort_unless((int) $modifier->product_id === (int) $product->id, 404);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0|max:99999999',
+        ]);
+
+        $modifier->update($modifier->isVariant()
+            ? ['name' => $validated['name'], 'price' => $validated['price']]
+            : ['name' => $validated['name'], 'price_modifier' => $validated['price']]);
+
+        return back()->with('success', 'Variante actualizada. Los pedidos ya cargados conservan su precio.');
+    }
+
+    /**
+     * Quita la variante. Si ya se vendió, se desactiva para no romper el historial.
+     */
+    public function destroyVariant(Product $product, ProductModifier $modifier)
+    {
+        Gate::authorize('update', $product);
+        abort_unless((int) $modifier->product_id === (int) $product->id, 404);
+
+        if (\App\Models\OrderItemModifier::where('product_modifier_id', $modifier->id)->exists()) {
+            $modifier->update(['is_active' => false]);
+
+            return back()->with('success', 'La variante ya tiene ventas: quedó desactivada y no se ofrece más.');
+        }
+
+        $modifier->delete();
+
+        return back()->with('success', 'Variante eliminada.');
+    }
+
+    public function storeVariantIngredient(Request $request, Product $product, ProductModifier $modifier)
+    {
+        Gate::authorize('update', $product);
+        abort_unless((int) $modifier->product_id === (int) $product->id, 404);
+
+        $validated = $request->validate([
             'ingredient_id' => 'required|exists:products,id',
-            'quantity' => 'required|numeric|min:0.001',
-            'unit' => 'nullable|string|max:50',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $ingredient = Product::findOrFail($validated['ingredient_id']);
-        if ($ingredient->type !== 'INSUMO' || $ingredient->restaurant_id !== $product->restaurant_id) {
+        if ($ingredient->type !== 'INSUMO' || (int) $ingredient->restaurant_id !== (int) $product->restaurant_id) {
             return back()->with('error', 'El insumo no es válido.');
         }
-        if ($product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
-            return back()->with('error', 'Ese insumo ya está en la receta.');
-        }
 
-        $product->ingredients()->attach($ingredient->id, [
-            'quantity' => (int) round($validated['quantity']),
-            'unit' => $validated['unit'] ?? $ingredient->unit,
+        $modifier->ingredients()->syncWithoutDetaching([
+            $ingredient->id => ['quantity' => (int) $validated['quantity']],
         ]);
 
-        return back()->with('success', 'Insumo agregado a la receta.');
+        return back()->with('success', 'Insumo agregado a la variante.');
+    }
+
+    public function destroyVariantIngredient(Product $product, ProductModifier $modifier, Product $ingredient)
+    {
+        Gate::authorize('update', $product);
+        abort_unless((int) $modifier->product_id === (int) $product->id, 404);
+
+        $modifier->ingredients()->detach($ingredient->id);
+
+        return back()->with('success', 'Insumo quitado de la variante.');
     }
 
     /**

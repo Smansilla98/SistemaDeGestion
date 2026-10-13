@@ -101,6 +101,16 @@ class Table extends Model
     }
 
     /**
+     * Nombre para mostrar: "Mesa 12" si es un número, o el nombre tal cual ("Barra 1").
+     */
+    public function displayName(): string
+    {
+        $number = trim((string) $this->number);
+
+        return preg_match('/^\d/', $number) ? 'Mesa '.$number : $number;
+    }
+
+    /**
      * Parte numérica inicial del número de mesa (para orden 0-9, 10-19, etc.).
      * Ej: "1" -> 1, "1-b" -> 1, "10" -> 10, "11 bis" -> 11.
      */
@@ -117,13 +127,56 @@ class Table extends Model
         return 0;
     }
 
+    const SORT_NUMBER = 'number';
+
+    const SORT_STATUS = 'status';
+
+    const SORT_CAPACITY = 'capacity';
+
+    /**
+     * Criterios de orden que puede elegir el usuario (web y app usan los mismos).
+     *
+     * @return array<string, string>
+     */
+    public static function sortOptions(): array
+    {
+        return [
+            self::SORT_NUMBER => 'Número de mesa',
+            self::SORT_STATUS => 'Ocupadas primero',
+            self::SORT_CAPACITY => 'Capacidad',
+        ];
+    }
+
+    public static function normalizeSort(?string $sort): string
+    {
+        return array_key_exists((string) $sort, self::sortOptions()) ? (string) $sort : self::SORT_NUMBER;
+    }
+
+    /**
+     * Ordena mesas según el criterio elegido. El desempate siempre es el número
+     * en orden natural (1, 2, 10 — no 1, 10, 2), igual en web y en la app.
+     */
+    public static function sortCollection($tables, ?string $sort = null)
+    {
+        $sort = self::normalizeSort($sort);
+        $statusRank = [self::STATUS_OCUPADA => 0, self::STATUS_RESERVADA => 1, self::STATUS_LIBRE => 2, self::STATUS_CERRADA => 3];
+
+        return $tables->sortBy(function (Table $table) use ($sort, $statusRank) {
+            $natural = [$table->getNumericSortKey(), $table->number];
+
+            return match ($sort) {
+                self::SORT_STATUS => [$statusRank[$table->status] ?? 9, ...$natural],
+                self::SORT_CAPACITY => [-1 * (int) $table->capacity, ...$natural],
+                default => $natural,
+            };
+        })->values();
+    }
+
     /**
      * Ordenar una colección de mesas por grupos numéricos (0-9, 10-19, …) y luego por número completo.
      */
     public static function sortByNumericGroup($tables)
     {
-        return $tables->sortBy(function (Table $table) {
-            return [$table->getNumericSortKey(), $table->number];
-        })->values();
+        return self::sortCollection($tables, self::SORT_NUMBER);
     }
 }

@@ -123,6 +123,8 @@ final class ApiRouter
             ['methods' => ['GET'], 'uri' => 'stock', 'action' => [StockOpsController::class, 'index'], 'middleware' => array_merge($jwt, ['permission:stock.read'])],
             ['methods' => ['GET'], 'uri' => 'stock/movements', 'action' => [StockOpsController::class, 'movements'], 'middleware' => array_merge($jwt, ['permission:stock.read'])],
             ['methods' => ['POST'], 'uri' => 'stock/movements', 'action' => [StockOpsController::class, 'storeMovement'], 'middleware' => array_merge($jwt, ['permission:stock.write'])],
+            ['methods' => ['GET'], 'uri' => 'stock/reset', 'action' => [StockOpsController::class, 'resetPreview'], 'middleware' => array_merge($jwt, ['permission:stock.reset'])],
+            ['methods' => ['POST'], 'uri' => 'stock/reset', 'action' => [StockOpsController::class, 'reset'], 'middleware' => array_merge($jwt, ['permission:stock.reset'])],
             ['methods' => ['GET'], 'uri' => 'stock/suppliers', 'action' => [StockOpsController::class, 'suppliers'], 'middleware' => array_merge($jwt, ['permission:stock.read'])],
             ['methods' => ['GET'], 'uri' => 'stock/mozo-insumos', 'action' => [StockOpsController::class, 'mozoInsumos'], 'middleware' => array_merge($jwt, ['permission:stock_mozo.create,stock.write'])],
             ['methods' => ['POST'], 'uri' => 'stock/mozo-insumos', 'action' => [StockOpsController::class, 'storeMozoInsumo'], 'middleware' => array_merge($jwt, ['permission:stock_mozo.create,stock.write'])],
@@ -184,6 +186,7 @@ final class ApiRouter
             ['methods' => ['POST'], 'uri' => 'auth/refresh', 'action' => [AuthJwtController::class, 'refresh'], 'middleware' => ['throttle:auth-jwt']],
             ['methods' => ['POST'], 'uri' => 'auth/logout', 'action' => [AuthJwtController::class, 'logout'], 'middleware' => ['throttle:auth-jwt']],
             ['methods' => ['GET'], 'uri' => 'auth/me', 'action' => [AuthJwtController::class, 'me'], 'middleware' => ['jwt.auth', 'throttle:jwt-api', 'permission:auth.me']],
+            ['methods' => ['POST'], 'uri' => 'auth/select-branch', 'action' => [AuthJwtController::class, 'selectBranch'], 'middleware' => ['jwt.auth', 'throttle:jwt-api', 'permission:auth.me']],
         ];
     }
 }

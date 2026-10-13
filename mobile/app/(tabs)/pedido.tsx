@@ -8,6 +8,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { ProductRow, TableRow } from '../../src/api/types';
+import { sellableOptions, type SellableOption } from '../../src/api/variants';
 import { colors, radius, space } from '../../src/theme';
 import {
   AppText,
@@ -19,7 +20,10 @@ import {
 } from '../../src/ui/primitives';
 
 type CartItem = {
+  /** Identifica la línea: producto + variante. */
+  key: string;
   product_id: number;
+  variant_id: number | null;
   name: string;
   quantity: number;
   price: number;
@@ -73,22 +77,33 @@ export default function PedidoScreen() {
   );
 
   const filtered = useMemo(() => {
+    const options = sellableOptions(products);
     const needle = q.trim().toLowerCase();
-    if (!needle) return products.slice(0, 60);
-    return products.filter((p) => p.name.toLowerCase().includes(needle)).slice(0, 60);
+    if (!needle) return options.slice(0, 60);
+    return options.filter((o) => o.name.toLowerCase().includes(needle)).slice(0, 60);
   }, [products, q]);
 
-  const addProduct = (p: ProductRow) => {
-    if (isOutOfStock(p)) return;
-    const price = Number(p.price);
+  const addProduct = (o: SellableOption) => {
+    if (isOutOfStock(o.product)) return;
     setCart((prev) => {
-      const i = prev.findIndex((x) => x.product_id === p.id);
+      const i = prev.findIndex((x) => x.key === o.key);
       if (i >= 0) {
         const copy = [...prev];
         copy[i] = { ...copy[i], quantity: copy[i].quantity + 1 };
         return copy;
       }
-      return [...prev, { product_id: p.id, name: p.name, quantity: 1, price, observations: '' }];
+      return [
+        ...prev,
+        {
+          key: o.key,
+          product_id: o.product.id,
+          variant_id: o.variant?.id ?? null,
+          name: o.name,
+          quantity: 1,
+          price: o.price,
+          observations: '',
+        },
+      ];
     });
   };
 
@@ -133,6 +148,7 @@ export default function PedidoScreen() {
         idempotency_key: `m-${Date.now()}-${mesa ?? 'q'}`,
         items: cart.map((c) => ({
           product_id: c.product_id,
+          ...(c.variant_id != null ? { variant_id: c.variant_id } : {}),
           quantity: c.quantity,
           ...(c.observations.trim() ? { observations: c.observations.trim() } : {}),
         })),
@@ -194,20 +210,20 @@ export default function PedidoScreen() {
         <SectionLabel>Productos</SectionLabel>
         <Field placeholder="Buscar…" value={q} onChangeText={setQ} />
         <View style={styles.row}>
-          {filtered.map((p) => {
-            const out = isOutOfStock(p);
+          {filtered.map((o) => {
+            const out = isOutOfStock(o.product);
             return (
               <Pressable
-                key={p.id}
+                key={o.key}
                 style={[styles.prod, out && styles.prodDisabled]}
-                onPress={() => addProduct(p)}
+                onPress={() => addProduct(o)}
                 disabled={out}
               >
                 <AppText weight="semibold" style={styles.prodName} numberOfLines={2}>
-                  {p.name}
+                  {o.name}
                 </AppText>
                 <AppText weight="bold" style={[styles.prodPrice, out && { color: colors.danger }]}>
-                  {out ? 'Sin stock' : `$${Number(p.price).toFixed(2)}`}
+                  {out ? 'Sin stock' : `$${o.price.toFixed(2)}`}
                 </AppText>
               </Pressable>
             );
@@ -219,7 +235,7 @@ export default function PedidoScreen() {
           <AppText style={styles.muted}>Todavía no agregaste productos.</AppText>
         ) : (
           cart.map((c, idx) => (
-            <View key={c.product_id} style={styles.cartBlock}>
+            <View key={c.key} style={styles.cartBlock}>
               <View style={styles.cartRow}>
                 <AppText weight="medium" style={{ flex: 1 }}>
                   {c.name}

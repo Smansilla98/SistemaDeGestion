@@ -9,6 +9,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api/client';
 import type { DiscountTypeRow, OrderRow, ProductRow } from '../../src/api/types';
+import { sellableOptions } from '../../src/api/variants';
 import { useAuth } from '../../src/auth/AuthContext';
 import { canSeeAdminHub, hasPermission, isAdminRole } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
@@ -56,6 +57,8 @@ export default function OrderDetailScreen() {
 
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [products, setProducts] = useState<ProductRow[]>([]);
+  // Los productos con variantes se listan una fila por variante, cada una con su precio.
+  const options = useMemo(() => sellableOptions(products), [products]);
   const [discounts, setDiscounts] = useState<DiscountTypeRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -410,17 +413,19 @@ export default function OrderDetailScreen() {
           onChangeText={setItemObs}
           placeholder="Sin cebolla, extra salsa…"
         />
-        {products.map((p) => {
+        {options.map((o) => {
+          const p = o.product;
           const out = isOutOfStock(p);
           return (
             <Pressable
-              key={p.id}
+              key={o.key}
               style={[styles.pickRow, out && { opacity: 0.45 }]}
               disabled={out || busy}
               onPress={() =>
                 void run(async () => {
                   await api.addOrderItem(Number(id), {
                     product_id: p.id,
+                    variant_id: o.variant?.id ?? null,
                     quantity: Math.max(1, Number(qty) || 1),
                     ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
                   });
@@ -431,11 +436,11 @@ export default function OrderDetailScreen() {
               }
             >
               <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
-                {p.name}
+                {o.name}
                 {out ? ' (sin stock)' : ''}
               </AppText>
               <AppText weight="bold" style={{ color: fx.brand }}>
-                ${Number(p.price).toFixed(2)}
+                ${o.price.toFixed(2)}
               </AppText>
             </Pressable>
           );
@@ -462,11 +467,12 @@ export default function OrderDetailScreen() {
           onChangeText={setItemObs}
           placeholder="Opcional"
         />
-        {products.map((p) => {
+        {options.map((o) => {
+          const p = o.product;
           const out = isOutOfStock(p);
           return (
             <Pressable
-              key={p.id}
+              key={o.key}
               style={[styles.pickRow, out && { opacity: 0.45 }]}
               disabled={out || busy || replaceItemId == null}
               onPress={() =>
@@ -475,6 +481,7 @@ export default function OrderDetailScreen() {
                   await api.replaceOrderItem(Number(id), {
                     order_item_id: replaceItemId,
                     product_id: p.id,
+                    variant_id: o.variant?.id ?? null,
                     quantity: Math.max(1, Number(qty) || 1),
                     ...(itemObs.trim() ? { observations: itemObs.trim() } : {}),
                   });
@@ -484,11 +491,11 @@ export default function OrderDetailScreen() {
               }
             >
               <AppText weight="semibold" style={{ flex: 1, color: fx.ink }}>
-                {p.name}
+                {o.name}
                 {out ? ' (sin stock)' : ''}
               </AppText>
               <AppText weight="bold" style={{ color: fx.brand }}>
-                ${Number(p.price).toFixed(2)}
+                ${o.price.toFixed(2)}
               </AppText>
             </Pressable>
           );

@@ -364,6 +364,7 @@
 @endpush
 
 @section('content')
+@include('partials.variant-picker')
 <div class="row mb-4">
     <div class="col-12 tables-header d-flex justify-content-between align-items-center">
         <div>
@@ -390,6 +391,14 @@
             <i class="bi bi-search"></i>
             <input type="text" id="tableSearch" data-tutorial="tables-search" placeholder="Buscar mesa por número o nombre...">
         </div>
+        <form method="GET" action="{{ route('tables.index') }}" class="d-flex align-items-center gap-2 mt-2">
+            <label for="tableSort" class="small text-muted mb-0"><i class="bi bi-sort-down"></i> Ordenar por</label>
+            <select id="tableSort" name="sort" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                @foreach(\App\Models\Table::sortOptions() as $value => $label)
+                    <option value="{{ $value }}" {{ ($tableSort ?? 'number') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 </div>
 
@@ -930,10 +939,15 @@ function openNewOrderModal(tableId, tableLabel) {
     newOrderModal.show();
 }
 
-function addModalItem(productId, name, price, currentStock, stockMinimum) {
-    // Validar stock si aplica
+async function addModalItem(productId, name, price, currentStock, stockMinimum) {
+    const choice = await AlToqueVariants.resolve(productId, name, price);
+    if (!choice) return;
+    const sameLine = (i) => i.product_id === productId && i.variant_id === choice.variantId;
+
+    // Validar stock si aplica (el stock es del producto base, sume la variante que sume)
     if (currentStock !== null && currentStock !== undefined) {
-        const existing = modalItems.find(i => i.product_id === productId);
+        const existing = modalItems.filter(i => i.product_id === productId)
+            .reduce((acc, i) => ({ quantity: acc.quantity + i.quantity }), { quantity: 0 });
         const requestedQty = existing ? existing.quantity + 1 : 1;
         
         if (currentStock <= 0) {
@@ -960,10 +974,10 @@ function addModalItem(productId, name, price, currentStock, stockMinimum) {
         
     }
     
-    addItemToModal(productId, name, price, modalItems.find(i => i.product_id === productId));
+    addItemToModal(productId, choice.name, choice.price, modalItems.find(sameLine), choice.variantId);
 }
 
-function addItemToModal(productId, name, price, existing) {
+function addItemToModal(productId, name, price, existing, variantId = null) {
     if (existing) {
         existing.quantity += 1;
     } else {
@@ -971,6 +985,7 @@ function addItemToModal(productId, name, price, existing) {
         modalItems.push({
             id: modalItemCounter,
             product_id: productId,
+            variant_id: variantId,
             name,
             price,
             quantity: 1,
@@ -1136,6 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     : String(Date.now()) + Math.random().toString(36).slice(2, 10),
                 items: modalItems.map(i => ({
                     product_id: i.product_id,
+                    variant_id: i.variant_id || null,
                     quantity: i.quantity,
                     observations: i.observations || null,
                 }))

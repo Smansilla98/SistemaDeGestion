@@ -16,6 +16,7 @@ use App\Models\RefreshToken;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Repositories\UserRepository;
+use App\Support\BranchAccess;
 use App\Support\DemoLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,8 @@ final class JwtAuthService
 {
     public function __construct(
         private readonly UserRepository $users,
-        private readonly JwtTokenService $jwt
+        private readonly JwtTokenService $jwt,
+        private readonly BranchAccess $branches
     ) {}
 
     public function login(LoginCredentialsDto $dto, ?Request $request = null): AuthTokenPayloadDto
@@ -127,7 +129,27 @@ final class JwtAuthService
 
         $row->forceFill(['revoked_at' => now()])->save();
 
-        return $this->buildTokenResponse($user, $request);
+        // La sucursal elegida sobrevive al refresh mientras el usuario siga teniendo acceso.
+        $branchId = $row->restaurant_id !== null ? (int) $row->restaurant_id : null;
+        if ($branchId !== null && ! $this->branches->canAccess($user, $branchId)) {
+            $branchId = null;
+        }
+
+        return $this->buildTokenResponse($user, $request, $branchId);
+    }
+
+    /**
+     * Cambia la sucursal activa: emite un par de tokens nuevo atado a esa sucursal.
+     */
+    public function selectBranch(User $user, int $restaurantId, ?string $plainRefreshToken = null, ?Request $request = null): AuthTokenPayloadDto
+    {
+        if (! $this->branches->canAccess($user, $restaurantId)) {
+            throw new ApiException('No tenés acceso a esa sucursal.', 403, 'BRANCH_FORBIDDEN');
+        }
+
+        $this->logout($plainRefreshToken);
+
+        return $this->buildTokenResponse($user, $request, $restaurantId);
     }
 
     public function logout(?string $plainRefreshToken): void
@@ -146,21 +168,23 @@ final class JwtAuthService
     /**
      * @return array<string, mixed>
      */
-    public function me(User $user): array
+    public function me(User $user, bool $branchSelected = false): array
     {
-        return $this->userToPublicArray($user);
+        return $this->userToPublicArray($user, $branchSelected);
     }
 
-    private function buildTokenResponse(User $user, ?Request $request = null): AuthTokenPayloadDto
+    private function buildTokenResponse(User $user, ?Request $request = null, ?int $branchId = null): AuthTokenPayloadDto
     {
-        $issued = $this->jwt->issueForUser($user);
-        [$plainRefresh, $refreshTtl] = $this->issueRefreshToken($user, $request);
+        $user->useRestaurant($branchId);
+
+        $issued = $this->jwt->issueForUser($user, $branchId !== null);
+        [$plainRefresh, $refreshTtl] = $this->issueRefreshToken($user, $request, $branchId);
 
         return new AuthTokenPayloadDto(
             accessToken: $issued['token'],
             tokenType: 'Bearer',
             expiresIn: $issued['expires_in'],
-            user: $this->userToPublicArray($user),
+            user: $this->userToPublicArray($user, $branchId !== null),
             refreshToken: $plainRefresh,
             refreshExpiresIn: $refreshTtl,
         );
@@ -169,13 +193,14 @@ final class JwtAuthService
     /**
      * @return array{0: string, 1: int}
      */
-    private function issueRefreshToken(User $user, ?Request $request = null): array
+    private function issueRefreshToken(User $user, ?Request $request = null, ?int $branchId = null): array
     {
         $ttl = (int) config('jwt.refresh_ttl', 60 * 60 * 24 * 30);
         $plain = Str::random(64);
 
         RefreshToken::query()->create([
             'user_id' => $user->id,
+            'restaurant_id' => $branchId,
             'token_hash' => hash('sha256', $plain),
             'expires_at' => now()->addSeconds($ttl),
             'device_name' => $request?->header('X-Device-Name'),
@@ -188,8 +213,10 @@ final class JwtAuthService
     /**
      * @return array<string, mixed>
      */
-    private function userToPublicArray(User $user): array
+    private function userToPublicArray(User $user, bool $branchSelected = false): array
     {
+        $branches = $this->branches->branchesFor($user);
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -197,6 +224,10 @@ final class JwtAuthService
             'email' => $user->email,
             'role' => $user->role,
             'restaurant_id' => $user->restaurant_id,
+            'restaurant_name' => $branches->firstWhere('id', $user->restaurant_id)?->name,
+            'home_restaurant_id' => $user->homeRestaurantId(),
+            'branches' => BranchAccess::toPublicArray($branches),
+            'requires_branch_selection' => $branches->count() > 1 && ! $branchSelected,
             'is_active' => (bool) $user->is_active,
             'permissions' => \App\Core\Rbac\RbacChecker::permissionsForRole($user->role),
         ];
