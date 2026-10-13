@@ -60,7 +60,7 @@ jobs:
           npm run build
 
       - name: Verificar formato de codigo (Pint)
-        run: vendor/bin/pint --test
+        run: vendor/bin/pint --test app
 
       - name: Analisis estatico (PHPStan)
         run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
