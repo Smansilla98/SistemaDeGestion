@@ -1,91 +1,101 @@
-import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { useKeepAwake } from 'expo-keep-awake';
 import { api, ApiError } from '../../src/api/client';
-import { useAuth } from '../../src/auth/AuthContext';
-import { hasPermission } from '../../src/auth/permissions';
-import { colors, radius, space } from '../../src/theme';
-import { Badge, Card, Chip, PageHeader, PrimaryButton } from '../../src/ui/primitives';
 
-type BoardModifier = { id?: number; name?: string; price_modifier?: number | string };
 type BoardItem = {
   id: number;
   name: string;
   quantity: number;
   status: string;
   observations?: string | null;
-  modifiers?: BoardModifier[];
+  modifiers?: Array<{ id?: number; name?: string }>;
 };
 type BoardOrder = {
   id: number;
   number: string;
   status: string;
   sent_at?: string;
+  place?: string;
   table?: string;
+  sector?: string | null;
   waiter?: string;
   observations?: string | null;
   items?: BoardItem[];
 };
 
-type FilterKey = 'ALL' | 'PENDIENTES' | 'EN_PREPARACION' | 'LISTO';
+const REFRESH_MS = 5000;
+const WARN_MIN = 10;
+const LATE_MIN = 15;
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'ALL', label: 'Todos' },
-  { key: 'PENDIENTES', label: 'Pendientes' },
-  { key: 'EN_PREPARACION', label: 'En prep' },
-  { key: 'LISTO', label: 'Listos' },
-];
+/** Paleta propia: pantalla de pared, oscura y de alto contraste (igual que el KDS web). */
+const kd = {
+  bg: '#0e1416',
+  panel: '#172124',
+  panel2: '#1f2c30',
+  line: '#2c3d42',
+  ink: '#f2f6f7',
+  muted: '#9db0b5',
+  new: '#3aa0b3',
+  prep: '#f0a72e',
+  ready: '#37b36b',
+  late: '#e5484d',
+  note: '#ffe2a3',
+  noteBg: '#3a2f12',
+  mods: '#8fd3e0',
+} as const;
 
-function isUrgent(sentAt?: string): boolean {
-  if (!sentAt) return false;
-  const t = Date.parse(sentAt);
-  if (Number.isNaN(t)) return false;
-  return Date.now() - t > 15 * 60 * 1000;
+const STATUS: Record<string, { label: string; color: string }> = {
+  ENVIADO: { label: 'NUEVO', color: kd.new },
+  EN_PREPARACION: { label: 'EN PREPARACIÓN', color: kd.prep },
+  LISTO: { label: 'LISTO', color: kd.ready },
+};
+
+function elapsed(sentAt: string | undefined, now: number): { minutes: number; label: string } {
+  const start = sentAt ? Date.parse(sentAt) : NaN;
+  if (Number.isNaN(start)) return { minutes: 0, label: '0:00' };
+  const seconds = Math.max(0, Math.floor((now - start) / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const label =
+    minutes >= 60
+      ? `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`
+      : `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+  return { minutes, label };
 }
 
-function matchesFilter(order: BoardOrder, filter: FilterKey): boolean {
-  if (filter === 'ALL') return true;
-  if (filter === 'PENDIENTES') {
-    return order.status === 'ENVIADO' || (order.items ?? []).some((i) => i.status === 'PENDIENTE');
-  }
-  if (filter === 'EN_PREPARACION') {
-    return (
-      order.status === 'EN_PREPARACION' ||
-      (order.items ?? []).some((i) => i.status === 'EN_PREPARACION')
-    );
-  }
-  if (filter === 'LISTO') {
-    return order.status === 'LISTO' || (order.items ?? []).every((i) => i.status === 'LISTO' || i.status === 'ENTREGADO');
-  }
-  return true;
-}
-
+/**
+ * Cocina: pantalla de solo lectura. No hay acciones; se refresca sola
+ * y mantiene el dispositivo encendido mientras está a la vista.
+ */
 export default function CocinaScreen() {
-  const { user } = useAuth();
-  const canWrite = hasPermission(user, 'kitchen.write');
+  useKeepAwake();
+  const { width } = useWindowDimensions();
+  const columns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+
   const [orders, setOrders] = useState<BoardOrder[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [filter, setFilter] = useState<FilterKey>('ALL');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busyItem, setBusyItem] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const lastOkAt = useRef<number | null>(null);
+  // Diferencia entre el reloj del servidor y el del dispositivo, para que los tiempos no mientan.
+  const clockOffset = useRef(0);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const board = await api.kitchenBoard();
+      if (board.server_time) {
+        const server = Date.parse(board.server_time);
+        if (!Number.isNaN(server)) clockOffset.current = server - Date.now();
+      }
       setCounts(board.counts ?? {});
       setOrders((board.orders as BoardOrder[]) ?? []);
+      lastOkAt.current = Date.now();
+      setError(null);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Error KDS');
+      // Se conserva el último tablero conocido y se avisa arriba.
+      setError(e instanceof ApiError ? e.message : 'Sin conexión');
     } finally {
       setLoading(false);
     }
@@ -93,141 +103,113 @@ export default function CocinaScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
       void load();
-      const t = setInterval(() => void load(), 10000);
+      const t = setInterval(() => void load(), REFRESH_MS);
       return () => clearInterval(t);
     }, [load]),
   );
 
-  const visible = useMemo(
-    () => orders.filter((o) => matchesFilter(o, filter)),
-    [orders, filter],
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Lo más viejo primero: es lo que hay que sacar antes.
+  const sorted = useMemo(
+    () =>
+      [...orders].sort(
+        (a, b) => (Date.parse(a.sent_at ?? '') || 0) - (Date.parse(b.sent_at ?? '') || 0),
+      ),
+    [orders],
   );
 
-  const setItem = async (itemId: number, status: string) => {
-    setBusyItem(itemId);
-    try {
-      await api.kitchenItemStatus(itemId, status);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo actualizar');
-    } finally {
-      setBusyItem(null);
-    }
-  };
+  const serverNow = now + clockOffset.current;
+  const stale = lastOkAt.current !== null && now - lastOkAt.current > REFRESH_MS * 3;
 
-  if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal500} />;
+  if (loading) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator color={kd.ink} size="large" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
-      <PageHeader title="Cocina" subtitle="Kanban en vivo" bi="egg-fried" />
-      <View style={styles.counts}>
-        {Object.entries(counts).map(([k, v]) => (
-          <View key={k} style={styles.countBox}>
-            <Text style={styles.countVal}>{v}</Text>
-            <Text style={styles.countKey}>{k.replace(/_/g, ' ')}</Text>
-          </View>
-        ))}
+      <View style={styles.top}>
+        <View style={styles.counts}>
+          {(['ENVIADO', 'EN_PREPARACION', 'LISTO'] as const).map((key) => (
+            <View key={key} style={[styles.count, { borderLeftColor: STATUS[key].color }]}>
+              <Text style={styles.countValue}>{counts[key] ?? 0}</Text>
+              <Text style={styles.countLabel}>{STATUS[key].label}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.live} accessibilityLiveRegion="polite">
+          <View style={[styles.dot, { backgroundColor: error || stale ? kd.late : kd.ready }]} />
+          <Text style={[styles.liveText, (error || stale) && styles.liveTextOff]}>
+            {error || stale ? `${error ?? 'Sin conexión'} — reintentando` : 'En vivo'}
+          </Text>
+        </View>
       </View>
-      <View style={styles.chips}>
-        {FILTERS.map((f) => (
-          <Chip
-            key={f.key}
-            label={f.label}
-            selected={filter === f.key}
-            onPress={() => setFilter(f.key)}
-          />
-        ))}
-      </View>
-      {error && <Text style={styles.err}>{error}</Text>}
+
       <FlatList
-        data={visible}
+        key={columns}
+        data={sorted}
+        numColumns={columns}
         keyExtractor={(o) => String(o.id)}
-        contentContainerStyle={{ padding: space.md }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void load()} />}
-        ListEmptyComponent={<Text style={styles.empty}>Cocina libre</Text>}
+        contentContainerStyle={styles.list}
+        columnWrapperStyle={columns > 1 ? styles.columns : undefined}
+        ListEmptyComponent={<Text style={styles.empty}>Cocina al día: no hay pedidos pendientes</Text>}
         renderItem={({ item }) => {
-          const urgent = isUrgent(item.sent_at);
+          const time = elapsed(item.sent_at, serverNow);
+          const status = STATUS[item.status] ?? { label: item.status, color: kd.new };
+          const ready = item.status === 'LISTO';
+          const late = !ready && time.minutes >= LATE_MIN;
+          const warn = !ready && !late && time.minutes >= WARN_MIN;
+          const meta = [item.number, item.sector, item.waiter].filter(Boolean).join(' · ');
+
           return (
-            <Card style={[styles.card, urgent && styles.urgentCard]}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.num}>{item.number}</Text>
-                <View style={styles.rowBetween}>
-                  {urgent ? <Badge label="URGENTE" /> : null}
-                  <Badge label={item.status} />
+            <View
+              style={[
+                styles.card,
+                { borderTopColor: late ? kd.late : status.color },
+                late && styles.cardLate,
+              ]}
+            >
+              <View style={styles.head}>
+                <View style={styles.headLeft}>
+                  <Text style={styles.place}>
+                    {item.place ?? (item.table ? `Mesa ${item.table}` : 'Barra')}
+                  </Text>
+                  {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+                  <Text style={styles.chip}>{status.label}</Text>
                 </View>
+                <Text
+                  style={[styles.timer, warn && styles.timerWarn, late && styles.timerLate]}
+                  accessibilityLabel={`Hace ${time.minutes} minutos`}
+                >
+                  {time.label}
+                </Text>
               </View>
-              <Text style={styles.meta}>
-                Mesa {item.table ?? '—'} · {item.waiter ?? ''}
-              </Text>
-              {item.observations ? (
-                <Text style={styles.obs}>Pedido: {item.observations}</Text>
-              ) : null}
-              {(item.items ?? []).map((it) => (
-                <View key={it.id} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemName}>
-                      {it.quantity}× {it.name}
-                    </Text>
-                    {it.modifiers && it.modifiers.length > 0 ? (
-                      <Text style={styles.mod}>
-                        {it.modifiers.map((m) => m.name).filter(Boolean).join(', ')}
-                      </Text>
-                    ) : null}
-                    {it.observations ? (
-                      <Text style={styles.obs}>Obs: {it.observations}</Text>
-                    ) : null}
-                    <Badge label={it.status} />
-                  </View>
-                  {canWrite && (
-                    <View style={styles.itemActions}>
-                      {it.status !== 'EN_PREPARACION' &&
-                        it.status !== 'LISTO' &&
-                        it.status !== 'ENTREGADO' && (
-                          <Pressable
-                            style={styles.miniBtn}
-                            disabled={busyItem === it.id}
-                            onPress={() => void setItem(it.id, 'EN_PREPARACION')}
-                          >
-                            <Text style={styles.miniText}>Prep</Text>
-                          </Pressable>
-                        )}
-                      {it.status !== 'LISTO' && it.status !== 'ENTREGADO' && (
-                        <Pressable
-                          style={[styles.miniBtn, styles.miniOk]}
-                          disabled={busyItem === it.id}
-                          onPress={() => void setItem(it.id, 'LISTO')}
-                        >
-                          <Text style={styles.miniText}>Listo</Text>
-                        </Pressable>
-                      )}
-                      {it.status !== 'ENTREGADO' && (
-                        <Pressable
-                          style={[styles.miniBtn, styles.miniDeliver]}
-                          disabled={busyItem === it.id}
-                          onPress={() => void setItem(it.id, 'ENTREGADO')}
-                        >
-                          <Text style={styles.miniText}>ENTREGADO</Text>
-                        </Pressable>
-                      )}
+
+              {item.observations ? <Text style={styles.note}>{item.observations}</Text> : null}
+
+              {(item.items ?? []).map((it, index) => {
+                const done = it.status === 'LISTO' || it.status === 'ENTREGADO';
+                const mods = (it.modifiers ?? []).map((m) => m.name).filter(Boolean).join(' · ');
+                return (
+                  <View key={it.id} style={[styles.item, index === 0 && styles.itemFirst]}>
+                    <Text style={[styles.qty, done && styles.done]}>{it.quantity}×</Text>
+                    <View style={styles.itemBody}>
+                      <Text style={[styles.name, done && styles.doneName]}>{it.name}</Text>
+                      {mods ? <Text style={[styles.mods, done && styles.done]}>{mods}</Text> : null}
+                      {it.observations ? <Text style={styles.obs}>{it.observations}</Text> : null}
                     </View>
-                  )}
-                </View>
-              ))}
-              {canWrite && (item.items ?? []).some((i) => i.status !== 'LISTO' && i.status !== 'ENTREGADO') && (
-                <PrimaryButton
-                  title="Marcar todo listo"
-                  onPress={() => {
-                    void Promise.all(
-                      (item.items ?? [])
-                        .filter((i) => i.status !== 'LISTO' && i.status !== 'ENTREGADO')
-                        .map((i) => setItem(i.id, 'LISTO')),
-                    );
-                  }}
-                />
-              )}
-            </Card>
+                  </View>
+                );
+              })}
+            </View>
           );
         }}
       />
@@ -236,57 +218,110 @@ export default function CocinaScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
-  counts: { flexDirection: 'row', gap: 8, padding: space.md },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  root: { flex: 1, backgroundColor: kd.bg },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  top: {
+    backgroundColor: kd.panel,
+    borderBottomWidth: 1,
+    borderBottomColor: kd.line,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     gap: 8,
-    paddingHorizontal: space.md,
-    marginBottom: 4,
   },
-  countBox: {
+  counts: { flexDirection: 'row', gap: 8 },
+  count: {
     flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: radius.lg,
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gray100,
-  },
-  countVal: { fontSize: 20, fontWeight: '800', color: colors.teal500 },
-  countKey: { fontSize: 10, color: colors.gray600, marginTop: 4, textAlign: 'center' },
-  err: { color: colors.danger, paddingHorizontal: space.md },
-  empty: { textAlign: 'center', marginTop: 40, color: colors.gray600 },
-  card: { marginBottom: 12 },
-  urgentCard: {
-    borderColor: colors.danger,
-    borderWidth: 2,
-    backgroundColor: colors.dangerBg,
-  },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
-  num: { fontWeight: '800', fontSize: 18, color: colors.gray900 },
-  meta: { color: colors.gray600, marginVertical: 8 },
-  obs: { color: colors.amber, fontSize: 12, marginBottom: 4, fontWeight: '600' },
-  mod: { color: colors.gray500, fontSize: 12, marginBottom: 2 },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    backgroundColor: kd.panel2,
+    borderLeftWidth: 6,
+    borderRadius: 12,
     paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray100,
-  },
-  itemName: { fontWeight: '600', marginBottom: 4, color: colors.gray900 },
-  itemActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, maxWidth: 160, justifyContent: 'flex-end' },
-  miniBtn: {
-    backgroundColor: colors.amber,
-    borderRadius: radius.md,
     paddingHorizontal: 10,
-    minHeight: 40,
-    justifyContent: 'center',
   },
-  miniOk: { backgroundColor: colors.teal500 },
-  miniDeliver: { backgroundColor: colors.gray800 },
-  miniText: { color: '#fff', fontWeight: '700', fontSize: 11 },
+  countValue: { color: kd.ink, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  countLabel: { color: kd.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
+  live: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  liveText: { color: kd.muted, fontSize: 13 },
+  liveTextOff: { color: '#ffb4b6', fontWeight: '700' },
+  list: { padding: 12, paddingBottom: 32 },
+  columns: { gap: 12 },
+  empty: { color: kd.muted, textAlign: 'center', marginTop: 80, fontSize: 20, fontWeight: '600' },
+  card: {
+    flex: 1,
+    backgroundColor: kd.panel,
+    borderWidth: 1,
+    borderColor: kd.line,
+    borderTopWidth: 10,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    gap: 10,
+  },
+  cardLate: { borderColor: kd.late },
+  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
+  headLeft: { flex: 1, gap: 4 },
+  place: { color: kd.ink, fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
+  meta: { color: kd.muted, fontSize: 14 },
+  chip: {
+    alignSelf: 'flex-start',
+    color: kd.ink,
+    backgroundColor: kd.panel2,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  timer: {
+    color: kd.ink,
+    backgroundColor: kd.panel2,
+    fontSize: 26,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  timerWarn: { backgroundColor: kd.prep, color: '#1b1300' },
+  timerLate: { backgroundColor: kd.late, color: '#fff' },
+  note: {
+    color: kd.note,
+    backgroundColor: kd.noteBg,
+    fontSize: 16,
+    fontWeight: '600',
+    padding: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  item: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: kd.line,
+  },
+  itemFirst: { borderTopWidth: 0, paddingTop: 0 },
+  qty: {
+    minWidth: 54,
+    textAlign: 'center',
+    color: kd.ink,
+    backgroundColor: kd.panel2,
+    fontSize: 26,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  itemBody: { flex: 1, gap: 2 },
+  name: { color: kd.ink, fontSize: 22, fontWeight: '700' },
+  mods: { color: kd.mods, fontSize: 17, fontWeight: '600' },
+  obs: { color: kd.note, fontSize: 16, fontWeight: '600' },
+  done: { color: kd.muted },
+  doneName: { color: kd.muted, textDecorationLine: 'line-through' },
 });

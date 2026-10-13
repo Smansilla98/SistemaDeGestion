@@ -126,11 +126,6 @@ parameters:
 			path: app/Http/Controllers/Table/TableController.php
 
 		-
-			message: "#^Comparison operation \"\\!\\=\" between object\\|non\\-falsy\\-string and int\\<min, \\-1\\>\\|int\\<1, max\\> results in an error\\.$#"
-			count: 1
-			path: app/Http/Middleware/CheckRole.php
-
-		-
 			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
 			count: 1
 			path: app/Http/Middleware/RedirectIfAuthenticated.php
@@ -188,6 +183,6 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property App\\\\Models\\\\Product\\:\\:\\$pivot\\.$#"
-			count: 3
+			count: 2
 			path: app/Services/StockService.php
 

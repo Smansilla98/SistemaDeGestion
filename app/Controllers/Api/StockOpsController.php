@@ -10,8 +10,10 @@ use App\Core\Rbac\RbacChecker;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Models\StockMovement;
+use App\Models\StockReset;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\StockResetService;
 use App\Services\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -306,6 +308,85 @@ final class StockOpsController extends Controller
             201,
             'Ingreso de insumo registrado'
         );
+    }
+
+    /**
+     * Puesta a punto: qué se va a bajar y qué hay que contar.
+     */
+    public function resetPreview(Request $request, StockResetService $resets): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $preview = $resets->preview($restaurantId);
+        $preview['products'] = $preview['products']->all();
+        $preview['confirmation'] = StockResetService::CONFIRMATION;
+        $preview['history'] = StockReset::query()
+            ->where('restaurant_id', $restaurantId)
+            ->with('user:id,name')
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn (StockReset $r) => $this->resetToArray($r))
+            ->all();
+
+        return ApiResponse::success($preview);
+    }
+
+    /**
+     * Puesta a punto: frena pedidos, baja lo activo y fija el stock real.
+     */
+    public function reset(Request $request, StockResetService $resets): JsonResponse
+    {
+        $restaurantId = $this->requireRestaurantId($request);
+        if ($restaurantId instanceof JsonResponse) {
+            return $restaurantId;
+        }
+
+        $validated = $request->validate([
+            'counts' => ['nullable', 'array'],
+            'counts.*.product_id' => ['required', 'integer'],
+            'counts.*.quantity' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'confirmation' => ['required', 'string'],
+        ]);
+
+        if (strtoupper(trim($validated['confirmation'])) !== StockResetService::CONFIRMATION) {
+            return ApiResponse::error('Escribí "'.StockResetService::CONFIRMATION.'" para confirmar.', 422, 'CONFIRMATION_REQUIRED');
+        }
+
+        $counts = [];
+        foreach ($validated['counts'] ?? [] as $row) {
+            $counts[(int) $row['product_id']] = (int) $row['quantity'];
+        }
+
+        try {
+            $reset = $resets->execute($restaurantId, $request->user(), $counts, $validated['notes'] ?? null);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 422, 'STOCK_RESET_ERROR');
+        }
+
+        return ApiResponse::success($this->resetToArray($reset), 201, 'Puesta a punto realizada');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resetToArray(StockReset $reset): array
+    {
+        return [
+            'id' => $reset->id,
+            'created_at' => $reset->created_at?->toIso8601String(),
+            'user' => $reset->user?->name,
+            'orders_cancelled' => $reset->orders_cancelled,
+            'orders_cancelled_total' => round($reset->orders_cancelled_total_cents / 100, 2),
+            'sessions_closed' => $reset->sessions_closed,
+            'tables_freed' => $reset->tables_freed,
+            'products_adjusted' => $reset->products_adjusted,
+            'notes' => $reset->notes,
+        ];
     }
 
     public function suppliers(Request $request): JsonResponse

@@ -36,12 +36,15 @@ Aplicación web para la operación completa de un restaurante: salón, pedidos, 
 
 - **Salón** — mapa de mesas en tiempo real, estados, unión y división de mesas
 - **Pedidos** — carga rápida, modificadores, envío a cocina, control de tiempos
-- **Cocina** — pantalla de comandas con estados de preparación
+- **Cocina** — pantalla de comandas de solo lectura, siempre encendida y con refresco continuo
 - **Caja** — apertura y cierre, movimientos, arqueo, medios de pago
 - **Stock** — productos, costos, precios, descuento automático por venta
 - **Reportes** — ventas, gastos fijos, márgenes, monitor para superadmin
 - **Roles y permisos** — superadmin, administrador, encargado, mozo, cocina
 - **Multi-cliente** — nombre y logo configurables por variables de entorno
+- **Sucursales** — un negocio con varios locales: el admin elige sucursal al iniciar sesión, el resto entra directo a la suya
+- **Variantes y proporciones** — un producto base con variantes que definen el precio (pizza → sabores) y tragos armados por % del vaso
+- **Puesta a punto** — corte general: frena pedidos, libera mesas y fija el stock real contado
 
 ---
 
@@ -139,6 +142,25 @@ Cabecera recomendada: `Accept: application/json`.
 | GET/PUT/PATCH/DELETE | `/api/users/{id}` | |
 
 Respuesta típica: `{ "success": true, "data": ... }` o errores de validación 422.
+
+### Sucursales, stock y cocina
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/api/auth/select-branch` | Elige la sucursal activa (`restaurant_id`); devuelve un par de tokens atado a ella. `login` y `me` informan `branches` y `requires_branch_selection` |
+| GET | `/api/tables?sort=` | Mesas en el mismo orden que la web: `number` (natural, por defecto), `status` o `capacity` |
+| GET/POST | `/api/stock/reset` | Puesta a punto: vista previa y ejecución (permiso `stock.reset`, confirmación `PUESTA A PUNTO`) |
+| GET | `/api/kitchen/board` | Tablero de cocina de solo lectura (pedidos + ítems + `server_time`) |
+
+Los ítems de pedido aceptan `variant_id`: si el producto tiene variantes activas es obligatorio y define el precio de la línea.
+`GET /api/products` devuelve `variants` en cada producto.
+
+### Cómo modelar la carta
+
+- **Pizza con sabores**: un producto `Pizza` con control de stock y una variante por sabor (Napolitana $20.000, Jamón y morrones $24.000).
+  Cada venta descuenta una pizza y, si la variante tiene insumos propios, también esos insumos.
+- **Trago por proporción**: producto `Fernet con coca`, medida del vaso 500 cc, receta 30% Fernet + 70% Coca.
+  Cada venta descuenta 150 y 350 de cada insumo (los insumos se llevan en la misma unidad que el vaso: ml/cc).
 
 ### Compatibilidad `/api/v1/*`
 

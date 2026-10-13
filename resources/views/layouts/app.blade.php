@@ -220,11 +220,23 @@
                 <i class="bi bi-bag sb-ico"></i>
                 <span>Stock</span>
             </a>
+            @if(in_array($navUser->role ?? '', ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO'], true))
+            <a href="{{ route('stock.reset.index') }}" class="sb-link {{ request()->routeIs('stock.reset.*') ? 'active' : '' }}">
+                <i class="bi bi-flag sb-ico"></i>
+                <span>Puesta a punto</span>
+            </a>
+            @endif
             @endif
             @if($canUsers)
             <a href="{{ route('users.index') }}" class="sb-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people sb-ico"></i>
                 <span>Usuarios</span>
+            </a>
+            @endif
+            @if($navUser && $navUser->isAdminLevel())
+            <a href="{{ route('branches.index') }}" class="sb-link {{ request()->routeIs('branches.*') ? 'active' : '' }}">
+                <i class="bi bi-shop sb-ico"></i>
+                <span>Sucursales</span>
             </a>
             @endif
             @if($canPrinters)
@@ -350,6 +362,13 @@
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px;">{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
             </a>
             @endif
+            @isset($branchSwitcher)
+            <a href="{{ route('branch.select') }}" class="btn btn-g btn-sm" title="Cambiar de sucursal">
+                <i class="bi bi-shop"></i>
+                <span class="d-none d-sm-inline">{{ $branchSwitcher['current']->name }}</span>
+                <i class="bi bi-arrow-left-right small"></i>
+            </a>
+            @endisset
             <span class="tb-badge">{{ strtoupper(auth()->user()->role) }}</span>
             <div class="dropdown flex-shrink-0">
                 <a href="#" class="tb-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">

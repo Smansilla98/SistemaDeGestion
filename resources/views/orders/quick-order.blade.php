@@ -3,6 +3,7 @@
 @section('title', 'Pedidos Rápidos')
 
 @section('content')
+@include('partials.variant-picker')
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
@@ -230,16 +231,20 @@ function resetQuickOrderProductSearch() {
     input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function quickOrderAddProduct(productId, productName, productPrice) {
-    const existingItem = quickOrderItems.find(item => item.product_id === productId);
+async function quickOrderAddProduct(productId, productName, productPrice) {
+    const choice = await AlToqueVariants.resolve(productId, productName, productPrice);
+    if (!choice) return;
+
+    const existingItem = quickOrderItems.find(item => item.product_id === productId && item.variant_id === choice.variantId);
 
     if (existingItem) {
         existingItem.quantity++;
     } else {
         quickOrderItems.push({
             product_id: productId,
-            name: productName,
-            price: productPrice,
+            variant_id: choice.variantId,
+            name: choice.name,
+            price: choice.price,
             quantity: 1,
             observations: ''
         });
@@ -348,6 +353,7 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
     
     const items = quickOrderItems.map(item => ({
         product_id: item.product_id,
+        variant_id: item.variant_id || null,
         name: item.name,
         quantity: item.quantity,
         observations: item.observations || ''

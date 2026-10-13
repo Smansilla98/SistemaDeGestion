@@ -35,6 +35,11 @@ class User extends Authenticatable
 
     const ROLE_ENCARGADO = 'ENCARGADO';
 
+    /**
+     * Sucursal activa en esta request (no se persiste). Ver useRestaurant().
+     */
+    private ?int $activeRestaurantId = null;
+
     protected $fillable = [
         'restaurant_id',
         'name',
@@ -69,6 +74,36 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Opera esta request como otra sucursal sin tocar la fila del usuario.
+     * Quien valida que tenga acceso es BranchAccess, antes de llamar acá.
+     */
+    public function useRestaurant(?int $restaurantId): static
+    {
+        $this->activeRestaurantId = $restaurantId;
+        $this->unsetRelation('restaurant');
+
+        return $this;
+    }
+
+    /**
+     * Local al que pertenece el usuario en la base, sin importar la sucursal activa.
+     */
+    public function homeRestaurantId(): ?int
+    {
+        $raw = $this->attributes['restaurant_id'] ?? null;
+
+        return $raw !== null ? (int) $raw : null;
+    }
+
+    /**
+     * restaurant_id devuelve la sucursal activa si se eligió una; si no, la propia.
+     */
+    public function getRestaurantIdAttribute($value)
+    {
+        return $this->activeRestaurantId ?? $value;
     }
 
     /**

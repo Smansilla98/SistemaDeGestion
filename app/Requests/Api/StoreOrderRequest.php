@@ -36,6 +36,7 @@ class StoreOrderRequest extends FormRequest
             'send_to_kitchen' => 'nullable|boolean',
             'items' => 'nullable|array|min:1',
             'items.*.product_id' => 'required_with:items|integer|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required_with:items|integer|min:1',
             'items.*.observations' => 'nullable|string|max:500',
         ];

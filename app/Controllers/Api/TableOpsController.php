@@ -37,7 +37,8 @@ final class TableOpsController extends Controller
             $query->where('sector_id', $request->integer('sector_id'));
         }
 
-        $tables = $query->orderBy('number')->get()->map(fn (Table $t) => [
+        // Mismo orden que la web: número natural por defecto, o el criterio que elija el usuario.
+        $tables = Table::sortCollection($query->get(), $request->query('sort'))->map(fn (Table $t) => [
             'id' => $t->id,
             'number' => $t->number,
             'status' => $t->status,
@@ -82,8 +83,8 @@ final class TableOpsController extends Controller
             ->where('restaurant_id', $restaurantId)
             ->when($sectorId, fn ($q) => $q->where('sector_id', $sectorId))
             ->with(['currentSession.waiter:id,name'])
-            ->orderBy('number')
             ->get()
+            ->pipe(fn ($rows) => Table::sortCollection($rows, $request->query('sort')))
             ->map(fn (Table $t) => [
                 'id' => $t->id,
                 'number' => $t->number,

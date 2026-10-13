@@ -44,6 +44,22 @@
             @endforelse
         </div>
 
+        @if($variantes !== [])
+            <div class="mt-2">
+                <div class="small text-muted mb-1">Elegí la variante</div>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach($variantes as $variante)
+                        <button type="button"
+                                wire:click="selectVariante({{ $variante['id'] }})"
+                                class="btn {{ $varianteSeleccionada === $variante['id'] ? 'btn-primary' : 'btn-outline-light' }}"
+                                style="min-height: 48px;">
+                            {{ $variante['name'] }} · ${{ number_format($variante['price'], 2) }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="d-flex align-items-center gap-2 mt-2">
             <div class="input-group" style="max-width: 140px;">
                 <button type="button" class="btn btn-outline-secondary" style="min-height: 48px;" wire:click="$set('cantidad', {{ max(1, $cantidad - 1) }})">−</button>
@@ -53,7 +69,7 @@
             <button wire:click="agregarItem"
                     class="btn btn-success flex-grow-1"
                     style="min-height: 48px;"
-                    @disabled(! $productoSeleccionado)
+                    @disabled(! $productoSeleccionado || ($variantes !== [] && ! $varianteSeleccionada))
                     wire:loading.attr="disabled">
                 Agregar
             </button>

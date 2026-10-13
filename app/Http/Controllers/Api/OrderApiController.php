@@ -123,6 +123,7 @@ class OrderApiController extends Controller
             'observations' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -158,6 +159,7 @@ class OrderApiController extends Controller
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|integer',
             'quantity' => 'required|integer|min:1',
             'observations' => 'nullable|string',
         ]);

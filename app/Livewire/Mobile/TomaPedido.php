@@ -17,6 +17,12 @@ class TomaPedido extends Component
 
     public ?int $productoSeleccionado = null;
 
+    /** Variante elegida del producto seleccionado (ej. sabor de la pizza). */
+    public ?int $varianteSeleccionada = null;
+
+    /** @var list<array{id:int, name:string, price:float}> */
+    public array $variantes = [];
+
     public int $cantidad = 1;
 
     public ?string $observaciones = null;
@@ -53,13 +59,29 @@ class TomaPedido extends Component
                 ->first();
 
             if ($product) {
-                $this->precioActual = (float) $product->price;
+                $this->varianteSeleccionada = null;
+                $this->variantes = $product->variants()->get()
+                    ->map(fn ($v) => ['id' => (int) $v->id, 'name' => $v->name, 'price' => (float) $v->price])
+                    ->all();
+                // Con variantes no hay precio hasta que se elige una.
+                $this->precioActual = $this->variantes === [] ? (float) $product->price : null;
                 $this->stockDisponible = $product->has_stock
                     ? $product->getCurrentStock(Auth::user()->restaurant_id)
                     : null;
                 $this->cantidad = 1;
             }
         }
+    }
+
+    public function selectVariante(int $variantId): void
+    {
+        $variant = collect($this->variantes)->firstWhere('id', $variantId);
+        if ($variant === null) {
+            return;
+        }
+
+        $this->varianteSeleccionada = $variantId;
+        $this->precioActual = (float) $variant['price'];
     }
 
     public function agregarItem(): void
@@ -82,10 +104,18 @@ class TomaPedido extends Component
             }
         }
 
-        $precio = (float) $product->price;
+        $variant = collect($this->variantes)->firstWhere('id', $this->varianteSeleccionada);
+        if ($this->variantes !== [] && $variant === null) {
+            session()->flash('error', "Elegí una variante para {$product->name}.");
+
+            return;
+        }
+
+        $precio = (float) ($variant['price'] ?? $product->price);
+        $variantId = $variant['id'] ?? null;
         $existing = null;
         foreach ($this->items as $i => $item) {
-            if ((int) $item['product_id'] === (int) $product->id) {
+            if ((int) $item['product_id'] === (int) $product->id && ($item['variant_id'] ?? null) === $variantId) {
                 $existing = $i;
                 break;
             }
@@ -97,14 +127,15 @@ class TomaPedido extends Component
         } else {
             $this->items[] = [
                 'product_id' => $product->id,
-                'name' => $product->name,
+                'variant_id' => $variantId,
+                'name' => $variant ? $product->name.' · '.$variant['name'] : $product->name,
                 'quantity' => $this->cantidad,
                 'price' => $precio,
                 'subtotal' => $precio * $this->cantidad,
             ];
         }
 
-        $this->reset(['productoSeleccionado', 'cantidad', 'precioActual', 'stockDisponible']);
+        $this->reset(['productoSeleccionado', 'varianteSeleccionada', 'variantes', 'cantidad', 'precioActual', 'stockDisponible']);
         $this->cantidad = 1;
     }
 
@@ -131,6 +162,7 @@ class TomaPedido extends Component
             'mesa' => 'required|exists:tables,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -145,6 +177,7 @@ class TomaPedido extends Component
             'idempotency_key' => (string) Str::ulid(),
             'items' => collect($this->items)->map(fn ($item) => [
                 'product_id' => $item['product_id'],
+                'variant_id' => $item['variant_id'] ?? null,
                 'quantity' => $item['quantity'],
             ])->all(),
         ];
@@ -161,7 +194,7 @@ class TomaPedido extends Component
 
             session()->flash('success', 'Pedido Nº '.$order->number.' cargado'
                 .($this->enviarCocina ? ' y enviado a cocina.' : '.'));
-            $this->reset(['mesa', 'items', 'productoSeleccionado', 'cantidad', 'observaciones', 'precioActual', 'stockDisponible', 'busqueda']);
+            $this->reset(['mesa', 'items', 'productoSeleccionado', 'varianteSeleccionada', 'variantes', 'cantidad', 'observaciones', 'precioActual', 'stockDisponible', 'busqueda']);
             $this->cantidad = 1;
             $this->enviarCocina = true;
         } catch (\Throwable $e) {

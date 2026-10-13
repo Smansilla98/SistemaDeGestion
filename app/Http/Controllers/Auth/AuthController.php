@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
+use App\Support\BranchAccess;
 use App\Support\DemoEntry;
 use App\Support\DemoLogin;
 use Illuminate\Http\Request;
@@ -79,6 +80,11 @@ class AuthController extends Controller
 
             // Actualizar último login
             $user->update(['last_login_at' => now()]);
+
+            // Quien opera más de una sucursal elige explícitamente antes de entrar.
+            if (app(BranchAccess::class)->requiresSelection($user)) {
+                return redirect()->route('branch.select');
+            }
 
             if (DemoEntry::decides($user)) {
                 return redirect()->route('entry.choose');

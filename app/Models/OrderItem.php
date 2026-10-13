@@ -66,6 +66,20 @@ class OrderItem extends Model
     }
 
     /**
+     * Ids de variante/extras elegidos: definen qué insumos descontó esta línea.
+     *
+     * @return list<int>
+     */
+    public function productModifierIds(): array
+    {
+        return $this->modifiers()
+            ->whereNotNull('product_modifier_id')
+            ->pluck('product_modifier_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
      * Obtener todos los estados disponibles
      */
     public static function getStatuses(): array

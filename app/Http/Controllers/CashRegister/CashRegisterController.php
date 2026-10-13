@@ -391,6 +391,7 @@ class CashRegisterController extends Controller
             'cash_register_session_id' => 'required|exists:cash_register_sessions,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.observations' => 'nullable|string',
             'payments' => 'required|array|min:1',

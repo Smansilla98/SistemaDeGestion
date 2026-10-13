@@ -39,9 +39,10 @@ final class JwtTokenService
     /**
      * Genera un access token con claims mínimos para RBAC en API.
      *
+     * @param  bool  $branchSelected  true si el usuario eligió sucursal explícitamente
      * @return array{token: string, expires_in: int}
      */
-    public function issueForUser(Authenticatable $user): array
+    public function issueForUser(Authenticatable $user, bool $branchSelected = false): array
     {
         $now = time();
         $exp = $now + $this->ttl;
@@ -54,6 +55,7 @@ final class JwtTokenService
             'exp' => $exp,
             'role' => $user->role ?? null,
             'restaurant_id' => $user->restaurant_id ?? null,
+            'branch_selected' => $branchSelected,
         ];
 
         $token = JWT::encode($payload, $this->secret, $this->algo);

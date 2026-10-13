@@ -1,4 +1,5 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,8 +31,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (loading || !fontsReady) return;
     SplashScreen.hideAsync().catch(() => {});
     const inAuth = segments[0] === 'login';
-    if (!user && !inAuth) router.replace('/login');
-    if (user && inAuth) router.replace(homeHrefForRole(user));
+    const inBranch = (segments[0] as string) === 'branch';
+    if (!user) {
+      if (!inAuth) router.replace('/login');
+      return;
+    }
+    // Quien opera más de una sucursal elige antes de entrar a cualquier pantalla.
+    if (user.requires_branch_selection) {
+      if (!inBranch) router.replace('/branch' as Href);
+      return;
+    }
+    if (inAuth) router.replace(homeHrefForRole(user));
   }, [user, loading, fontsReady, segments, router]);
 
   if (loading || !fontsReady) {
@@ -67,7 +77,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const segments = useSegments();
-  const onLogin = segments[0] === 'login';
+  const onLogin = segments[0] === 'login' || (segments[0] as string) === 'branch';
 
   return (
     <MosaicBackground>
@@ -93,6 +103,8 @@ export default function RootLayout() {
                 }}
               >
                 <Stack.Screen name="login" />
+                <Stack.Screen name="branch" />
+                <Stack.Screen name="stock/reset" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="order/[id]" options={{ ...stackHeader, title: 'Pedido' }} />
                 <Stack.Screen name="table/[id]" options={{ ...stackHeader, title: 'Mesa' }} />

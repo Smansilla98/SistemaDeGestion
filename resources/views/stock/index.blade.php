@@ -33,6 +33,11 @@
                 <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
             </form>
         </div>
+        @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO'], true))
+        <a href="{{ route('stock.reset.index') }}" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-flag"></i> Puesta a punto
+        </a>
+        @endif
         <a href="{{ route('stock.movements') }}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-list-ul"></i> Ver Movimientos
         </a>

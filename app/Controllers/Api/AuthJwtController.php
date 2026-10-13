@@ -99,6 +99,37 @@ final class AuthJwtController extends Controller
             return ApiResponse::error('No autenticado', 401, 'UNAUTHENTICATED');
         }
 
-        return ApiResponse::success($auth->me($user));
+        return ApiResponse::success($auth->me($user, (bool) $request->attributes->get('branch_selected', false)));
+    }
+
+    public function selectBranch(Request $request, JwtAuthService $auth): JsonResponse
+    {
+        $validated = $request->validate([
+            'restaurant_id' => ['required', 'integer'],
+            'refresh_token' => ['nullable', 'string'],
+        ]);
+
+        $user = $request->user();
+        if ($user === null) {
+            return ApiResponse::error('No autenticado', 401, 'UNAUTHENTICATED');
+        }
+
+        try {
+            $payload = $auth->selectBranch(
+                $user,
+                (int) $validated['restaurant_id'],
+                $validated['refresh_token'] ?? null,
+                $request
+            );
+        } catch (ApiException $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode(),
+                $e->getErrorCode(),
+                $e->getErrors()
+            );
+        }
+
+        return ApiResponse::success($payload->toArray());
     }
 }

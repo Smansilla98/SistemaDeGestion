@@ -46,6 +46,8 @@ const BI_TO_ION: Record<string, Ion> = {
   funnel: 'filter-outline',
   pencil: 'pencil-outline',
   trash: 'trash-outline',
+  shop: 'storefront-outline',
+  flag: 'flag-outline',
 };
 
 export function biToIon(bi: string): Ion {

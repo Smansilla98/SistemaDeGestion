@@ -1,631 +1,383 @@
-@extends('layouts.app')
-
-@section('title', 'KDS - Kitchen Display System')
-
-@section('content')
-<style>
-    .kds-container {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-        min-height: calc(100vh - 70px);
-        padding: 2rem;
-    }
-
-    .kds-header {
-        background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
-        color: white;
-        padding: 1.5rem 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(30, 128, 129, 0.3);
-    }
-
-    .kds-header h1 {
-        margin: 0;
-        font-size: 2rem;
-        font-weight: 700;
-    }
-
-    .kds-filters {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-    }
-
-    .kds-filter-btn {
-        padding: 0.75rem 1.5rem;
-        border: 2px solid var(--conurbania-primary);
-        background: white;
-        color: var(--conurbania-primary);
-        border-radius: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .kds-filter-btn.active {
-        background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary));
-        color: white;
-        border-color: transparent;
-        box-shadow: 0 4px 15px rgba(30, 128, 129, 0.3);
-    }
-
-    .kds-columns {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .kds-column {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        min-height: 600px;
-    }
-
-    .kds-column-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 1rem;
-        margin-bottom: 1.5rem;
-        border-bottom: 3px solid;
-    }
-
-    .kds-column-header.pending {
-        border-color: #ffc107;
-        color: #856404;
-    }
-
-    .kds-column-header.preparing {
-        border-color: #fd7e14;
-        color: #843505;
-    }
-
-    .kds-column-header.ready {
-        border-color: #28a745;
-        color: #155724;
-    }
-
-    .kds-column-header h3 {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 700;
-    }
-
-    .kds-badge {
-        background: rgba(0, 0, 0, 0.1);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .kds-order-card {
-        background: white;
-        border: 3px solid;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .kds-order-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 6px;
-        height: 100%;
-        background: currentColor;
-    }
-
-    .kds-order-card.pending {
-        border-color: #ffc107;
-        color: #856404;
-    }
-
-    .kds-order-card.pending.new {
-        animation: pulse 2s infinite;
-        border-color: #ff9800;
-        box-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
-    }
-
-    .kds-order-card.preparing {
-        border-color: #fd7e14;
-        color: #843505;
-    }
-
-    .kds-order-card.ready {
-        border-color: #28a745;
-        color: #155724;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-    }
-
-    .kds-order-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .kds-order-info h4 {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 700;
-    }
-
-    .kds-order-meta {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: right;
-    }
-
-    .kds-time-badge {
-        background: rgba(0, 0, 0, 0.1);
-        padding: 0.5rem 1rem;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .kds-time-badge.urgent {
-        background: #dc3545;
-        color: white;
-        animation: blink 1s infinite;
-    }
-
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-    }
-
-    .kds-items-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .kds-item {
-        background: rgba(0, 0, 0, 0.03);
-        border-radius: 12px;
-        padding: 1rem;
-        border-left: 4px solid;
-        transition: all 0.3s ease;
-    }
-
-    .kds-item.pending {
-        border-left-color: #ffc107;
-    }
-
-    .kds-item.preparing {
-        border-left-color: #fd7e14;
-    }
-
-    .kds-item.ready {
-        border-left-color: #28a745;
-    }
-
-    .kds-item.entregado {
-        border-left-color: #6c757d;
-        opacity: 0.6;
-    }
-
-    .kds-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 0.5rem;
-    }
-
-    .kds-item-name {
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
-
-    .kds-item-qty {
-        background: rgba(0, 0, 0, 0.1);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 1rem;
-    }
-
-    .kds-item-obs {
-        font-size: 0.9rem;
-        color: #6c757d;
-        font-style: italic;
-        margin-top: 0.5rem;
-    }
-
-    .kds-item-status {
-        margin-top: 0.75rem;
-    }
-
-    .kds-status-select {
-        width: 100%;
-        padding: 0.75rem;
-        border: 2px solid;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .kds-status-select.pending {
-        border-color: #ffc107;
-        background: rgba(255, 193, 7, 0.1);
-    }
-
-    .kds-status-select.preparing {
-        border-color: #fd7e14;
-        background: rgba(253, 126, 20, 0.1);
-    }
-
-    .kds-status-select.ready {
-        border-color: #28a745;
-        background: rgba(40, 167, 69, 0.1);
-    }
-
-    .kds-empty {
-        text-align: center;
-        padding: 3rem;
-        color: #6c757d;
-    }
-
-    .kds-empty i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.3;
-    }
-
-    .kds-auto-refresh {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        background: white;
-        padding: 1rem 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        z-index: 100;
-    }
-
-    .kds-auto-refresh-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #28a745;
-        animation: pulse-dot 2s infinite;
-    }
-
-    @keyframes pulse-dot {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(1.2); }
-    }
-
-    @media (max-width: 768px) {
-        .kds-columns {
-            grid-template-columns: 1fr;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cocina - {{ config('app.name', 'Al Toque') }}</title>
+    @include('partials.favicon')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg: #0e1416;
+            --panel: #172124;
+            --panel-2: #1f2c30;
+            --line: #2c3d42;
+            --ink: #f2f6f7;
+            --muted: #9db0b5;
+            --new: #3aa0b3;
+            --prep: #f0a72e;
+            --ready: #37b36b;
+            --late: #e5484d;
         }
-    }
-</style>
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-<div class="kds-container">
-    <div class="kds-header">
-        <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-fire"></i> Kitchen Display System (KDS)</h1>
-        <p class="mb-0" style="opacity: 0.9;">Gestión de pedidos en tiempo real</p>
-    </div>
+        .kd-top {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 12px 20px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+        .kd-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+        .kd-clock { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .kd-counts { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+        .kd-count {
+            display: flex; align-items: baseline; gap: 8px;
+            padding: 6px 14px; border-radius: 12px;
+            background: var(--panel-2); border-left: 6px solid var(--muted);
+            font-weight: 600; color: var(--muted);
+        }
+        .kd-count strong { font-size: 1.7rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .kd-count.new { border-left-color: var(--new); }
+        .kd-count.prep { border-left-color: var(--prep); }
+        .kd-count.ready { border-left-color: var(--ready); }
 
-    <div class="kds-filters">
-        <button class="kds-filter-btn active" data-filter="all" onclick="filterKDS('all')">
-            <i class="bi bi-list-ul"></i> Todos
-        </button>
-        <button class="kds-filter-btn" data-filter="pending" onclick="filterKDS('pending')">
-            <i class="bi bi-clock"></i> Pendientes
-        </button>
-        <button class="kds-filter-btn" data-filter="preparing" onclick="filterKDS('preparing')">
-            <i class="bi bi-gear"></i> En Preparación
-        </button>
-        <button class="kds-filter-btn" data-filter="ready" onclick="filterKDS('ready')">
-            <i class="bi bi-check-circle"></i> Listos
-        </button>
-    </div>
+        .kd-status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.95rem; }
+        .kd-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ready); }
+        .kd-status.offline { color: #ffb4b6; font-weight: 700; }
+        .kd-status.offline .kd-dot { background: var(--late); animation: kd-blink 1s infinite; }
+        .kd-tools { display: flex; gap: 6px; }
+        .kd-tool {
+            background: transparent; border: 1px solid var(--line); color: var(--muted);
+            border-radius: 10px; padding: 8px 12px; font-size: 1rem; cursor: pointer;
+        }
+        .kd-tool:hover, .kd-tool:focus-visible { color: var(--ink); border-color: var(--muted); outline: none; }
+        .kd-tool[aria-pressed="true"] { color: var(--ink); background: var(--panel-2); }
 
-    <div class="kds-columns">
-        <!-- Columna: Pendientes -->
-        <div class="kds-column" data-column="pending">
-            <div class="kds-column-header pending">
-                <h3><i class="bi bi-clock-history"></i> Pendientes</h3>
-                <span class="kds-badge" id="pending-count" data-kds-count="ENVIADO">0</span>
-            </div>
-            <div class="kds-orders-container" id="pending-orders">
-                @if(isset($orders['ENVIADO']) && $orders['ENVIADO']->count() > 0)
-                    @foreach($orders['ENVIADO']->sortBy('sent_at') as $order)
-                        @include('kitchen.partials.order-card', ['order' => $order, 'status' => 'pending'])
-                    @endforeach
-                @else
-                    <div class="kds-empty">
-                        <i class="bi bi-inbox"></i>
-                        <p>No hay pedidos pendientes</p>
-                    </div>
-                @endif
-            </div>
+        .kd-board {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 18px;
+            align-content: start;
+        }
+
+        .kd-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-top: 10px solid var(--new);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .kd-card.prep { border-top-color: var(--prep); }
+        .kd-card.ready { border-top-color: var(--ready); }
+        .kd-card.late { border-color: var(--late); border-top-color: var(--late); }
+        .kd-card.fresh { animation: kd-flash 1.2s ease-in-out 4; }
+
+        .kd-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .kd-place { font-size: 2.1rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+        .kd-meta { color: var(--muted); font-size: 1rem; margin-top: 4px; }
+        .kd-timer {
+            font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums;
+            padding: 4px 12px; border-radius: 10px; background: var(--panel-2); white-space: nowrap;
+        }
+        .kd-timer.warn { background: var(--prep); color: #1b1300; }
+        .kd-timer.late { background: var(--late); color: #fff; }
+        .kd-chip {
+            display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+            background: var(--panel-2); color: var(--ink);
+        }
+
+        .kd-note {
+            background: #3a2f12; color: #ffe2a3; border-radius: 10px;
+            padding: 8px 12px; font-size: 1.1rem; font-weight: 600;
+        }
+        .kd-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+        .kd-item { display: flex; gap: 14px; align-items: flex-start; padding-top: 10px; border-top: 1px solid var(--line); }
+        .kd-item:first-child { border-top: 0; padding-top: 0; }
+        .kd-qty {
+            min-width: 58px; text-align: center; font-size: 1.9rem; font-weight: 800;
+            background: var(--panel-2); border-radius: 10px; padding: 2px 8px; font-variant-numeric: tabular-nums;
+        }
+        .kd-name { font-size: 1.55rem; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+        .kd-mods { color: #8fd3e0; font-size: 1.2rem; font-weight: 600; margin-top: 2px; }
+        .kd-obs { color: #ffe2a3; font-size: 1.1rem; font-weight: 600; margin-top: 2px; }
+        .kd-item.done .kd-name, .kd-item.done .kd-mods { color: var(--muted); text-decoration: line-through; }
+        .kd-item.done .kd-qty { color: var(--muted); }
+
+        .kd-empty {
+            grid-column: 1 / -1;
+            text-align: center; color: var(--muted);
+            padding: 12vh 20px; font-size: 1.8rem; font-weight: 600;
+        }
+        .kd-empty i { display: block; font-size: 5rem; margin-bottom: 12px; opacity: 0.5; }
+
+        @keyframes kd-blink { 50% { opacity: 0.3; } }
+        @keyframes kd-flash { 50% { background: #24424a; } }
+        @media (prefers-reduced-motion: reduce) {
+            .kd-card.fresh, .kd-status.offline .kd-dot { animation: none; }
+        }
+        @media (max-width: 720px) {
+            .kd-board { grid-template-columns: 1fr; padding: 12px; }
+            .kd-counts { margin-left: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header class="kd-top">
+        <div class="kd-title"><i class="bi bi-fire"></i> Cocina</div>
+        <div class="kd-clock" id="kdClock" aria-label="Hora actual">--:--</div>
+
+        <div class="kd-counts" aria-live="polite">
+            <div class="kd-count new"><strong id="kdCountNew">0</strong> Nuevos</div>
+            <div class="kd-count prep"><strong id="kdCountPrep">0</strong> En preparación</div>
+            <div class="kd-count ready"><strong id="kdCountReady">0</strong> Listos</div>
         </div>
 
-        <!-- Columna: En Preparación -->
-        <div class="kds-column" data-column="preparing">
-            <div class="kds-column-header preparing">
-                <h3><i class="bi bi-gear-fill"></i> En Preparación</h3>
-                <span class="kds-badge" id="preparing-count" data-kds-count="EN_PREPARACION">0</span>
-            </div>
-            <div class="kds-orders-container" id="preparing-orders">
-                @if(isset($orders['EN_PREPARACION']) && $orders['EN_PREPARACION']->count() > 0)
-                    @foreach($orders['EN_PREPARACION']->sortBy('sent_at') as $order)
-                        @include('kitchen.partials.order-card', ['order' => $order, 'status' => 'preparing'])
-                    @endforeach
-                @else
-                    <div class="kds-empty">
-                        <i class="bi bi-inbox"></i>
-                        <p>No hay pedidos en preparación</p>
-                    </div>
-                @endif
-            </div>
+        <div class="kd-status" id="kdStatus" role="status">
+            <span class="kd-dot"></span>
+            <span id="kdStatusText">Conectando…</span>
         </div>
 
-        <!-- Columna: Listos -->
-        <div class="kds-column" data-column="ready">
-            <div class="kds-column-header ready">
-                <h3><i class="bi bi-check-circle-fill"></i> Listos</h3>
-                <span class="kds-badge" id="ready-count" data-kds-count="LISTO">0</span>
-            </div>
-            <div class="kds-orders-container" id="ready-orders">
-                @if(isset($orders['LISTO']) && $orders['LISTO']->count() > 0)
-                    @foreach($orders['LISTO']->sortBy('sent_at') as $order)
-                        @include('kitchen.partials.order-card', ['order' => $order, 'status' => 'ready'])
-                    @endforeach
-                @else
-                    <div class="kds-empty">
-                        <i class="bi bi-inbox"></i>
-                        <p>No hay pedidos listos</p>
-                    </div>
-                @endif
-            </div>
+        <div class="kd-tools">
+            <button type="button" class="kd-tool" id="kdSound" aria-pressed="false" title="Avisar con sonido cuando entra un pedido">
+                <i class="bi bi-volume-mute"></i>
+            </button>
+            <button type="button" class="kd-tool" id="kdFullscreen" title="Pantalla completa">
+                <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                @csrf
+                <button type="submit" class="kd-tool" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
+            </form>
         </div>
-    </div>
+    </header>
 
-    <div class="kds-auto-refresh">
-        <div class="kds-auto-refresh-indicator"></div>
-        <span>Actualización automática activa</span>
-    </div>
-</div>
+    <main class="kd-board" id="kdBoard" aria-label="Pedidos en cocina">
+        <div class="kd-empty"><i class="bi bi-hourglass-split"></i>Cargando pedidos…</div>
+    </main>
 
-@push('scripts')
-<script>
-let lastUpdateTime = Date.now();
-let autoRefreshInterval;
+    <script>
+    (function () {
+        const BOARD_URL = @json($boardUrl);
+        const REFRESH_MS = @json($refreshSeconds) * 1000;
+        const WARN_MIN = 10;
+        const LATE_MIN = 15;
+        const STATUS_LABEL = { ENVIADO: 'NUEVO', EN_PREPARACION: 'EN PREPARACIÓN', LISTO: 'LISTO' };
+        const STATUS_CLASS = { ENVIADO: 'new', EN_PREPARACION: 'prep', LISTO: 'ready' };
 
-// Calcular tiempo transcurrido
-function getElapsedTime(sentAt) {
-    if (!sentAt) return '0 min';
-    const sent = new Date(sentAt);
-    const now = new Date();
-    const diff = Math.floor((now - sent) / 60000); // minutos
-    if (diff < 1) return '< 1 min';
-    if (diff < 60) return `${diff} min`;
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-    return `${hours}h ${mins}m`;
-}
+        const board = document.getElementById('kdBoard');
+        const statusBox = document.getElementById('kdStatus');
+        const statusText = document.getElementById('kdStatusText');
 
-// Actualizar contadores
-function updateCounters() {
-    const pending = document.querySelectorAll('[data-column="pending"] .kds-order-card').length;
-    const preparing = document.querySelectorAll('[data-column="preparing"] .kds-order-card').length;
-    const ready = document.querySelectorAll('[data-column="ready"] .kds-order-card').length;
-    
-    document.getElementById('pending-count').textContent = pending;
-    document.getElementById('preparing-count').textContent = preparing;
-    document.getElementById('ready-count').textContent = ready;
-}
+        let orders = [];
+        let knownIds = null;      // null hasta la primera carga: no avisar por lo que ya estaba
+        let freshUntil = {};      // id de pedido -> hasta cuándo resaltarlo
+        let lastOkAt = null;
+        let clockOffset = 0;      // diferencia reloj servidor - reloj de la pantalla
+        let soundOn = false;
+        let audioCtx = null;
 
-// Filtrar por estado
-function filterKDS(filter) {
-    document.querySelectorAll('.kds-filter-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.closest('.kds-filter-btn').classList.add('active');
-    
-    document.querySelectorAll('.kds-column').forEach(col => {
-        if (filter === 'all') {
-            col.style.display = '';
-        } else {
-            col.style.display = col.dataset.column === filter ? '' : 'none';
-        }
-    });
-}
-
-// Actualizar estado de item
-document.addEventListener('change', async function(e) {
-    if (!e.target.classList.contains('kds-status-select')) return;
-    
-    const select = e.target;
-    const form = select.closest('form');
-    const itemId = form.dataset.itemId;
-    const newStatus = select.value;
-    const itemName = form.dataset.itemName || 'Item';
-    const tableName = form.dataset.tableName || 'Mesa';
-    
-    // Deshabilitar select mientras se procesa
-    select.disabled = true;
-    
-    try {
-        const res = await fetch(form.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({ status: newStatus }).toString(),
-        });
-
-        if (!res.ok) {
-            throw new Error('No se pudo actualizar el estado');
+        function el(tag, className, text) {
+            const node = document.createElement(tag);
+            if (className) node.className = className;
+            if (text !== undefined && text !== null) node.textContent = text;
+            return node;
         }
 
-        const data = await res.json();
-        
-        // Actualizar clase del item
-        const itemCard = select.closest('.kds-item');
-        itemCard.className = `kds-item ${newStatus.toLowerCase()}`;
-        select.className = `kds-status-select ${newStatus.toLowerCase()}`;
+        function now() { return Date.now() + clockOffset; }
 
-        // Mostrar toast según estado
-        if (newStatus === 'ENTREGADO') {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: `✅ ${itemName} entregado en Mesa ${tableName}`,
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                background: '#e6ffed',
-                color: '#4e8d99',
-                iconColor: '#4e8d99',
+        function elapsed(sentAt) {
+            const start = Date.parse(sentAt);
+            if (Number.isNaN(start)) return { minutes: 0, label: '0:00' };
+            const seconds = Math.max(0, Math.floor((now() - start) / 1000));
+            const minutes = Math.floor(seconds / 60);
+            const label = minutes >= 60
+                ? `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`
+                : `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+            return { minutes, label };
+        }
+
+        function renderCard(order) {
+            const time = elapsed(order.sent_at);
+            const card = el('article', 'kd-card ' + (STATUS_CLASS[order.status] || 'new'));
+            if (time.minutes >= LATE_MIN && order.status !== 'LISTO') card.classList.add('late');
+            if ((freshUntil[order.id] || 0) > Date.now()) card.classList.add('fresh');
+
+            const head = el('div', 'kd-head');
+            const left = el('div');
+            left.appendChild(el('div', 'kd-place', order.place || 'Barra'));
+            const meta = [order.number, order.sector, order.waiter].filter(Boolean).join(' · ');
+            left.appendChild(el('div', 'kd-meta', meta));
+            left.appendChild(el('span', 'kd-chip', STATUS_LABEL[order.status] || order.status));
+            head.appendChild(left);
+
+            const timer = el('div', 'kd-timer', time.label);
+            timer.dataset.sentAt = order.sent_at || '';
+            timer.dataset.status = order.status;
+            if (order.status !== 'LISTO') {
+                if (time.minutes >= LATE_MIN) timer.classList.add('late');
+                else if (time.minutes >= WARN_MIN) timer.classList.add('warn');
+            }
+            head.appendChild(timer);
+            card.appendChild(head);
+
+            if (order.observations) card.appendChild(el('div', 'kd-note', order.observations));
+
+            const list = el('ul', 'kd-items');
+            (order.items || []).forEach((item) => {
+                const row = el('li', 'kd-item');
+                if (item.status === 'LISTO' || item.status === 'ENTREGADO') row.classList.add('done');
+                row.appendChild(el('div', 'kd-qty', `${item.quantity}×`));
+                const body = el('div');
+                body.appendChild(el('div', 'kd-name', item.name || 'Producto'));
+                if ((item.modifiers || []).length) body.appendChild(el('div', 'kd-mods', item.modifiers.join(' · ')));
+                if (item.observations) body.appendChild(el('div', 'kd-obs', item.observations));
+                row.appendChild(body);
+                list.appendChild(row);
             });
-            
-            // Ocultar item entregado con animación
-            setTimeout(() => {
-                itemCard.style.opacity = '0';
-                itemCard.style.transform = 'translateX(-20px)';
-                setTimeout(() => itemCard.remove(), 300);
-            }, 1000);
-        } else {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: `Estado actualizado: ${itemName}`,
-                text: `Nuevo estado: ${newStatus}`,
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true,
-                background: '#e6ffed',
-                color: '#4e8d99',
-                iconColor: '#4e8d99',
+            card.appendChild(list);
+
+            return card;
+        }
+
+        function render() {
+            board.replaceChildren();
+            if (!orders.length) {
+                const empty = el('div', 'kd-empty');
+                empty.appendChild(el('i', 'bi bi-check2-circle'));
+                empty.appendChild(document.createTextNode('Cocina al día: no hay pedidos pendientes'));
+                board.appendChild(empty);
+                return;
+            }
+            // Lo más viejo primero: es lo que hay que sacar antes.
+            orders.slice()
+                .sort((a, b) => Date.parse(a.sent_at) - Date.parse(b.sent_at))
+                .forEach((order) => board.appendChild(renderCard(order)));
+        }
+
+        function tickTimers() {
+            document.querySelectorAll('.kd-timer').forEach((timer) => {
+                const time = elapsed(timer.dataset.sentAt);
+                timer.textContent = time.label;
+                if (timer.dataset.status === 'LISTO') return;
+                timer.classList.toggle('late', time.minutes >= LATE_MIN);
+                timer.classList.toggle('warn', time.minutes >= WARN_MIN && time.minutes < LATE_MIN);
+                timer.closest('.kd-card').classList.toggle('late', time.minutes >= LATE_MIN);
             });
-        }
-        
-        updateCounters();
-    } catch (err) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo actualizar el estado del item.',
-            confirmButtonColor: '#c94a2d',
-        });
-        // Revertir selección
-        select.value = select.dataset.previousValue;
-    } finally {
-        select.disabled = false;
-    }
-});
 
-// Auto-refresh suave cada 15s vía JSON (reload solo si cambió el tablero)
-let lastBoardSignature = null;
-async function refreshKitchenBoardSoft() {
-    try {
-        const url = @json(route('kitchen.board-json')) + (window.location.search || '');
-        const res = await fetch(url, {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.success) return;
+            const clock = new Date(now());
+            document.getElementById('kdClock').textContent =
+                `${String(clock.getHours()).padStart(2, '0')}:${String(clock.getMinutes()).padStart(2, '0')}`;
 
-        // Contadores
-        if (data.counts) {
-            const map = {
-                'ENVIADO': data.counts.ENVIADO || 0,
-                'EN_PREPARACION': data.counts.EN_PREPARACION || 0,
-                'LISTO': data.counts.LISTO || 0,
-            };
-            document.querySelectorAll('[data-kds-count]').forEach(el => {
-                const key = el.getAttribute('data-kds-count');
-                if (key in map) el.textContent = map[key];
-            });
+            if (lastOkAt !== null) {
+                const ago = Math.floor((Date.now() - lastOkAt) / 1000);
+                const offline = ago > (REFRESH_MS / 1000) * 3;
+                statusBox.classList.toggle('offline', offline);
+                statusText.textContent = offline
+                    ? `Sin conexión hace ${ago}s — reintentando`
+                    : 'En vivo';
+            }
         }
 
-        if (lastBoardSignature && data.signature && lastBoardSignature !== data.signature) {
-            // Cambió el set de pedidos: un reload limpio evita DOM stale
-            location.reload();
-            return;
+        function beep() {
+            if (!soundOn || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.6);
         }
-        lastBoardSignature = data.signature;
-    } catch (e) {
-        console.warn('KDS soft refresh falló', e);
-    }
-}
 
-function startAutoRefresh() {
-    autoRefreshInterval = setInterval(() => {
-        const timeSinceLastUpdate = Date.now() - lastUpdateTime;
-        if (timeSinceLastUpdate > 12000) {
-            refreshKitchenBoardSoft();
-        }
-    }, 15000);
-}
-
-// Marcar interacción
-document.addEventListener('mousemove', () => lastUpdateTime = Date.now());
-document.addEventListener('click', () => lastUpdateTime = Date.now());
-document.addEventListener('keypress', () => lastUpdateTime = Date.now());
-
-// Inicializar
-document.addEventListener('DOMContentLoaded', function() {
-    updateCounters();
-    startAutoRefresh();
-    
-    // Actualizar tiempos transcurridos cada minuto
-    setInterval(() => {
-        document.querySelectorAll('.kds-time-badge').forEach(badge => {
-            const sentAt = badge.dataset.sentAt;
-            if (sentAt) {
-                badge.textContent = getElapsedTime(sentAt);
-                const minutes = Math.floor((new Date() - new Date(sentAt)) / 60000);
-                if (minutes > 15) {
-                    badge.classList.add('urgent');
+        async function refresh() {
+            try {
+                const res = await fetch(BOARD_URL, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                });
+                if (res.status === 401 || res.status === 419) {
+                    window.location.href = @json(route('login'));
+                    return;
                 }
-            }
-        });
-    }, 60000);
-    
-    // Marcar pedidos nuevos (menos de 2 minutos)
-    document.querySelectorAll('.kds-order-card').forEach(card => {
-        const sentAt = card.dataset.sentAt;
-        if (sentAt) {
-            const minutes = Math.floor((new Date() - new Date(sentAt)) / 60000);
-            if (minutes < 2) {
-                card.classList.add('new');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data.success) throw new Error('respuesta inválida');
+
+                if (data.server_time) clockOffset = Date.parse(data.server_time) - Date.now();
+
+                const incoming = data.orders || [];
+                const ids = new Set(incoming.map((o) => o.id));
+                if (knownIds !== null) {
+                    const added = incoming.filter((o) => !knownIds.has(o.id));
+                    added.forEach((o) => { freshUntil[o.id] = Date.now() + 6000; });
+                    if (added.length) beep();
+                }
+                knownIds = ids;
+                orders = incoming;
+
+                document.getElementById('kdCountNew').textContent = (data.counts && data.counts.ENVIADO) || 0;
+                document.getElementById('kdCountPrep').textContent = (data.counts && data.counts.EN_PREPARACION) || 0;
+                document.getElementById('kdCountReady').textContent = (data.counts && data.counts.LISTO) || 0;
+
+                lastOkAt = Date.now();
+                render();
+            } catch (e) {
+                // Se conserva el último tablero conocido; tickTimers avisa si la desconexión se alarga.
+                if (lastOkAt === null) statusText.textContent = 'Sin conexión — reintentando';
             }
         }
-    });
-});
-</script>
-@endpush
-@endsection
+
+        // La pantalla no se apaga mientras el tablero esté a la vista.
+        let wakeLock = null;
+        async function keepAwake() {
+            if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { wakeLock = null; }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') { keepAwake(); refresh(); }
+        });
+
+        document.getElementById('kdFullscreen').addEventListener('click', () => {
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen().catch(() => {});
+        });
+
+        document.getElementById('kdSound').addEventListener('click', function () {
+            soundOn = !soundOn;
+            if (soundOn && !audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            this.setAttribute('aria-pressed', String(soundOn));
+            this.firstElementChild.className = soundOn ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+            beep();
+        });
+
+        keepAwake();
+        refresh();
+        setInterval(refresh, REFRESH_MS);
+        setInterval(tickTimers, 1000);
+        tickTimers();
+    })();
+    </script>
+</body>
+</html>

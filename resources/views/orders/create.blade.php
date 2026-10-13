@@ -3,6 +3,7 @@
 @section('title', 'Nuevo Pedido')
 
 @section('content')
+@include('partials.variant-picker')
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-receipt"></i> Nuevo Pedido</h1>
@@ -117,13 +118,17 @@
 let orderItems = [];
 let itemCounter = 0;
 
-function addProduct(productId, productName, productPrice) {
+async function addProduct(productId, productName, productPrice) {
+    const choice = await AlToqueVariants.resolve(productId, productName, productPrice);
+    if (!choice) return;
+
     itemCounter++;
     const item = {
         id: itemCounter,
         product_id: productId,
-        name: productName,
-        price: productPrice,
+        variant_id: choice.variantId,
+        name: choice.name,
+        price: choice.price,
         quantity: 1
     };
     orderItems.push(item);
@@ -233,6 +238,14 @@ function updateItemsList() {
         quantityInput.name = `items[${index}][quantity]`;
         quantityInput.value = item.quantity;
         itemsContainer.appendChild(quantityInput);
+
+        if (item.variant_id) {
+            const variantInput = document.createElement('input');
+            variantInput.type = 'hidden';
+            variantInput.name = `items[${index}][variant_id]`;
+            variantInput.value = item.variant_id;
+            itemsContainer.appendChild(variantInput);
+        }
     });
 }
 
@@ -259,7 +272,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             table_id: document.getElementById('table_id').value,
             observations: document.getElementById('observations').value,
             items: orderItems.map(function(i) {
-                return { product_id: i.product_id, quantity: parseInt(i.quantity) || 1 };
+                return { product_id: i.product_id, variant_id: i.variant_id || null, quantity: parseInt(i.quantity) || 1 };
             }),
             _token: document.querySelector('input[name="_token"]').value
         };

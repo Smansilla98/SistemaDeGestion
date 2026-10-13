@@ -180,6 +180,7 @@ class OrderController extends Controller
             'observations' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -311,6 +312,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'old_item_ids' => 'required|string',
             'new_product_id' => 'required|exists:products,id',
+            'new_variant_id' => 'nullable|integer',
             'quantity' => 'required|integer|min:1',
             'observations' => 'nullable|string|max:1000',
         ]);
@@ -344,7 +346,7 @@ class OrderController extends Controller
                     'product_id' => $product->id,
                     'quantity' => (int) $validated['quantity'],
                     'observations' => $validated['observations'] ?? null,
-                    // Nota: no enviamos modificadores para mantenerlo simple; si querés, se puede extender.
+                    'variant_id' => $validated['new_variant_id'] ?? null,
                 ];
 
                 $this->orderService->addItem($order, $itemData);
@@ -377,6 +379,7 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|integer',
             'quantity' => 'required|integer|min:1',
             'observations' => 'nullable|string',
             'modifiers' => 'nullable|array',
@@ -805,6 +808,7 @@ class OrderController extends Controller
             'idempotency_key' => 'nullable|string|max:26',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.observations' => 'nullable|string|max:500',
         ]);
@@ -1128,6 +1132,7 @@ class OrderController extends Controller
                     }
                 },
             ],
+            'items.*.variant_id' => 'nullable|integer',
             'items.*.quantity' => 'required|integer|min:1|max:999',
             'items.*.observations' => 'nullable|string|max:500',
             'payments' => 'required|array|min:1',

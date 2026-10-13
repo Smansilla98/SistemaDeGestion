@@ -13,6 +13,9 @@ import type {
   PaymentMethodConfig,
   ProductRow,
   ProductsReport,
+  StockResetPreview,
+  StockResetResult,
+  TableSort,
   SalesReport,
   StaffReport,
   TableDetail,
@@ -144,6 +147,13 @@ export const api = {
 
   me: () => apiRequest<import('./types').ApiUser>('/auth/me'),
 
+  /** Cambia la sucursal activa: el servidor devuelve un par de tokens nuevo atado a ella. */
+  selectBranch: (restaurantId: number, refreshToken: string | null) =>
+    apiRequest<AuthPayload>('/auth/select-branch', {
+      method: 'POST',
+      body: JSON.stringify({ restaurant_id: restaurantId, refresh_token: refreshToken }),
+    }),
+
   logout: async (refreshToken: string | null) => {
     try {
       await apiRequest(
@@ -159,10 +169,13 @@ export const api = {
     }
   },
 
-  tables: (sectorId?: number) =>
-    apiRequest<TableRow[]>(
-      sectorId != null ? `/tables?sector_id=${sectorId}` : '/tables',
-    ).then((d) => asList<TableRow>(d)),
+  tables: (sectorId?: number, sort?: TableSort) => {
+    const qs = new URLSearchParams();
+    if (sectorId != null) qs.set('sector_id', String(sectorId));
+    if (sort) qs.set('sort', sort);
+    const q = qs.toString();
+    return apiRequest<TableRow[]>(`/tables${q ? `?${q}` : ''}`).then((d) => asList<TableRow>(d));
+  },
 
   tablesLayout: (sectorId?: number) => {
     const q = sectorId != null ? `?sector_id=${sectorId}` : '';
@@ -349,7 +362,10 @@ export const api = {
       body: JSON.stringify({ status, note }),
     }),
 
-  addOrderItem: (id: number, body: { product_id: number; quantity: number; observations?: string }) =>
+  addOrderItem: (
+    id: number,
+    body: { product_id: number; variant_id?: number | null; quantity: number; observations?: string },
+  ) =>
     apiRequest<{ item: unknown; order: OrderRow }>(`/orders/${id}/items`, {
       method: 'POST',
       body: JSON.stringify(body),
@@ -363,7 +379,13 @@ export const api = {
 
   replaceOrderItem: (
     id: number,
-    body: { order_item_id: number; product_id: number; quantity?: number; observations?: string },
+    body: {
+      order_item_id: number;
+      product_id: number;
+      variant_id?: number | null;
+      quantity?: number;
+      observations?: string;
+    },
   ) =>
     apiRequest<{ item: unknown; order: OrderRow }>(`/orders/${id}/items/replace`, {
       method: 'POST',
@@ -386,12 +408,19 @@ export const api = {
     apiRequest<{
       counts: Record<string, number>;
       orders: Array<Record<string, unknown>>;
+      server_time?: string;
     }>('/kitchen/board'),
 
-  kitchenItemStatus: (itemId: number, status: string) =>
-    apiRequest(`/kitchen/items/${itemId}/status`, {
+  stockResetPreview: () => apiRequest<StockResetPreview>('/stock/reset'),
+
+  stockReset: (body: {
+    counts: Array<{ product_id: number; quantity: number }>;
+    confirmation: string;
+    notes?: string;
+  }) =>
+    apiRequest<StockResetResult>('/stock/reset', {
       method: 'POST',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     }),
 
   dashboard: () => apiRequest<import('./types').DashboardPayload>('/dashboard'),

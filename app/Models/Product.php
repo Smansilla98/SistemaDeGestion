@@ -26,6 +26,7 @@ class Product extends Model
         'is_active',
         'type', // PRODUCT o INSUMO
         'unit', // unidad de medida para insumos
+        'serving_size', // medida del vaso (cc/ml) para tragos armados por proporción
         'unit_cost', // costo unitario para insumos
         'supplier_id', // proveedor del insumo
     ];
@@ -36,6 +37,7 @@ class Product extends Model
         'unit_cost' => 'decimal:2',
         'has_stock' => 'boolean',
         'stock_minimum' => 'integer',
+        'serving_size' => 'integer',
         'is_active' => 'boolean',
     ];
 
@@ -61,6 +63,26 @@ class Product extends Model
     public function modifiers(): HasMany
     {
         return $this->hasMany(ProductModifier::class);
+    }
+
+    /**
+     * Variantes activas (ej. sabores de una pizza): definen el precio de venta.
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductModifier::class)
+            ->where('kind', ProductModifier::KIND_VARIANT)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name');
+    }
+
+    /**
+     * Si tiene variantes activas, no se puede vender sin elegir una.
+     */
+    public function hasVariants(): bool
+    {
+        return $this->variants()->exists();
     }
 
     /**
@@ -104,7 +126,7 @@ class Product extends Model
     public function ingredients(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_ingredients', 'product_id', 'ingredient_id')
-            ->withPivot('quantity', 'unit')
+            ->withPivot('quantity', 'percentage', 'unit')
             ->withTimestamps();
     }
 
@@ -114,7 +136,7 @@ class Product extends Model
     public function usedInProducts(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_ingredients', 'ingredient_id', 'product_id')
-            ->withPivot('quantity', 'unit')
+            ->withPivot('quantity', 'percentage', 'unit')
             ->withTimestamps();
     }
 
