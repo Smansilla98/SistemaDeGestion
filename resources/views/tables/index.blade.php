@@ -1157,7 +1157,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }))
             };
 
-            var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+            // Sin 'noopener': con esa opción window.open devuelve null y la ventana en blanco
+            // no se puede ni redirigir al ticket ni cerrar si el pedido falla.
+            var printWin = window.open('', 'kitchen_print', 'width=450,height=700');
+            try { if (printWin) printWin.opener = null; } catch (e) {}
 
             try {
                 const res = await fetch(`/tables/${tableId}/orders`, {
@@ -1184,7 +1187,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     printWin.location.href = data.kitchen_ticket_url;
                     setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
                 } else if (data.kitchen_ticket_url) {
-                    var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+                    var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'width=450,height=700');
+                    try { if (w) w.opener = null; } catch (e) {}
                     if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
                 }
 

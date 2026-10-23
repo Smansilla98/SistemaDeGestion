@@ -68,8 +68,8 @@ class StockServiceTest extends TestCase
     {
         $stock = $this->crearStock(quantity: 5, minimum: 1);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('No se puede tener stock negativo');
+        $this->expectException(\App\Exceptions\StockInsuficienteException::class);
+        $this->expectExceptionMessage('Stock insuficiente. Disponible: 5, a descontar: 10');
 
         $this->stockService->reduceStock($stock, 10);
     }

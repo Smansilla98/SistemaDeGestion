@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\StockInsuficienteException;
 use App\Models\Product;
 use App\Models\ProductModifier;
 use App\Models\Purchase;
@@ -38,7 +39,7 @@ class StockService
             };
 
             if ($newStock < 0) {
-                throw new \Exception('No se puede tener stock negativo');
+                throw new StockInsuficienteException("Stock insuficiente de '{$product->name}'. Disponible: {$currentStock}, necesario: {$data['quantity']}");
             }
 
             Stock::updateOrCreate(
@@ -112,7 +113,7 @@ class StockService
         }
 
         if ($stock->quantity - $quantity < 0) {
-            throw new \Exception('No se puede tener stock negativo');
+            throw new StockInsuficienteException("Stock insuficiente. Disponible: {$stock->quantity}, a descontar: {$quantity}");
         }
 
         $stock->decrement('quantity', $quantity);
@@ -206,12 +207,12 @@ class StockService
 
             if ($line['from_recipe']) {
                 $unit = $line['unit'];
-                throw new \Exception(
+                throw new StockInsuficienteException(
                     "Stock insuficiente de '{$target->name}'. Disponible: {$current} {$unit}, Necesario: {$required} {$unit}"
                 );
             }
 
-            throw new \Exception(
+            throw new StockInsuficienteException(
                 "Stock insuficiente para '{$target->name}'. Disponible: {$current}, Solicitado: {$required}"
             );
         }
