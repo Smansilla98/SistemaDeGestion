@@ -68,6 +68,13 @@ use App\Http\Controllers\Table\TableController;
 Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
 Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
+// Portada pública: presenta el sistema a quien no inició sesión.
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : view('landing');
+})->name('home');
+
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -96,10 +103,6 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
     Route::get('/entrada/presupuesto.pdf', [\App\Http\Controllers\Entry\EntryController::class, 'quotePdf'])->name('entry.quote.pdf');
 
     // Dashboard
-    Route::get('/', function () {
-        return redirect()->route('dashboard');
-    });
-
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // Notificaciones (campana y listado)
