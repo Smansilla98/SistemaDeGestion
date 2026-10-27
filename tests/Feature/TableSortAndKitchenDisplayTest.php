@@ -58,7 +58,7 @@ it('la web ordena con el mismo criterio y recuerda la elección', function () {
         ->assertSeeInOrder(['data-table-number="2"', 'data-table-number="1"', 'data-table-number="10"'], false);
 });
 
-it('cocina: la pantalla es de solo lectura y se alimenta del tablero JSON', function () {
+it('cocina: la pantalla no usa selects y se alimenta del tablero JSON', function () {
     $table = Table::where('number', '2')->first();
     Order::factory()->create([
         'restaurant_id' => $this->restaurant->id,

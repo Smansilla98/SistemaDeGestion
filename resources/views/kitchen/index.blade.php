@@ -125,6 +125,31 @@
         .kd-item.done .kd-name, .kd-item.done .kd-mods { color: var(--muted); text-decoration: line-through; }
         .kd-item.done .kd-qty { color: var(--muted); }
 
+        .kd-item.can-tap { cursor: pointer; border-radius: 10px; margin: 0 -8px; padding-left: 8px; padding-right: 8px; transition: background .12s; }
+        .kd-item.can-tap:hover, .kd-item.can-tap:focus-visible { background: var(--panel-2); outline: none; }
+        .kd-check { margin-left: auto; align-self: center; flex: 0 0 34px; height: 34px; border-radius: 10px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 1.2rem; color: transparent; }
+        .kd-item.done .kd-check { background: var(--ready); border-color: var(--ready); color: #fff; }
+        .kd-hint { color: var(--muted); font-size: .85rem; margin-top: -4px; }
+
+        .kd-actions { display: flex; gap: 10px; margin-top: auto; padding-top: 4px; }
+        .kd-btn { flex: 1; min-height: 58px; border: 0; border-radius: 14px; font-size: 1.25rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff; transition: transform .1s, filter .1s; }
+        .kd-btn:hover { filter: brightness(1.08); }
+        .kd-btn:active { transform: scale(.98); }
+        .kd-btn:disabled { opacity: .5; cursor: wait; }
+        .kd-btn.start { background: var(--prep); color: #1b1300; }
+        .kd-btn.ready { background: var(--ready); }
+        .kd-btn.deliver { background: var(--new); }
+        .kd-btn.back { flex: 0 0 auto; padding: 0 16px; background: transparent; border: 2px solid var(--line); color: var(--muted); font-size: 1rem; }
+        .kd-btn.back:hover { color: var(--ink); border-color: var(--muted); }
+
+        .kd-card { position: relative; }
+        .kd-undo { position: absolute; inset: 0; border-radius: 16px; background: rgba(14,20,22,.93); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; z-index: 2; }
+        .kd-undo strong { font-size: 1.6rem; display: flex; align-items: center; gap: 10px; color: #8ee0b0; }
+        .kd-undo .kd-btn { flex: 0 0 auto; min-width: 220px; background: #fff; color: #0e1416; }
+        .kd-undo small { color: var(--muted); font-size: 1rem; }
+
+        .kd-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #3a1416; color: #ffd6d7; border: 1px solid var(--late); padding: 12px 18px; border-radius: 12px; font-weight: 700; z-index: 10; display: none; max-width: 90vw; }
+
         .kd-empty {
             grid-column: 1 / -1;
             text-align: center; color: var(--muted);
@@ -174,6 +199,7 @@
         </div>
     </header>
 
+    <div class="kd-toast" id="kdToast" role="alert"></div>
     <main class="kd-board" id="kdBoard" aria-label="Pedidos en cocina">
         <div class="kd-empty"><i class="bi bi-hourglass-split"></i>Cargando pedidos…</div>
     </main>
@@ -186,6 +212,12 @@
         const LATE_MIN = 15;
         const STATUS_LABEL = { ENVIADO: 'NUEVO', EN_PREPARACION: 'EN PREPARACIÓN', LISTO: 'LISTO' };
         const STATUS_CLASS = { ENVIADO: 'new', EN_PREPARACION: 'prep', LISTO: 'ready' };
+        const ORDER_URL = @json(route('kitchen.update-order-status', ['order' => '__ID__']));
+        const ITEM_URL = @json(route('kitchen.update-item-status', ['item' => '__ID__']));
+        const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+        const UNDO_SECONDS = 5;
+        const busy = new Set();      // pedidos con un cambio en curso
+        const pendingDelivery = {};  // id -> { until, timer } mientras se puede deshacer «Entregado»
 
         const board = document.getElementById('kdBoard');
         const statusBox = document.getElementById('kdStatus');
@@ -246,20 +278,160 @@
             if (order.observations) card.appendChild(el('div', 'kd-note', order.observations));
 
             const list = el('ul', 'kd-items');
+            const canTick = order.status !== 'LISTO' && (order.items || []).length > 1;
             (order.items || []).forEach((item) => {
                 const row = el('li', 'kd-item');
-                if (item.status === 'LISTO' || item.status === 'ENTREGADO') row.classList.add('done');
+                const done = item.status === 'LISTO' || item.status === 'ENTREGADO';
+                if (done) row.classList.add('done');
                 row.appendChild(el('div', 'kd-qty', `${item.quantity}×`));
                 const body = el('div');
                 body.appendChild(el('div', 'kd-name', item.name || 'Producto'));
                 if ((item.modifiers || []).length) body.appendChild(el('div', 'kd-mods', item.modifiers.join(' · ')));
                 if (item.observations) body.appendChild(el('div', 'kd-obs', item.observations));
                 row.appendChild(body);
+                if (canTick && item.status !== 'ENTREGADO') {
+                    row.classList.add('can-tap');
+                    row.tabIndex = 0;
+                    row.setAttribute('role', 'button');
+                    row.setAttribute('aria-pressed', String(done));
+                    row.setAttribute('aria-label', `${item.quantity} ${item.name}: ${done ? 'hecho, tocá para volver a pendiente' : 'tocá para marcar hecho'}`);
+                    const check = el('span', 'kd-check');
+                    check.appendChild(el('i', 'bi bi-check-lg'));
+                    row.appendChild(check);
+                    const toggle = () => changeItem(order.id, item.id, done ? 'EN_PREPARACION' : 'LISTO');
+                    row.addEventListener('click', toggle);
+                    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+                }
                 list.appendChild(row);
             });
             card.appendChild(list);
+            if (canTick) card.appendChild(el('div', 'kd-hint', 'Tocá cada plato cuando esté hecho.'));
+
+            card.appendChild(renderActions(order));
+
+            const pending = pendingDelivery[order.id];
+            if (pending) card.appendChild(renderUndo(order, pending));
 
             return card;
+        }
+
+        function button(cls, icon, text, onClick, disabled) {
+            const b = el('button', 'kd-btn ' + cls);
+            b.type = 'button';
+            if (icon) b.appendChild(el('i', 'bi ' + icon));
+            b.appendChild(document.createTextNode(text));
+            b.disabled = !!disabled;
+            b.addEventListener('click', onClick);
+            return b;
+        }
+
+        function renderActions(order) {
+            const box = el('div', 'kd-actions');
+            const isBusy = busy.has(order.id);
+            if (order.status === 'ENVIADO') {
+                box.appendChild(button('start', 'bi-play-fill', 'Empezar', () => changeOrder(order.id, 'EN_PREPARACION'), isBusy));
+                box.appendChild(button('ready', 'bi-check2', 'Listo', () => changeOrder(order.id, 'LISTO'), isBusy));
+            } else if (order.status === 'EN_PREPARACION') {
+                box.appendChild(button('back', 'bi-arrow-counterclockwise', 'Volver', () => changeOrder(order.id, 'ENVIADO'), isBusy));
+                box.appendChild(button('ready', 'bi-check2-circle', 'Listo', () => changeOrder(order.id, 'LISTO'), isBusy));
+            } else if (order.status === 'LISTO') {
+                box.appendChild(button('back', 'bi-arrow-counterclockwise', 'Volver', () => changeOrder(order.id, 'EN_PREPARACION'), isBusy));
+                box.appendChild(button('deliver', 'bi-bag-check', 'Entregado', () => startDelivery(order.id), isBusy));
+            }
+            return box;
+        }
+
+        function renderUndo(order, pending) {
+            const box = el('div', 'kd-undo');
+            const title = el('strong');
+            title.appendChild(el('i', 'bi bi-check-circle-fill'));
+            title.appendChild(document.createTextNode(`${order.place || 'Pedido'} entregado`));
+            box.appendChild(title);
+            const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
+            box.appendChild(button('', 'bi-arrow-counterclockwise', 'Deshacer', () => cancelDelivery(order.id)));
+            const note = el('small', 'kd-undo-count', `Se confirma en ${left} s`);
+            note.dataset.until = String(pending.until);
+            box.appendChild(note);
+            return box;
+        }
+
+        function toast(message) {
+            const t = document.getElementById('kdToast');
+            t.textContent = message;
+            t.style.display = 'block';
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+        }
+
+        async function send(url, method, status) {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ status }),
+            });
+            if (res.status === 401 || res.status === 419) { window.location.href = @json(route('login')); return false; }
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.success === false) throw new Error(data.message || 'No se pudo actualizar.');
+            return true;
+        }
+
+        async function changeOrder(orderId, status) {
+            if (busy.has(orderId)) return;
+            busy.add(orderId);
+            const order = orders.find((o) => o.id === orderId);
+            const previous = order ? order.status : null;
+            if (order) order.status = status;  // se ve al instante; el servidor confirma en el refresco
+            if (status === 'ENTREGADO') orders = orders.filter((o) => o.id !== orderId);
+            render();
+            try {
+                await send(ORDER_URL.replace('__ID__', orderId), 'PUT', status);
+            } catch (e) {
+                if (order && previous) order.status = previous;
+                toast(e.message);
+            } finally {
+                busy.delete(orderId);
+                refresh();
+            }
+        }
+
+        async function changeItem(orderId, itemId, status) {
+            if (busy.has(orderId)) return;
+            busy.add(orderId);
+            const order = orders.find((o) => o.id === orderId);
+            const item = order && (order.items || []).find((i) => i.id === itemId);
+            const previous = item ? item.status : null;
+            if (item) item.status = status;
+            render();
+            try {
+                await send(ITEM_URL.replace('__ID__', itemId), 'POST', status);
+            } catch (e) {
+                if (item && previous) item.status = previous;
+                toast(e.message);
+            } finally {
+                busy.delete(orderId);
+                refresh();
+            }
+        }
+
+        // «Entregado» saca el pedido del tablero y no tiene vuelta atrás:
+        // se espera unos segundos con opción de deshacer antes de confirmarlo.
+        function startDelivery(orderId) {
+            const until = Date.now() + UNDO_SECONDS * 1000;
+            pendingDelivery[orderId] = {
+                until,
+                timer: setTimeout(async () => {
+                    delete pendingDelivery[orderId];
+                    await changeOrder(orderId, 'ENTREGADO');
+                }, UNDO_SECONDS * 1000),
+            };
+            render();
+        }
+
+        function cancelDelivery(orderId) {
+            const pending = pendingDelivery[orderId];
+            if (pending) clearTimeout(pending.timer);
+            delete pendingDelivery[orderId];
+            render();
         }
 
         function render() {
@@ -278,6 +450,10 @@
         }
 
         function tickTimers() {
+            document.querySelectorAll('.kd-undo-count').forEach((n) => {
+                const left = Math.max(0, Math.ceil((Number(n.dataset.until) - Date.now()) / 1000));
+                n.textContent = `Se confirma en ${left} s`;
+            });
             document.querySelectorAll('.kd-timer').forEach((timer) => {
                 const time = elapsed(timer.dataset.sentAt);
                 timer.textContent = time.label;
