@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Kitchen;
 
 use App\Enums\OrderStatus;
+use App\Exceptions\InvalidOrderTransition;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -93,23 +94,39 @@ class KitchenController extends Controller
         ]);
     }
 
+    /**
+     * Cocina tilda un ítem como hecho (LISTO) o lo vuelve a preparación.
+     * El pedido acompaña: arranca la preparación con el primer ítem y pasa a
+     * LISTO (avisando al mozo) cuando no queda ninguno pendiente.
+     */
     public function updateItemStatus(Request $request, OrderItem $item)
     {
         $validated = $request->validate([
             'status' => 'required|in:EN_PREPARACION,LISTO,ENTREGADO',
         ]);
 
-        $this->orderService->updateItemStatus($item, $validated['status']);
-
+        // OrderItem no tiene alcance por local: el pedido sí, así que se valida por él.
         $order = $item->order;
-        $allItemsReady = $order->items()
-            ->where('status', '!=', 'ENTREGADO')
-            ->count() === 0;
+        abort_if($order === null, 404);
 
-        if ($allItemsReady && in_array($order->status, [OrderStatus::EN_PREPARACION->value, OrderStatus::ENVIADO->value], true)) {
-            $order->transitionTo(OrderStatus::LISTO, auth()->user(), 'Ítems listos');
-        } elseif ($order->status === OrderStatus::ENVIADO->value && $validated['status'] === 'EN_PREPARACION') {
-            $order->transitionTo(OrderStatus::EN_PREPARACION, auth()->user(), 'Cocina tomó el pedido');
+        $this->orderService->updateItemStatus($item, $validated['status']);
+        $order->refresh();
+
+        $pending = $order->items()->whereNotIn('status', ['LISTO', 'ENTREGADO'])->count();
+        $current = $order->statusEnum();
+        $actor = auth()->user();
+
+        try {
+            if ($pending === 0 && in_array($current, [OrderStatus::ENVIADO, OrderStatus::EN_PREPARACION], true)) {
+                $order->transitionTo(OrderStatus::LISTO, $actor, 'Todos los ítems listos (KDS)');
+                $this->notifyReady($order, 'LISTO');
+            } elseif ($pending > 0 && $current === OrderStatus::ENVIADO) {
+                $order->transitionTo(OrderStatus::EN_PREPARACION, $actor, 'Cocina empezó el pedido');
+            } elseif ($pending > 0 && $current === OrderStatus::LISTO) {
+                $order->transitionTo(OrderStatus::EN_PREPARACION, $actor, 'Cocina reabrió un ítem');
+            }
+        } catch (InvalidOrderTransition $e) {
+            // El ítem quedó marcado; el pedido sigue en el estado que tenía.
         }
 
         if (request()->wantsJson() || request()->expectsJson()) {
@@ -127,13 +144,7 @@ class KitchenController extends Controller
     public function markOrderReady(Order $order)
     {
         $order->transitionTo(OrderStatus::LISTO, auth()->user(), 'Marcado listo desde KDS');
-
-        $this->notificationService->notifyOrderReady($order);
-        User::where('restaurant_id', $order->restaurant_id)
-            ->where('is_active', true)
-            ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN', 'CAJERO'])
-            ->get()
-            ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, 'LISTO')));
+        $this->notifyReady($order, 'LISTO');
 
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([
@@ -153,15 +164,24 @@ class KitchenController extends Controller
         ]);
 
         $target = OrderStatus::from($validated['status']);
-        $order->transitionTo($target, auth()->user(), 'Cambio desde KDS');
+        try {
+            $order->transitionTo($target, auth()->user(), 'Cambio desde KDS');
+        } catch (InvalidOrderTransition $e) {
+            $message = 'Este pedido ya cambió de estado. La pantalla se actualiza sola.';
+            if (request()->wantsJson() || request()->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        // Al volver a preparación, los ítems se destildan para que la cocina los vea pendientes.
+        if ($target === OrderStatus::EN_PREPARACION || $target === OrderStatus::ENVIADO) {
+            $order->items()->where('status', 'LISTO')->update(['status' => 'EN_PREPARACION']);
+        }
 
         if (in_array($validated['status'], ['LISTO', 'ENTREGADO'], true)) {
-            $this->notificationService->notifyOrderReady($order);
-            User::where('restaurant_id', $order->restaurant_id)
-                ->where('is_active', true)
-                ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN', 'CAJERO'])
-                ->get()
-                ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, $validated['status'])));
+            $this->notifyReady($order, $validated['status']);
         }
 
         if (request()->wantsJson() || request()->expectsJson()) {
@@ -216,5 +236,15 @@ class KitchenController extends Controller
             'orders' => $readyOrders,
             'count' => $readyOrders->count(),
         ]);
+    }
+
+    private function notifyReady(Order $order, string $status): void
+    {
+        $this->notificationService->notifyOrderReady($order);
+        User::where('restaurant_id', $order->restaurant_id)
+            ->where('is_active', true)
+            ->whereIn('role', ['MOZO', 'ENCARGADO', 'ADMIN', 'CAJERO'])
+            ->get()
+            ->each(fn ($u) => $u->notify(new OrderDispatchedNotification($order, $status)));
     }
 }
