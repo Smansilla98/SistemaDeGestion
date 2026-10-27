@@ -63,39 +63,41 @@
     .mz-sector-sum { display: flex; gap: .75rem; font-size: .82rem; color: #5d676b; font-weight: 600; }
     .mz-sector-sum span { display: inline-flex; align-items: center; gap: .3rem; }
 
-    .mz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: .8rem; }
-    .mz-table { position: relative; display: flex; flex-direction: column; border-radius: 16px; border: 1.5px solid #e6e8ea; background: #fff; padding: .85rem .85rem .75rem; min-height: 168px; transition: transform .12s, box-shadow .12s, border-color .12s; }
-    .mz-table::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; border-radius: 16px 16px 0 0; background: var(--mz-cerrada); }
-    .mz-table.is-libre::before { background: var(--mz-libre); }
-    .mz-table.is-ocupada { background: linear-gradient(180deg, var(--conurbania-primary-10), #fff 70%); border-color: var(--conurbania-primary-30); }
-    .mz-table.is-ocupada::before { background: var(--mz-ocupada); }
-    .mz-table.is-reservada { background: linear-gradient(180deg, rgba(217,154,30,.10), #fff 70%); }
-    .mz-table.is-reservada::before { background: var(--mz-reservada); }
-    .mz-table:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.08); }
+    .mz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .9rem; }
+    .mz-table { position: relative; display: flex; flex-direction: column; min-height: 212px; border-radius: 20px; border: 1.5px solid #e8eaec; background: #fff; padding: 1rem; box-shadow: 0 1px 2px rgba(16,24,40,.04); transition: transform .15s, box-shadow .15s, border-color .15s; }
+    .mz-table.is-ocupada { background: linear-gradient(160deg, var(--conurbania-primary-10), #fff 60%); border-color: var(--conurbania-primary-30); }
+    .mz-table.is-reservada { background: linear-gradient(160deg, rgba(217,154,30,.10), #fff 60%); border-color: rgba(217,154,30,.35); }
+    .mz-table:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16,24,40,.08); }
     .mz-table[hidden] { display: none; }
-    .mz-table-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .4rem; }
-    .mz-num { font-size: 1.65rem; font-weight: 800; line-height: 1; color: #1a2326; letter-spacing: -.02em; }
-    .mz-badge { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .28rem .55rem; border-radius: 999px; background: #eef0f2; color: #5d676b; white-space: nowrap; }
+    .mz-table-top { display: flex; align-items: flex-start; gap: .5rem; }
+    .mz-id { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; min-width: 0; }
+    .mz-num { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #1a2326; letter-spacing: -.03em; overflow-wrap: anywhere; }
+    .mz-badge { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; font-weight: 700; padding: .3rem .6rem; border-radius: 999px; background: #f0f2f3; color: #5d676b; white-space: nowrap; }
+    .mz-badge .mz-dot { width: 8px; height: 8px; }
     .mz-badge.libre { background: rgba(47,158,110,.12); color: #217a53; }
-    .mz-badge.ocupada { background: var(--conurbania-primary-10); color: var(--conurbania-secondary); }
-    .mz-badge.reservada { background: rgba(217,154,30,.15); color: #94640a; }
+    .mz-badge.ocupada { background: #fff; color: var(--conurbania-secondary); box-shadow: inset 0 0 0 1px var(--conurbania-primary-30); }
+    .mz-badge.reservada { background: #fff; color: #94640a; box-shadow: inset 0 0 0 1px rgba(217,154,30,.4); }
     .mz-badge.listo { background: var(--mz-listo); color: #fff; animation: mzPulse 1.6s ease-in-out infinite; }
+    .mz-badge.listo .mz-dot { background: #fff; }
     @keyframes mzPulse { 50% { box-shadow: 0 0 0 6px rgba(47,158,110,.18); } }
-    .mz-meta { margin: .55rem 0 .7rem; display: grid; gap: .25rem; font-size: .84rem; color: #5d676b; }
-    .mz-meta span { display: flex; align-items: center; gap: .35rem; min-width: 0; }
-    .mz-meta span > em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mz-meta .mz-total { color: #1a2326; font-weight: 800; font-size: .95rem; }
-    .mz-meta .mz-late { color: var(--conurbania-accent); font-weight: 700; }
-    .mz-actions { margin-top: auto; display: flex; flex-direction: column; gap: .4rem; }
-    .mz-sub { display: flex; gap: .4rem; }
-    .mz-sub a { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .3rem; min-height: 38px; border-radius: 10px; border: 1.5px solid #e2e5e7; background: #fff; color: #33403f; font-weight: 700; font-size: .82rem; text-decoration: none; }
-    .mz-sub a:hover { border-color: var(--conurbania-primary); color: var(--conurbania-primary); }
-    .mz-more { width: 34px; height: 34px; margin: -4px -6px 0 0; border: 0; border-radius: 10px; background: transparent; color: #5d676b; font-size: 1.1rem; display: grid; place-items: center; }
-    .mz-more:hover, .mz-more[aria-expanded="true"] { background: #f0f2f3; color: #1a2326; }
-    .mz-table-top .mz-badge { display: table; margin-top: .4rem; }
-    .mz-actions .mz-main { width: 100%; min-width: 0; border: 0; border-radius: 11px; padding: .6rem .5rem; font-weight: 800; font-size: .9rem; color: #fff; background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); display: inline-flex; align-items: center; justify-content: center; gap: .35rem; text-decoration: none; min-height: 44px; white-space: nowrap; }
+    .mz-table-top .dropdown { margin-left: auto; }
+    .mz-more { width: 34px; height: 34px; margin-right: -6px; border: 0; border-radius: 10px; background: transparent; color: #7b8488; font-size: 1.1rem; display: grid; place-items: center; }
+    .mz-more:hover, .mz-more[aria-expanded="true"] { background: rgba(0,0,0,.05); color: #1a2326; }
+    .mz-body { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-end; gap: .45rem; padding: .6rem 0 .75rem; }
+    .mz-total { font-size: 1.45rem; font-weight: 800; color: #1a2326; letter-spacing: -.02em; line-height: 1.1; }
+    .mz-tags { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .mz-tags span { display: inline-flex; align-items: center; gap: .3rem; max-width: 100%; background: rgba(255,255,255,.85); border: 1px solid #e8eaec; border-radius: 8px; padding: .2rem .5rem; font-size: .78rem; font-weight: 600; color: #4b5557; }
+    .mz-tags em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mz-tags span:has(.mz-late) { border-color: rgba(201,74,45,.35); background: rgba(201,74,45,.06); }
+    .mz-late { color: var(--conurbania-accent); font-weight: 700; }
+    .mz-seats { display: inline-flex; align-items: center; gap: .4rem; color: #5d676b; font-weight: 600; font-size: .92rem; }
+    .mz-seats i { font-size: 1.1rem; color: #9aa3a7; }
+    .mz-actions { display: flex; gap: .4rem; align-items: stretch; }
+    .mz-actions .mz-main { flex: 1; min-width: 0; border: 0; border-radius: 12px; padding: .55rem .5rem; font-weight: 700; font-size: .9rem; color: #fff; background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); display: inline-flex; align-items: center; justify-content: center; gap: .35rem; text-decoration: none; min-height: 42px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 12px var(--conurbania-primary-30); }
     .mz-actions .mz-main:hover { filter: brightness(1.06); color: #fff; }
-    .mz-actions .mz-main.is-soft { background: #f0f2f3; color: #1a2326; }
+    .mz-actions .mz-main.is-soft { background: #f0f2f3; color: #1a2326; box-shadow: none; }
+    .mz-icon { flex: 0 0 42px; width: 42px; min-height: 42px; border-radius: 12px; border: 1.5px solid #e2e5e7; background: #fff; color: #33403f; display: grid; place-items: center; font-size: 1.05rem; text-decoration: none; }
+    .mz-icon:hover { border-color: var(--conurbania-primary); color: var(--conurbania-primary); }
     .mz-table .dropdown-menu { border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.15); border: 0; padding: .35rem; }
     .mz-table .dropdown-item { border-radius: 8px; padding: .55rem .75rem; font-weight: 600; display: flex; gap: .5rem; align-items: center; }
     .mz-empty { grid-column: 1 / -1; text-align: center; color: #7b7d84; padding: 1.25rem; border: 2px dashed #e2e5e7; border-radius: 14px; }
@@ -106,9 +108,13 @@
     @media (max-width: 767.98px) {
         .mz-stats { grid-template-columns: repeat(2, 1fr); }
         .mz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
-        .mz-table { padding: .75rem .65rem .65rem; min-height: 156px; }
-        .mz-num { font-size: 1.4rem; }
-        .mz-actions .mz-main { font-size: .84rem; padding: .55rem .35rem; }
+        .mz-table { min-height: 172px; padding: .8rem .7rem .7rem; border-radius: 18px; }
+        .mz-num { font-size: 1.5rem; }
+        .mz-badge { font-size: .68rem; padding: .25rem .45rem; }
+        .mz-total { font-size: 1.15rem; }
+        .mz-actions .mz-main { font-size: .84rem; padding: .5rem .3rem; }
+        .mz-actions .mz-main i { display: none; }
+        .mz-icon { flex-basis: 38px; width: 38px; }
         .mz-sector { padding: .85rem .7rem; border-radius: 16px; }
         .mz-head-actions { width: 100%; }
         .mz-head-actions .btn { flex: 1; }
@@ -200,12 +206,12 @@
                          data-search="{{ $search }}"
                          @if($isFirst) data-tutorial="tables-table-card" @endif>
                     <div class="mz-table-top">
-                        <div>
+                        <div class="mz-id">
                             <span class="mz-num">{{ $table->number }}</span>
                             @if($isReady)
-                                <span class="mz-badge listo" title="La cocina marcó el pedido como listo">Listo para servir</span>
+                                <span class="mz-badge listo" title="La cocina marcó el pedido como listo"><i class="mz-dot"></i>Listo para servir</span>
                             @else
-                                <span class="mz-badge {{ strtolower($status) }}">{{ $statusLabels[$status] ?? $status }}</span>
+                                <span class="mz-badge {{ strtolower($status) }}"><i class="mz-dot {{ strtolower($status) }}"></i>{{ $statusLabels[$status] ?? $status }}</span>
                             @endif
                         </div>
                         @if($canUpdateThis)
@@ -228,18 +234,21 @@
                         </div>
                         @endif
                     </div>
-                    <div class="mz-meta">
-                        <span><i class="bi bi-people" aria-hidden="true"></i><em>{{ $table->capacity }} {{ $table->capacity === 1 ? 'lugar' : 'lugares' }}</em></span>
+                    <div class="mz-body">
                         @if($status === 'OCUPADA')
-                            @if($waiterName)<span><i class="bi bi-person-badge" aria-hidden="true"></i><em>{{ $waiterName }}</em></span>@endif
-                            @if($session?->started_at)<span><i class="bi bi-clock" aria-hidden="true"></i><em class="mz-elapsed" data-since="{{ $session->started_at->toIso8601String() }}">{{ $session->started_at->format('H:i') }}</em></span>@endif
-                            @if($order && (float) $order->total > 0)<span class="mz-total">{{ $money($order->total) }}</span>@endif
+                            <span class="mz-total">{{ $order && (float) $order->total > 0 ? $money($order->total) : 'Sin consumo' }}</span>
+                            <div class="mz-tags">
+                                @if($waiterName)<span title="Mozo"><i class="bi bi-person" aria-hidden="true"></i><em>{{ $waiterName }}</em></span>@endif
+                                @if($session?->started_at)<span title="Tiempo en la mesa"><i class="bi bi-clock" aria-hidden="true"></i><em class="mz-elapsed" data-since="{{ $session->started_at->toIso8601String() }}">{{ $session->started_at->format('H:i') }}</em></span>@endif
+                            </div>
+                        @else
+                            <span class="mz-seats"><i class="bi bi-people" aria-hidden="true"></i> {{ $table->capacity }} {{ $table->capacity === 1 ? 'lugar' : 'lugares' }}</span>
                         @endif
                     </div>
                     <div class="mz-actions">
                         @if(in_array($status, ['LIBRE', 'OCUPADA', 'RESERVADA'], true) && $canTakeOrder)
-                            <button type="button" class="mz-main js-take-order" data-table-id="{{ $table->id }}" data-table-label="{{ is_numeric($table->number) ? 'Mesa '.$table->number : $table->number }}">
-                                <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ $status === 'OCUPADA' ? 'Agregar al pedido' : 'Tomar pedido' }}
+                            <button type="button" class="mz-main js-take-order" data-table-id="{{ $table->id }}" data-table-label="{{ is_numeric($table->number) ? 'Mesa '.$table->number : $table->number }}" title="{{ $status === 'OCUPADA' ? 'Agregar al pedido' : 'Tomar pedido' }}">
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ $status === 'OCUPADA' ? 'Agregar' : 'Tomar pedido' }}
                             </button>
                         @elseif($status === 'OCUPADA')
                             <a href="{{ route('tables.orders', $table) }}" class="mz-main is-soft"><i class="bi bi-receipt" aria-hidden="true"></i> Ver pedidos</a>
@@ -250,11 +259,8 @@
                         @else
                             <span class="mz-main is-soft">{{ $statusLabels[$status] ?? $status }}</span>
                         @endif
-                        @if($status === 'OCUPADA' && ($canTakeOrder || $canUpdateThis))
-                        <div class="mz-sub">
-                            @if($canTakeOrder)<a href="{{ route('tables.orders', $table) }}"><i class="bi bi-receipt" aria-hidden="true"></i> Pedidos</a>@endif
-                            @if($canUpdateThis)<a href="{{ route('tables.show-close', $table) }}"><i class="bi bi-cash-coin" aria-hidden="true"></i> Cobrar</a>@endif
-                        </div>
+                        @if($status === 'OCUPADA' && $canUpdateThis)
+                            <a href="{{ route('tables.show-close', $table) }}" class="mz-icon" title="Cobrar y cerrar" aria-label="Cobrar y cerrar la mesa {{ $table->number }}"><i class="bi bi-cash-coin"></i></a>
                         @endif
                     </div>
                 </article>
@@ -372,7 +378,7 @@
         const now = Date.now();
         document.querySelectorAll('.mz-elapsed[data-since]').forEach((el) => {
             const mins = Math.max(0, Math.floor((now - new Date(el.dataset.since).getTime()) / 60000));
-            el.textContent = mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`;
+            el.textContent = mins < 60 ? `${mins} min` : (mins < 1440 ? `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')}` : `${Math.floor(mins / 1440)} d ${Math.floor((mins % 1440) / 60)} h`);
             el.classList.toggle('mz-late', mins >= 90);
         });
     }
