@@ -2,727 +2,315 @@
 
 @section('title', 'Mesas')
 
+@php
+    $authUser = auth()->user();
+    $role = $authUser->role ?? '';
+    $canTakeOrder = in_array($role, \App\Models\Table::ORDER_TAKER_ROLES, true);
+    $canOperate = in_array($role, \App\Policies\TablePolicy::UPDATE_ROLES, true);
+    $canCreate = $authUser->can('create', \App\Models\Table::class);
+
+    // Solo sectores principales con mesas (los subsectores se ven en el plano).
+    $visibleSectors = $sectors->filter(fn ($s) => strtoupper($s->type ?? 'SECTOR') !== 'SUBSECTOR' && ($s->tables->isNotEmpty() || $canCreate))->values();
+    $allTables = $visibleSectors->flatMap(fn ($s) => $s->tables);
+    $countBy = fn (string $status) => $allTables->where('status', $status)->count();
+    $stats = [
+        'all' => $allTables->count(),
+        'LIBRE' => $countBy('LIBRE'),
+        'OCUPADA' => $countBy('OCUPADA'),
+        'RESERVADA' => $countBy('RESERVADA'),
+    ];
+    $statusLabels = ['LIBRE' => 'Libre', 'OCUPADA' => 'Ocupada', 'RESERVADA' => 'Reservada', 'CERRADA' => 'Cerrada'];
+    $money = fn ($n) => '$'.number_format((float) $n, 2, ',', '.');
+@endphp
+
 @push('styles')
 <style>
-    /* Grid de mesas: 4 columnas en pantallas anchas */
-    .tables-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.25rem;
-    }
-    @media (min-width: 1200px) {
-        .tables-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-    .tables-grid-empty {
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 2rem;
+    .mz { --mz-libre: #2f9e6e; --mz-ocupada: var(--conurbania-primary); --mz-reservada: #d99a1e; --mz-cerrada: #7b7d84; --mz-listo: #2f9e6e; }
+    .mz-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+    .mz-head h1 { color: #fff; font-weight: 800; font-size: clamp(1.6rem, 3vw, 2.3rem); margin: 0; }
+    .mz-head p { color: rgba(255,255,255,.82); margin: .25rem 0 0; }
+    .mz-head-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .mz-head-actions .btn { border-radius: 12px; font-weight: 700; padding: .6rem 1rem; }
+    .mz-btn-light { background: rgba(255,255,255,.95); color: var(--conurbania-dark); border: 0; }
+    .mz-btn-light:hover { background: #fff; color: var(--conurbania-dark); }
+
+    .mz-panel { background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 1rem; margin-bottom: 1.25rem; }
+    .mz-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; }
+    .mz-stat { border: 2px solid transparent; background: #f5f6f7; border-radius: 14px; padding: .7rem .9rem; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+    .mz-stat:hover { background: #eef0f2; }
+    .mz-stat.is-active { border-color: var(--conurbania-primary); background: var(--conurbania-primary-10); }
+    .mz-stat strong { display: block; font-size: 1.6rem; line-height: 1.1; color: #1a2326; }
+    .mz-stat span { font-size: .82rem; color: #5d676b; font-weight: 600; display: inline-flex; align-items: center; gap: .35rem; }
+    .mz-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--mz-cerrada); }
+    .mz-dot.libre { background: var(--mz-libre); } .mz-dot.ocupada { background: var(--mz-ocupada); } .mz-dot.reservada { background: var(--mz-reservada); }
+
+    .mz-toolbar { display: flex; gap: .6rem; align-items: center; margin-top: .9rem; flex-wrap: wrap; }
+    .mz-search { flex: 1 1 220px; position: relative; margin: 0; }
+    .mz-search i { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: #8a9397; }
+    .mz-search input { width: 100%; border: 1.5px solid #e2e5e7; border-radius: 12px; padding: .65rem .9rem .65rem 2.4rem; font-size: 1rem; }
+    .mz-search input:focus { outline: none; border-color: var(--conurbania-primary); box-shadow: 0 0 0 3px var(--conurbania-primary-10); }
+    .mz-sort { border-radius: 12px; border: 1.5px solid #e2e5e7; padding: .6rem .8rem; font-size: .9rem; background: #fff; }
+    .mz-chips { display: flex; gap: .45rem; overflow-x: auto; padding: .15rem 0 .25rem; margin-top: .75rem; scrollbar-width: thin; }
+    .mz-chip { flex: 0 0 auto; border: 1.5px solid #e2e5e7; background: #fff; color: #33403f; border-radius: 999px; padding: .45rem .9rem; font-weight: 700; font-size: .88rem; cursor: pointer; white-space: nowrap; }
+    .mz-chip small { color: #8a9397; font-weight: 600; margin-left: .3rem; }
+    .mz-chip.is-active { background: var(--conurbania-primary); border-color: var(--conurbania-primary); color: #fff; }
+    .mz-chip.is-active small { color: rgba(255,255,255,.8); }
+
+    .mz-sector { background: rgba(255,255,255,.97); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 1rem 1rem 1.1rem; margin-bottom: 1.25rem; }
+    .mz-sector-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .85rem; padding: 0 .15rem; }
+    .mz-sector-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; color: #1a2326; }
+    .mz-sector-head h2 small { font-weight: 500; color: #7b7d84; font-size: .85rem; margin-left: .4rem; }
+    .mz-sector-sum { display: flex; gap: .75rem; font-size: .82rem; color: #5d676b; font-weight: 600; }
+    .mz-sector-sum span { display: inline-flex; align-items: center; gap: .3rem; }
+
+    .mz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: .8rem; }
+    .mz-table { position: relative; display: flex; flex-direction: column; border-radius: 16px; border: 1.5px solid #e6e8ea; background: #fff; padding: .85rem .85rem .75rem; min-height: 168px; transition: transform .12s, box-shadow .12s, border-color .12s; }
+    .mz-table::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; border-radius: 16px 16px 0 0; background: var(--mz-cerrada); }
+    .mz-table.is-libre::before { background: var(--mz-libre); }
+    .mz-table.is-ocupada { background: linear-gradient(180deg, var(--conurbania-primary-10), #fff 70%); border-color: var(--conurbania-primary-30); }
+    .mz-table.is-ocupada::before { background: var(--mz-ocupada); }
+    .mz-table.is-reservada { background: linear-gradient(180deg, rgba(217,154,30,.10), #fff 70%); }
+    .mz-table.is-reservada::before { background: var(--mz-reservada); }
+    .mz-table:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.08); }
+    .mz-table[hidden] { display: none; }
+    .mz-table-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .4rem; }
+    .mz-num { font-size: 1.65rem; font-weight: 800; line-height: 1; color: #1a2326; letter-spacing: -.02em; }
+    .mz-badge { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .28rem .55rem; border-radius: 999px; background: #eef0f2; color: #5d676b; white-space: nowrap; }
+    .mz-badge.libre { background: rgba(47,158,110,.12); color: #217a53; }
+    .mz-badge.ocupada { background: var(--conurbania-primary-10); color: var(--conurbania-secondary); }
+    .mz-badge.reservada { background: rgba(217,154,30,.15); color: #94640a; }
+    .mz-badge.listo { background: var(--mz-listo); color: #fff; animation: mzPulse 1.6s ease-in-out infinite; }
+    @keyframes mzPulse { 50% { box-shadow: 0 0 0 6px rgba(47,158,110,.18); } }
+    .mz-meta { margin: .55rem 0 .7rem; display: grid; gap: .25rem; font-size: .84rem; color: #5d676b; }
+    .mz-meta span { display: flex; align-items: center; gap: .35rem; min-width: 0; }
+    .mz-meta span > em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mz-meta .mz-total { color: #1a2326; font-weight: 800; font-size: .95rem; }
+    .mz-meta .mz-late { color: var(--conurbania-accent); font-weight: 700; }
+    .mz-actions { margin-top: auto; display: flex; flex-direction: column; gap: .4rem; }
+    .mz-sub { display: flex; gap: .4rem; }
+    .mz-sub a { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .3rem; min-height: 38px; border-radius: 10px; border: 1.5px solid #e2e5e7; background: #fff; color: #33403f; font-weight: 700; font-size: .82rem; text-decoration: none; }
+    .mz-sub a:hover { border-color: var(--conurbania-primary); color: var(--conurbania-primary); }
+    .mz-more { width: 34px; height: 34px; margin: -4px -6px 0 0; border: 0; border-radius: 10px; background: transparent; color: #5d676b; font-size: 1.1rem; display: grid; place-items: center; }
+    .mz-more:hover, .mz-more[aria-expanded="true"] { background: #f0f2f3; color: #1a2326; }
+    .mz-table-top .mz-badge { display: table; margin-top: .4rem; }
+    .mz-actions .mz-main { width: 100%; min-width: 0; border: 0; border-radius: 11px; padding: .6rem .5rem; font-weight: 800; font-size: .9rem; color: #fff; background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); display: inline-flex; align-items: center; justify-content: center; gap: .35rem; text-decoration: none; min-height: 44px; white-space: nowrap; }
+    .mz-actions .mz-main:hover { filter: brightness(1.06); color: #fff; }
+    .mz-actions .mz-main.is-soft { background: #f0f2f3; color: #1a2326; }
+    .mz-table .dropdown-menu { border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.15); border: 0; padding: .35rem; }
+    .mz-table .dropdown-item { border-radius: 8px; padding: .55rem .75rem; font-weight: 600; display: flex; gap: .5rem; align-items: center; }
+    .mz-empty { grid-column: 1 / -1; text-align: center; color: #7b7d84; padding: 1.25rem; border: 2px dashed #e2e5e7; border-radius: 14px; }
+    .mz-none { text-align: center; color: #fff; padding: 2rem 1rem; display: none; }
+    .mz-refresh { color: rgba(255,255,255,.8); font-size: .8rem; text-align: right; margin: -.6rem 0 .6rem; }
+    .mz-refresh button { background: none; border: 0; color: #fff; font-weight: 700; text-decoration: underline; padding: 0 .25rem; }
+
+    @media (max-width: 767.98px) {
+        .mz-stats { grid-template-columns: repeat(2, 1fr); }
+        .mz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+        .mz-table { padding: .75rem .65rem .65rem; min-height: 156px; }
+        .mz-num { font-size: 1.4rem; }
+        .mz-actions .mz-main { font-size: .84rem; padding: .55rem .35rem; }
+        .mz-sector { padding: .85rem .7rem; border-radius: 16px; }
+        .mz-head-actions { width: 100%; }
+        .mz-head-actions .btn { flex: 1; }
     }
 
-    /* Card de mesa: blanca, sombra, bordes redondeados */
-    .table-card {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid var(--g100, #e8eeec);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        transition: box-shadow 0.2s ease;
-    }
-    .table-card:hover {
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    }
-    .table-card-body {
-        padding: 1.25rem 1.25rem 1rem;
-    }
-    .table-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
-    }
-    .table-card-number {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #131a18;
-        line-height: 1.2;
-    }
-    .table-status-pill {
-        flex-shrink: 0;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.35rem 0.75rem;
-        border-radius: 20px;
-        border: none;
-        cursor: pointer;
-    }
-    .table-status-pill.table-status-libre { background: var(--t100, #d4f2e8); color: var(--t700, #155240); }
-    .table-status-pill.table-status-ocupada { background: #e8f0ef; color: var(--g700, #2d3d39); }
-    .table-status-pill.table-status-reservada { background: var(--t50, #edf9f4); color: var(--t600, #1d7a5c); }
-    .table-status-pill:not(button) { cursor: default; }
-    .table-card-capacity {
-        font-size: 0.875rem;
-        color: var(--g500, #6b7f7a);
-        margin-bottom: 1rem;
-    }
-    .table-card-extra {
-        font-size: 0.75rem;
-        color: var(--g500);
-        margin-bottom: 0.75rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    .table-badge-info, .table-card-time { display: inline-flex; align-items: center; gap: 0.25rem; }
-
-    /* Botones de acción: apilados, ancho completo */
-    .table-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
-        margin-top: 0.25rem;
-    }
-    .table-actions .btn {
-        width: 100%;
-        min-height: 44px;
-        padding: 0.65rem 1rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        border: none !important;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .table-actions .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-    }
-    .btn-reservar {
-        background: var(--t500, #1d9e75) !important;
-        color: white !important;
-    }
-    .btn-ocupar {
-        background: var(--t600, #1d7a5c) !important;
-        color: white !important;
-    }
-    .btn-pedido {
-        background: var(--t700, #155240) !important;
-        color: white !important;
-    }
-    .btn-ver-pedidos {
-        background: var(--t100, #d4f2e8) !important;
-        color: var(--t700, #155240) !important;
-    }
-    .btn-cerrar {
-        background: var(--g500, #6b7f7a) !important;
-        color: white !important;
-    }
-    .btn-editar {
-        background: var(--g600, #4a5e59) !important;
-        color: white !important;
-    }
-    .btn-cambiar-estado {
-        background: var(--g700, #2d3d39) !important;
-        color: white !important;
-    }
-    
-    .modal-dialog-scrollable .modal-content {
-        max-height: 100%;
-        overflow-y: scroll !important;
-    }
-    
-    /* Mejoras para móvil */
-    @media (max-width: 768px) {
-        /* Header más compacto */
-        .tables-header {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 1rem;
-        }
-        
-        .tables-header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .tables-header .text-muted {
-            font-size: 0.875rem;
-        }
-        
-        .tables-header-actions {
-            width: 100%;
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .tables-header-actions .btn {
-            flex: 1;
-            min-width: 120px;
-            font-size: 0.875rem;
-            padding: 0.625rem 1rem;
-        }
-        
-        .tables-grid {
-            grid-template-columns: 1fr;
-        }
-        .table-card {
-            border-radius: 14px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-        }
-        .table-card:active {
-            transform: scale(0.99);
-        }
-        .table-card-body {
-            padding: 1.25rem !important;
-        }
-        .table-actions .btn {
-            min-height: 48px;
-            padding: 0.75rem 1rem;
-        }
-        .sector-header {
-            padding: 1rem !important;
-        }
-        .sector-header .ch-t {
-            font-size: 1rem !important;
-        }
-        
-        /* Modales fullscreen en móvil */
-        .modal-dialog {
-            margin: 0;
-            max-width: 100%;
-            height: 100%;
-        }
-        
-        .modal-content {
-            height: 100%;
-            border-radius: 0;
-            border: none;
-        }
-        
-        .modal-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 2px solid var(--mosaic-border);
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 10;
-        }
-        
-        .modal-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-        }
-        
-        .modal-body {
-            padding: 1.25rem;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .modal-footer {
-            padding: 1rem 1.25rem;
-            border-top: 2px solid var(--mosaic-border);
-            position: sticky;
-            bottom: 0;
-            background: white;
-            z-index: 10;
-        }
-        
-        .modal-footer .btn {
-            min-height: 48px;
-            font-size: 1rem;
-            font-weight: 600;
-            flex: 1;
-        }
-        
-        /* Formularios en móvil */
-        .form-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-control,
-        .form-select {
-            min-height: 48px;
-            font-size: 1rem;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-        }
-        
-        .modal-dialog-scrollable .modal-content {
-            max-height: 100%;
-            overflow-y: scroll !important;
-        }
-        
-        /* Modal de nuevo pedido */
-        #newOrderModal .modal-dialog {
-            max-height: calc(100vh - 2rem);
-            margin: 1rem auto;
-        }
-        
-        #newOrderModal .modal-body {
-            padding: 1rem;
-        }
-        
-        #newOrderModal .row {
-            flex-direction: column;
-        }
-        
-        #newOrderModal .col-lg-7,
-        #newOrderModal .col-lg-5 {
-            width: 100%;
-            max-width: 100%;
-        }
-        
-        #newOrderModal .product-item {
-            width: 100% !important;
-            margin-bottom: 0.75rem;
-        }
-        
-        #newOrderModal .product-item .btn {
-            min-height: 44px;
-            min-width: 44px;
-        }
-        
-        #productSearch {
-            max-width: 100% !important;
-            min-height: 44px;
-            font-size: 1rem;
-        }
-        
-        .accordion-button {
-            min-height: 48px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            padding: 0.75rem 1rem;
-        }
-        
-        /* Botón de confirmar pedido fijo en móvil */
-        #newOrderModal .col-lg-5 {
-            position: sticky;
-            bottom: 0;
-            background: white;
-            padding-top: 1rem;
-            border-top: 2px solid var(--mosaic-border);
-            margin-top: 1rem;
-        }
-        
-        #confirmOrderBtn {
-            width: 100%;
-            min-height: 52px;
-            font-size: 1.125rem;
-            font-weight: 700;
-        }
-        
-        /* Mejoras de scroll */
-        .modal-body::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .modal-body::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        .modal-body::-webkit-scrollbar-thumb {
-            background: #1e8081;
-            border-radius: 3px;
-        }
-        
-        /* Espaciado mejorado */
-        .card-body {
-            padding: 1rem !important;
-        }
-        
-        .mb-4 {
-            margin-bottom: 1.5rem !important;
-        }
-        
-        /* Badges más grandes */
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 8px;
-        }
-    }
-    
-    /* Mejoras generales para touch */
-    @media (hover: none) and (pointer: coarse) {
-        .btn:active {
-            transform: scale(0.95);
-        }
-        
-        .table-card:active {
-            transform: scale(0.98);
-        }
-    }
+    #createTableModal .modal-content { border-radius: 18px; border: 0; }
 </style>
 @endpush
 
 @section('content')
 @include('partials.variant-picker')
-<div class="row mb-4">
-    <div class="col-12 tables-header d-flex justify-content-between align-items-center">
+<div class="mz">
+    <div class="mz-head">
         <div>
-            <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;"><i class="bi bi-table"></i> Gestión de Mesas</h1>
+            <h1><i class="bi bi-grid-3x3-gap"></i> Mesas</h1>
+            <p>{{ $canTakeOrder ? 'Tocá «Tomar pedido» en cualquier mesa: si está libre, se ocupa sola.' : 'Estado del salón en tiempo real.' }}</p>
         </div>
-        <div class="tables-header-actions">
-            @can('create', App\Models\Table::class)
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTableModal">
-                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Nueva Mesa</span>
+        <div class="mz-head-actions">
+            <a href="{{ route('tables.layout') }}" class="btn mz-btn-light"><i class="bi bi-diagram-3"></i> Plano</a>
+            @if($canCreate)
+            <button type="button" class="btn mz-btn-light" data-bs-toggle="modal" data-bs-target="#createTableModal">
+                <i class="bi bi-plus-lg"></i> Nueva mesa
             </button>
-            @endcan
-            <a href="{{ route('tables.layout') }}" class="btn btn-secondary">
-                <i class="bi bi-diagram-3"></i> <span class="d-none d-sm-inline">Layout</span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="page">
-<!-- Búsqueda de mesas -->
-<div class="card mb-3">
-    <div class="cb">
-        <div class="sb-bar">
-            <i class="bi bi-search"></i>
-            <input type="text" id="tableSearch" data-tutorial="tables-search" placeholder="Buscar mesa por número o nombre...">
-        </div>
-        <form method="GET" action="{{ route('tables.index') }}" class="d-flex align-items-center gap-2 mt-2">
-            <label for="tableSort" class="small text-muted mb-0"><i class="bi bi-sort-down"></i> Ordenar por</label>
-            <select id="tableSort" name="sort" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                @foreach(\App\Models\Table::sortOptions() as $value => $label)
-                    <option value="{{ $value }}" {{ ($tableSort ?? 'number') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
-            </select>
-        </form>
-    </div>
-</div>
-
-@foreach($sectors as $sector)
-<div class="card mb-4">
-    <div class="ch sector-header" style="background: var(--g50);">
-        <div class="ch-t" style="color: var(--g800);">
-            <i class="bi bi-door-open"></i> {{ $sector->name }}
-            @if($sector->description)
-                <small class="text-muted d-none d-sm-inline">- {{ $sector->description }}</small>
             @endif
         </div>
     </div>
-    <div class="cb">
-        <div class="tables-grid">
-            @forelse($sector->tables as $table)
-            <div class="table-item" 
-                 data-table-number="{{ strtolower($table->number) }}"
-                 data-sector-name="{{ strtolower($sector->name) }}">
-                <div class="table-card h-100" data-tutorial="tables-table-card">
-                    <div class="table-card-body">
-                        <div class="table-card-header">
-                            <span class="table-card-number">{{ $table->number }}</span>
-                            @can('update', $table)
-                            <button type="button" 
-                                    class="table-status-pill table-status-{{ strtolower($table->status) }}"
-                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                {{ $table->status }}
-                            </button>
+
+    <div class="mz-panel">
+        <div class="mz-stats" id="mzStats" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="mz-stat is-active" data-status-filter="all"><strong data-stat="all">{{ $stats['all'] }}</strong><span>Todas</span></button>
+            <button type="button" class="mz-stat" data-status-filter="LIBRE"><strong data-stat="LIBRE">{{ $stats['LIBRE'] }}</strong><span><i class="mz-dot libre"></i>Libres</span></button>
+            <button type="button" class="mz-stat" data-status-filter="OCUPADA"><strong data-stat="OCUPADA">{{ $stats['OCUPADA'] }}</strong><span><i class="mz-dot ocupada"></i>Ocupadas</span></button>
+            <button type="button" class="mz-stat" data-status-filter="RESERVADA"><strong data-stat="RESERVADA">{{ $stats['RESERVADA'] }}</strong><span><i class="mz-dot reservada"></i>Reservadas</span></button>
+        </div>
+        <div class="mz-toolbar">
+            <label class="mz-search" data-tutorial="tables-search">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input type="search" id="tableSearch" placeholder="Buscar mesa o mozo…" autocomplete="off" aria-label="Buscar mesa o mozo">
+            </label>
+            <form method="GET" action="{{ route('tables.index') }}">
+                <select id="tableSort" name="sort" class="mz-sort" onchange="this.form.submit()" aria-label="Ordenar mesas">
+                    @foreach(\App\Models\Table::sortOptions() as $value => $label)
+                        <option value="{{ $value }}" {{ ($tableSort ?? 'number') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+        @if($visibleSectors->count() > 1)
+        <div class="mz-chips" role="group" aria-label="Filtrar por sector">
+            <button type="button" class="mz-chip is-active" data-sector-filter="all">Todos los sectores</button>
+            @foreach($visibleSectors as $sector)
+            <button type="button" class="mz-chip" data-sector-filter="{{ $sector->id }}">{{ $sector->name }}<small>{{ $sector->tables->count() }}</small></button>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
+    <div class="mz-refresh" aria-live="polite">Actualizado <span id="mzUpdated">recién</span> · <button type="button" id="mzRefreshBtn">Actualizar</button></div>
+
+    <div id="mzBoard">
+        @forelse($visibleSectors as $sector)
+        @php
+            $sectorFree = $sector->tables->where('status', 'LIBRE')->count();
+            $sectorBusy = $sector->tables->where('status', 'OCUPADA')->count();
+        @endphp
+        <section class="mz-sector" data-sector="{{ $sector->id }}" aria-label="Sector {{ $sector->name }}">
+            <header class="mz-sector-head">
+                <h2>{{ $sector->name }}@if($sector->description)<small class="d-none d-md-inline">{{ $sector->description }}</small>@endif</h2>
+                <div class="mz-sector-sum">
+                    <span><i class="mz-dot libre"></i>{{ $sectorFree }} libres</span>
+                    <span><i class="mz-dot ocupada"></i>{{ $sectorBusy }} ocupadas</span>
+                </div>
+            </header>
+            <div class="mz-grid">
+                @forelse($sector->tables as $table)
+                @php
+                    $status = $table->status;
+                    $session = $table->currentSession;
+                    $order = $table->currentOrder;
+                    $isReady = $order && $order->status === \App\Models\Order::STATUS_LISTO;
+                    $waiterName = $session?->waiter?->name;
+                    $canUpdateThis = $canOperate && $authUser->can('update', $table);
+                    $isFirst = $loop->parent->first && $loop->first;
+                    $search = strtolower($table->number.' '.$sector->name.' '.($waiterName ?? ''));
+                @endphp
+                <article class="mz-table is-{{ strtolower($status) }} table-item"
+                         data-status="{{ $status }}"
+                         data-table-number="{{ strtolower($table->number) }}"
+                         data-search="{{ $search }}"
+                         @if($isFirst) data-tutorial="tables-table-card" @endif>
+                    <div class="mz-table-top">
+                        <div>
+                            <span class="mz-num">{{ $table->number }}</span>
+                            @if($isReady)
+                                <span class="mz-badge listo" title="La cocina marcó el pedido como listo">Listo para servir</span>
                             @else
-                            <span class="table-status-pill table-status-{{ strtolower($table->status) }}">{{ $table->status }}</span>
-                            @endcan
+                                <span class="mz-badge {{ strtolower($status) }}">{{ $statusLabels[$status] ?? $status }}</span>
+                            @endif
                         </div>
-                        <div class="table-card-capacity">Capacidad: {{ $table->capacity }} personas</div>
-                        @if($table->status === 'OCUPADA' && $table->currentSession)
-                        <div class="table-card-extra">
-                            @if($table->currentSession->waiter)
-                            <span class="table-badge-info">{{ $table->currentSession->waiter->name }}</span>
-                            @endif
-                            @if($table->currentSession->started_at)
-                            <span class="table-card-time">{{ $table->currentSession->started_at->format('H:i') }}</span>
-                            @endif
+                        @if($canUpdateThis)
+                        <div class="dropdown">
+                            <button type="button" class="mz-more" data-bs-toggle="dropdown" aria-expanded="false" title="Más acciones" aria-label="Más acciones de la mesa {{ $table->number }}"><i class="bi bi-three-dots-vertical"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                @if($status === 'LIBRE')
+                                    <li><button type="button" class="dropdown-item js-status" data-table-id="{{ $table->id }}" data-status="LIBRE" data-capacity="{{ $table->capacity }}" data-target-status="OCUPADA" @if($isFirst) data-tutorial="tables-action-ocupar" @endif><i class="bi bi-person-plus"></i> Ocupar y asignar mozo</button></li>
+                                    <li><a class="dropdown-item" href="{{ route('tables.reserve', $table) }}" @if($isFirst) data-tutorial="tables-action-reservar" @endif><i class="bi bi-calendar-check"></i> Reservar</a></li>
+                                @elseif($status === 'OCUPADA')
+                                    <li><a class="dropdown-item" href="{{ route('tables.orders', $table) }}"><i class="bi bi-receipt"></i> Ver pedidos</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('tables.show-close', $table) }}"><i class="bi bi-cash-coin"></i> Cobrar y cerrar</a></li>
+                                    <li><button type="button" class="dropdown-item js-status" data-table-id="{{ $table->id }}" data-status="OCUPADA" data-capacity="{{ $table->capacity }}" data-target-status="LIBRE"><i class="bi bi-arrow-counterclockwise"></i> Liberar sin cobrar</button></li>
+                                @else
+                                    <li><button type="button" class="dropdown-item js-status" data-table-id="{{ $table->id }}" data-status="{{ $status }}" data-capacity="{{ $table->capacity }}" data-target-status="{{ $status === 'RESERVADA' ? 'OCUPADA' : 'LIBRE' }}"><i class="bi bi-arrow-left-right"></i> Cambiar estado</button></li>
+                                @endif
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('tables.edit', $table) }}"><i class="bi bi-pencil"></i> Editar mesa</a></li>
+                            </ul>
                         </div>
                         @endif
-                        <div class="table-actions">
-                            @if($table->status === 'LIBRE')
-                            {{-- Mesa LIBRE: Solo puede reservar o cambiar estado a OCUPADA --}}
-                            <a href="{{ route('tables.reserve', $table) }}" class="btn btn-reservar" data-tutorial="tables-action-reservar">
-                                <span>Reservar</span>
-                            </a>
-                            @can('update', $table)
-                            <button type="button" 
-                                    class="btn btn-ocupar"
-                                    data-tutorial="tables-action-ocupar"
-                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <span>Marcar Ocupada</span>
-                            </button>
-                            @endcan
-                            @elseif($table->status === 'OCUPADA')
-                            {{-- Mesa OCUPADA: Puede tomar pedidos o cerrar mesa --}}
-                            @if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
-                            <button type="button"
-                                    class="btn btn-pedido"
-                                    onclick="openNewOrderModal({{ $table->id }}, '{{ $table->number }}')">
-                                <span>Nuevo Pedido</span>
-                            </button>
-                            @endif
-                            <a href="{{ route('tables.orders', $table) }}" class="btn btn-ver-pedidos">
-                                <span>Ver Pedidos</span>
-                            </a>
-                            @can('update', $table)
-                            <form action="{{ route('tables.close', $table) }}" method="POST" class="d-inline w-100" id="closeTableForm{{ $table->id }}">
-                                @csrf
-                                <button type="button" class="btn btn-cerrar w-100" onclick="confirmCloseTable({{ $table->id }})">
-                                    <span>Cerrar Mesa</span>
-                                </button>
-                            </form>
-                            @endcan
-                            @elseif($table->status === 'RESERVADA')
-                            {{-- Mesa RESERVADA: Puede cambiar estado --}}
-                            @can('update', $table)
-                            <button type="button" 
-                                    class="btn btn-cambiar-estado"
-                                    onclick="openChangeStatusModal({{ $table->id }}, '{{ $table->status }}', {{ $table->capacity }})">
-                                <span>Cambiar Estado</span>
-                            </button>
-                            @endcan
-                            @endif
-                            @can('update', $table)
-                            <a href="{{ route('tables.edit', $table) }}" class="btn btn-editar">
-                                <span>Editar</span>
-                            </a>
-                            @endcan
-                        </div>
                     </div>
+                    <div class="mz-meta">
+                        <span><i class="bi bi-people" aria-hidden="true"></i><em>{{ $table->capacity }} {{ $table->capacity === 1 ? 'lugar' : 'lugares' }}</em></span>
+                        @if($status === 'OCUPADA')
+                            @if($waiterName)<span><i class="bi bi-person-badge" aria-hidden="true"></i><em>{{ $waiterName }}</em></span>@endif
+                            @if($session?->started_at)<span><i class="bi bi-clock" aria-hidden="true"></i><em class="mz-elapsed" data-since="{{ $session->started_at->toIso8601String() }}">{{ $session->started_at->format('H:i') }}</em></span>@endif
+                            @if($order && (float) $order->total > 0)<span class="mz-total">{{ $money($order->total) }}</span>@endif
+                        @endif
+                    </div>
+                    <div class="mz-actions">
+                        @if(in_array($status, ['LIBRE', 'OCUPADA', 'RESERVADA'], true) && $canTakeOrder)
+                            <button type="button" class="mz-main js-take-order" data-table-id="{{ $table->id }}" data-table-label="{{ is_numeric($table->number) ? 'Mesa '.$table->number : $table->number }}">
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ $status === 'OCUPADA' ? 'Agregar al pedido' : 'Tomar pedido' }}
+                            </button>
+                        @elseif($status === 'OCUPADA')
+                            <a href="{{ route('tables.orders', $table) }}" class="mz-main is-soft"><i class="bi bi-receipt" aria-hidden="true"></i> Ver pedidos</a>
+                        @elseif($canUpdateThis)
+                            <button type="button" class="mz-main is-soft js-status" data-table-id="{{ $table->id }}" data-status="{{ $status }}" data-capacity="{{ $table->capacity }}" data-target-status="{{ $status === 'LIBRE' ? 'OCUPADA' : 'LIBRE' }}">
+                                {{ $status === 'LIBRE' ? 'Ocupar mesa' : 'Cambiar estado' }}
+                            </button>
+                        @else
+                            <span class="mz-main is-soft">{{ $statusLabels[$status] ?? $status }}</span>
+                        @endif
+                        @if($status === 'OCUPADA' && ($canTakeOrder || $canUpdateThis))
+                        <div class="mz-sub">
+                            @if($canTakeOrder)<a href="{{ route('tables.orders', $table) }}"><i class="bi bi-receipt" aria-hidden="true"></i> Pedidos</a>@endif
+                            @if($canUpdateThis)<a href="{{ route('tables.show-close', $table) }}"><i class="bi bi-cash-coin" aria-hidden="true"></i> Cobrar</a>@endif
+                        </div>
+                        @endif
+                    </div>
+                </article>
+                @empty
+                <div class="mz-empty">
+                    Sin mesas en este sector.
+                    @if($canCreate)<button type="button" class="btn btn-link p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#createTableModal" data-sector-preset="{{ $sector->id }}">Agregar una</button>@endif
                 </div>
+                @endforelse
             </div>
-            @empty
-            <div class="tables-grid-empty">
-                <p class="text-muted mb-0">No hay mesas en este sector</p>
-            </div>
-            @endforelse
-        </div>
+        </section>
+        @empty
+        <section class="mz-sector text-center py-5">
+            <i class="bi bi-grid-3x3-gap" style="font-size: 2.2rem; opacity: .4"></i>
+            <p class="mt-2 mb-0">{{ $role === 'MOZO' ? 'No hay mesas libres ni mesas tuyas en este momento.' : 'Todavía no hay mesas cargadas.' }}</p>
+        </section>
+        @endforelse
     </div>
+    <p class="mz-none" id="mzNone"><i class="bi bi-search"></i> Ninguna mesa coincide con el filtro.</p>
 </div>
-@endforeach
 
-@can('create', App\Models\Table::class)
-<!-- Modal Crear Mesa -->
-<div class="modal fade" id="createTableModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+@if($canCreate)
+<div class="modal fade" id="createTableModal" tabindex="-1" aria-labelledby="createTableTitle">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('tables.store') }}" method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Nueva Mesa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fw-bold" id="createTableTitle">Nueva mesa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="sector_id" class="form-label">Sector</label>
                         <select class="form-select" id="sector_id" name="sector_id" required>
-                            <option value="">Seleccionar sector</option>
-                            @foreach($sectors as $sector)
+                            <option value="">Elegí un sector</option>
+                            @foreach($sectors->filter(fn ($s) => strtoupper($s->type ?? 'SECTOR') !== 'SUBSECTOR') as $sector)
                             <option value="{{ $sector->id }}">{{ $sector->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="number" class="form-label">Número de Mesa</label>
-                        <input type="text" class="form-control" id="number" name="number" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="capacity" class="form-label">Capacidad</label>
-                        <input type="number" class="form-control" id="capacity" name="capacity" min="1" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="position_x" class="form-label">Posición X (opcional)</label>
-                            <input type="number" class="form-control" id="position_x" name="position_x">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="position_y" class="form-label">Posición Y (opcional)</label>
-                            <input type="number" class="form-control" id="position_y" name="position_y">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Mesa</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endcan
-
-@if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
-<!-- Modal Cambiar Estado de Mesa -->
-<div class="modal fade" id="changeStatusModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <form id="changeStatusForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Cambiar Estado de Mesa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Estado</label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="LIBRE">Libre</option>
-                            <option value="OCUPADA">Ocupada</option>
-                            <option value="RESERVADA">Reservada</option>
-                            <option value="CERRADA">Cerrada</option>
-                        </select>
-                        <small class="text-muted" id="statusHelp"></small>
-                    </div>
-                    <div class="mb-3" id="waiterContainer" style="display: none;">
-                        <label for="waiter_id" class="form-label">Asignar Mozo <span class="text-danger">*</span></label>
-                        <select class="form-select" id="waiter_id" name="waiter_id">
-                            <option value="">Seleccionar mozo...</option>
-                            @foreach($waiters as $waiter)
-                            <option value="{{ $waiter->id }}">{{ $waiter->name }}</option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">Selecciona el mozo que atenderá esta mesa</small>
-                    </div>
-                    <div class="mb-3" id="guestsCountContainer">
-                        <label for="guests_count" class="form-label">Cantidad de Personas</label>
-                        <input type="number" class="form-control" id="guests_count" name="guests_count" min="1" value="1">
-                        <small class="text-muted">Capacidad máxima: <span id="maxCapacity">0</span> personas</small>
-                    </div>
-                    <input type="hidden" id="tableId" name="table_id">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endif
-
-@if(in_array(auth()->user()->role, ['SUPERADMIN', 'ADMIN', 'MOZO', 'ENCARGADO']))
-<!-- Modal Nuevo Pedido (desde Mesas) -->
-<div class="modal fade" id="newOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-md-down modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <form id="newOrderForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-plus-circle"></i> Nuevo Pedido
-                        <small class="text-muted d-none d-sm-inline">- <span id="newOrderTableLabel"></span></small>
-                        <span class="d-inline d-sm-none"><span id="newOrderTableLabelMobile"></span></span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="newOrderTableId" />
-
                     <div class="row g-3">
-                        <div class="col-lg-7">
-                            <div class="d-flex flex-column align-items-start mb-2">
-                                <h6 class="mb-0"><i class="bi bi-card-list"></i> Productos</h6>
-                                <input type="text" class="form-control" id="productSearch" placeholder="Buscar producto..." style="max-width: 100%;">
-                            </div>
-
-                            <div id="productsAccordion">
-                                @foreach($products as $categoryName => $categoryProducts)
-                                    @php $categoryLabel = $categoryName ?: 'Sin categoría'; @endphp
-                                    <div class="category-section-modal mb-4" data-category-name="{{ strtolower($categoryLabel) }}">
-                                        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #1e8081, #138496); padding: 0.75rem 1rem; border-radius: 8px;">
-                                            <h6 class="mb-0 text-white" style="font-weight: 700;">
-                                                <i class="bi bi-tag-fill"></i> {{ $categoryLabel }}
-                                            </h6>
-                                            <span class="badge bg-light text-dark ms-auto">{{ $categoryProducts->count() }} productos</span>
-                                        </div>
-                                        <div class="row g-2">
-                                                    @foreach($categoryProducts as $product)
-                                                        @php
-                                                            $currentStock = $product->has_stock ? $product->getCurrentStock(auth()->user()->restaurant_id) : null;
-                                                            $isOutOfStock = $currentStock !== null && $currentStock <= 0;
-                                                            $isLowStock = $currentStock !== null && $currentStock > 0 && $currentStock <= $product->stock_minimum;
-                                                        @endphp
-                                                        <div class="col-12 col-md-6 mb-2 product-item" data-name="{{ strtolower($product->name) }}" data-category-name="{{ strtolower($categoryLabel) }}">
-                                                            <div class="d-flex justify-content-between align-items-start border rounded p-2 {{ $isOutOfStock ? 'border-danger bg-light' : ($isLowStock ? 'border-warning bg-light' : '') }}">
-                                                                <div class="me-2 flex-grow-1">
-                                                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                                        <strong class="fs-6">{{ $product->name }}</strong>
-                                                                        @if($isOutOfStock)
-                                                                            <span class="badge bg-danger" title="Sin stock disponible">
-                                                                                <i class="bi bi-x-circle-fill"></i> Sin Stock
-                                                                            </span>
-                                                                        @elseif($isLowStock)
-                                                                            <span class="badge bg-warning text-dark" title="Stock bajo">
-                                                                                <i class="bi bi-exclamation-circle-fill"></i> Stock Bajo
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
-                                                                    @if($product->description)
-                                                                        <div class="text-muted small mb-1">{{ $product->description }}</div>
-                                                                    @endif
-                                                                    @if($product->has_stock && $currentStock !== null)
-                                                                        <div class="small mb-2">
-                                                                            <span class="badge bg-{{ $isOutOfStock ? 'danger' : ($isLowStock ? 'warning' : 'success') }}">
-                                                                                Stock: {{ $currentStock }}
-                                                                                @if($product->stock_minimum > 0)
-                                                                                    (Mín: {{ $product->stock_minimum }})
-                                                                                @endif
-                                                                            </span>
-                                                                        </div>
-                                                                    @endif
-                                                                    <div class="fs-5 fw-bold text-primary">${{ number_format($product->price, 2) }}</div>
-                                                                </div>
-                                                                <div class="ms-2">
-                                                                    <button type="button"
-                                                                            class="btn btn-primary {{ $isOutOfStock ? 'disabled' : '' }}"
-                                                                            style="min-width: 48px; min-height: 48px;"
-                                                                            onclick="addModalItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float) $product->price }}, {{ $currentStock ?? 'null' }}, {{ $product->stock_minimum ?? 0 }})"
-                                                                            {{ $isOutOfStock ? 'disabled title="Producto sin stock"' : '' }}>
-                                                                        <i class="bi bi-plus-lg"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                        </div>
-                                        </div>
-                                @endforeach
-                            </div>
+                        <div class="col-7">
+                            <label for="number" class="form-label">Número o nombre</label>
+                            <input type="text" class="form-control" id="number" name="number" placeholder="Ej: 14 o Barra 5" required>
                         </div>
-
-                        <div class="col-lg-5">
-                            <div class="sticky-top bg-light rounded-3 p-3 border" style="top: 70px;">
-                                <h6 class="mb-3"><i class="bi bi-receipt"></i> Resumen del pedido</h6>
-
-                                <div id="modalItemsEmpty" class="text-muted text-center py-4 border rounded bg-white">No hay items. Agregá productos desde la lista.</div>
-                                <div id="modalItemsList" class="mb-3"></div>
-
-                                <div class="d-flex justify-content-between align-items-center mb-3 py-2 border-top border-bottom">
-                                    <strong class="fs-5">Total:</strong>
-                                    <span id="modalTotal" class="fs-4 fw-bold text-primary">$0.00</span>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold">Observaciones generales (opcional)</label>
-                                    <textarea class="form-control form-control-sm" id="newOrderObservations" rows="2" placeholder="Ej: sin sal, alergias..."></textarea>
-                                </div>
-
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="sendToKitchen" checked style="min-width: 48px; min-height: 24px;">
-                                    <label class="form-check-label ms-2" for="sendToKitchen" style="font-size: 0.875rem;">Enviar a cocina al confirmar</label>
-                                </div>
-
-                                <button type="submit" class="btn btn-success w-100" id="confirmOrderBtn" disabled style="min-height: 52px; font-size: 1.125rem; font-weight: 700;">
-                                    <i class="bi bi-check-circle"></i> Confirmar Pedido
-                                </button>
-                            </div>
+                        <div class="col-5">
+                            <label for="capacity" class="form-label">Lugares</label>
+                            <input type="number" class="form-control" id="capacity" name="capacity" min="1" value="4" required>
                         </div>
                     </div>
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-info-circle"></i> La ubicación en el salón se acomoda después desde <strong>Plano</strong>.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear mesa</button>
                 </div>
             </form>
         </div>
@@ -730,572 +318,141 @@
 </div>
 @endif
 
-</div><!-- /.page -->
+@if($canOperate)
+    @include('tables.partials.status-modal')
+@endif
+@if($canTakeOrder)
+    @include('tables.partials.order-modal')
+@endif
 
 <script>
-function openChangeStatusModal(tableId, currentStatus, capacity) {
-    const modalElement = document.getElementById('changeStatusModal');
-    if (!modalElement) {
-        console.error('No se encontró el modal #changeStatusModal en el DOM.');
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Acción no disponible',
-                text: 'No tenés acceso para cambiar el estado de la mesa.',
-                confirmButtonColor: '#1e8081',
+(function () {
+    const STORE_KEY = 'altoque.mesas.filtros';
+
+    // ===== Filtros (estado, sector, búsqueda) =====
+    let filters = { status: 'all', sector: 'all', q: '' };
+    try { Object.assign(filters, JSON.parse(localStorage.getItem(STORE_KEY) || '{}'), { q: '' }); } catch (e) {}
+
+    function applyFilters() {
+        const q = filters.q.toLowerCase().trim();
+        if (filters.sector !== 'all' && !document.querySelector(`#mzBoard .mz-sector[data-sector="${filters.sector}"]`)) filters.sector = 'all';
+        let anyVisible = false;
+        document.querySelectorAll('#mzBoard .mz-sector[data-sector]').forEach((sec) => {
+            const sectorOk = filters.sector === 'all' || sec.dataset.sector === String(filters.sector);
+            let shown = 0;
+            sec.querySelectorAll('.mz-table').forEach((t) => {
+                const ok = sectorOk
+                    && (filters.status === 'all' || t.dataset.status === filters.status)
+                    && (!q || (t.dataset.search || '').includes(q));
+                t.hidden = !ok;
+                if (ok) shown++;
             });
-        }
-        return;
+            const hasEmptyHint = sec.querySelector('.mz-empty') && sectorOk && filters.status === 'all' && !q;
+            sec.hidden = !(shown > 0 || hasEmptyHint);
+            if (!sec.hidden) anyVisible = true;
+        });
+        const none = document.getElementById('mzNone');
+        const hasSectors = !!document.querySelector('#mzBoard .mz-sector[data-sector]');
+        if (none) none.style.display = (anyVisible || !hasSectors) ? 'none' : 'block';
+        document.querySelectorAll('[data-status-filter]').forEach((b) => b.classList.toggle('is-active', b.dataset.statusFilter === filters.status));
+        document.querySelectorAll('[data-sector-filter]').forEach((b) => b.classList.toggle('is-active', b.dataset.sectorFilter === String(filters.sector)));
+        try { localStorage.setItem(STORE_KEY, JSON.stringify({ status: filters.status, sector: filters.sector })); } catch (e) {}
     }
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-    const form = document.getElementById('changeStatusForm');
-    const statusSelect = document.getElementById('status');
-    const guestsInput = document.getElementById('guests_count');
-    const guestsContainer = document.getElementById('guestsCountContainer');
-    const waiterContainer = document.getElementById('waiterContainer');
-    const waiterSelect = document.getElementById('waiter_id');
-    const tableIdInput = document.getElementById('tableId');
-    const maxCapacitySpan = document.getElementById('maxCapacity');
-    const statusHelp = document.getElementById('statusHelp');
-    
-    // Configurar formulario
-    form.action = `/tables/${tableId}/status`;
-    tableIdInput.value = tableId;
-    maxCapacitySpan.textContent = capacity;
-    guestsInput.max = capacity;
-    
-    // Limpiar event listeners anteriores clonando el select
-    const newStatusSelect = statusSelect.cloneNode(true);
-    statusSelect.parentNode.replaceChild(newStatusSelect, statusSelect);
-    const newStatusSelectRef = document.getElementById('status');
-    
-    // Función para mostrar/ocultar campos según el estado
-    function updateFieldsForStatus(status) {
-        if (status === 'OCUPADA') {
-            guestsContainer.style.display = 'block';
-            guestsInput.required = true;
-            if (!guestsInput.value || guestsInput.value === '0') {
-                guestsInput.value = 1;
-            }
-            waiterContainer.style.display = 'block';
-            waiterSelect.required = true;
-        } else if (status === 'LIBRE') {
-            guestsContainer.style.display = 'none';
-            guestsInput.required = false;
-            guestsInput.value = 0;
-            waiterContainer.style.display = 'none';
-            waiterSelect.required = false;
-            waiterSelect.value = '';
-        } else if (status === 'RESERVADA') {
-            guestsContainer.style.display = 'block';
-            guestsInput.required = true;
-            if (!guestsInput.value || guestsInput.value === '0') {
-                guestsInput.value = 1;
-            }
-            waiterContainer.style.display = 'none';
-            waiterSelect.required = false;
-            waiterSelect.value = '';
-        } else {
-            guestsContainer.style.display = 'none';
-            guestsInput.required = false;
-            guestsInput.value = 0;
-            waiterContainer.style.display = 'none';
-            waiterSelect.required = false;
-            waiterSelect.value = '';
-        }
-    }
-    
-    // Configurar opciones según el estado actual
-    newStatusSelectRef.innerHTML = '';
-    
-    if (currentStatus === 'LIBRE') {
-        // Si está LIBRE, solo puede cambiar a OCUPADA o RESERVADA
-        newStatusSelectRef.innerHTML = `
-            <option value="OCUPADA">Ocupada</option>
-            <option value="RESERVADA">Reservada</option>
-        `;
-        statusHelp.textContent = 'Una mesa libre solo puede marcarse como Ocupada o Reservada.';
-        guestsContainer.style.display = 'block';
-        guestsInput.required = true;
-        guestsInput.value = 1;
-        waiterContainer.style.display = 'none';
-        waiterSelect.required = false;
-        waiterSelect.value = '';
-    } else if (currentStatus === 'OCUPADA') {
-        // Si está OCUPADA, puede cambiar a LIBRE o CERRADA
-        newStatusSelectRef.innerHTML = `
-            <option value="LIBRE">Libre</option>
-            <option value="CERRADA">Cerrada</option>
-        `;
-        statusHelp.textContent = 'Para cerrar la mesa y generar el recibo, usa el botón "Cerrar Mesa" en lugar de cambiar el estado.';
-        guestsContainer.style.display = 'none';
-        guestsInput.required = false;
-        guestsInput.value = 0;
-        waiterContainer.style.display = 'none';
-        waiterSelect.required = false;
-        waiterSelect.value = '';
-    } else if (currentStatus === 'RESERVADA') {
-        // Si está RESERVADA, puede cambiar a OCUPADA o LIBRE
-        newStatusSelectRef.innerHTML = `
-            <option value="LIBRE">Libre</option>
-            <option value="OCUPADA">Ocupada</option>
-        `;
-        statusHelp.textContent = 'Una mesa reservada puede marcarse como Ocupada o Libre.';
-        guestsContainer.style.display = 'block';
-        guestsInput.required = true;
-        guestsInput.value = 1;
-        waiterContainer.style.display = 'none';
-        waiterSelect.required = false;
-        waiterSelect.value = '';
-    } else {
-        // Cualquier otro estado, permitir todos los cambios
-        newStatusSelectRef.innerHTML = `
-            <option value="LIBRE">Libre</option>
-            <option value="OCUPADA">Ocupada</option>
-            <option value="RESERVADA">Reservada</option>
-            <option value="CERRADA">Cerrada</option>
-        `;
-        statusHelp.textContent = '';
-        guestsContainer.style.display = 'block';
-        guestsInput.required = true;
-        guestsInput.value = 1;
-        waiterContainer.style.display = 'none';
-        waiterSelect.required = false;
-        waiterSelect.value = '';
-    }
-    
-    // Actualizar cuando cambie el estado seleccionado
-    newStatusSelectRef.addEventListener('change', function() {
-        updateFieldsForStatus(this.value);
+
+    document.addEventListener('click', (e) => {
+        const st = e.target.closest('[data-status-filter]');
+        if (st) { filters.status = st.dataset.statusFilter; applyFilters(); return; }
+        const sc = e.target.closest('[data-sector-filter]');
+        if (sc) { filters.sector = sc.dataset.sectorFilter; applyFilters(); }
     });
-    
-    // Verificar el estado inicial después de configurar las opciones
-    setTimeout(() => {
-        const initialValue = newStatusSelectRef.value;
-        updateFieldsForStatus(initialValue);
-    }, 50);
-    
-    // También verificar cuando el modal se muestra completamente
-    const handleShown = function() {
-        const currentValue = newStatusSelectRef.value;
-        updateFieldsForStatus(currentValue);
-        modalElement.removeEventListener('shown.bs.modal', handleShown);
-    };
-    modalElement.addEventListener('shown.bs.modal', handleShown);
-    
-    modal.show();
-}
+    document.getElementById('tableSearch')?.addEventListener('input', (e) => { filters.q = e.target.value; applyFilters(); });
 
-function editTable(tableId) {
-    // TODO: Implementar edición de mesa
-    Swal.fire({
-        icon: 'info',
-        title: 'Editar Mesa',
-        text: 'Funcionalidad de edición de mesa ' + tableId + ' en desarrollo',
-        confirmButtonColor: '#1e8081',
-        confirmButtonText: 'Entendido'
-    });
-}
-
-function confirmCloseTable(tableId) {
-    Swal.fire({
-        icon: 'question',
-        title: '¿Cerrar Mesa?',
-        text: 'Se cerrarán todos los pedidos activos y se generará el recibo consolidado.',
-        showCancelButton: true,
-        confirmButtonColor: '#1e8081',
-        cancelButtonColor: '#7b7d84',
-        confirmButtonText: 'Sí, cerrar mesa',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('closeTableForm' + tableId).submit();
-        }
-    });
-}
-
-// ===== Modal Nuevo Pedido =====
-let newOrderModal;
-let modalItems = [];
-let modalItemCounter = 0;
-
-function openNewOrderModal(tableId, tableLabel) {
-    if (!newOrderModal) {
-        newOrderModal = new bootstrap.Modal(document.getElementById('newOrderModal'));
-    }
-
-    document.getElementById('newOrderTableId').value = tableId;
-    document.getElementById('newOrderTableLabel').textContent = tableLabel;
-    document.getElementById('newOrderTableLabelMobile').textContent = tableLabel;
-    document.getElementById('newOrderObservations').value = '';
-    document.getElementById('sendToKitchen').checked = true;
-    document.getElementById('productSearch').value = '';
-
-    modalItems = [];
-    modalItemCounter = 0;
-    renderModalItems();
-    filterProducts('');
-
-    newOrderModal.show();
-}
-
-async function addModalItem(productId, name, price, currentStock, stockMinimum) {
-    const choice = await AlToqueVariants.resolve(productId, name, price);
-    if (!choice) return;
-    const sameLine = (i) => i.product_id === productId && i.variant_id === choice.variantId;
-
-    // Validar stock si aplica (el stock es del producto base, sume la variante que sume)
-    if (currentStock !== null && currentStock !== undefined) {
-        const existing = modalItems.filter(i => i.product_id === productId)
-            .reduce((acc, i) => ({ quantity: acc.quantity + i.quantity }), { quantity: 0 });
-        const requestedQty = existing ? existing.quantity + 1 : 1;
-        
-        if (currentStock <= 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sin Stock',
-                text: `El producto "${name}" no tiene stock disponible.`,
-                confirmButtonColor: '#c94a2d',
-                confirmButtonText: 'Entendido'
-            });
-            return;
-        }
-        
-        if (requestedQty > currentStock) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Stock Insuficiente',
-                html: `El producto "${name}" tiene stock limitado.<br><strong>Disponible: ${currentStock}</strong><br>Solicitado: ${requestedQty}`,
-                confirmButtonColor: '#ffc107',
-                confirmButtonText: 'Entendido'
-            });
-            return;
-        }
-        
-    }
-    
-    addItemToModal(productId, choice.name, choice.price, modalItems.find(sameLine), choice.variantId);
-}
-
-function addItemToModal(productId, name, price, existing, variantId = null) {
-    if (existing) {
-        existing.quantity += 1;
-    } else {
-        modalItemCounter++;
-        modalItems.push({
-            id: modalItemCounter,
-            product_id: productId,
-            variant_id: variantId,
-            name,
-            price,
-            quantity: 1,
-            observations: ''
+    // ===== Tiempo transcurrido en mesas ocupadas =====
+    function tickElapsed() {
+        const now = Date.now();
+        document.querySelectorAll('.mz-elapsed[data-since]').forEach((el) => {
+            const mins = Math.max(0, Math.floor((now - new Date(el.dataset.since).getTime()) / 60000));
+            el.textContent = mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`;
+            el.classList.toggle('mz-late', mins >= 90);
         });
     }
-    renderModalItems();
-}
 
-function removeModalItem(itemId) {
-    modalItems = modalItems.filter(i => i.id !== itemId);
-    renderModalItems();
-}
-
-function updateModalQty(itemId, qty) {
-    const item = modalItems.find(i => i.id === itemId);
-    if (!item) return;
-    item.quantity = Math.max(1, parseInt(qty || '1', 10));
-    renderModalItems();
-}
-
-function updateModalObs(itemId, obs) {
-    const item = modalItems.find(i => i.id === itemId);
-    if (!item) return;
-    item.observations = obs || '';
-}
-
-function renderModalItems() {
-    const list = document.getElementById('modalItemsList');
-    const empty = document.getElementById('modalItemsEmpty');
-    const totalEl = document.getElementById('modalTotal');
-    const btn = document.getElementById('confirmOrderBtn');
-
-    if (modalItems.length === 0) {
-        list.innerHTML = '';
-        empty.style.display = 'block';
-        totalEl.textContent = '$0.00';
-        btn.disabled = true;
-        return;
+    // ===== Actualización sin recargar la página =====
+    let lastUpdate = Date.now();
+    function paintUpdated() {
+        const s = Math.round((Date.now() - lastUpdate) / 1000);
+        const el = document.getElementById('mzUpdated');
+        if (el) el.textContent = s < 10 ? 'recién' : (s < 60 ? `hace ${s} s` : `hace ${Math.floor(s / 60)} min`);
     }
+    async function refreshBoard() {
+        try {
+            const res = await fetch(window.location.href, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' });
+            if (!res.ok || res.redirected) return;
+            const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+            const board = doc.getElementById('mzBoard');
+            if (!board) return;
+            document.getElementById('mzBoard').innerHTML = board.innerHTML;
+            doc.querySelectorAll('[data-stat]').forEach((n) => {
+                const mine = document.querySelector(`[data-stat="${n.dataset.stat}"]`);
+                if (mine) mine.textContent = n.textContent;
+            });
+            lastUpdate = Date.now();
+            applyFilters(); tickElapsed(); paintUpdated();
+        } catch (e) { /* sin red: se reintenta en el próximo ciclo */ }
+    }
+    window.mzRefreshBoard = refreshBoard;
+    document.getElementById('mzRefreshBtn')?.addEventListener('click', refreshBoard);
+    setInterval(() => {
+        paintUpdated(); tickElapsed();
+        const busy = document.querySelector('.modal.show, .dropdown-menu.show, .swal2-container');
+        if (document.visibilityState === 'visible' && !busy && Date.now() - lastUpdate > 30000) refreshBoard();
+    }, 10000);
 
-    empty.style.display = 'none';
-    btn.disabled = false;
+    applyFilters(); tickElapsed();
 
-    let total = 0;
-    list.innerHTML = modalItems.map(item => {
-        const subtotal = item.price * item.quantity;
-        total += subtotal;
-        return `
-            <div class="border rounded p-3 mb-3">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="flex-grow-1">
-                        <strong class="d-block mb-1">${item.name}</strong>
-                        <div class="text-muted small mb-2">$${item.price.toFixed(2)} c/u</div>
-                    </div>
-                    <button type="button" class="btn btn-outline-danger ms-2" onclick="removeModalItem(${item.id})" style="min-width: 44px; min-height: 44px;">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="small fw-semibold">Cantidad</label>
-                        <input type="number" class="form-control" min="1" value="${item.quantity}"
-                               onchange="updateModalQty(${item.id}, this.value)" style="min-height: 44px;">
-                    </div>
-                    <div class="col-6">
-                        <label class="small fw-semibold">Subtotal</label>
-                        <div class="form-control bg-light" style="min-height: 44px; display: flex; align-items: center;">
-                            <strong class="text-primary">$${subtotal.toFixed(2)}</strong>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <label class="small fw-semibold">Observaciones (opcional)</label>
-                    <input type="text" class="form-control" value="${item.observations || ''}"
-                           oninput="updateModalObs(${item.id}, this.value)" placeholder="Ej: sin sal..." style="min-height: 44px;">
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    totalEl.textContent = `$${total.toFixed(2)}`;
-}
-
-function filterProducts(term) {
-    const t = (term || '').toLowerCase().trim();
-    
-    document.querySelectorAll('.category-section-modal').forEach(section => {
-        let hasVisibleProducts = false;
-        
-        section.querySelectorAll('.product-item').forEach(el => {
-            const name = el.getAttribute('data-name') || '';
-            const categoryName = el.getAttribute('data-category-name') || '';
-            
-            if (!t || name.includes(t) || categoryName.includes(t)) {
-                el.style.display = '';
-                hasVisibleProducts = true;
-            } else {
-                el.style.display = 'none';
-            }
-        });
-        
-        // Mostrar/ocultar sección según si tiene productos visibles
-        section.style.display = hasVisibleProducts ? 'block' : 'none';
+    // ===== Toma de pedido (modal compartido en tables/partials/order-modal) =====
+    document.addEventListener('click', (e) => {
+        const preset = e.target.closest('[data-sector-preset]');
+        if (preset) { const sel = document.getElementById('sector_id'); if (sel) sel.value = preset.dataset.sectorPreset; }
+        const b = e.target.closest('.js-take-order');
+        if (b && window.TakeOrder) window.TakeOrder.open(`/tables/${b.dataset.tableId}/orders`, b.dataset.tableLabel);
     });
-}
+    document.addEventListener('altoque:order-created', refreshBoard);
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Búsqueda de mesas
-    const tableSearch = document.getElementById('tableSearch');
-    if (tableSearch) {
-        tableSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
-            document.querySelectorAll('.table-item').forEach(item => {
-                const tableNumber = item.dataset.tableNumber || '';
-                const sectorName = item.dataset.sectorName || '';
-                
-                if (!searchTerm || tableNumber.includes(searchTerm) || sectorName.includes(searchTerm)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-            
-            // Ocultar secciones de sector si no tienen mesas visibles
-            document.querySelectorAll('.card.mb-4').forEach(card => {
-                const visibleTables = card.querySelectorAll('.table-item[style="display: block;"], .table-item:not([style*="display: none"])').length;
-                if (searchTerm && visibleTables === 0) {
-                    card.style.display = 'none';
-                } else {
-                    card.style.display = 'block';
-                }
-            });
-        });
+    // Desde el Plano: /tables?pedido=ID abre directo la toma de pedido de esa mesa.
+    const fromPlan = new URLSearchParams(window.location.search).get('pedido');
+    if (fromPlan && window.TakeOrder) {
+        const btn = document.querySelector(`.js-take-order[data-table-id="${CSS.escape(fromPlan)}"]`);
+        if (btn) window.TakeOrder.open(`/tables/${btn.dataset.tableId}/orders`, btn.dataset.tableLabel);
+        history.replaceState(null, '', window.location.pathname);
     }
-    
-    const search = document.getElementById('productSearch');
-    if (search) {
-        search.addEventListener('input', (e) => filterProducts(e.target.value));
-    }
+})();
 
-    const form = document.getElementById('newOrderForm');
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            if (modalItems.length === 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Pedido vacío',
-                    text: 'Agregá al menos un producto.',
-                    confirmButtonColor: '#1e8081'
-                });
-                return;
-            }
-
-            const tableId = document.getElementById('newOrderTableId').value;
-            const payload = {
-                observations: document.getElementById('newOrderObservations').value || null,
-                send_to_kitchen: document.getElementById('sendToKitchen').checked,
-                idempotency_key: (typeof crypto !== 'undefined' && crypto.randomUUID)
-                    ? crypto.randomUUID().replace(/-/g, '').slice(0, 26)
-                    : String(Date.now()) + Math.random().toString(36).slice(2, 10),
-                items: modalItems.map(i => ({
-                    product_id: i.product_id,
-                    variant_id: i.variant_id || null,
-                    quantity: i.quantity,
-                    observations: i.observations || null,
-                }))
-            };
-
-            // Sin 'noopener': con esa opción window.open devuelve null y la ventana en blanco
-            // no se puede ni redirigir al ticket ni cerrar si el pedido falla.
-            var printWin = window.open('', 'kitchen_print', 'width=450,height=700');
-            try { if (printWin) printWin.opener = null; } catch (e) {}
-
-            try {
-                const res = await fetch(`/tables/${tableId}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.success) {
-                    throw new Error(data.message || 'No se pudo crear el pedido');
-                }
-
-                // Si se agregaron ítems a un pedido existente, no abrir ticket completo (ya se imprimieron solo los nuevos)
-                if (data.added_to_existing && printWin && !printWin.closed) {
-                    printWin.close();
-                }
-                // Abrir ticket de cocina solo cuando es pedido nuevo
-                else if (data.kitchen_ticket_url && printWin && !printWin.closed) {
-                    printWin.location.href = data.kitchen_ticket_url;
-                    setTimeout(function() { try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {} }, 3500);
-                } else if (data.kitchen_ticket_url) {
-                    var w = window.open(data.kitchen_ticket_url, 'kitchen_print', 'width=450,height=700');
-                    try { if (w) w.opener = null; } catch (e) {}
-                    if (w) setTimeout(function() { try { if (w && !w.closed) w.close(); } catch (e) {} }, 3500);
-                }
-
-                Swal.fire({
-                    icon: data.print_ok === false ? 'warning' : 'success',
-                    title: data.added_to_existing ? 'Ítems agregados' : 'Pedido creado',
-                    html: `
-                        <p>${data.added_to_existing ? `Pedido <strong>${data.order_number}</strong>.` : `Pedido <strong>${data.order_number}</strong> creado exitosamente.`}</p>
-                        <p class="text-muted small">${data.message || ''}</p>
-                        ${data.print_ok === false ? `<p class="text-warning small mb-2"><i class="bi bi-exclamation-triangle"></i> La impresora falló. Reimprimí desde el botón.</p>` : ''}
-                        <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
-                            ${data.kitchen_ticket_url ? `
-                                <a href="${data.kitchen_ticket_url}" target="_blank" class="btn btn-sm ${data.print_ok === false ? 'btn-warning' : 'btn-outline-primary'}">
-                                    <i class="bi bi-printer"></i> ${data.print_ok === false ? 'Reimprimir cocina' : 'Ver Ticket Cocina'}
-                                </a>
-                            ` : ''}
-                            ${data.comanda_url ? `
-                                <a href="${data.comanda_url}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-receipt"></i> Comanda
-                                </a>
-                            ` : ''}
-                        </div>
-                    `,
-                    confirmButtonColor: '#1e8081',
-                    confirmButtonText: 'Entendido'
-                });
-
-                newOrderModal.hide();
-                
-                // Recargar la página para actualizar la lista de pedidos
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } catch (err) {
-                try { if (printWin && !printWin.closed) printWin.close(); } catch (e) {}
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: err.message || 'No se pudo crear el pedido',
-                    confirmButtonColor: '#c94a2d',
-                });
-            }
-        });
-    }
-    
-    // MÓDULO 3: Sistema de notificaciones para pedidos listos
-    let lastNotificationCheck = null;
-    let notifiedOrders = new Set();
-    
+@if($role === 'MOZO')
+// Aviso al mozo cuando la cocina marca un pedido como listo.
+(function () {
+    const notified = new Set();
     async function checkReadyOrders() {
         try {
-            const response = await fetch('/api/notifications/ready-orders', {
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
+            const res = await fetch('/api/notifications/ready-orders', { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            (data.orders || []).forEach((order) => {
+                if (notified.has(order.id)) return;
+                notified.add(order.id);
+                Swal.fire({
+                    icon: 'success', title: 'Pedido listo',
+                    html: `Pedido <strong>#${order.number}</strong> para la <strong>mesa ${order.table_number}</strong>`,
+                    toast: true, position: 'top-end', showConfirmButton: true, confirmButtonText: 'Ver pedidos',
+                    confirmButtonColor: '#1e8081', timer: 10000, timerProgressBar: true,
+                }).then((r) => { if (r.isConfirmed && order.table_id) window.location.href = `/tables/${order.table_id}/orders`; });
+                if (window.mzRefreshBoard) window.mzRefreshBoard();
             });
-            
-            if (!response.ok) return;
-            
-            const data = await response.json();
-            if (data.success && data.orders) {
-                data.orders.forEach(order => {
-                    // Solo notificar si no se ha notificado antes
-                    if (!notifiedOrders.has(order.id)) {
-                        notifiedOrders.add(order.id);
-                        
-                        // Mostrar notificación toast
-                        Swal.fire({
-                            icon: 'success',
-                            title: '🍽️ Pedido Listo',
-                            html: `Pedido <strong>#${order.number}</strong> listo en <strong>Mesa ${order.table_number}</strong>`,
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Ver Pedidos',
-                            confirmButtonColor: '#1e8081',
-                            timer: 10000,
-                            timerProgressBar: true,
-                            didOpen: (toast) => {
-                                toast.addEventListener('mouseenter', Swal.stopTimer);
-                                toast.addEventListener('mouseleave', Swal.resumeTimer);
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // Redirigir a ver pedidos de la mesa
-                                window.location.href = `/tables/${order.table_id || ''}/orders`;
-                            }
-                        });
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error checking ready orders:', error);
-        }
+        } catch (e) {}
     }
-    
-    // Iniciar polling cada 10 segundos si el usuario es MOZO
-    @if(auth()->user()->role === 'MOZO')
-        if (typeof checkReadyOrders === 'function') {
-            // Primera verificación después de 2 segundos
-            setTimeout(checkReadyOrders, 2000);
-            // Luego cada 10 segundos
-            setInterval(checkReadyOrders, 10000);
-        }
-    @endif
-});
+    setTimeout(checkReadyOrders, 2000);
+    setInterval(checkReadyOrders, 10000);
+})();
+@endif
 </script>
 @endsection
-

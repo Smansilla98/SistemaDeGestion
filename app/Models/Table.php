@@ -21,6 +21,9 @@ class Table extends Model
 
     const STATUS_CERRADA = 'CERRADA';
 
+    /** Roles que toman pedidos desde una mesa (pantalla de mesas y plano). */
+    public const ORDER_TAKER_ROLES = ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO'];
+
     protected $fillable = [
         'restaurant_id',
         'sector_id',

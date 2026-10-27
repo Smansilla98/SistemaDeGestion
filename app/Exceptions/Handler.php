@@ -124,6 +124,12 @@ class Handler extends ExceptionHandler
             return $this->handleNotFound($request, $exception);
         }
 
+        // Gate::authorize() lanza AuthorizationException: sin esto, en pedidos JSON
+        // caía en el genérico de abajo y respondía 500 en vez de 403.
+        if ($exception instanceof \Illuminate\Auth\Access\AuthorizationException) {
+            $exception = new AccessDeniedHttpException($exception->getMessage() ?: 'No tenés permiso para hacer esto.', $exception);
+        }
+
         if ($exception instanceof AccessDeniedHttpException) {
             return $this->handleAccessDenied($request, $exception);
         }

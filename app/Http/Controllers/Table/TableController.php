@@ -100,8 +100,7 @@ class TableController extends Controller
      */
     public function storeOrder(Request $request, Table $table)
     {
-        // Solo ADMIN / GERENTE / MOZO / ENCARGADO
-        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+        if (! in_array(auth()->user()->role, Table::ORDER_TAKER_ROLES, true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -262,6 +261,9 @@ class TableController extends Controller
         $selectedSector = null;
         $tables = collect();
 
+        // Sin sector elegido, se abre el primero en vez de una pantalla vacía.
+        $sectorId = $sectorId ?: $sectors->first()?->id;
+
         if ($sectorId) {
             // Cargar el sector principal con sus mesas y subsectores
             $selectedSector = Sector::where('restaurant_id', $restaurantId)
@@ -272,7 +274,7 @@ class TableController extends Controller
 
             // Cargar mesas del sector principal y ordenar por grupos numéricos (0-9, 10-19, etc.)
             $tables = Table::sortByNumericGroup(
-                Table::where('sector_id', $sectorId)->get()
+                Table::where('sector_id', $sectorId)->with(['currentOrder', 'currentSession.waiter'])->get()
             );
 
             // Cargar subsectores con sus items ordenados
@@ -308,8 +310,7 @@ class TableController extends Controller
      */
     public function storeOrderFromSubsectorItem(Request $request, \App\Models\SubsectorItem $item)
     {
-        // Solo ADMIN / GERENTE / MOZO / ENCARGADO
-        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
+        if (! in_array(auth()->user()->role, Table::ORDER_TAKER_ROLES, true)) {
             abort(403, 'No tienes permisos para crear pedidos');
         }
 
@@ -530,10 +531,8 @@ class TableController extends Controller
      */
     public function updateLayout(Request $request)
     {
-        // Verificar permisos: solo ADMIN/GERENTE/MOZO/ENCARGADO pueden actualizar layouts
-        if (! in_array(auth()->user()->role, ['ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
-            abort(403, 'No tienes permisos para actualizar el layout');
-        }
+        // Acomodar el plano es tarea de quien arma el salón (los mismos roles que crean mesas).
+        Gate::authorize('create', Table::class);
 
         $validated = $request->validate([
             'sector_id' => 'required|exists:sectors,id',
@@ -632,7 +631,7 @@ class TableController extends Controller
             if ($validated['status'] === 'OCUPADA' && ! $table->current_session_id) {
                 // Requerir waiter_id al abrir mesa
                 if (empty($validated['waiter_id'])) {
-                    return redirect()->route('tables.index')
+                    return $this->backToTables($request)
                         ->with('error', 'Debes asignar un mozo al abrir la mesa.');
                 }
 
@@ -644,13 +643,13 @@ class TableController extends Controller
                     ->first();
 
                 if (! $waiter) {
-                    return redirect()->route('tables.index')
+                    return $this->backToTables($request)
                         ->with('error', 'El mozo seleccionado no es válido o no pertenece a este restaurante.');
                 }
 
                 // Fallback defensivo: si en prod aún no corrieron migraciones, evitar fatal
                 if (! Schema::hasTable('table_sessions')) {
-                    return redirect()->route('tables.index')
+                    return $this->backToTables($request)
                         ->with('error', 'Faltan migraciones en la base de datos (table_sessions). Ejecutá migraciones para habilitar sesiones de mesa.');
                 }
 
@@ -696,7 +695,7 @@ class TableController extends Controller
                         'table_id' => $table->id,
                     ]);
 
-                    return redirect()->route('tables.index')
+                    return $this->backToTables($request)
                         ->with('error', 'No se pudo abrir la mesa. Reintentá en un momento o avisá a soporte.');
                 }
             }
@@ -706,13 +705,26 @@ class TableController extends Controller
             ]);
         }
 
-        return redirect()->route('tables.index')
+        return $this->backToTables($request)
             ->with('success', 'Estado de mesa actualizado exitosamente');
     }
 
     /**
      * Mostrar resumen y modal de pago antes de cerrar mesa
      */
+    /**
+     * Vuelve a la pantalla de mesas desde la que se operó (lista o plano).
+     * Solo acepta rutas internas de /tables para no abrir redirecciones a otros sitios.
+     */
+    private function backToTables(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $to = (string) $request->input('return_to', '');
+
+        return preg_match('#^/tables(/|\?|$)#', $to) === 1
+            ? redirect()->to($to)
+            : redirect()->route('tables.index');
+    }
+
     public function showCloseTable(Table $table)
     {
         Gate::authorize('update', $table);

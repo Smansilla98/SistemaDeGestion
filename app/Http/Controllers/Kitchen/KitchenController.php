@@ -18,7 +18,8 @@ class KitchenController extends Controller
         private OrderService $orderService,
         private NotificationService $notificationService
     ) {
-        $this->middleware('role:COCINA,ADMIN');
+        // El aviso de pedidos listos lo consultan los mozos desde Mesas.
+        $this->middleware('role:COCINA,ADMIN')->except('getReadyOrdersNotifications');
     }
 
     /**
