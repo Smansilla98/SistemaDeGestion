@@ -283,6 +283,14 @@
             @endif
             @endif
 
+            @if(auth()->check())
+            <div class="sb-div"></div>
+            <a href="{{ route('manual') }}" class="sb-link {{ request()->routeIs('manual') ? 'active' : '' }}">
+                <i class="bi bi-question-circle sb-ico"></i>
+                <span>Manual de uso</span>
+            </a>
+            @endif
+
             @if($canConfiguration || $canTutorials || ($navUser && $navUser->isAdminLevel()))
             <div class="sb-div"></div>
             @if($canConfiguration)

@@ -105,6 +105,9 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
+    // Manual de uso: cada rol ve primero el suyo y puede consultar los demás.
+    Route::get('/manual/{rol?}', \App\Http\Controllers\Manual\ManualController::class)->name('manual');
+
     // Notificaciones (campana y listado)
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');

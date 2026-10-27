@@ -14,7 +14,7 @@ class TablePolicy
      * Roles que pueden operar una mesa (abrir, cobrar y cerrar).
      * CAJERO y SUPERVISOR estaban excluidos y recibían 403 al intentar cerrar mesas.
      */
-    private const UPDATE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO', 'SUPERVISOR'];
+    public const UPDATE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERENTE', 'ENCARGADO', 'MOZO', 'CAJERO', 'SUPERVISOR'];
 
     /**
      * Determinar si el usuario puede ver cualquier mesa

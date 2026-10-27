@@ -64,6 +64,7 @@
             background: transparent; border: 1px solid var(--line); color: var(--muted);
             border-radius: 10px; padding: 8px 12px; font-size: 1rem; cursor: pointer;
         }
+        a.kd-tool { text-decoration: none; display: inline-flex; align-items: center; }
         .kd-tool:hover, .kd-tool:focus-visible { color: var(--ink); border-color: var(--muted); outline: none; }
         .kd-tool[aria-pressed="true"] { color: var(--ink); background: var(--panel-2); }
 
@@ -165,6 +166,7 @@
             <button type="button" class="kd-tool" id="kdFullscreen" title="Pantalla completa">
                 <i class="bi bi-arrows-fullscreen"></i>
             </button>
+            <a href="{{ route('manual') }}" class="kd-tool" title="Manual de uso" aria-label="Manual de uso"><i class="bi bi-question-circle"></i></a>
             <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
                 @csrf
                 <button type="submit" class="kd-tool" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
