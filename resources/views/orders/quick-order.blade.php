@@ -369,7 +369,10 @@ document.getElementById('newQuickOrderForm')?.addEventListener('submit', async f
         items: items
     };
 
-    var printWin = window.open('', 'kitchen_print', 'noopener,noreferrer,width=450,height=700');
+    // Sin 'noopener': con esa opción window.open devuelve null y la ventana en blanco
+            // no se puede ni redirigir al ticket ni cerrar si el pedido falla.
+            var printWin = window.open('', 'kitchen_print', 'width=450,height=700');
+            try { if (printWin) printWin.opener = null; } catch (e) {}
 
     // Mostrar loading
     Swal.fire({
