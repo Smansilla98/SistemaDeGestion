@@ -561,6 +561,10 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
 
     Route::prefix('agenda')->name('agenda.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Community\AgendaController::class, 'index'])->name('index');
+        Route::get('/categorias', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categorias', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'store'])->name('categories.store');
+        Route::put('/categorias/{category}', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categorias/{category}', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'destroy'])->name('categories.destroy');
         Route::post('/avisos', [\App\Http\Controllers\Community\AgendaController::class, 'storeNotice'])->name('notices.store');
         Route::delete('/avisos/{notice}', [\App\Http\Controllers\Community\AgendaController::class, 'destroyNotice'])->name('notices.destroy');
     });
@@ -578,6 +582,19 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::get('/{contact}/editar', [$c, 'edit'])->name('edit');
         Route::put('/{contact}', [$c, 'update'])->name('update');
         Route::delete('/{contact}', [$c, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('formularios')->name('forms.')->group(function () {
+        $c = \App\Http\Controllers\Community\FormSourceController::class;
+        Route::get('/', [$c, 'index'])->name('index');
+        Route::get('/nuevo', [$c, 'create'])->name('create');
+        Route::post('/', [$c, 'store'])->name('store')->middleware('throttle:20,1');
+        Route::get('/{form}', [$c, 'show'])->name('show');
+        Route::get('/{form}/editar', [$c, 'edit'])->name('edit');
+        Route::put('/{form}', [$c, 'update'])->name('update');
+        Route::post('/{form}/mapeo', [$c, 'mapping'])->name('mapping');
+        Route::post('/{form}/sincronizar', [$c, 'sync'])->name('sync')->middleware('throttle:20,1');
+        Route::delete('/{form}', [$c, 'destroy'])->name('destroy');
     });
 
     Route::prefix('comunicaciones')->name('campaigns.')->group(function () {

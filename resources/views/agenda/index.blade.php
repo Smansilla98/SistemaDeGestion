@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $quickLabels = ['workshop' => ['bi-easel', 'Nuevo taller'], 'event' => ['bi-calendar-event', 'Nuevo evento'],
+    $quickLabels = ['workshop' => ['bi-easel', 'Nuevo taller'], 'event' => ['bi-calendar-event', 'Nuevo evento'], 'forms' => ['bi-ui-checks', 'Formularios'],
         'cycle' => ['bi-arrow-repeat', 'Ciclo de pedidos'], 'entrepreneur' => ['bi-shop-window', 'Sumar emprendedor']];
     $quickHtml = collect($quick)->map(fn ($url, $k) => '<a href="'.e($url).'" class="btn btn-'.($k === 'workshop' ? 'primary' : 'outline-light').'"><i class="bi '.$quickLabels[$k][0].'"></i> '.$quickLabels[$k][1].'</a>')->implode(' ');
 @endphp
@@ -12,18 +12,35 @@
     'subtitle' => 'Clases, eventos y etapas, actividades, entregas, fechas especiales y avisos en un solo lugar.',
     'actions' => $quickHtml !== '' ? $quickHtml : null])
 
+@php $keep = array_filter(['tipo' => $filters['types'] ?: null, 'categoria' => $filters['category_id']]); @endphp
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="btn-group">
-        <a href="{{ route('agenda.index', ['vista' => $view, 'desde' => $prev->toDateString()]) }}" class="btn btn-outline-light"><i class="bi bi-chevron-left"></i></a>
-        <a href="{{ route('agenda.index', ['vista' => $view]) }}" class="btn btn-outline-light">Hoy</a>
-        <a href="{{ route('agenda.index', ['vista' => $view, 'desde' => $next->toDateString()]) }}" class="btn btn-outline-light"><i class="bi bi-chevron-right"></i></a>
+        <a href="{{ route('agenda.index', ['vista' => $view, 'desde' => $prev->toDateString()] + $keep) }}" class="btn btn-outline-light"><i class="bi bi-chevron-left"></i></a>
+        <a href="{{ route('agenda.index', ['vista' => $view] + $keep) }}" class="btn btn-outline-light">Hoy</a>
+        <a href="{{ route('agenda.index', ['vista' => $view, 'desde' => $next->toDateString()] + $keep) }}" class="btn btn-outline-light"><i class="bi bi-chevron-right"></i></a>
     </div>
     <strong class="text-white">{{ $from->locale('es')->translatedFormat('d M') }} – {{ $to->locale('es')->translatedFormat('d M Y') }}</strong>
     <div class="btn-group">
-        <a href="{{ route('agenda.index', ['vista' => 'semana', 'desde' => $from->toDateString()]) }}" class="btn btn-{{ $view === 'semana' ? 'primary' : 'outline-light' }}">Semana</a>
-        <a href="{{ route('agenda.index', ['vista' => 'mes', 'desde' => $from->toDateString()]) }}" class="btn btn-{{ $view === 'mes' ? 'primary' : 'outline-light' }}">Mes</a>
+        <a href="{{ route('agenda.index', ['vista' => 'semana', 'desde' => $from->toDateString()] + $keep) }}" class="btn btn-{{ $view === 'semana' ? 'primary' : 'outline-light' }}">Semana</a>
+        <a href="{{ route('agenda.index', ['vista' => 'mes', 'desde' => $from->toDateString()] + $keep) }}" class="btn btn-{{ $view === 'mes' ? 'primary' : 'outline-light' }}">Mes</a>
     </div>
 </div>
+
+<form method="GET" class="card mb-3"><div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
+    <input type="hidden" name="vista" value="{{ $view }}"><input type="hidden" name="desde" value="{{ $from->toDateString() }}">
+    @foreach(\App\Services\Community\AgendaService::TYPES as $k => $label)
+    <label class="form-check-label small d-flex align-items-center gap-1"><input type="checkbox" class="form-check-input mt-0" name="tipo[]" value="{{ $k }}" @checked(in_array($k, $filters['types'], true))> {{ $label }}</label>
+    @endforeach
+    @if($categories->isNotEmpty())
+    <select name="categoria" class="form-select form-select-sm w-auto">
+        <option value="">Todas las categorías</option>
+        @foreach($categories as $c)<option value="{{ $c->id }}" @selected($filters['category_id'] === $c->id)>{{ $c->name }}</option>@endforeach
+    </select>
+    @endif
+    <button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+    @if($filters['types'] || $filters['category_id'])<a href="{{ route('agenda.index', ['vista' => $view, 'desde' => $from->toDateString()]) }}" class="small">Quitar filtros</a>@endif
+    @if($canCreate)<a href="{{ route('agenda.categories.index') }}" class="small ms-auto"><i class="bi bi-tags"></i> Categorías</a>@endif
+</div></form>
 
 <div class="row g-4">
     <div class="{{ $canCreate ? 'col-lg-8' : 'col-12' }}">
@@ -36,6 +53,7 @@
                     <div class="d-flex gap-2 align-items-baseline small {{ $i['cancelled'] ? 'text-muted text-decoration-line-through' : '' }}">
                         <span class="text-muted" style="min-width: 3rem">{{ $i['time'] ?? '—' }}</span>
                         <span class="badge bg-secondary">{{ $i['kind'] }}</span>
+                        @if($i['category'])<span class="badge" style="background: {{ $i['color'] ?? '#6c757d' }}">{{ $i['category'] }}</span>@endif
                         @if($i['url'])<a href="{{ $i['url'] }}">{{ $i['title'] }}</a>@else<span>{{ $i['title'] }}</span>@endif
                         @if($i['detail'])<span class="text-muted">· {{ $i['detail'] }}</span>@endif
                     </div>
@@ -58,6 +76,9 @@
                     <div class="col-12"><select name="kind" class="form-select">@foreach(\App\Models\AgendaNotice::KINDS as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></div>
                     <div class="col-12"><input name="title" class="form-control" placeholder="Título (ej. Menú especial 25 de Mayo)" required></div>
                     <div class="col-12"><textarea name="body" class="form-control" rows="2" placeholder="Detalle (opcional)"></textarea></div>
+                    @if($categories->isNotEmpty())
+                    <div class="col-12"><select name="activity_category_id" class="form-select"><option value="">Sin categoría</option>@foreach($categories as $c)<option value="{{ $c->id }}">{{ $c->name }}</option>@endforeach</select></div>
+                    @endif
                     <div class="col-6"><label class="form-label small">Fecha</label><input type="date" name="date" class="form-control" required></div>
                     <div class="col-6"><label class="form-label small">Hasta (opcional)</label><input type="date" name="end_date" class="form-control"></div>
                     <div class="col-6"><label class="form-label small">Hora</label><input type="time" name="time" class="form-control"></div>

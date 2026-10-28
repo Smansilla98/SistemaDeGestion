@@ -23,6 +23,7 @@ class Event extends Model
         'expected_attendance',
         'status',
         'distribution_rule_id',
+        'activity_category_id',
     ];
 
     protected $casts = [
@@ -151,5 +152,10 @@ class Event extends Model
         }
 
         return $date;
+    }
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
     }
 }

@@ -15,10 +15,10 @@ class Workshop extends Model
 {
     use BelongsToRestaurant;
 
-    public const STATUSES = ['ABIERTO' => 'Inscripción abierta', 'EN_CURSO' => 'En curso', 'CERRADO' => 'Cerrado', 'FINALIZADO' => 'Finalizado'];
+    public const STATUSES = ['PROPUESTA' => 'Propuesta (a evaluar)', 'ABIERTO' => 'Inscripción abierta', 'EN_CURSO' => 'En curso', 'CERRADO' => 'Cerrado', 'FINALIZADO' => 'Finalizado'];
 
     protected $fillable = ['restaurant_id', 'name', 'description', 'teacher_contact_id', 'room', 'capacity', 'fee_cents',
-        'starts_on', 'ends_on', 'status', 'distribution_rule_id'];
+        'starts_on', 'ends_on', 'status', 'distribution_rule_id', 'activity_category_id'];
 
     protected $casts = ['starts_on' => 'date', 'ends_on' => 'date', 'capacity' => 'integer', 'fee_cents' => 'integer'];
 
@@ -77,5 +77,10 @@ class Workshop extends Model
     {
         return $this->teacher_contact_id !== null
             && Contact::withoutGlobalScopes()->whereKey($this->teacher_contact_id)->where('user_id', $user->id)->exists();
+    }
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
     }
 }

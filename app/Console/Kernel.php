@@ -16,6 +16,8 @@ class Kernel extends ConsoleKernel
     {
         // Recordatorios de talleres, agenda, aranceles y consignaciones (idempotente).
         $schedule->command('community:reminders')->dailyAt('09:00')->withoutOverlapping();
+        // Respuestas nuevas de los formularios de Google conectados.
+        $schedule->command('forms:sync')->everyThirtyMinutes()->withoutOverlapping();
     }
 
     /**

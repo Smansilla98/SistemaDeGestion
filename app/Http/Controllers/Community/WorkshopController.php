@@ -32,15 +32,19 @@ class WorkshopController extends Controller
             ->withCount([
                 'enrollments as active_count' => fn ($e) => $e->where('status', WorkshopEnrollment::ACTIVA),
                 'enrollments as waiting_count' => fn ($e) => $e->where('status', WorkshopEnrollment::EN_ESPERA),
-            ])->orderByRaw("FIELD(status, 'ABIERTO', 'EN_CURSO', 'CERRADO', 'FINALIZADO')")->orderBy('name');
+            ])->orderByRaw("FIELD(status, 'ABIERTO', 'EN_CURSO', 'PROPUESTA', 'CERRADO', 'FINALIZADO')")->orderBy('name');
         if ($this->isTeacherOnly()) {
             $q->whereHas('teacher', fn ($t) => $t->where('user_id', $this->user()->id));
         }
         if ($request->filled('status')) {
             $q->where('status', $request->string('status')->toString());
         }
+        if ($request->filled('categoria')) {
+            $q->where('activity_category_id', $request->integer('categoria'));
+        }
 
-        return view('workshops.index', ['workshops' => $q->get(), 'canCreate' => $this->can('workshops.create')]);
+        return view('workshops.index', ['workshops' => $q->with('category')->get(), 'canCreate' => $this->can('workshops.create'),
+            'categories' => \App\Models\ActivityCategory::query()->where('restaurant_id', $this->org())->orderBy('name')->get()]);
     }
 
     public function create(): View
@@ -226,6 +230,7 @@ class WorkshopController extends Controller
             'fee' => ['nullable', 'string', 'max:20'], 'starts_on' => ['nullable', 'date'], 'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
             'status' => ['required', Rule::in(array_keys(Workshop::STATUSES))],
             'distribution_rule_id' => ['nullable', 'integer', Rule::exists('distribution_rules', 'id')->where('restaurant_id', $this->org())],
+            'activity_category_id' => ['nullable', 'integer', Rule::exists('activity_categories', 'id')->where('restaurant_id', $this->org())],
             'schedules' => ['nullable', 'array', 'max:14'],
             'schedules.*.weekday' => ['nullable', 'integer', 'between:1,7'],
             'schedules.*.start_time' => ['nullable', 'date_format:H:i'],
@@ -260,6 +265,7 @@ class WorkshopController extends Controller
             'teachers' => Contact::query()->where('restaurant_id', $this->org())->where('is_active', true)
                 ->orderByRaw("kind = 'PROFESOR' DESC")->orderBy('name')->get(['id', 'name', 'kind']),
             'rules' => DistributionRule::query()->where('restaurant_id', $this->org())->orderBy('name')->get(),
+            'categories' => \App\Models\ActivityCategory::query()->where('restaurant_id', $this->org())->orderBy('name')->get(),
             'schedules' => $workshop->exists ? $workshop->schedules()->get() : collect(),
         ];
     }

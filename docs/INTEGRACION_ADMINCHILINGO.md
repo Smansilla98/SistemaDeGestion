@@ -147,6 +147,29 @@ persistencia → vista) y, donde se indica, con la suite de tests de cada proyec
 - La agenda tiene accesos para crear taller, evento, ciclo de pedidos o emprendedor según permisos.
 - `EventPolicy` suma a Coordinación (crear/editar) y a Artista y Marketing (ver).
 
+### Formularios de Google / Excel y categorías (29/10/2026)
+
+- **Formularios** (Comunidad → Formularios, módulo Contactos, permiso `contacts.create` para administrar):
+  cada organización conecta sus Google Forms a través de la planilla de respuestas (link de Google Sheets
+  compartido «cualquier persona con el enlace» o publicado como CSV) o sube el Excel/CSV descargado.
+  Destinos: **inscripciones a talleres** (crea/actualiza el contacto y lo inscribe en el taller fijo o en los
+  elegidos en el form, respetando cupo y lista de espera), **propuestas de talleristas** (contacto PROFESOR
+  con etiqueta «Postulante» + taller en estado PROPUESTA), **contactos** y **actividades de agenda**.
+- El sistema propone qué columna es cada dato (nombre, apellido, email, WhatsApp, taller, categoría,
+  fecha, hora, consentimiento…) y la organización lo ajusta. Cada respuesta se guarda con un hash: no se
+  duplica al volver a sincronizar; las que no se pudieron importar quedan «para revisar» y se reintentan.
+  Los contactos existentes (mismo email o teléfono) se completan sin pisar lo cargado.
+- `forms:sync` corre cada 30 minutos para los formularios con sincronización automática. Sólo se aceptan
+  links `https://docs.google.com/spreadsheets/…` (sin OAuth ni credenciales de Google).
+- **Categorías de actividades** (Agenda → Categorías): nombre y color; se asignan a talleres, eventos y
+  avisos, y los formularios pueden crearlas. La agenda se filtra por tipo (clases, eventos, etapas,
+  actividades, entregas, avisos) y por categoría; talleres se filtran por categoría.
+- Migración `2026_10_29_000001_create_form_sources_and_activity_categories` (reversible).
+- Se agregó `guzzlehttp/guzzle`: el cliente HTTP de Laravel lo necesita y faltaba en el proyecto
+  (también dejaba sin funcionar el push de Expo ya existente).
+- `composer audit` reporta avisos de seguridad previos en `laravel/framework` 10 y `livewire/livewire`
+  (no relacionados con este cambio): conviene planificar la actualización.
+
 ### Pendiente / fuera de esta etapa
 
 - **App móvil y API JWT**: los módulos nuevos son web. `AuthenticateJwt` ya aplica el rol de membresía al elegir sucursal, pero no hay endpoints nuevos.

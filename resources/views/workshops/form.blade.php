@@ -24,6 +24,11 @@
         <div class="col-md-3"><label class="form-label">Arancel ($)</label><input name="fee" class="form-control" value="{{ old('fee', $workshop->fee_cents ? number_format($workshop->fee_cents / 100, 2, ',', '.') : '') }}" placeholder="0"></div>
         <div class="col-md-3"><label class="form-label">Desde</label><input type="date" name="starts_on" class="form-control" value="{{ old('starts_on', $workshop->starts_on?->toDateString()) }}"></div>
         <div class="col-md-3"><label class="form-label">Hasta</label><input type="date" name="ends_on" class="form-control" value="{{ old('ends_on', $workshop->ends_on?->toDateString()) }}"></div>
+        <div class="col-md-6"><label class="form-label">Categoría</label>
+            <select name="activity_category_id" class="form-select"><option value="">Sin categoría</option>
+                @foreach($categories as $c)<option value="{{ $c->id }}" @selected((int) old('activity_category_id', $workshop->activity_category_id) === $c->id)>{{ $c->name }}</option>@endforeach
+            </select>
+            <div class="form-text">Se administran desde Agenda → Categorías.</div></div>
         @if($rules->isNotEmpty())
         <div class="col-md-6"><label class="form-label">Reparto de lo recaudado</label>
             <select name="distribution_rule_id" class="form-select"><option value="">Sin regla</option>

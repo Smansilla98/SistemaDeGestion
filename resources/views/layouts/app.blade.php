@@ -296,6 +296,12 @@
                 <span>Contactos</span>
             </a>
             @endif
+            @if($canContacts)
+            <a href="{{ route('forms.index') }}" class="sb-link {{ request()->routeIs('forms.*') ? 'active' : '' }}">
+                <i class="bi bi-ui-checks sb-ico"></i>
+                <span>Formularios</span>
+            </a>
+            @endif
             @if($canCampaigns)
             <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
                 <i class="bi bi-megaphone sb-ico"></i>

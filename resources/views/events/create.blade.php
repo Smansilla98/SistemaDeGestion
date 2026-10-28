@@ -82,6 +82,16 @@
                         </div>
                     </div>
 
+                    @if(isset($categories) && $categories->isNotEmpty())
+                    <div class="row"><div class="col-md-6 mb-3">
+                        <label for="activity_category_id" class="form-label">Categoría</label>
+                        <select name="activity_category_id" id="activity_category_id" class="form-select">
+                            <option value="">Sin categoría</option>
+                            @foreach($categories as $c)<option value="{{ $c->id }}" @selected((int) old('activity_category_id') === $c->id)>{{ $c->name }}</option>@endforeach
+                        </select>
+                    </div></div>
+                    @endif
+
                     <div class="mb-3">
                         <label for="description" class="form-label">Descripción</label>
                         <textarea class="form-control @error('description') is-invalid @enderror" 

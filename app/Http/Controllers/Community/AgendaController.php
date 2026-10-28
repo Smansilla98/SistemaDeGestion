@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Community;
 
 use App\Http\Controllers\Concerns\OrganizationContext;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityCategory;
 use App\Models\AgendaNotice;
 use App\Services\Community\AgendaService;
 use App\Services\Community\OrganizationDirectory;
@@ -27,8 +28,13 @@ class AgendaController extends Controller
             ? [$ref->startOfMonth(), $ref->endOfMonth()->startOfDay()]
             : [$ref->startOfWeek(), $ref->startOfWeek()->addDays(6)];
 
+        $filters = ['types' => array_values(array_filter((array) $request->input('tipo', []), 'is_string')),
+            'category_id' => $request->integer('categoria') ?: null];
+
         return view('agenda.index', [
-            'days' => $agenda->between($this->user(), $this->org(), $from, $to),
+            'days' => $agenda->between($this->user(), $this->org(), $from, $to, $filters),
+            'filters' => $filters,
+            'categories' => ActivityCategory::query()->where('restaurant_id', $this->org())->orderBy('name')->get(),
             'from' => $from, 'to' => $to, 'view' => $view,
             'prev' => $view === 'mes' ? $from->subMonth() : $from->subWeek(),
             'next' => $view === 'mes' ? $from->addMonth() : $from->addWeek(),
@@ -36,6 +42,7 @@ class AgendaController extends Controller
             'quick' => array_filter([
                 'workshop' => $this->can('workshops.create') && $this->moduleOn('workshops') ? route('workshops.create') : null,
                 'event' => $this->can('events.create') && $this->moduleOn('events') ? route('events.create') : null,
+                'forms' => $this->can('contacts.create') && $this->moduleOn('contacts') ? route('forms.index') : null,
                 'cycle' => $this->can('market.create') && $this->moduleOn('market') ? route('market.cycles.index') : null,
                 'entrepreneur' => $this->can('market.create') && $this->moduleOn('market') ? route('market.entrepreneurs.create') : null,
             ]),
@@ -56,6 +63,7 @@ class AgendaController extends Controller
             'kind' => ['required', Rule::in(array_keys(AgendaNotice::KINDS))], 'title' => ['required', 'string', 'max:255'],
             'body' => ['nullable', 'string', 'max:2000'], 'date' => ['required', 'date'], 'end_date' => ['nullable', 'date', 'after_or_equal:date'],
             'time' => ['nullable', 'date_format:H:i'], 'notify' => ['nullable', 'boolean'],
+            'activity_category_id' => ['nullable', 'integer', Rule::exists('activity_categories', 'id')->where('restaurant_id', $this->org())],
         ]);
         $notice = AgendaNotice::query()->create(collect($data)->except('notify')->all() + ['restaurant_id' => $this->org(), 'created_by' => $this->user()->id]);
 

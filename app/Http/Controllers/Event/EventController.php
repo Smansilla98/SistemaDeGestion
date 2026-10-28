@@ -125,7 +125,9 @@ class EventController extends Controller
         // Fecha preseleccionada si viene por query
         $selectedDate = $request->get('date');
 
-        return view('events.create', compact('products', 'selectedDate'));
+        $categories = \App\Models\ActivityCategory::query()->where('restaurant_id', $restaurantId)->orderBy('name')->get();
+
+        return view('events.create', compact('products', 'selectedDate', 'categories'));
     }
 
     /**
@@ -141,6 +143,7 @@ class EventController extends Controller
             'date' => 'required|date',
             'time' => 'nullable|date_format:H:i',
             'expected_attendance' => 'nullable|integer|min:0',
+            'activity_category_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('activity_categories', 'id')->where('restaurant_id', auth()->user()->restaurant_id)],
             'products' => 'nullable|array',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.expected_quantity' => 'required|integer|min:1',
@@ -158,6 +161,7 @@ class EventController extends Controller
             'date' => $validated['date'],
             'time' => $validated['time'] ?? null,
             'expected_attendance' => $validated['expected_attendance'] ?? null,
+            'activity_category_id' => $validated['activity_category_id'] ?? null,
             'status' => Event::STATUS_PROGRAMADO,
         ]);
 
@@ -223,7 +227,9 @@ class EventController extends Controller
 
         $event->load('products');
 
-        return view('events.edit', compact('event', 'products'));
+        $categories = \App\Models\ActivityCategory::query()->where('restaurant_id', $restaurantId)->orderBy('name')->get();
+
+        return view('events.edit', compact('event', 'products', 'categories'));
     }
 
     /**
@@ -240,6 +246,7 @@ class EventController extends Controller
             'time' => 'nullable|date_format:H:i',
             'expected_attendance' => 'nullable|integer|min:0',
             'status' => 'required|in:PROGRAMADO,EN_CURSO,FINALIZADO,CANCELADO',
+            'activity_category_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('activity_categories', 'id')->where('restaurant_id', auth()->user()->restaurant_id)],
             'products' => 'nullable|array',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.expected_quantity' => 'required|integer|min:1',
@@ -253,6 +260,7 @@ class EventController extends Controller
             'date' => $validated['date'],
             'time' => $validated['time'] ?? null,
             'expected_attendance' => $validated['expected_attendance'] ?? null,
+            'activity_category_id' => $validated['activity_category_id'] ?? null,
             'status' => $validated['status'],
         ]);
 

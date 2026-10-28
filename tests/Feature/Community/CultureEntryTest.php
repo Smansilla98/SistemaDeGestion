@@ -20,7 +20,8 @@ it('la entrada «Centro cultural» habilita sólo los módulos de gestión y dej
 
     expect(Workshop::query()->where('name', DemoCommunityData::MARKER)->count())->toBe(1);
     $ws = Workshop::query()->where('name', DemoCommunityData::MARKER)->first();
-    expect($ws->enrollments()->where('status', 'EN_ESPERA')->count())->toBe(1)
+    // Eli queda en espera por cupo y Nico (del formulario de ejemplo) también.
+    expect($ws->enrollments()->where('status', 'EN_ESPERA')->count())->toBe(2)
         ->and($ws->sessions()->count())->toBeGreaterThan(5);
 
     $this->get(route('agenda.index'))->assertOk()->assertSee('Nuevo taller')->assertSee('Nuevo evento')->assertSee('Reunión de coordinación');

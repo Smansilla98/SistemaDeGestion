@@ -100,10 +100,10 @@ return [
     'contacts' => [
         'community' => true,
         'label' => 'Contactos y difusión',
-        'description' => 'Contactos con etiquetas y grupos, importación/exportación y comunicaciones.',
+        'description' => 'Contactos con etiquetas y grupos, formularios de Google/Excel, importación/exportación y comunicaciones.',
         'offered' => false,
         'default' => false,
-        'web' => ['contacts.', 'contact-groups.', 'campaigns.'],
+        'web' => ['contacts.', 'contact-groups.', 'campaigns.', 'forms.'],
         'api' => [],
     ],
     'market' => [

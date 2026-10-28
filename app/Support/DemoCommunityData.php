@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\ActivityCategory;
 use App\Models\AgendaNotice;
 use App\Models\Contact;
 use App\Models\ContactTag;
 use App\Models\DistributionRule;
 use App\Models\Entrepreneur;
 use App\Models\Event;
+use App\Models\FormSource;
 use App\Models\MarketProduct;
 use App\Models\OrderCycle;
 use App\Models\User;
@@ -17,6 +19,7 @@ use App\Models\Workshop;
 use App\Models\WorkshopSchedule;
 use App\Services\Community\WorkshopService;
 use App\Services\Finance\ActivityFinanceService;
+use App\Services\Forms\FormImportService;
 use App\Services\Market\ConsignmentService;
 use App\Services\Market\MarketStockService;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +48,11 @@ final class DemoCommunityData
             $profe = Contact::query()->create(['restaurant_id' => $org, 'name' => 'Marta Ríos (ejemplo)', 'kind' => 'PROFESOR', 'phone' => '11 4000 1000']);
             $tag = ContactTag::query()->firstOrCreate(['restaurant_id' => $org, 'name' => 'zona sur']);
 
-            $workshop = Workshop::query()->create(['restaurant_id' => $org, 'name' => self::MARKER, 'status' => 'ABIERTO',
+            $musica = ActivityCategory::query()->firstOrCreate(['restaurant_id' => $org, 'name' => 'Música'], ['color' => '#8a5cc2']);
+            $teatro = ActivityCategory::query()->firstOrCreate(['restaurant_id' => $org, 'name' => 'Teatro'], ['color' => '#d9534f']);
+            $feria = ActivityCategory::query()->firstOrCreate(['restaurant_id' => $org, 'name' => 'Feria'], ['color' => '#2e7d32']);
+
+            $workshop = Workshop::query()->create(['restaurant_id' => $org, 'name' => self::MARKER, 'status' => 'ABIERTO', 'activity_category_id' => $musica->id,
                 'description' => 'Taller abierto a la comunidad. Ejemplo para recorrer inscripciones, clases y asistencia.',
                 'capacity' => 4, 'fee_cents' => 1500000, 'teacher_contact_id' => $profe->id, 'room' => 'Sala grande',
                 'starts_on' => today()->subWeeks(3), 'distribution_rule_id' => $rule->id]);
@@ -66,7 +73,8 @@ final class DemoCommunityData
             $finance->record($workshop, 'GASTO', 'Parches y baquetas', 600000, today()->toDateString(), $user);
 
             $event = Event::query()->create(['restaurant_id' => $org, 'created_by' => $user->id, 'name' => 'Peña de primavera (ejemplo)',
-                'date' => today()->addWeeks(2), 'time' => '20:00', 'status' => Event::STATUS_PROGRAMADO, 'expected_attendance' => 150]);
+                'date' => today()->addWeeks(2), 'time' => '20:00', 'status' => Event::STATUS_PROGRAMADO, 'expected_attendance' => 150,
+                'activity_category_id' => $musica->id]);
             foreach ([['Armado y sonido', 20000000], ['Difusión', 3000000], ['Artistas', 25000000]] as $pos => [$name, $budget]) {
                 $event->stages()->create(['name' => $name, 'position' => $pos, 'budget_cents' => $budget, 'status' => 'PENDIENTE',
                     'starts_at' => today()->addWeeks(2)->setTime(16 + $pos, 0), 'responsible_contact_id' => $profe->id]);
@@ -88,8 +96,34 @@ final class DemoCommunityData
 
             AgendaNotice::query()->create(['restaurant_id' => $org, 'kind' => 'FECHA_ESPECIAL', 'title' => 'Menú especial por fecha patria (ejemplo)',
                 'date' => today()->addDays(3), 'created_by' => $user->id]);
+            AgendaNotice::query()->create(['restaurant_id' => $org, 'kind' => 'FERIA', 'title' => 'Feria de emprendedores (ejemplo)',
+                'date' => today()->addDays(9), 'time' => '15:00', 'activity_category_id' => $feria->id, 'created_by' => $user->id]);
+            $teatroTaller = Workshop::query()->create(['restaurant_id' => $org, 'name' => 'Teatro comunitario (ejemplo)', 'status' => 'ABIERTO',
+                'capacity' => 15, 'activity_category_id' => $teatro->id, 'room' => 'Sala chica']);
+            WorkshopSchedule::query()->create(['workshop_id' => $teatroTaller->id, 'weekday' => 6, 'start_time' => '11:00:00', 'end_time' => '13:00:00']);
+            $svc->generateSessions($teatroTaller, today(), today()->addWeeks(6));
             AgendaNotice::query()->create(['restaurant_id' => $org, 'kind' => 'REUNION', 'title' => 'Reunión de coordinación (ejemplo)',
                 'date' => today()->addDay(), 'time' => '19:00', 'created_by' => $user->id]);
         });
+
+        self::demoForm($user, (int) $orgId);
+    }
+
+    /**
+     * Formulario de inscripción de ejemplo, como si viniera de Google Forms (sin conexión externa).
+     */
+    private static function demoForm(User $user, int $org): void
+    {
+        $source = FormSource::query()->create(['restaurant_id' => $org, 'name' => 'Inscripciones por Google Forms (ejemplo)',
+            'target' => 'ALUMNOS', 'tags' => 'formulario', 'created_by' => $user->id, 'is_active' => true]);
+        $h = ['Marca temporal', 'Nombre y apellido', 'Dirección de correo electrónico', 'WhatsApp', '¿A qué taller te querés anotar?', '¿Querés recibir novedades del centro?'];
+        $rows = [
+            [now()->subDays(2)->format('d/m/Y H:i:s'), 'Juli Paz', 'juli.paz@example.com', '11 6000 1111', 'Teatro comunitario (ejemplo)', 'Sí'],
+            [now()->subDay()->format('d/m/Y H:i:s'), 'Nico Sosa', 'nico.sosa@example.com', '11 6000 2222', 'Teatro comunitario (ejemplo), Percusión inicial (ejemplo)', 'No'],
+            [now()->format('d/m/Y H:i:s'), 'Vero Luna', 'vero.luna@example.com', '11 6000 3333', 'Danza árabe', 'Sí'],
+        ];
+        $service = app(FormImportService::class);
+        $service->storeDataset($source, ['headers' => $h, 'rows' => array_map(fn ($r) => array_combine($h, $r), $rows)]);
+        $service->import($source->fresh());
     }
 }
