@@ -3,8 +3,14 @@
 @section('title', 'Agenda')
 
 @section('content')
+@php
+    $quickLabels = ['workshop' => ['bi-easel', 'Nuevo taller'], 'event' => ['bi-calendar-event', 'Nuevo evento'],
+        'cycle' => ['bi-arrow-repeat', 'Ciclo de pedidos'], 'entrepreneur' => ['bi-shop-window', 'Sumar emprendedor']];
+    $quickHtml = collect($quick)->map(fn ($url, $k) => '<a href="'.e($url).'" class="btn btn-'.($k === 'workshop' ? 'primary' : 'outline-light').'"><i class="bi '.$quickLabels[$k][0].'"></i> '.$quickLabels[$k][1].'</a>')->implode(' ');
+@endphp
 @include('community._head', ['icon' => 'bi-calendar-week', 'title' => 'Agenda',
-    'subtitle' => 'Clases, eventos y etapas, actividades, entregas, fechas especiales y avisos en un solo lugar.'])
+    'subtitle' => 'Clases, eventos y etapas, actividades, entregas, fechas especiales y avisos en un solo lugar.',
+    'actions' => $quickHtml !== '' ? $quickHtml : null])
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="btn-group">

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Entry;
 use App\Http\Controllers\Controller;
 use App\Services\ModuleLicenseService;
 use App\Support\CommercialQuote;
+use App\Support\DemoCommunityData;
 use App\Support\DemoEntry;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -24,8 +25,25 @@ class EntryController extends Controller
     public function demo(): RedirectResponse
     {
         DemoEntry::enterDemo();
+        DemoCommunityData::ensure(request()->user());
 
         return redirect()->route(DemoEntry::homeRoute(request()->user()));
+    }
+
+    /**
+     * Demo de centro cultural / escuela / mercado: sólo los módulos de gestión comunitaria,
+     * con datos de ejemplo para crear y recorrer talleres, eventos, consignaciones y pedidos.
+     */
+    public function culture(ModuleLicenseService $licenses): RedirectResponse
+    {
+        $map = array_fill_keys(array_keys($licenses->offered()), false);
+        foreach (array_keys($licenses->community()) as $key) {
+            $map[$key] = true;
+        }
+        DemoEntry::enterCustom($map);
+        DemoCommunityData::ensure(request()->user());
+
+        return redirect()->route('agenda.index');
     }
 
     public function modules(ModuleLicenseService $licenses): View
@@ -34,6 +52,7 @@ class EntryController extends Controller
 
         return view('entry.modules', [
             'offered' => $licenses->offered(),
+            'community' => $licenses->community(),
             'selected' => is_array($selected) ? $selected : null,
         ]);
     }
@@ -46,11 +65,14 @@ class EntryController extends Controller
 
         $input = $request->input('modules', []);
         $map = [];
-        foreach (array_keys($licenses->offered()) as $key) {
+        foreach (array_keys($licenses->offered() + $licenses->community()) as $key) {
             $map[$key] = filter_var($input[$key] ?? false, FILTER_VALIDATE_BOOLEAN);
         }
 
         DemoEntry::enterCustom($map);
+        if (collect($licenses->community())->keys()->contains(fn ($k) => $map[$k])) {
+            DemoCommunityData::ensure($request->user());
+        }
 
         return redirect()->route(DemoEntry::homeRoute($request->user()));
     }

@@ -15,6 +15,8 @@ class LandingPageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Todo el servicio en un solo sistema')
+            ->assertSee('Gestioná tu espacio, tus talleres y tu comunidad')
+            ->assertSee('Repartos 70/30')
             ->assertSee(route('login'), false);
     }
 

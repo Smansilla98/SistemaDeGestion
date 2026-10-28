@@ -15,11 +15,11 @@ use App\Support\DemoEntry;
 final class ModuleLicenseService
 {
     /**
-     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}>
+     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}>
      */
     public function catalog(): array
     {
-        /** @var array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}> $catalog */
+        /** @var array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}> $catalog */
         $catalog = config('sellable_modules', []);
 
         return $catalog;
@@ -28,13 +28,26 @@ final class ModuleLicenseService
     /**
      * Módulos que se pueden ofrecer a un restaurante (venta de comida).
      *
-     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}>
+     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}>
      */
     public function offered(): array
     {
         return array_filter(
             $this->catalog(),
             fn (array $module): bool => ($module['offered'] ?? true) === true,
+        );
+    }
+
+    /**
+     * Módulos para centros culturales, escuelas, mercados y nodos (se muestran aparte en la demo).
+     *
+     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}>
+     */
+    public function community(): array
+    {
+        return array_filter(
+            $this->catalog(),
+            fn (array $module): bool => ($module['community'] ?? false) === true,
         );
     }
 

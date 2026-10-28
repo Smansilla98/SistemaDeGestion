@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $brand }} — {{ \App\Support\Branding::tagline() }}</title>
-    <meta name="description" content="{{ $brand }} es un sistema para gestionar un restaurante completo: salón de mesas, pedidos, comandas de cocina, caja, stock y reportes, con permisos por rol.">
+    <meta name="description" content="{{ $brand }} es un sistema para gestionar un restaurante completo —salón de mesas, pedidos, cocina, caja, stock y reportes— y también centros culturales, escuelas, talleres, mercados y nodos: inscripciones, agenda, contactos, consignaciones y repartos.">
     <meta name="theme-color" content="{{ $colors['primary'] }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     @include('partials.favicon')
@@ -85,6 +85,17 @@
         .roles span i { color: var(--primary); margin-right: 6px; }
         .note { color: var(--muted); margin: 18px 0 0; max-width: 46em; line-height: 1.6; }
 
+        .alt { background: color-mix(in srgb, var(--accent) 6%, var(--bg)); }
+        .split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin-top: 32px; }
+        .split h3 { margin: 0 0 12px; font-size: 1.2rem; }
+        .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+        .checks li { display: flex; gap: 10px; line-height: 1.5; color: var(--muted); }
+        .checks li i { color: var(--primary); margin-top: 2px; }
+        .checks li strong { color: var(--ink); }
+        .kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+        .kinds span { background: var(--card); border: 1px dashed var(--line); border-radius: 999px; padding: 6px 14px; font-size: .9rem; font-weight: 600; color: var(--muted); }
+        @media (max-width: 960px) { .split { grid-template-columns: 1fr; } }
+
         .cta { margin: 24px auto 64px; padding: 40px 24px; text-align: center; border-radius: 20px; background: linear-gradient(135deg, var(--secondary), var(--ink)); color: #fff; }
         .cta h2 { margin: 0 0 8px; font-size: clamp(1.5rem, 3vw, 2.1rem); }
         .cta p { margin: 0 0 22px; opacity: .85; }
@@ -121,6 +132,7 @@
         <nav class="nav__links" aria-label="Secciones">
             <a href="#que-es">Qué es</a>
             <a href="#como-funciona">Cómo funciona</a>
+            <a href="#centros-culturales">Centros culturales</a>
             <a href="#equipo">Equipo</a>
         </nav>
         <a href="{{ route('login') }}" class="btn btn-primary">Ingresar</a>
@@ -140,6 +152,7 @@
                 <div class="actions">
                     <a href="{{ route('login') }}" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> Ingresar al sistema</a>
                     <a href="#que-es" class="btn btn-ghost">Conocer más</a>
+                    <a href="#centros-culturales" class="btn btn-ghost"><i class="bi bi-easel"></i> Para centros culturales</a>
                 </div>
             </div>
             <div class="mock" aria-hidden="true">
@@ -225,6 +238,87 @@
         </div>
     </section>
 
+
+    <section id="centros-culturales" class="block alt">
+        <div class="wrap">
+            <p class="kicker">También para centros culturales</p>
+            <h2>Gestioná tu espacio, tus talleres y tu comunidad</h2>
+            <div class="kinds">
+                <span>Centros culturales</span><span>Escuelas y talleres</span><span>Mercados territoriales</span>
+                <span>Nodos agroecológicos</span><span>Emprendedores</span><span>Organizadores de eventos</span>
+            </div>
+            <div class="grid">
+                <article class="card">
+                    <i class="bi bi-easel" aria-hidden="true"></i>
+                    <h3>Talleres e inscripciones</h3>
+                    <p>Cupos y lista de espera: si alguien se da de baja, el lugar pasa solo a quien sigue y se le avisa.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i>
+                    <h3>Agenda y clases</h3>
+                    <p>Clases semanales, reprogramaciones con aviso, eventos, ferias, entregas y fechas especiales en un solo calendario.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-check2-square" aria-hidden="true"></i>
+                    <h3>Asistencia y seguimiento</h3>
+                    <p>El profe toma asistencia desde el celular; si alguien falta varias clases seguidas, la coordinación se entera.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                    <h3>Contactos y difusión</h3>
+                    <p>Profes, artistas, alumnos y público con etiquetas y grupos. Comunicaciones sólo a quien aceptó recibirlas.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-shop-window" aria-hidden="true"></i>
+                    <h3>Emprendedores y consignaciones</h3>
+                    <p>Productos, stock y consignaciones: qué se vendió, qué se devolvió y cuánto se le debe a cada emprendedor.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-basket" aria-hidden="true"></i>
+                    <h3>Ciclos de pedidos</h3>
+                    <p>Para nodos y mercados: se abren pedidos, se cierra, se consolida qué pedir a cada productor y se entrega.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-pie-chart" aria-hidden="true"></i>
+                    <h3>Repartos 70/30</h3>
+                    <p>Ingresos y gastos por taller o evento, reglas de reparto a medida, pagos parciales y saldos al día.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-diagram-3" aria-hidden="true"></i>
+                    <h3>Eventos por etapas</h3>
+                    <p>Dividí cada evento en etapas con responsable, presupuesto y lo pagado de cada una.</p>
+                </article>
+                <article class="card">
+                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                    <h3>Documentos y manual de marca</h3>
+                    <p>Reglamentos y materiales con versiones y permisos; manual de marca en PDF para cada emprendedor.</p>
+                </article>
+            </div>
+
+            <div class="split">
+                <div>
+                    <h3>Cómo se gestiona</h3>
+                    <ul class="checks">
+                        <li><i class="bi bi-1-circle-fill"></i><span><strong>Elegís el tipo de organización</strong> y los módulos que usás: nada más aparece en el menú.</span></li>
+                        <li><i class="bi bi-2-circle-fill"></i><span><strong>Sumás a tu equipo con su propia cuenta</strong>: una persona puede ser mozo en un bar y profe en tu centro, sin otra contraseña.</span></li>
+                        <li><i class="bi bi-3-circle-fill"></i><span><strong>Cargás talleres, eventos y productos</strong>, o importás tus contactos desde una planilla.</span></li>
+                        <li><i class="bi bi-4-circle-fill"></i><span><strong>El sistema avisa solo</strong>: inscripciones, cambios de horario, recordatorios de clase, stock bajo y pagos pendientes.</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Cada quien ve lo suyo</h3>
+                    <ul class="checks">
+                        <li><i class="bi bi-check-circle-fill"></i><span><strong>Coordinación</strong>: todo el espacio, agenda, finanzas y difusión.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span><strong>Profes</strong>: sus talleres, la asistencia y las evaluaciones.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span><strong>Alumnos</strong>: sus clases, avisos y documentos.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span><strong>Emprendedores</strong>: sus productos, consignaciones y liquidaciones.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span><strong>Marketing e inventario</strong>: contactos y comunicaciones, o stock y movimientos.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="equipo" class="block">
         <div class="wrap">
             <p class="kicker">Equipo</p>
@@ -235,15 +329,21 @@
                 <span><i class="bi bi-person-walking"></i>Mozo</span>
                 <span><i class="bi bi-egg-fried"></i>Cocina</span>
                 <span><i class="bi bi-person-gear"></i>Superadmin</span>
+                <span><i class="bi bi-diagram-3"></i>Coordinación</span>
+                <span><i class="bi bi-easel"></i>Profe</span>
+                <span><i class="bi bi-mortarboard"></i>Alumno</span>
+                <span><i class="bi bi-shop-window"></i>Emprendedor</span>
+                <span><i class="bi bi-music-note-beamed"></i>Artista</span>
+                <span><i class="bi bi-megaphone"></i>Marketing</span>
             </div>
-            <p class="note">Cada persona entra con su usuario y ve solo lo suyo: el mozo, sus mesas y pedidos; la cocina, sus comandas; la administración, la caja, el stock y los reportes.</p>
+            <p class="note">Cada persona entra con su usuario y ve solo lo suyo: el mozo, sus mesas y pedidos; la cocina, sus comandas; la administración, la caja, el stock y los reportes. En un centro cultural, el profe ve sus talleres y el emprendedor sus consignaciones; y una misma cuenta puede participar en varias organizaciones con un rol distinto en cada una.</p>
         </div>
     </section>
 
     <div class="wrap">
         <section class="cta">
             <h2>¿Ya tenés usuario?</h2>
-            <p>Entrá para abrir el salón y empezar el servicio.</p>
+            <p>Entrá para abrir el salón, o para organizar los talleres y la agenda de tu espacio.</p>
             <a href="{{ route('login') }}" class="btn btn-primary">Ingresar</a>
         </section>
     </div>

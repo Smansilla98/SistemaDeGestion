@@ -70,15 +70,17 @@ return [
         'api' => ['reports'],
     ],
     'events' => [
+        'community' => true,
         'label' => 'Eventos',
-        'description' => 'Agenda y actividades recurrentes. No se ofrece al local: no es la venta de comida.',
+        'description' => 'Eventos con etapas, presupuesto y actividades recurrentes.',
         'offered' => false,
         'web' => ['events.', 'recurring-activities.'],
         'api' => ['events', 'recurring-activities'],
     ],
     'fixed-expenses' => [
+        'community' => true,
         'label' => 'Gastos fijos',
-        'description' => 'Alquiler y servicios. No se ofrece al local.',
+        'description' => 'Alquiler, servicios e ingresos fijos del espacio.',
         'offered' => false,
         'web' => ['fixed-expenses.'],
         'api' => ['fixed-expenses'],
@@ -87,6 +89,7 @@ return [
     // Módulos para organizaciones culturales, educativas y comerciales. default=false: un local
     // existente no los ve hasta que el superadmin los habilita en Monitor de módulos.
     'workshops' => [
+        'community' => true,
         'label' => 'Talleres y agenda',
         'description' => 'Talleres, inscripciones con cupo y lista de espera, clases, asistencia, evaluaciones y agenda.',
         'offered' => false,
@@ -95,6 +98,7 @@ return [
         'api' => [],
     ],
     'contacts' => [
+        'community' => true,
         'label' => 'Contactos y difusión',
         'description' => 'Contactos con etiquetas y grupos, importación/exportación y comunicaciones.',
         'offered' => false,
@@ -103,6 +107,7 @@ return [
         'api' => [],
     ],
     'market' => [
+        'community' => true,
         'label' => 'Emprendedores y mercado',
         'description' => 'Emprendedores, productos, stock, consignaciones, liquidaciones y ciclos de pedidos.',
         'offered' => false,
@@ -111,6 +116,7 @@ return [
         'api' => [],
     ],
     'documents' => [
+        'community' => true,
         'label' => 'Documentos',
         'description' => 'Documentos con versiones y permisos, y manuales de marca en PDF.',
         'offered' => false,
@@ -119,6 +125,7 @@ return [
         'api' => [],
     ],
     'finance' => [
+        'community' => true,
         'label' => 'Finanzas de actividades',
         'description' => 'Ingresos y gastos por taller o evento, repartos configurables (ej. 70/30) y liquidaciones.',
         'offered' => false,

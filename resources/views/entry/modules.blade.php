@@ -60,6 +60,7 @@
             align-items: center;
             margin-top: 18px;
         }
+        h2.group { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #8b93a1; margin: 18px 0 8px; }
         a.back { color: #8b93a1; font-size: 13px; text-decoration: none; }
         a.back:hover { color: #1c2430; }
         button.go {
@@ -79,7 +80,8 @@
     <form class="panel" method="POST" action="{{ route('entry.modules.store') }}">
         @csrf
         <h1>Configurar módulos</h1>
-        <p class="lead">Solo la venta de comida. Lo que desmarques no aparece en el menú ni se puede abrir en esta sesión. La demo completa sigue disponible al volver a entrar.</p>
+        <p class="lead">Lo que desmarques no aparece en el menú ni se puede abrir en esta sesión. La demo completa sigue disponible al volver a entrar.</p>
+        <h2 class="group">Venta de comida</h2>
         @foreach($offered as $key => $module)
             <label class="row">
                 <input type="hidden" name="modules[{{ $key }}]" value="0">
@@ -89,6 +91,17 @@
                     value="1"
                     @checked($selected === null || ($selected[$key] ?? false))
                 >
+                <span>
+                    <strong>{{ $module['label'] }}</strong>
+                    <span>{{ $module['description'] }}</span>
+                </span>
+            </label>
+        @endforeach
+        <h2 class="group">Centros culturales, escuelas y mercados</h2>
+        @foreach($community as $key => $module)
+            <label class="row">
+                <input type="hidden" name="modules[{{ $key }}]" value="0">
+                <input type="checkbox" name="modules[{{ $key }}]" value="1" @checked($selected !== null && ($selected[$key] ?? false))>
                 <span>
                     <strong>{{ $module['label'] }}</strong>
                     <span>{{ $module['description'] }}</span>

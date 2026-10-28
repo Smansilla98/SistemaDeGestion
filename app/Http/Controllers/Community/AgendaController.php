@@ -33,9 +33,20 @@ class AgendaController extends Controller
             'prev' => $view === 'mes' ? $from->subMonth() : $from->subWeek(),
             'next' => $view === 'mes' ? $from->addMonth() : $from->addWeek(),
             'canCreate' => $this->can('agenda.create'),
+            'quick' => array_filter([
+                'workshop' => $this->can('workshops.create') && $this->moduleOn('workshops') ? route('workshops.create') : null,
+                'event' => $this->can('events.create') && $this->moduleOn('events') ? route('events.create') : null,
+                'cycle' => $this->can('market.create') && $this->moduleOn('market') ? route('market.cycles.index') : null,
+                'entrepreneur' => $this->can('market.create') && $this->moduleOn('market') ? route('market.entrepreneurs.create') : null,
+            ]),
             'notices' => $this->can('agenda.create') ? AgendaNotice::query()->where('restaurant_id', $this->org())
                 ->whereDate('date', '>=', today()->subDays(30))->orderBy('date')->get() : collect(),
         ]);
+    }
+
+    private function moduleOn(string $key): bool
+    {
+        return app(\App\Services\ModuleLicenseService::class)->enabledForUser($this->user(), $key);
     }
 
     public function storeNotice(Request $request, OrganizationDirectory $directory, Notifier $notifier): RedirectResponse

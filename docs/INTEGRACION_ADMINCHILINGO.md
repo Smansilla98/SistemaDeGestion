@@ -136,6 +136,17 @@ persistencia → vista) y, donde se indica, con la suite de tests de cada proyec
 5. Correo (opcional): con `MAIL_*` configurado se envían los avisos por mail a quien lo elija en *Preferencias de avisos* y las comunicaciones marcadas «también por correo».
 6. Los documentos se guardan en el disco `local` (`storage/app/private`): en Railway necesita volumen persistente, como los demás archivos subidos.
 
+### Portada y demo (29/10/2026)
+
+- La portada (`/`) tiene la sección «Centros culturales» con los módulos, cómo se gestiona y qué ve cada rol.
+- En la entrada de la demo hay una opción **Centro cultural**: habilita sólo los módulos de gestión
+  (talleres, agenda, contactos, mercado, documentos, finanzas, eventos y gastos fijos) y carga una vez
+  datos de ejemplo (`App\Support\DemoCommunityData`, marcados «(ejemplo)») para empezar a crear
+  talleres, eventos, ciclos y emprendedores desde la agenda. «Configurar módulos» lista también este grupo.
+  Los ejemplos sólo se cargan con `DEMO_ENTRY_ENABLED` activo (nunca en una instalación de cliente).
+- La agenda tiene accesos para crear taller, evento, ciclo de pedidos o emprendedor según permisos.
+- `EventPolicy` suma a Coordinación (crear/editar) y a Artista y Marketing (ver).
+
 ### Pendiente / fuera de esta etapa
 
 - **App móvil y API JWT**: los módulos nuevos son web. `AuthenticateJwt` ya aplica el rol de membresía al elegir sucursal, pero no hay endpoints nuevos.

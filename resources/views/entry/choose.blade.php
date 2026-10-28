@@ -23,7 +23,7 @@
             color: #1c2430;
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-        .wrap { width: min(920px, 100%); text-align: center; }
+        .wrap { width: min(1220px, 100%); text-align: center; }
         h1 {
             margin: 0 0 28px;
             font-size: 22px;
@@ -49,6 +49,8 @@
             cursor: pointer;
             transition: border-color .15s ease, box-shadow .15s ease;
         }
+        .cards > form { display: flex; }
+        .cards > form > .card, .cards > a.card { align-self: stretch; }
         button.card {
             font: inherit;
             appearance: none;
@@ -69,6 +71,7 @@
         .ico.demo { color: #c4843a; }
         .ico.cfg { color: #5b8fd4; }
         .ico.quote { color: #4e8d99; }
+        .ico.culture { color: #8a5cc2; }
         .card strong {
             display: block;
             font-size: 15px;
@@ -104,7 +107,15 @@
                 <button type="submit" class="card">
                     <div class="ico demo"><i class="bi bi-clipboard"></i></div>
                     <strong>Ver la demo</strong>
-                    <span>Recorré el producto completo, con todos los módulos.</span>
+                    <span>Recorré el producto completo: restaurante y gestión cultural, con todos los módulos.</span>
+                </button>
+            </form>
+            <form method="POST" action="{{ route('entry.culture') }}">
+                @csrf
+                <button type="submit" class="card">
+                    <div class="ico culture"><i class="bi bi-easel"></i></div>
+                    <strong>Centro cultural</strong>
+                    <span>Talleres, agenda, contactos, emprendedores, consignaciones y repartos, con ejemplos para crear tus actividades.</span>
                 </button>
             </form>
             <a class="card" href="{{ route('entry.modules') }}">
