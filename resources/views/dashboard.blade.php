@@ -14,6 +14,8 @@
     </div>
 </div>
 
+@include('dashboard._enrollments')
+
 <div class="page">
     <div class="sg">
         <x-card href="{{ route('tables.index') }}" icon="bi-table" label="Mesas disponibles" :value="$stats['mesas_libres']" :subvalue="'de '.$stats['total_tables']">

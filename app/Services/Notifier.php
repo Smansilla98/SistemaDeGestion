@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Jobs\SendExpoPushNotification;
+use App\Models\DeviceToken;
 use App\Models\NotificationPreference;
 use App\Models\User;
 use App\Notifications\SystemNotification;
@@ -63,6 +65,9 @@ final class Notifier
 
         try {
             $user->notify(new SystemNotification($category, $title, $message, $url, $restaurantId ?? $user->restaurant_id, $channels));
+            if ($pref['in_app']) {
+                $this->push($user, $category, $title, $message, $url);
+            }
 
             return true;
         } catch (Throwable $e) {
@@ -100,6 +105,22 @@ final class Notifier
         $row = NotificationPreference::query()->where('user_id', $user->id)->where('category', $category)->first();
 
         return ['in_app' => $row?->in_app ?? true, 'email' => $row?->email ?? false];
+    }
+
+    /**
+     * Push a la app (Expo) en los dispositivos de la persona, si tiene la app instalada.
+     */
+    private function push(User $user, string $category, string $title, string $message, ?string $url): void
+    {
+        $tokens = DeviceToken::query()->where('user_id', $user->id)->pluck('token')->filter()->unique()->values()->all();
+        if ($tokens === []) {
+            return;
+        }
+        try {
+            SendExpoPushNotification::dispatch($tokens, $title, $message, ['type' => $category, 'url' => $url]);
+        } catch (Throwable $e) {
+            Log::warning('Notifier: falló el push', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        }
     }
 
     private function reserve(User $user, string $key): bool

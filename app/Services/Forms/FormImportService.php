@@ -284,6 +284,9 @@ final class FormImportService
         }
 
         $done = FormSourceRow::query()->where('form_source_id', $source->id)->whereIn('status', ['IMPORTADA', 'OMITIDA'])->pluck('row_hash')->flip();
+        // La primera importación trae respuestas históricas: un solo resumen, sin un aviso por persona.
+        $firstImport = $source->last_synced_at === null;
+        $stampHeader = collect($table['headers'])->first(fn ($h) => in_array(Str::lower(Str::ascii(trim($h))), ['marca temporal', 'timestamp'], true));
         $result = ['imported' => 0, 'errors' => 0, 'skipped' => 0];
         foreach ($table['rows'] as $row) {
             $hash = sha1(json_encode(array_values($row), JSON_UNESCAPED_UNICODE));
@@ -297,7 +300,8 @@ final class FormImportService
                 }
             }
             try {
-                [$status, $message, $contactId] = DB::transaction(fn () => $this->importRow($source, $values));
+                $signedUpAt = $stampHeader !== null ? self::parseDateTime((string) ($row[$stampHeader] ?? '')) : null;
+                [$status, $message, $contactId] = DB::transaction(fn () => $this->importRow($source, $values, $signedUpAt, ! $firstImport));
             } catch (ValidationException $e) {
                 [$status, $message, $contactId] = ['ERROR', collect($e->errors())->flatten()->implode(' '), null];
             } catch (Throwable $e) {
@@ -310,7 +314,8 @@ final class FormImportService
         }
         $source->update(['last_synced_at' => now(), 'last_error' => null]);
 
-        if ($result['imported'] > 0) {
+        // Con inscripciones, cada persona nueva ya avisó con su detalle; el resumen queda para el resto.
+        if ($result['imported'] > 0 && ($firstImport || $source->target !== 'ALUMNOS')) {
             $this->notifier->sendMany($this->directory->managers((int) $source->restaurant_id), 'inscripciones',
                 "Formulario «{$source->name}»: {$result['imported']} respuestas nuevas",
                 $source->targetLabel().($result['errors'] ? " · {$result['errors']} para revisar" : ''),
@@ -324,7 +329,7 @@ final class FormImportService
      * @param  array<string, string>  $v
      * @return array{0: string, 1: string, 2: ?int}
      */
-    private function importRow(FormSource $source, array $v): array
+    private function importRow(FormSource $source, array $v, ?Carbon $signedUpAt = null, bool $notifyStaff = true): array
     {
         $org = (int) $source->restaurant_id;
         $category = filled($v['category'] ?? null) ? ActivityCategory::findOrCreateByName($org, $v['category']) : $source->category;
@@ -361,7 +366,7 @@ final class FormImportService
 
                     continue;
                 }
-                $e = $this->workshops->enroll($w, $contact, 'Formulario: '.$source->name);
+                $e = $this->workshops->enroll($w, $contact, 'Formulario: '.$source->name, $signedUpAt, 'formulario «'.$source->name.'»', $notifyStaff);
                 $msgs[] = $w->name.': '.($e->status === WorkshopEnrollment::ACTIVA ? 'inscripto/a' : "lista de espera #{$e->waitlist_position}");
             }
 
@@ -478,6 +483,31 @@ final class FormImportService
         }
 
         return null;
+    }
+
+    /** Marca temporal de Google Forms ("29/10/2026 14:03:12") o de Excel. */
+    public static function parseDateTime(string $value): ?Carbon
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        if (is_numeric($value) && (float) $value > 20000 && (float) $value < 80000) {
+            return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value));
+        }
+        foreach (['d/m/Y H:i:s', 'd/m/Y H:i', 'Y-m-d H:i:s', 'Y-m-d H:i', 'm/d/Y H:i:s'] as $format) {
+            try {
+                $d = Carbon::createFromFormat($format, $value);
+            } catch (Throwable) {
+                continue;
+            }
+            if ($d instanceof Carbon && $d->year >= 2000 && $d->lte(now()->addDay())) {
+                return $d;
+            }
+        }
+        $date = self::parseDate($value);
+
+        return $date !== null ? Carbon::parse($date) : null;
     }
 
     public static function parseTime(string $value): ?string

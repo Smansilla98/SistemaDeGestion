@@ -33,7 +33,12 @@ final class WorkshopService
 
     // ── Inscripciones ─────────────────────────────────────────────────────────
 
-    public function enroll(Workshop $workshop, Contact $contact, ?string $note = null): WorkshopEnrollment
+    /**
+     * @param  CarbonInterface|null  $signedUpAt  cuándo se anotó (ej. marca temporal del formulario); por defecto ahora
+     * @param  string|null  $via  de dónde vino (ej. «Formulario Inscripciones 2027»)
+     * @param  bool  $notifyStaff  avisar a coordinación y profe (no en cargas históricas)
+     */
+    public function enroll(Workshop $workshop, Contact $contact, ?string $note = null, ?CarbonInterface $signedUpAt = null, ?string $via = null, bool $notifyStaff = true): WorkshopEnrollment
     {
         if ((int) $contact->restaurant_id !== (int) $workshop->restaurant_id) {
             throw ValidationException::withMessages(['contact_id' => 'El contacto no pertenece a esta organización.']);
@@ -42,7 +47,7 @@ final class WorkshopService
             throw ValidationException::withMessages(['contact_id' => 'El taller no admite inscripciones.']);
         }
 
-        $enrollment = DB::transaction(function () use ($workshop, $contact, $note) {
+        $enrollment = DB::transaction(function () use ($workshop, $contact, $note, $signedUpAt) {
             // Bloquea el taller: dos inscripciones simultáneas no pueden pasarse del cupo.
             $locked = Workshop::withoutGlobalScopes()->whereKey($workshop->id)->lockForUpdate()->firstOrFail();
 
@@ -58,7 +63,7 @@ final class WorkshopService
                 'status' => $hasRoom ? WorkshopEnrollment::ACTIVA : WorkshopEnrollment::EN_ESPERA,
                 'waitlist_position' => $hasRoom ? null : ((int) WorkshopEnrollment::query()->where('workshop_id', $locked->id)
                     ->where('status', WorkshopEnrollment::EN_ESPERA)->max('waitlist_position')) + 1,
-                'enrolled_at' => now(),
+                'enrolled_at' => $signedUpAt ?? now(),
                 'cancelled_at' => null,
                 'note' => $note,
             ];
@@ -79,7 +84,42 @@ final class WorkshopService
                 : "El taller está completo. Quedaste en el lugar {$enrollment->waitlist_position} de la lista de espera.",
             "enroll:{$enrollment->id}:{$enrollment->updated_at?->timestamp}");
 
+        if ($notifyStaff) {
+            $this->notifyStaffNewEnrollment($workshop, $contact, $enrollment, $via);
+        }
+
         return $enrollment;
+    }
+
+    /**
+     * Aviso a coordinación y al profe del taller: quién se anotó, a qué taller y cuándo.
+     * No le avisa a quien hizo la inscripción a mano (ya lo sabe).
+     */
+    private function notifyStaffNewEnrollment(Workshop $workshop, Contact $contact, WorkshopEnrollment $enrollment, ?string $via): void
+    {
+        $recipients = $this->directory->managers((int) $workshop->restaurant_id);
+        $teacher = $workshop->teacher()->withoutGlobalScopes()->first()?->user;
+        if ($teacher) {
+            $recipients->push($teacher);
+        }
+        $actorId = auth()->id();
+        $recipients = $recipients->reject(fn (User $u) => $u->id === $actorId);
+
+        $when = $enrollment->enrolled_at ?? now();
+        $parts = [
+            "Taller: {$workshop->name}",
+            'Se anotó: '.$when->format('d/m/Y H:i'),
+            $enrollment->status === WorkshopEnrollment::EN_ESPERA ? "Lista de espera #{$enrollment->waitlist_position}" : 'Inscripción confirmada',
+        ];
+        if ($contact->phone) {
+            $parts[] = "Tel: {$contact->phone}";
+        }
+        if ($via) {
+            $parts[] = "Vía: {$via}";
+        }
+
+        $this->notifier->sendMany($recipients, 'inscripciones', "Nueva inscripción: {$contact->name}", implode(' · ', $parts),
+            route('workshops.show', $workshop), "new-enrollment:{$enrollment->id}:".$when->timestamp, (int) $workshop->restaurant_id);
     }
 
     /**

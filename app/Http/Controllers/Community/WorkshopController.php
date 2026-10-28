@@ -118,7 +118,7 @@ class WorkshopController extends Controller
             $contact = Contact::query()->create(['restaurant_id' => $this->org(), 'kind' => 'ALUMNO', 'name' => $data['new_name'],
                 'phone' => $data['new_phone'] ?? null, 'email' => $data['new_email'] ?? null]);
         }
-        $enrollment = $this->service->enroll($workshop, $contact, $data['note'] ?? null);
+        $enrollment = $this->service->enroll($workshop, $contact, $data['note'] ?? null, null, 'cargada por '.$this->user()->name);
 
         return back()->with('success', $enrollment->status === WorkshopEnrollment::ACTIVA
             ? "{$contact->name} quedó inscripto/a."

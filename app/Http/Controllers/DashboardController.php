@@ -109,7 +109,10 @@ class DashboardController extends Controller
             ->orderBy('total', 'desc')
             ->get();
 
+        $recentEnrollments = $this->recentEnrollments();
+
         return view('dashboard', compact(
+            'recentEnrollments',
             'stats',
             'recentOrders',
             'topProducts',
@@ -119,5 +122,31 @@ class DashboardController extends Controller
             'activeTables',
             'incomeByMethod'
         ));
+    }
+
+    /**
+     * Últimas inscripciones a talleres (quién, qué taller, cuándo) para el inicio de un centro cultural.
+     * El profe ve sólo las de sus talleres.
+     */
+    private function recentEnrollments(): \Illuminate\Support\Collection
+    {
+        $user = auth()->user();
+        $orgId = $user?->restaurant_id;
+        if ($orgId === null
+            || ! app(\App\Services\ModuleLicenseService::class)->enabledForUser($user, 'workshops')
+            || ! app(\App\Services\PermissionService::class)->allowed($user, 'workshops.view')) {
+            return collect();
+        }
+
+        return \App\Models\WorkshopEnrollment::query()
+            ->with(['contact', 'workshop'])
+            ->whereIn('status', [\App\Models\WorkshopEnrollment::ACTIVA, \App\Models\WorkshopEnrollment::EN_ESPERA])
+            ->whereHas('workshop', function ($q) use ($orgId, $user) {
+                $q->where('restaurant_id', $orgId);
+                if ($user->role === \App\Models\User::ROLE_PROFESOR) {
+                    $q->whereHas('teacher', fn ($t) => $t->where('user_id', $user->id));
+                }
+            })
+            ->latest('enrolled_at')->latest('id')->limit(8)->get();
     }
 }
