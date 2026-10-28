@@ -14,6 +14,7 @@ class Restaurant extends Model
     protected $fillable = [
         'parent_id',
         'name',
+        'kind',
         'address',
         'phone',
         'email',
@@ -25,6 +26,27 @@ class Restaurant extends Model
         'settings' => 'array',
         'is_active' => 'boolean',
     ];
+
+    /** Tipos de organización. RESTAURANTE es el comportamiento original del sistema. */
+    public const KINDS = [
+        'RESTAURANTE' => 'Restaurante / bar',
+        'ESPACIO_CULTURAL' => 'Espacio cultural',
+        'ESCUELA' => 'Escuela / talleres',
+        'MERCADO' => 'Mercado territorial',
+        'NODO_AGROECOLOGICO' => 'Nodo agroecológico',
+        'EVENTOS' => 'Organización de eventos',
+        'OTRO' => 'Otra organización',
+    ];
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(OrganizationMembership::class);
+    }
+
+    public function kindLabel(): string
+    {
+        return self::KINDS[$this->kind ?? 'RESTAURANTE'] ?? (string) $this->kind;
+    }
 
     /**
      * Relación: casa matriz de esta sucursal (null si es la matriz o un local único)

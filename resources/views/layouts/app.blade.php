@@ -139,6 +139,15 @@
                 $canRecurring = $canRecurring && $modOn('events');
                 $canFixedExpenses = $canFixedExpenses && $modOn('fixed-expenses');
                 $canReports = $canReports && $modOn('reports');
+                // Módulos de organizaciones (talleres, contactos, mercado, documentos, finanzas)
+                $canWorkshops = $perm && $modOn('workshops') && $perm->allowed($navUser, 'workshops.view');
+                $canAgenda = $perm && $modOn('workshops') && $perm->allowed($navUser, 'agenda.view');
+                $canContacts = $perm && $modOn('contacts') && $perm->allowed($navUser, 'contacts.view');
+                $canCampaigns = $perm && $modOn('contacts') && $perm->allowed($navUser, 'contacts.campaign');
+                $canMarket = $perm && $modOn('market') && $perm->allowed($navUser, 'market.view');
+                $canDocuments = $perm && $modOn('documents') && $perm->allowed($navUser, 'documents.view');
+                $canActivityFinance = $perm && $modOn('finance') && $perm->allowed($navUser, 'finance.view');
+                $navUnreadMessages = $navUser && $navUser->restaurant_id ? \App\Models\UserMessage::query()->where('restaurant_id', $navUser->restaurant_id)->where('recipient_id', $navUser->id)->whereNull('read_at')->count() : 0;
                 $navTablesCount = $canTables && $navUser && $navUser->restaurant_id ? \App\Models\Table::where('restaurant_id', $navUser->restaurant_id)->count() : 0;
                 $navPendingOrdersCount = $canOrders && $navUser && $navUser->restaurant_id ? \App\Models\Order::where('restaurant_id', $navUser->restaurant_id)->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])->count() : 0;
             @endphp
@@ -266,9 +275,68 @@
             @endif
             @endif
 
-            @if($canFixedExpenses || $canReports)
+            @if($canAgenda || $canWorkshops || $canContacts || $canMarket || $canDocuments)
+            <div class="sb-div"></div>
+            <div class="sb-label">Comunidad</div>
+            @if($canAgenda)
+            <a href="{{ route('agenda.index') }}" class="sb-link {{ request()->routeIs('agenda.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-week sb-ico"></i>
+                <span>Agenda</span>
+            </a>
+            @endif
+            @if($canWorkshops)
+            <a href="{{ route('workshops.index') }}" class="sb-link {{ request()->routeIs('workshops.*') ? 'active' : '' }}">
+                <i class="bi bi-easel sb-ico"></i>
+                <span>Talleres</span>
+            </a>
+            @endif
+            @if($canContacts)
+            <a href="{{ route('contacts.index') }}" class="sb-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
+                <i class="bi bi-person-lines-fill sb-ico"></i>
+                <span>Contactos</span>
+            </a>
+            @endif
+            @if($canCampaigns)
+            <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
+                <i class="bi bi-megaphone sb-ico"></i>
+                <span>Comunicaciones</span>
+            </a>
+            @endif
+            @if($canMarket)
+            <a href="{{ route('market.entrepreneurs.index') }}" class="sb-link {{ request()->routeIs('market.entrepreneurs.*') ? 'active' : '' }}">
+                <i class="bi bi-shop-window sb-ico"></i>
+                <span>Emprendedores</span>
+            </a>
+            <a href="{{ route('market.products.index') }}" class="sb-link {{ request()->routeIs('market.products.*') ? 'active' : '' }}">
+                <i class="bi bi-basket sb-ico"></i>
+                <span>Productos y stock</span>
+            </a>
+            <a href="{{ route('market.consignments.index') }}" class="sb-link {{ request()->routeIs('market.consignments.*') ? 'active' : '' }}">
+                <i class="bi bi-box-arrow-in-down sb-ico"></i>
+                <span>Consignaciones</span>
+            </a>
+            <a href="{{ route('market.cycles.index') }}" class="sb-link {{ request()->routeIs('market.cycles.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-repeat sb-ico"></i>
+                <span>Ciclos de pedidos</span>
+            </a>
+            @endif
+            @if($canDocuments)
+            <a href="{{ route('documents.index') }}" class="sb-link {{ request()->routeIs('documents.*') ? 'active' : '' }}">
+                <i class="bi bi-folder2-open sb-ico"></i>
+                <span>Documentos</span>
+            </a>
+            @endif
+            @endif
+
+            @if($canFixedExpenses || $canReports || $canActivityFinance)
             <div class="sb-div"></div>
             <div class="sb-label">Finanzas</div>
+            @if($canActivityFinance)
+            <a href="{{ route('finance.index') }}" class="sb-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
+                <i class="bi bi-pie-chart sb-ico"></i>
+                <span>Talleres y eventos</span>
+            </a>
+            @endif
             @if($canFixedExpenses)
             <a href="{{ route('fixed-expenses.index') }}" class="sb-link {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack sb-ico"></i>
@@ -285,6 +353,19 @@
 
             @if(auth()->check())
             <div class="sb-div"></div>
+            @if($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canContacts || $canMarket || $canDocuments))
+            <a href="{{ route('messages.index') }}" class="sb-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots sb-ico"></i>
+                <span>Mensajes</span>
+                @if($navUnreadMessages > 0)<span class="sb-badge sb-ba">{{ $navUnreadMessages }}</span>@endif
+            </a>
+            @endif
+            @if($navUser && $navUser->isAdminLevel())
+            <a href="{{ route('organization.show') }}" class="sb-link {{ request()->routeIs('organization.*') ? 'active' : '' }}">
+                <i class="bi bi-diagram-3 sb-ico"></i>
+                <span>Organización y miembros</span>
+            </a>
+            @endif
             <a href="{{ route('manual') }}" class="sb-link {{ request()->routeIs('manual') ? 'active' : '' }}">
                 <i class="bi bi-question-circle sb-ico"></i>
                 <span>Manual de uso</span>
@@ -329,7 +410,7 @@
 
         @auth
         @php
-            $roleLabels = ['SUPERADMIN' => 'Superadmin', 'ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor', 'ENCARGADO' => 'Encargado'];
+            $roleLabels = \App\Models\User::roleLabels() + ['MANAGER' => 'Manager', 'VENDEDOR' => 'Vendedor'];
             $sidebarRoleLabel = $roleLabels[auth()->user()->role ?? ''] ?? auth()->user()->role;
         @endphp
         <div class="sb-footer">
@@ -386,6 +467,9 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
                     <li><span class="dropdown-item-text small text-muted">Rol: {{ auth()->user()->role }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ route('notifications.index') }}"><i class="bi bi-bell me-2"></i> Notificaciones</a></li>
+                    <li><a class="dropdown-item" href="{{ route('notifications.preferences') }}"><i class="bi bi-sliders me-2"></i> Preferencias de avisos</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form action="{{ route('logout') }}" method="POST">

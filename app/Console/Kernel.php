@@ -14,7 +14,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Recordatorios de talleres, agenda, aranceles y consignaciones (idempotente).
+        $schedule->command('community:reminders')->dailyAt('09:00')->withoutOverlapping();
     }
 
     /**

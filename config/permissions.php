@@ -26,6 +26,13 @@ return [
         ['key' => 'configuration', 'label' => 'Configuración', 'actions' => ['view', 'update']],
         ['key' => 'payment-methods', 'label' => 'Medios de cobro', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'tutorials', 'label' => 'Tutoriales', 'actions' => ['view', 'create', 'update', 'delete']],
+        ['key' => 'workshops', 'label' => 'Talleres y clases', 'actions' => ['view', 'create', 'update', 'delete', 'attendance']],
+        ['key' => 'agenda', 'label' => 'Agenda', 'actions' => ['view', 'create']],
+        ['key' => 'contacts', 'label' => 'Contactos y difusión', 'actions' => ['view', 'create', 'update', 'delete', 'export', 'campaign']],
+        ['key' => 'market', 'label' => 'Emprendedores y mercado', 'actions' => ['view', 'create', 'update', 'delete', 'settle']],
+        ['key' => 'documents', 'label' => 'Documentos', 'actions' => ['view', 'create', 'update', 'delete']],
+        ['key' => 'finance', 'label' => 'Finanzas de actividades', 'actions' => ['view', 'create', 'settle']],
+        ['key' => 'messages', 'label' => 'Mensajes', 'actions' => ['send']],
     ],
 
     'action_labels' => [
@@ -34,6 +41,10 @@ return [
         'update' => 'Actualizar',
         'delete' => 'Eliminar',
         'export' => 'Exportar',
+        'attendance' => 'Tomar asistencia',
+        'campaign' => 'Enviar comunicaciones',
+        'settle' => 'Liquidar',
+        'send' => 'Enviar',
     ],
 
     /*
@@ -120,6 +131,40 @@ return [
             'users.view' => false, 'printers.view' => false,
             'events.view' => false, 'recurring-activities.view' => true,
             'fixed-expenses.view' => false, 'reports.view' => true, 'configuration.view' => false, 'payment-methods.view' => false, 'tutorials.view' => true,
+        ],
+
+        // Roles de organizaciones culturales/educativas/comerciales (sólo por membresía).
+        'COORDINADOR' => [
+            'dashboard.view' => true, 'events.view' => true, 'events.create' => true, 'events.update' => true,
+            'workshops.view' => true, 'workshops.create' => true, 'workshops.update' => true, 'workshops.delete' => true, 'workshops.attendance' => true,
+            'agenda.view' => true, 'agenda.create' => true,
+            'contacts.view' => true, 'contacts.create' => true, 'contacts.update' => true, 'contacts.export' => true, 'contacts.campaign' => true,
+            'market.view' => true, 'documents.view' => true, 'documents.create' => true, 'documents.update' => true,
+            'finance.view' => true, 'finance.create' => true, 'messages.send' => true,
+        ],
+        'PROFESOR' => [
+            'dashboard.view' => true, 'workshops.view' => true, 'workshops.attendance' => true,
+            'agenda.view' => true, 'documents.view' => true, 'messages.send' => true,
+        ],
+        'ALUMNO' => [
+            'dashboard.view' => true, 'agenda.view' => true, 'documents.view' => true, 'messages.send' => true,
+        ],
+        'EMPRENDEDOR' => [
+            'dashboard.view' => true, 'market.view' => true, 'agenda.view' => true,
+            'documents.view' => true, 'messages.send' => true,
+        ],
+        'ARTISTA' => [
+            'dashboard.view' => true, 'agenda.view' => true, 'events.view' => true, 'documents.view' => true, 'messages.send' => true,
+        ],
+        'MARKETING' => [
+            'dashboard.view' => true, 'agenda.view' => true, 'agenda.create' => true, 'events.view' => true,
+            'contacts.view' => true, 'contacts.create' => true, 'contacts.update' => true, 'contacts.delete' => true,
+            'contacts.export' => true, 'contacts.campaign' => true,
+            'documents.view' => true, 'documents.create' => true, 'documents.update' => true, 'messages.send' => true,
+        ],
+        'INVENTARIO' => [
+            'dashboard.view' => true, 'market.view' => true, 'market.create' => true, 'market.update' => true,
+            'agenda.view' => true, 'messages.send' => true,
         ],
     ],
 ];

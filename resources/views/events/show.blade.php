@@ -167,5 +167,6 @@
         </div>
     </div>
 </div>
-@endsection
 
+@include('events._stages')
+@endsection

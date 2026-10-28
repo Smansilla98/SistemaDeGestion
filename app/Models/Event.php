@@ -22,6 +22,7 @@ class Event extends Model
         'time',
         'expected_attendance',
         'status',
+        'distribution_rule_id',
     ];
 
     protected $casts = [
@@ -70,6 +71,29 @@ class Event extends Model
     public function eventProducts(): HasMany
     {
         return $this->hasMany(EventProduct::class);
+    }
+
+    /**
+     * Etapas del evento (responsable, presupuesto, estado).
+     */
+    public function stages(): HasMany
+    {
+        return $this->hasMany(EventStage::class)->orderBy('position')->orderBy('id');
+    }
+
+    public function distributionRule(): BelongsTo
+    {
+        return $this->belongsTo(DistributionRule::class);
+    }
+
+    public function entries(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(ActivityEntry::class, 'entryable');
+    }
+
+    public function payouts(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(DistributionPayout::class, 'payoutable');
     }
 
     /**

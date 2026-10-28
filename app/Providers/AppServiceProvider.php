@@ -44,6 +44,12 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('es');
         date_default_timezone_set(config('app.timezone'));
 
+        // Tipos estables para ingresos/gastos y repartos por actividad (no se fuerza en el resto).
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'workshop' => \App\Models\Workshop::class,
+            'event' => \App\Models\Event::class,
+        ]);
+
         if (config('app.env') === 'production' || request()->secure()) {
             URL::forceScheme('https');
         }

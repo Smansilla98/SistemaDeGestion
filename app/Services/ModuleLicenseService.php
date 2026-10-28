@@ -15,11 +15,11 @@ use App\Support\DemoEntry;
 final class ModuleLicenseService
 {
     /**
-     * @return array<string, array{label: string, description: string, offered?: bool, web: list<string>, api: list<string>}>
+     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}>
      */
     public function catalog(): array
     {
-        /** @var array<string, array{label: string, description: string, offered?: bool, web: list<string>, api: list<string>}> $catalog */
+        /** @var array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}> $catalog */
         $catalog = config('sellable_modules', []);
 
         return $catalog;
@@ -28,7 +28,7 @@ final class ModuleLicenseService
     /**
      * Módulos que se pueden ofrecer a un restaurante (venta de comida).
      *
-     * @return array<string, array{label: string, description: string, offered?: bool, web: list<string>, api: list<string>}>
+     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, web: list<string>, api: list<string>}>
      */
     public function offered(): array
     {
@@ -72,7 +72,7 @@ final class ModuleLicenseService
         $map = $this->storedMap($restaurantId);
 
         if ($map === null || ! array_key_exists($key, $map)) {
-            return true;
+            return $this->defaultFor($key);
         }
 
         return (bool) $map[$key];
@@ -88,7 +88,7 @@ final class ModuleLicenseService
 
         foreach (array_keys($this->catalog()) as $key) {
             $map[$key] = $stored === null || ! array_key_exists($key, $stored)
-                ? true
+                ? $this->defaultFor($key)
                 : (bool) $stored[$key];
         }
 
@@ -151,6 +151,14 @@ final class ModuleLicenseService
         }
 
         return $bestKey;
+    }
+
+    /**
+     * Valor sin licencia guardada: los módulos originales quedan prendidos; los nuevos, apagados.
+     */
+    private function defaultFor(string $key): bool
+    {
+        return (bool) ($this->catalog()[$key]['default'] ?? true);
     }
 
     /**

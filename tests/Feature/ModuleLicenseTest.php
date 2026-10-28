@@ -36,15 +36,18 @@ class ModuleLicenseTest extends TestCase
         $this->assertNull($licenses->moduleForApiPath('api/permissions/modules'));
     }
 
-    public function test_sin_mapa_guardado_todos_los_modulos_quedan_habilitados(): void
+    public function test_sin_mapa_guardado_los_modulos_originales_quedan_habilitados_y_los_nuevos_no(): void
     {
         $licenses = app(ModuleLicenseService::class);
         $map = $licenses->mapFor(null);
 
         $this->assertNotEmpty($map);
-        foreach ($map as $enabled) {
-            $this->assertTrue($enabled);
+        foreach ($map as $key => $enabled) {
+            // Los módulos de organizaciones (default=false) no aparecen solos en locales existentes.
+            $this->assertSame($licenses->catalog()[$key]['default'] ?? true, $enabled, $key);
         }
+        $this->assertTrue($map['tables']);
+        $this->assertFalse($map['workshops']);
         $this->assertTrue($licenses->isEnabled(null, 'stock'));
         $this->assertTrue($licenses->isEnabled(null, 'no-existe'));
     }

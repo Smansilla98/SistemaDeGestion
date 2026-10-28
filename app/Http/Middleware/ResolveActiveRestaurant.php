@@ -30,6 +30,12 @@ class ResolveActiveRestaurant
 
         $branches = $this->access->branchesFor($user);
         if ($branches->count() <= 1) {
+            // Cuenta que sólo participa de otra organización (sin local propio): opera esa.
+            $only = $branches->first();
+            if ($only !== null && (int) $only->id !== $user->homeRestaurantId()) {
+                $user->useRestaurant((int) $only->id);
+            }
+
             return $next($request);
         }
 

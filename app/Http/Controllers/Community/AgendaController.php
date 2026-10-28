@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Controllers\Community;
+
+use App\Http\Controllers\Concerns\OrganizationContext;
+use App\Http\Controllers\Controller;
+use App\Models\AgendaNotice;
+use App\Services\Community\AgendaService;
+use App\Services\Community\OrganizationDirectory;
+use App\Services\Notifier;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class AgendaController extends Controller
+{
+    use OrganizationContext;
+
+    public function index(Request $request, AgendaService $agenda): View
+    {
+        $this->requirePermission('agenda.view');
+        $view = $request->input('vista') === 'mes' ? 'mes' : 'semana';
+        $ref = CarbonImmutable::parse($request->input('desde', today()->toDateString()));
+        [$from, $to] = $view === 'mes'
+            ? [$ref->startOfMonth(), $ref->endOfMonth()->startOfDay()]
+            : [$ref->startOfWeek(), $ref->startOfWeek()->addDays(6)];
+
+        return view('agenda.index', [
+            'days' => $agenda->between($this->user(), $this->org(), $from, $to),
+            'from' => $from, 'to' => $to, 'view' => $view,
+            'prev' => $view === 'mes' ? $from->subMonth() : $from->subWeek(),
+            'next' => $view === 'mes' ? $from->addMonth() : $from->addWeek(),
+            'canCreate' => $this->can('agenda.create'),
+            'notices' => $this->can('agenda.create') ? AgendaNotice::query()->where('restaurant_id', $this->org())
+                ->whereDate('date', '>=', today()->subDays(30))->orderBy('date')->get() : collect(),
+        ]);
+    }
+
+    public function storeNotice(Request $request, OrganizationDirectory $directory, Notifier $notifier): RedirectResponse
+    {
+        $this->requirePermission('agenda.create');
+        $data = $request->validate([
+            'kind' => ['required', Rule::in(array_keys(AgendaNotice::KINDS))], 'title' => ['required', 'string', 'max:255'],
+            'body' => ['nullable', 'string', 'max:2000'], 'date' => ['required', 'date'], 'end_date' => ['nullable', 'date', 'after_or_equal:date'],
+            'time' => ['nullable', 'date_format:H:i'], 'notify' => ['nullable', 'boolean'],
+        ]);
+        $notice = AgendaNotice::query()->create(collect($data)->except('notify')->all() + ['restaurant_id' => $this->org(), 'created_by' => $this->user()->id]);
+
+        $sent = 0;
+        if ($request->boolean('notify')) {
+            $sent = $notifier->sendMany($directory->members($this->org())->map(fn ($m) => $m['user']), 'agenda', $notice->title,
+                ($notice->body ?: AgendaNotice::KINDS[$notice->kind]).' — '.$notice->date->format('d/m/Y'), route('agenda.index', ['desde' => $notice->date->toDateString()]),
+                "notice-now:{$notice->id}", $this->org());
+        }
+
+        return back()->with('success', 'Aviso agregado a la agenda.'.($sent ? " Se avisó a {$sent} personas." : ''));
+    }
+
+    public function destroyNotice(AgendaNotice $notice): RedirectResponse
+    {
+        $this->ensureOrg($notice);
+        $this->requirePermission('agenda.create');
+        $notice->delete();
+
+        return back()->with('success', 'Aviso quitado de la agenda.');
+    }
+}

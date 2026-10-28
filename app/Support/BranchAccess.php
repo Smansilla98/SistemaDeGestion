@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
  *  - SUPERADMIN: cualquier restaurante activo.
  *  - ADMIN: cualquier sucursal activa de su grupo.
  *  - Resto de los roles: solo su local.
+ *  - Además, cualquier organización donde tenga una membresía activa (con el rol de esa membresía).
  */
 final class BranchAccess
 {
@@ -27,10 +28,26 @@ final class BranchAccess
      */
     public function branchesFor(User $user): Collection
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->homeRole() === User::ROLE_SUPERADMIN) {
             return Restaurant::query()->where('is_active', true)->orderBy('name')->get();
         }
 
+        $own = $this->ownBranches($user);
+        $memberOf = Restaurant::query()
+            ->where('is_active', true)
+            ->whereIn('id', $user->memberships()->where('is_active', true)->select('restaurant_id'))
+            ->whereNotIn('id', $own->pluck('id'))
+            ->orderBy('name')
+            ->get();
+
+        return $own->concat($memberOf)->values();
+    }
+
+    /**
+     * @return Collection<int, Restaurant>
+     */
+    private function ownBranches(User $user): Collection
+    {
         $homeId = $user->homeRestaurantId();
         if ($homeId === null) {
             return new Collection;
@@ -41,7 +58,7 @@ final class BranchAccess
             return new Collection;
         }
 
-        if (! in_array($user->role, self::MULTI_BRANCH_ROLES, true)) {
+        if (! in_array($user->homeRole(), self::MULTI_BRANCH_ROLES, true)) {
             return new Collection([$home]);
         }
 
@@ -67,7 +84,7 @@ final class BranchAccess
 
     /**
      * @param  Collection<int, Restaurant>  $branches
-     * @return list<array{id:int, name:string, address:?string, is_main:bool}>
+     * @return list<array{id:int, name:string, address:?string, is_main:bool, kind:string}>
      */
     public static function toPublicArray(Collection $branches): array
     {
@@ -76,6 +93,7 @@ final class BranchAccess
             'name' => (string) $r->name,
             'address' => $r->address,
             'is_main' => $r->parent_id === null,
+            'kind' => (string) ($r->kind ?? 'RESTAURANTE'),
         ])->values()->all();
     }
 }

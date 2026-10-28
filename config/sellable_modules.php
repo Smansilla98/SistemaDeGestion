@@ -83,4 +83,47 @@ return [
         'web' => ['fixed-expenses.'],
         'api' => ['fixed-expenses'],
     ],
+
+    // Módulos para organizaciones culturales, educativas y comerciales. default=false: un local
+    // existente no los ve hasta que el superadmin los habilita en Monitor de módulos.
+    'workshops' => [
+        'label' => 'Talleres y agenda',
+        'description' => 'Talleres, inscripciones con cupo y lista de espera, clases, asistencia, evaluaciones y agenda.',
+        'offered' => false,
+        'default' => false,
+        'web' => ['workshops.', 'agenda.'],
+        'api' => [],
+    ],
+    'contacts' => [
+        'label' => 'Contactos y difusión',
+        'description' => 'Contactos con etiquetas y grupos, importación/exportación y comunicaciones.',
+        'offered' => false,
+        'default' => false,
+        'web' => ['contacts.', 'contact-groups.', 'campaigns.'],
+        'api' => [],
+    ],
+    'market' => [
+        'label' => 'Emprendedores y mercado',
+        'description' => 'Emprendedores, productos, stock, consignaciones, liquidaciones y ciclos de pedidos.',
+        'offered' => false,
+        'default' => false,
+        'web' => ['market.'],
+        'api' => [],
+    ],
+    'documents' => [
+        'label' => 'Documentos',
+        'description' => 'Documentos con versiones y permisos, y manuales de marca en PDF.',
+        'offered' => false,
+        'default' => false,
+        'web' => ['documents.'],
+        'api' => [],
+    ],
+    'finance' => [
+        'label' => 'Finanzas de actividades',
+        'description' => 'Ingresos y gastos por taller o evento, repartos configurables (ej. 70/30) y liquidaciones.',
+        'offered' => false,
+        'default' => false,
+        'web' => ['finance.'],
+        'api' => [],
+    ],
 ];

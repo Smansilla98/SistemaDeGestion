@@ -73,5 +73,6 @@ class Kernel extends HttpKernel
         'detect.mobile' => \App\Http\Middleware\DetectMobile::class,
         'module.license' => \App\Http\Middleware\EnsureLicensedModule::class,
         'entry.choice' => \App\Http\Middleware\EnsureDemoEntryChosen::class,
+        'perm' => \App\Http\Middleware\RequirePermission::class,
     ];
 }
