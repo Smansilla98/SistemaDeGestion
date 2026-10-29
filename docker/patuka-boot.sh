@@ -12,6 +12,20 @@ patuka_db_env() {
     if [ -z "${DB_USERNAME:-}" ] && [ -n "${MYSQLUSER:-}" ]; then export DB_USERNAME="$MYSQLUSER"; fi
     if [ -z "${DB_PASSWORD:-}" ] && [ -n "${MYSQLPASSWORD:-}" ]; then export DB_PASSWORD="$MYSQLPASSWORD"; fi
 
+    # APP_URL mal pegada (espacios, comillas, sin https://) hace caer a todo artisan con "Invalid URI".
+    # Se limpia; si queda vacía o inválida se usa el dominio público de Railway.
+    APP_URL=$(printf '%s' "${APP_URL:-}" | tr -d " \t\r\n\"'" | sed 's:/*$::')
+    if [ -n "$APP_URL" ] && ! printf '%s' "$APP_URL" | grep -Eq '^https?://'; then
+        APP_URL="https://$APP_URL"
+    fi
+    if ! printf '%s' "$APP_URL" | grep -Eq '^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/.*)?$'; then
+        if [ -n "$APP_URL" ]; then echo "⚠️  APP_URL inválida (${APP_URL}): se ignora."; fi
+        APP_URL=""
+        if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"; fi
+    fi
+    if [ -n "$APP_URL" ]; then export APP_URL; else unset APP_URL; fi
+    echo "APP_URL: ${APP_URL:-(sin definir: http://localhost)}"
+
     # Sin APP_KEY se rompen sesiones y datos cifrados. No se genera sola: cambiaría en cada deploy.
     if [ -z "${APP_KEY:-}" ]; then
         echo "✗ Falta APP_KEY. Generala una vez con: php artisan key:generate --show"
