@@ -2,8 +2,12 @@
 set -e
 
 echo "=========================================="
-echo "=== Iniciando Sistema de Restaurante ==="
+echo "=== Iniciando Patuka Espacio Cultural ==="
 echo "=========================================="
+
+# Variables de la base (Railway MySQL) y APP_KEY
+. ./docker/patuka-boot.sh
+patuka_db_env
 
 # --- Defaults limpios (API JWT + mobile) ---
 export PHP_MEMORY_LIMIT="${PHP_MEMORY_LIMIT:-256M}"
@@ -97,6 +101,9 @@ php artisan queue:restart 2>/dev/null || true
 # Migraciones (secuencias, centavos, refresh_tokens, device_tokens, etc.)
 echo "=== Ejecutando migraciones ==="
 php artisan migrate --force --no-interaction
+
+# Patuka: organización, módulos, marca, categorías y admin (solo la primera vez)
+patuka_first_run
 
 # Esquema crítico de cobro (enum de payments + audit_logs legacy)
 echo "=== Verificando esquema de cobro (payments/audit_logs) ==="

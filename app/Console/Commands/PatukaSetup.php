@@ -24,7 +24,8 @@ class PatukaSetup extends Command
         {--org= : ID de una organización existente para convertir en Patuka (si no, usa o crea "Patuka")}
         {--admin-user= : Usuario (para ingresar) del administrador; se crea si no existe}
         {--admin-password= : Contraseña del administrador nuevo (mínimo 8 caracteres)}
-        {--admin-email= : Email del administrador nuevo (opcional)}';
+        {--admin-email= : Email del administrador nuevo (opcional)}
+        {--first-run : Para el arranque del contenedor: si ya hay un espacio cultural configurado no lo toca (sólo crea el admin si falta)}';
 
     protected $description = 'Configura Patuka Espacio Cultural: módulos, marca, categorías, reparto y administrador';
 
@@ -42,7 +43,11 @@ class PatukaSetup extends Command
             return self::FAILURE;
         }
 
-        $org = DB::transaction(function () use ($licenses) {
+        $existing = $this->option('first-run') && ! $this->option('org')
+            ? Restaurant::query()->where('kind', 'ESPACIO_CULTURAL')->orderBy('id')->first()
+            : null;
+
+        $org = $existing ?? DB::transaction(function () use ($licenses) {
             $org = $this->option('org')
                 ? Restaurant::query()->findOrFail((int) $this->option('org'))
                 : Restaurant::query()->firstOrCreate(['name' => 'Patuka'], ['is_active' => true]);
@@ -69,7 +74,9 @@ class PatukaSetup extends Command
             return $org;
         });
 
-        $this->info("Organización #{$org->id} «{$org->name}» lista como espacio cultural.");
+        $this->info($existing
+            ? "Primera ejecución ya hecha: «{$org->name}» (#{$org->id}) no se modificó."
+            : "Organización #{$org->id} «{$org->name}» lista como espacio cultural.");
 
         if ($username = $this->option('admin-user')) {
             if (User::query()->where('username', $username)->exists()) {

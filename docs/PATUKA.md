@@ -54,6 +54,52 @@ php artisan patuka:setup --org=2
 - Crea la regla de reparto *Talleres 70/30* (Docente 70 / Espacio 30, sobre neto).
 - Crea el administrador.
 
+## Railway
+
+**Base de datos:** agregá al proyecto un servicio **MySQL**, desde *New → Database → Add MySQL*.
+
+- El sistema está hecho y probado sobre MySQL 8 (utf8mb4).
+- No uses PostgreSQL: hay migraciones y reparaciones con sintaxis propia de MySQL.
+- El servicio MySQL trae su propio volumen persistente.
+
+**Variables del servicio web.** Las de la base se pueden referenciar desde el servicio MySQL. Si no las cargás, `docker/patuka-boot.sh` toma las `MYSQL*` del servicio MySQL.
+
+```
+DB_CONNECTION=mysql
+DB_HOST=${{MySQL.MYSQLHOST}}
+DB_PORT=${{MySQL.MYSQLPORT}}
+DB_DATABASE=${{MySQL.MYSQLDATABASE}}
+DB_USERNAME=${{MySQL.MYSQLUSER}}
+DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+APP_KEY=base64:...            # php artisan key:generate --show (una sola vez)
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://<tu-dominio>
+APP_NAME=Patuka
+APP_BRAND_NAME=Patuka
+QUEUE_CONNECTION=database
+PATUKA_ADMIN_USER=patuka
+PATUKA_ADMIN_PASSWORD=<una clave fuerte>
+```
+
+**Primera ejecución.** En cada arranque, el contenedor (`docker/entrypoint-railway.sh`, que es el que usa el Dockerfile) hace lo siguiente:
+
+1. Espera la base de datos.
+2. Corre las migraciones.
+3. Ejecuta `patuka:setup --first-run`. Si todavía no hay un espacio cultural, crea «Patuka» con módulos, marca, categorías, reparto 70/30 y el admin de `PATUKA_ADMIN_*`. Si ya existe, no lo toca: solo crea el admin si falta.
+4. Cachea la configuración y las rutas.
+5. Levanta el worker de cola (avisos push y notificaciones) y el scheduler (recordatorios y sincronización de formularios). Se apagan con `QUEUE_WORKER_ENABLED=0` y `SCHEDULER_ENABLED=0`, respectivamente.
+
+`start.sh` hace lo mismo cuando se arranca sin Docker.
+
+**Después del primer deploy:**
+
+- Ingresá con el usuario admin.
+- Cambiá la contraseña.
+- Completá *Configuración → Web pública*.
+- Cargá los talleres en estado *Inscripción abierta*.
+- Podés borrar `PATUKA_ADMIN_PASSWORD` de las variables.
+
 ## Variables de entorno
 
 | Variable | Valor en Patuka |

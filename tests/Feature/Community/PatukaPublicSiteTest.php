@@ -100,3 +100,18 @@ it('la paleta lee los colores de la marca anterior como negro', function () {
     expect(Branding::palette(['colors' => ['primary' => '#4e8d99', 'secondary' => '#2a5c68']]))
         ->toBe(['primary' => '#111111', 'secondary' => '#000000', 'accent' => '#5c5c5c']);
 });
+
+it('patuka:setup --first-run configura una sola vez y respeta los cambios posteriores', function () {
+    \App\Models\Restaurant::query()->update(['kind' => 'RESTAURANTE']);
+
+    $this->artisan('patuka:setup', ['--first-run' => true, '--admin-user' => 'patuka', '--admin-password' => 'secreto123'])->assertSuccessful();
+    $org = \App\Models\Restaurant::query()->where('name', 'Patuka')->firstOrFail();
+    expect($org->kind)->toBe('ESPACIO_CULTURAL')
+        ->and(\App\Models\User::query()->where('username', 'patuka')->value('restaurant_id'))->toBe($org->id);
+
+    // El admin cambia un color; el siguiente arranque no lo pisa ni crea otra organización.
+    $org->update(['settings' => array_merge($org->settings, ['colors' => ['primary' => '#222222']])]);
+    $this->artisan('patuka:setup', ['--first-run' => true])->assertSuccessful();
+    expect($org->fresh()->settings['colors']['primary'])->toBe('#222222')
+        ->and(\App\Models\Restaurant::query()->where('name', 'Patuka')->count())->toBe(1);
+});
