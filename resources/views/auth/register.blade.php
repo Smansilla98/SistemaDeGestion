@@ -1,7 +1,7 @@
 @extends('layouts.auth')
 
 @section('title', 'Registro')
-@section('subtitle', 'Creá tu cuenta')
+@section('subtitle', 'Creá tu cuenta en el espacio')
 
 @section('content')
 <form method="POST" action="{{ route('register') }}" id="registerForm">
@@ -40,6 +40,42 @@
         @error('username')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+    </div>
+
+    <div class="mb-4">
+        <label for="role" class="form-label">
+            <i class="bi bi-person-vcard"></i> ¿Cómo participás en el espacio?
+        </label>
+        <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
+            <option value="" disabled @selected(! old('role'))>Elegí tu rol</option>
+            <optgroup label="Comunidad (acceso inmediato)">
+                @foreach($communityRoles as $value => $label)
+                    <option value="{{ $value }}" @selected(old('role') === $value)>{{ $label }}</option>
+                @endforeach
+            </optgroup>
+            <optgroup label="Equipo del espacio (requiere aprobación)">
+                @foreach($staffRoles as $value => $label)
+                    <option value="{{ $value }}" @selected(old('role') === $value)>{{ $label }}</option>
+                @endforeach
+            </optgroup>
+        </select>
+        @error('role')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <div class="form-text" id="roleHelp">Alumnos, profes, artistas y emprendedores entran al instante. Los roles del equipo los aprueba la administración.</div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6 mb-4">
+            <label for="phone" class="form-label"><i class="bi bi-whatsapp"></i> Teléfono</label>
+            <input type="tel" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone') }}" maxlength="40" autocomplete="tel" placeholder="Opcional">
+            @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+        <div class="col-sm-6 mb-4">
+            <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
+            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" maxlength="150" autocomplete="email" placeholder="Opcional">
+            @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
     </div>
 
     <div class="mb-4">

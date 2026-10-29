@@ -36,6 +36,28 @@ Esta rama convierte el sistema en la herramienta de un espacio cultural real: Pa
 - **Organización que se muestra:** la de `PUBLIC_ORG_ID`; si no está definida, el primer espacio cultural activo.
 - **Acceso del equipo:** con el botón «Equipo» → login. Si alguien ya inició sesión, `/` lo lleva al panel.
 
+## Panel pensado para el centro cultural
+
+- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
+- **Inicio («Hoy en Patuka»):** lo primero es la **agenda de la semana**: clases, eventos, etapas, actividades, entregas y avisos de los próximos 7 días, agrupados por día. Después vienen:
+  - el resumen cultural: talleres activos, inscriptos, lista de espera y eventos de los próximos 14 días;
+  - las últimas inscripciones.
+- **La barra queda al final, plegada,** en una sola línea: mesas ocupadas, pedidos en curso y caja abierta o cerrada. Para quien solo usa la barra (mozo, caja, cocina) aparece desplegada.
+
+## Registro con rol
+
+En `/register` cada persona elige cómo participa. Puede elegir cualquier rol menos Administrador o Superadministrador.
+
+- **Comunidad** (Alumno, Profesor, Artista, Emprendedor): la cuenta queda activa al instante.
+  - Se crea o se vincula su contacto con la cuenta, así el profe ve sus talleres y el alumno sus clases.
+  - Se avisa a la administración.
+- **Equipo** (Coordinador, Gerente, Encargado, Marketing, Inventario, Cajero, Mozo, Cocina, Supervisor): la cuenta queda **pendiente**.
+  - Estos roles dan acceso a caja, contactos o finanzas, así que nadie entra sin aprobación.
+  - Administración y gerencia reciben el aviso «Cuenta para aprobar». Para aprobarla, hay que marcarla como activa en *Usuarios*.
+  - Si la persona intenta ingresar antes, ve un mensaje claro.
+- **La migración `2026_10_29_000002`** suma los roles del espacio al rol propio de la cuenta (`users.role`); antes solo existían como membresías.
+- **Desde *Usuarios*,** la administración también puede asignar estos roles, con su nombre en castellano.
+
 ## Puesta en marcha
 
 ```bash

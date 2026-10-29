@@ -156,6 +156,8 @@
 .bg-green,.badge-green{background:#218a46;color:var(--green-800)}
 .bg-amber,.badge-amber{background:var(--amber-100);color:var(--amber-800)}
 .bg-teal,.badge-teal{background:var(--t100);color:var(--t600)}
+.badge.bg-teal,.badge.badge-teal{background:#eeeeee !important;color:#111111 !important}
+.badge.bg-amber,.badge.badge-amber{background:var(--amber-100) !important;color:var(--amber-800) !important}
 .bg-red,.badge-red{background:var(--red-100);color:var(--red-800)}
 .bg-blue,.badge-blue{background:var(--blue-100);color:var(--blue-800)}
 .bg-gray,.badge-gray{background:var(--g100);color:var(--g600)}

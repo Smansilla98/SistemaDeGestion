@@ -3,7 +3,7 @@
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-person-plus"></i> Últimas inscripciones</h5>
-        <a href="{{ route('workshops.index') }}" class="small">Ver talleres</a>
+        <a href="{{ route('workshops.index') }}" class="small text-dark fw-semibold">Ver talleres</a>
     </div>
     <ul class="list-group list-group-flush">
         @foreach($recentEnrollments as $e)

@@ -153,14 +153,95 @@
             @endphp
 
             @if(auth()->check())
-            <div class="sb-label">Operaciones</div>
-            @if($canDashboard || $canTables || $canOrders || $canKitchen || $canCashRegister || $canDiscountTypes)
+            {{-- Patuka: primero el espacio cultural; la barra (mesas, pedidos, caja, stock) es un módulo más. --}}
             @if($canDashboard)
             <a href="{{ route('dashboard') }}" class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-grid-3x3-gap sb-ico"></i>
-                <span>Página Principal</span>
+                <i class="bi bi-house sb-ico"></i>
+                <span>Inicio</span>
             </a>
             @endif
+
+            @if($canAgenda || $canWorkshops || $canEvents || $canRecurring)
+            <div class="sb-div"></div>
+            <div class="sb-label">Espacio cultural</div>
+            @if($canAgenda)
+            <a href="{{ route('agenda.index') }}" class="sb-link {{ request()->routeIs('agenda.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-week sb-ico"></i>
+                <span>Agenda</span>
+            </a>
+            @endif
+            @if($canWorkshops)
+            <a href="{{ route('workshops.index') }}" class="sb-link {{ request()->routeIs('workshops.*') ? 'active' : '' }}">
+                <i class="bi bi-easel sb-ico"></i>
+                <span>Talleres</span>
+            </a>
+            @endif
+            @if($canEvents)
+            <a href="{{ route('events.index') }}" class="sb-link {{ request()->routeIs('events.*') ? 'active' : '' }}">
+                <i class="bi bi-music-note-beamed sb-ico"></i>
+                <span>Eventos y shows</span>
+            </a>
+            @endif
+            @if($canRecurring)
+            <a href="{{ route('recurring-activities.index') }}" class="sb-link {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-repeat sb-ico"></i>
+                <span>Actividades recurrentes</span>
+            </a>
+            @endif
+            @endif
+
+            @if($canContacts || $canCampaigns || ($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canMarket || $canDocuments)))
+            <div class="sb-div"></div>
+            <div class="sb-label">Comunidad</div>
+            @if($canContacts)
+            <a href="{{ route('contacts.index') }}" class="sb-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
+                <i class="bi bi-person-lines-fill sb-ico"></i>
+                <span>Contactos</span>
+            </a>
+            <a href="{{ route('forms.index') }}" class="sb-link {{ request()->routeIs('forms.*') ? 'active' : '' }}">
+                <i class="bi bi-ui-checks sb-ico"></i>
+                <span>Formularios</span>
+            </a>
+            @endif
+            @if($canCampaigns)
+            <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
+                <i class="bi bi-megaphone sb-ico"></i>
+                <span>Comunicaciones</span>
+            </a>
+            @endif
+            @if($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canContacts || $canMarket || $canDocuments))
+            <a href="{{ route('messages.index') }}" class="sb-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots sb-ico"></i>
+                <span>Mensajes</span>
+                @if($navUnreadMessages > 0)<span class="sb-badge sb-ba">{{ $navUnreadMessages }}</span>@endif
+            </a>
+            @endif
+            @endif
+
+            @if($canMarket)
+            <div class="sb-div"></div>
+            <div class="sb-label">Feria</div>
+            <a href="{{ route('market.entrepreneurs.index') }}" class="sb-link {{ request()->routeIs('market.entrepreneurs.*') ? 'active' : '' }}">
+                <i class="bi bi-shop-window sb-ico"></i>
+                <span>Emprendedores</span>
+            </a>
+            <a href="{{ route('market.products.index') }}" class="sb-link {{ request()->routeIs('market.products.*') ? 'active' : '' }}">
+                <i class="bi bi-basket sb-ico"></i>
+                <span>Productos y stock</span>
+            </a>
+            <a href="{{ route('market.consignments.index') }}" class="sb-link {{ request()->routeIs('market.consignments.*') ? 'active' : '' }}">
+                <i class="bi bi-box-arrow-in-down sb-ico"></i>
+                <span>Consignaciones</span>
+            </a>
+            <a href="{{ route('market.cycles.index') }}" class="sb-link {{ request()->routeIs('market.cycles.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-repeat sb-ico"></i>
+                <span>Ciclos de pedidos</span>
+            </a>
+            @endif
+
+            @if($canTables || $canOrders || $canCashRegister || $canDiscountTypes || $canSectors || $canCategories || $canProducts || $canStock || $canStockMozoIns)
+            <div class="sb-div"></div>
+            <div class="sb-label">Barra</div>
             @if($canTables)
             <a href="{{ route('tables.index') }}" class="sb-link {{ request()->routeIs('tables.*') ? 'active' : '' }}">
                 <i class="bi bi-table sb-ico"></i>
@@ -175,47 +256,28 @@
                 @if($navPendingOrdersCount > 0)<span class="sb-badge sb-ba">{{ $navPendingOrdersCount }}</span>@endif
             </a>
             @endif
-            @if($canKitchen)
-            {{--
-            <a href="{{ route('kitchen.index') }}" class="sb-link {{ request()->routeIs('kitchen.*') ? 'active' : '' }}">
-                <i class="bi bi-egg-fried sb-ico"></i>
-                <span>Cocina</span>
-            </a>
-            --}}
-            @endif
             @if($canCashRegister)
             <a href="{{ route('cash-register.index') }}" class="sb-link {{ request()->routeIs('cash-register.*') ? 'active' : '' }}">
-                <i class="bi bi-plus-square sb-ico"></i>
+                <i class="bi bi-cash-coin sb-ico"></i>
                 <span>Caja</span>
+            </a>
+            @endif
+            @if($canProducts)
+            <a href="{{ route('products.index') }}" class="sb-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <i class="bi bi-cup-straw sb-ico"></i>
+                <span>Carta</span>
+            </a>
+            @endif
+            @if($canCategories)
+            <a href="{{ route('categories.index') }}" class="sb-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                <i class="bi bi-grid-3x3 sb-ico"></i>
+                <span>Categorías de la carta</span>
             </a>
             @endif
             @if($canDiscountTypes)
             <a href="{{ route('discount-types.index') }}" class="sb-link {{ request()->routeIs('discount-types.*') ? 'active' : '' }}">
                 <i class="bi bi-percent sb-ico"></i>
                 <span>Descuentos</span>
-            </a>
-            @endif
-            @endif
-
-            @if($canSectors || $canCategories || $canProducts || $canStock || $canStockMozoIns || $canUsers || $canPrinters)
-            <div class="sb-div"></div>
-            <div class="sb-label">Restaurante</div>
-            @if($canSectors)
-            <a href="{{ route('sectors.index') }}" class="sb-link {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
-                <i class="bi bi-building sb-ico"></i>
-                <span>Sectores</span>
-            </a>
-            @endif
-            @if($canCategories)
-            <a href="{{ route('categories.index') }}" class="sb-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                <i class="bi bi-grid-3x3 sb-ico"></i>
-                <span>Categorías</span>
-            </a>
-            @endif
-            @if($canProducts)
-            <a href="{{ route('products.index') }}" class="sb-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <i class="bi bi-tag sb-ico"></i>
-                <span>Productos</span>
             </a>
             @endif
             @if($canStockMozoIns)
@@ -236,117 +298,27 @@
             </a>
             @endif
             @endif
-            @if($canUsers)
-            <a href="{{ route('users.index') }}" class="sb-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people sb-ico"></i>
-                <span>Usuarios</span>
-            </a>
-            @endif
-            @if($navUser && $navUser->isAdminLevel())
-            <a href="{{ route('branches.index') }}" class="sb-link {{ request()->routeIs('branches.*') ? 'active' : '' }}">
-                <i class="bi bi-shop sb-ico"></i>
-                <span>Sucursales</span>
-            </a>
-            @endif
-            @if($canPrinters)
-            {{--
-            <a href="{{ route('printers.index') }}" class="sb-link {{ request()->routeIs('printers.*') ? 'active' : '' }}">
-                <i class="bi bi-printer sb-ico"></i>
-                <span>Impresoras</span>
-            </a>
-            --}}
-            @endif
-            @endif
-
-            @if($canEvents || $canRecurring)
-            <div class="sb-div"></div>
-            <div class="sb-label">Planificación</div>
-            @if($canEvents)
-            <a href="{{ route('events.index') }}" class="sb-link {{ request()->routeIs('events.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-event sb-ico"></i>
-                <span>Eventos</span>
-            </a>
-            @endif
-            @if($canRecurring)
-            <a href="{{ route('recurring-activities.index') }}" class="sb-link {{ request()->routeIs('recurring-activities.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-repeat sb-ico"></i>
-                <span>Actividades Recurrentes</span>
+            @if($canSectors)
+            <a href="{{ route('sectors.index') }}" class="sb-link {{ request()->routeIs('sectors.*') ? 'active' : '' }}">
+                <i class="bi bi-building sb-ico"></i>
+                <span>Sectores</span>
             </a>
             @endif
             @endif
 
-            @if($canAgenda || $canWorkshops || $canContacts || $canMarket || $canDocuments)
+            @if($canActivityFinance || $canFixedExpenses || $canReports || $canDocuments || $canUsers || $canConfiguration || ($navUser && $navUser->isAdminLevel()))
             <div class="sb-div"></div>
-            <div class="sb-label">Comunidad</div>
-            @if($canAgenda)
-            <a href="{{ route('agenda.index') }}" class="sb-link {{ request()->routeIs('agenda.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-week sb-ico"></i>
-                <span>Agenda</span>
-            </a>
-            @endif
-            @if($canWorkshops)
-            <a href="{{ route('workshops.index') }}" class="sb-link {{ request()->routeIs('workshops.*') ? 'active' : '' }}">
-                <i class="bi bi-easel sb-ico"></i>
-                <span>Talleres</span>
-            </a>
-            @endif
-            @if($canContacts)
-            <a href="{{ route('contacts.index') }}" class="sb-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
-                <i class="bi bi-person-lines-fill sb-ico"></i>
-                <span>Contactos</span>
-            </a>
-            @endif
-            @if($canContacts)
-            <a href="{{ route('forms.index') }}" class="sb-link {{ request()->routeIs('forms.*') ? 'active' : '' }}">
-                <i class="bi bi-ui-checks sb-ico"></i>
-                <span>Formularios</span>
-            </a>
-            @endif
-            @if($canCampaigns)
-            <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
-                <i class="bi bi-megaphone sb-ico"></i>
-                <span>Comunicaciones</span>
-            </a>
-            @endif
-            @if($canMarket)
-            <a href="{{ route('market.entrepreneurs.index') }}" class="sb-link {{ request()->routeIs('market.entrepreneurs.*') ? 'active' : '' }}">
-                <i class="bi bi-shop-window sb-ico"></i>
-                <span>Emprendedores</span>
-            </a>
-            <a href="{{ route('market.products.index') }}" class="sb-link {{ request()->routeIs('market.products.*') ? 'active' : '' }}">
-                <i class="bi bi-basket sb-ico"></i>
-                <span>Productos y stock</span>
-            </a>
-            <a href="{{ route('market.consignments.index') }}" class="sb-link {{ request()->routeIs('market.consignments.*') ? 'active' : '' }}">
-                <i class="bi bi-box-arrow-in-down sb-ico"></i>
-                <span>Consignaciones</span>
-            </a>
-            <a href="{{ route('market.cycles.index') }}" class="sb-link {{ request()->routeIs('market.cycles.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-repeat sb-ico"></i>
-                <span>Ciclos de pedidos</span>
-            </a>
-            @endif
-            @if($canDocuments)
-            <a href="{{ route('documents.index') }}" class="sb-link {{ request()->routeIs('documents.*') ? 'active' : '' }}">
-                <i class="bi bi-folder2-open sb-ico"></i>
-                <span>Documentos</span>
-            </a>
-            @endif
-            @endif
-
-            @if($canFixedExpenses || $canReports || $canActivityFinance)
-            <div class="sb-div"></div>
-            <div class="sb-label">Finanzas</div>
+            <div class="sb-label">Administración</div>
             @if($canActivityFinance)
             <a href="{{ route('finance.index') }}" class="sb-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
                 <i class="bi bi-pie-chart sb-ico"></i>
-                <span>Talleres y eventos</span>
+                <span>Finanzas de actividades</span>
             </a>
             @endif
             @if($canFixedExpenses)
             <a href="{{ route('fixed-expenses.index') }}" class="sb-link {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack sb-ico"></i>
-                <span>Gastos Fijos</span>
+                <span>Gastos fijos</span>
             </a>
             @endif
             @if($canReports)
@@ -355,15 +327,16 @@
                 <span>Reportes</span>
             </a>
             @endif
+            @if($canDocuments)
+            <a href="{{ route('documents.index') }}" class="sb-link {{ request()->routeIs('documents.*') ? 'active' : '' }}">
+                <i class="bi bi-folder2-open sb-ico"></i>
+                <span>Documentos</span>
+            </a>
             @endif
-
-            @if(auth()->check())
-            <div class="sb-div"></div>
-            @if($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canContacts || $canMarket || $canDocuments))
-            <a href="{{ route('messages.index') }}" class="sb-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-dots sb-ico"></i>
-                <span>Mensajes</span>
-                @if($navUnreadMessages > 0)<span class="sb-badge sb-ba">{{ $navUnreadMessages }}</span>@endif
+            @if($canUsers)
+            <a href="{{ route('users.index') }}" class="sb-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people sb-ico"></i>
+                <span>Usuarios y roles</span>
             </a>
             @endif
             @if($navUser && $navUser->isAdminLevel())
@@ -371,38 +344,16 @@
                 <i class="bi bi-diagram-3 sb-ico"></i>
                 <span>Organización y miembros</span>
             </a>
-            @endif
-            <a href="{{ route('manual') }}" class="sb-link {{ request()->routeIs('manual') ? 'active' : '' }}">
-                <i class="bi bi-question-circle sb-ico"></i>
-                <span>Manual de uso</span>
+            <a href="{{ route('branches.index') }}" class="sb-link {{ request()->routeIs('branches.*') ? 'active' : '' }}">
+                <i class="bi bi-geo-alt sb-ico"></i>
+                <span>Sedes</span>
             </a>
             @endif
-
-            @if($canConfiguration || $canTutorials || ($navUser && $navUser->isAdminLevel()))
-            <div class="sb-div"></div>
             @if($canConfiguration)
-            {{--
             <a href="{{ route('configuration.index') }}" class="sb-link {{ request()->routeIs('configuration.*') ? 'active' : '' }}">
                 <i class="bi bi-gear sb-ico"></i>
-                <span>Configuración</span>
+                <span>Configuración y web</span>
             </a>
-            --}}
-            @endif
-            @if($canTutorials)
-            {{--
-            <a href="{{ route('tutorials.index') }}" class="sb-link {{ request()->routeIs('tutorials.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-bookmark sb-ico"></i>
-                <span>Tutoriales</span>
-            </a>
-            --}}
-            @endif
-            @if($navUser && $navUser->isAdminLevel())
-            {{--
-            <a href="{{ route('permissions.index') }}" class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
-                <i class="bi bi-shield-lock sb-ico"></i>
-                <span>Permisos</span>
-            </a>
-            --}}
             @endif
             @if($navUser && $navUser->isSuperAdmin())
             <a href="{{ route('module-usage.index') }}" class="sb-link {{ request()->routeIs('module-usage.*') ? 'active' : '' }}">
@@ -411,6 +362,12 @@
             </a>
             @endif
             @endif
+
+            <div class="sb-div"></div>
+            <a href="{{ route('manual') }}" class="sb-link {{ request()->routeIs('manual') ? 'active' : '' }}">
+                <i class="bi bi-question-circle sb-ico"></i>
+                <span>Manual de uso</span>
+            </a>
             @endif
         </nav>
 

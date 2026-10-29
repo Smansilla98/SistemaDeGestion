@@ -1,22 +1,90 @@
 @extends('layouts.app')
 
-@section('title', 'Página Principal')
+@section('title', 'Inicio')
 
 @section('content')
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <div>
             <h1 class="text-white mb-2" style="font-weight: 700; font-size: 2.5rem;">
-                <i class="bi bi-grid-3x3-gap"></i> Página Principal
+                <i class="bi bi-house"></i> Hoy en {{ \App\Support\Branding::name() }}
             </h1>
-            <div class="text-white-50">Resumen del día — {{ now()->translatedFormat('l d \d\e F, Y') }}</div>
+            <div class="text-white-50">{{ ucfirst(now()->translatedFormat('l d \d\e F, Y')) }}</div>
         </div>
     </div>
 </div>
 
+<div class="page">
+@if($agendaWeek !== null)
+<div class="mb-4">
+    <div class="card">
+        <div class="ch">
+            <div class="ch-t"><i class="bi bi-calendar-week"></i> Agenda de la semana</div>
+            <div class="d-flex gap-2">
+                @if(\Illuminate\Support\Facades\Route::has('workshops.create') && auth()->user()->isAdminLevel())
+                <a href="{{ route('workshops.create') }}" class="btn btn-o btn-sm"><i class="bi bi-plus"></i> Taller</a>
+                @endif
+                <a href="{{ route('agenda.index') }}" class="btn btn-o btn-sm">Ver agenda completa</a>
+            </div>
+        </div>
+        @if($agendaWeek->isEmpty())
+            <div class="p-3 text-muted">No hay clases, eventos ni avisos en los próximos 7 días.</div>
+        @else
+            <div class="list-group list-group-flush">
+                @foreach($agendaWeek as $date => $items)
+                    @php $day = \Carbon\Carbon::parse($date); @endphp
+                    <div class="list-group-item bg-light py-2 fw-semibold small text-uppercase" style="letter-spacing: .05em">
+                        {{ $day->isToday() ? 'Hoy' : ($day->isTomorrow() ? 'Mañana' : '') }}
+                        <span class="{{ $day->isToday() || $day->isTomorrow() ? 'text-muted fw-normal' : '' }}">{{ $day->translatedFormat('l d/m') }}</span>
+                    </div>
+                    @foreach($items as $item)
+                        @php $tag = $item['url'] ? 'a' : 'div'; @endphp
+                        <{{ $tag }} @if($item['url']) href="{{ $item['url'] }}" @endif class="list-group-item {{ $item['url'] ? 'list-group-item-action' : '' }} d-flex gap-3 align-items-center {{ $item['cancelled'] ? 'text-decoration-line-through text-muted' : '' }}">
+                            <strong style="min-width: 3.2rem">{{ $item['time'] ? substr((string) $item['time'], 0, 5) : '—' }}</strong>
+                            <span class="badge bg-teal">{{ $item['kind'] }}</span>
+                            <span class="flex-grow-1">
+                                <strong>{{ $item['title'] }}</strong>
+                                @if(! empty($item['detail']))<span class="text-muted"> · {{ \Illuminate\Support\Str::limit((string) $item['detail'], 80) }}</span>@endif
+                            </span>
+                            @if(! empty($item['category']))<span class="small text-muted"><i class="bi bi-circle-fill" style="font-size: 7px; color: {{ $item['color'] ?: '#000' }}"></i> {{ $item['category'] }}</span>@endif
+                        </{{ $tag }}>
+                    @endforeach
+                @endforeach
+            </div>
+        @endif
+    </div>
+</div>
+@endif
+
+@if($culture)
+<div class="mb-4">
+    <div class="sg">
+        <x-card href="{{ route('workshops.index') }}" icon="bi-easel" label="Talleres activos" :value="$culture['workshops']">
+            <x-badge tone="teal">Abiertos o en curso</x-badge>
+        </x-card>
+        <x-card href="{{ route('workshops.index') }}" icon="bi-people" label="Inscriptos" :value="$culture['enrolled']">
+            @if($culture['waitlist'] > 0)<x-badge tone="amber">{{ $culture['waitlist'] }} en lista de espera</x-badge>@else<x-badge tone="green" :dot="true">Sin lista de espera</x-badge>@endif
+        </x-card>
+        <x-card href="{{ route('agenda.index') }}" icon="bi-music-note-beamed" label="Eventos próximos 14 días" :value="$culture['upcoming_events']">
+            <x-badge tone="teal">Ver agenda</x-badge>
+        </x-card>
+    </div>
+
+    </div>
+</div>
+@endif
+
 @include('dashboard._enrollments')
 
-<div class="page">
+@if($showBar)
+{{-- La barra queda en segundo plano: plegada, con lo esencial a la vista. --}}
+<details class="bar-summary mt-2" @if($culture === null && $agendaWeek === null) open @endif>
+<summary class="text-white d-flex align-items-center gap-3 flex-wrap py-2" style="cursor: pointer; list-style: none;">
+    <span class="h5 mb-0"><i class="bi bi-cup-straw"></i> Barra</span>
+    <span class="small text-white-50">{{ $stats['mesas_ocupadas'] }} mesas ocupadas · {{ $stats['pedidos_pendientes'] }} pedidos en curso · {{ ($stats['tiene_sesion_abierta'] ?? false) ? 'caja abierta' : 'caja cerrada' }}</span>
+    <span class="small text-white-50 ms-auto"><i class="bi bi-chevron-down"></i> Ver detalle</span>
+</summary>
+<div class="pt-2">
     <div class="sg">
         <x-card href="{{ route('tables.index') }}" icon="bi-table" label="Mesas disponibles" :value="$stats['mesas_libres']" :subvalue="'de '.$stats['total_tables']">
             <x-badge tone="green" :dot="true">{{ $stats['mesas_ocupadas'] }} ocupadas</x-badge>
@@ -265,6 +333,9 @@
         @endif
     </div>
     @endif
+</div>
+</details>
+@endif
 </div>
 
 @push('scripts')

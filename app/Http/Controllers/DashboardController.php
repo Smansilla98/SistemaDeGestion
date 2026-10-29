@@ -110,9 +110,15 @@ class DashboardController extends Controller
             ->get();
 
         $recentEnrollments = $this->recentEnrollments();
+        $culture = $this->culture();
+        $agendaWeek = $this->agendaWeek();
+        $showBar = $this->showsBar();
 
         return view('dashboard', compact(
             'recentEnrollments',
+            'culture',
+            'agendaWeek',
+            'showBar',
             'stats',
             'recentOrders',
             'topProducts',
@@ -122,6 +128,69 @@ class DashboardController extends Controller
             'activeTables',
             'incomeByMethod'
         ));
+    }
+
+    /**
+     * Resumen del espacio cultural: talleres, inscriptos, lista de espera y eventos próximos.
+     *
+     * @return array{workshops: int, enrolled: int, waitlist: int, upcoming_events: int}|null
+     */
+    private function culture(): ?array
+    {
+        $user = auth()->user();
+        $orgId = $user?->restaurant_id;
+        $licenses = app(\App\Services\ModuleLicenseService::class);
+        $perm = app(\App\Services\PermissionService::class);
+        if ($orgId === null || ! $licenses->enabledForUser($user, 'workshops') || ! $perm->allowed($user, 'workshops.view')) {
+            return null;
+        }
+
+        $workshops = \App\Models\Workshop::query()->where('restaurant_id', $orgId)->whereIn('status', ['ABIERTO', 'EN_CURSO']);
+        if ($user->role === \App\Models\User::ROLE_PROFESOR) {
+            $workshops->whereHas('teacher', fn ($t) => $t->where('user_id', $user->id));
+        }
+        $ids = $workshops->pluck('id');
+        $enrollments = \App\Models\WorkshopEnrollment::query()->whereIn('workshop_id', $ids);
+
+        $canEvents = $licenses->enabledForUser($user, 'events') && $perm->allowed($user, 'events.view');
+
+        return [
+            'workshops' => $ids->count(),
+            'enrolled' => (clone $enrollments)->where('status', \App\Models\WorkshopEnrollment::ACTIVA)->count(),
+            'waitlist' => (clone $enrollments)->where('status', \App\Models\WorkshopEnrollment::EN_ESPERA)->count(),
+            'upcoming_events' => $canEvents ? \App\Models\Event::query()->where('restaurant_id', $orgId)
+                ->whereBetween('date', [today()->addDay(), today()->addDays(14)])->where('status', '!=', \App\Models\Event::STATUS_CANCELADO)->count() : 0,
+        ];
+    }
+
+    /**
+     * Agenda de los próximos 7 días (clases, eventos, etapas, actividades, entregas y avisos): lo primero del inicio.
+     *
+     * @return \Illuminate\Support\Collection<array-key, mixed>|null fecha (Y-m-d) => items
+     */
+    private function agendaWeek(): ?\Illuminate\Support\Collection
+    {
+        $user = auth()->user();
+        $orgId = $user?->restaurant_id;
+        if ($orgId === null || ! app(\App\Services\ModuleLicenseService::class)->enabledForUser($user, 'workshops')
+            || ! app(\App\Services\PermissionService::class)->allowed($user, 'agenda.view')) {
+            return null;
+        }
+
+        $from = \Carbon\CarbonImmutable::today();
+
+        return app(\App\Services\Community\AgendaService::class)->between($user, (int) $orgId, $from, $from->addDays(6)->endOfDay());
+    }
+
+    /** La barra (mesas, pedidos, caja) se muestra sólo si el módulo está activo y la persona lo usa. */
+    private function showsBar(): bool
+    {
+        $user = auth()->user();
+        $licenses = app(\App\Services\ModuleLicenseService::class);
+        $perm = app(\App\Services\PermissionService::class);
+
+        return ($licenses->enabledForUser($user, 'tables') && $perm->allowed($user, 'tables.view'))
+            || ($licenses->enabledForUser($user, 'orders') && $perm->allowed($user, 'orders.view'));
     }
 
     /**

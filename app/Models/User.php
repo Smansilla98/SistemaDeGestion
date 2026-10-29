@@ -101,6 +101,13 @@ class User extends Authenticatable
      * Opera esta request como otra sucursal sin tocar la fila del usuario.
      * Quien valida que tenga acceso es BranchAccess, antes de llamar acá.
      */
+    /** Roles de la comunidad: al registrarse quedan activos al instante. */
+    public const SELF_SIGNUP_COMMUNITY = [self::ROLE_ALUMNO, self::ROLE_PROFESOR, self::ROLE_ARTISTA, self::ROLE_EMPRENDEDOR];
+
+    /** Roles del equipo: se pueden pedir al registrarse, pero la cuenta espera la aprobación de la administración. */
+    public const SELF_SIGNUP_STAFF = [self::ROLE_COORDINADOR, self::ROLE_GERENTE, self::ROLE_ENCARGADO, self::ROLE_MARKETING,
+        self::ROLE_INVENTARIO, self::ROLE_CAJERO, self::ROLE_MOZO, self::ROLE_COCINA, self::ROLE_SUPERVISOR];
+
     public function useRestaurant(?int $restaurantId): static
     {
         $this->activeRestaurantId = $restaurantId;
@@ -262,7 +269,9 @@ class User extends Authenticatable
      */
     public static function getAssignableRoles(?self $actor = null): array
     {
-        $all = self::getRoles();
+        // También los roles del espacio cultural (coordinación, profe, alumno, etc.).
+        $all = array_values(array_unique(array_merge(self::getRoles(), self::SELF_SIGNUP_COMMUNITY, self::SELF_SIGNUP_STAFF,
+            [self::ROLE_MARKETING, self::ROLE_INVENTARIO])));
         if ($actor !== null && $actor->isSuperAdmin()) {
             return $all;
         }

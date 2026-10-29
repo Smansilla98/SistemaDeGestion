@@ -58,7 +58,7 @@
                         <option value="">Seleccionar rol...</option>
                         @foreach($roles as $role)
                             <option value="{{ $role }}" {{ old('role') === $role ? 'selected' : '' }}>
-                                {{ $role }}
+                                {{ \App\Models\User::roleLabels()[$role] ?? $role }}
                             </option>
                         @endforeach
                     </select>
