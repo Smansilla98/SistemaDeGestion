@@ -1,4 +1,4 @@
-/* Estilos personalizados - Bootstrap 5 como base + tokens de Al Toque */
+/* Estilos personalizados - Bootstrap 5 como base + tokens de Patuka */
 @import 'conurbania.css';
 @import 'components/theme-fallbacks.css';
 @import 'components/layout-base.css';
@@ -15,12 +15,12 @@
 @import 'components/branding.css';
 
 :root {
-    --primary-color: #4e8d99;
-    --secondary-color: #2a5c68;
+    --primary-color: #111111;
+    --secondary-color: #000000;
 }
 
 body {
-    font-family: var(--font, 'Outfit', sans-serif);
+    font-family: var(--font, 'Roboto', sans-serif);
 }
 
 /* Mejoras para tablas */

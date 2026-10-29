@@ -119,7 +119,7 @@ function confirmDeleteCategory(categoryId, categoryName) {
         title: '¿Eliminar Categoría?',
         html: `¿Estás seguro de eliminar la categoría <strong>${categoryName}</strong>?<br><small class="text-muted">Esta acción no se puede deshacer.</small>`,
         showCancelButton: true,
-        confirmButtonColor: '#c94a2d',
+        confirmButtonColor: '#b3261e',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'

@@ -131,6 +131,36 @@ final class ContactService
     }
 
     /**
+     * Busca el contacto por email o teléfono (o por nombre si no hay ninguno) y si no existe lo crea.
+     * A uno existente sólo le completa lo que falta: no pisa lo que cargó la organización.
+     */
+    public function findOrCreate(int $restaurantId, string $name, ?string $email, ?string $phone, string $kind, bool $acceptsMarketing = false): Contact
+    {
+        $email = filter_var(Str::lower((string) $email), FILTER_VALIDATE_EMAIL) ? Str::lower((string) $email) : null;
+        $phone = filled($phone) ? mb_substr(trim((string) $phone), 0, 40) : null;
+        $name = mb_substr(trim($name), 0, 255);
+
+        $contact = Contact::query()->where('restaurant_id', $restaurantId)
+            ->where(fn ($q) => ($email || $phone)
+                ? $q->when($email, fn ($w) => $w->orWhere('email', $email))->when($phone, fn ($w) => $w->orWhere('phone', $phone))
+                : $q->where('name', $name))
+            ->first();
+
+        $attrs = array_filter(['email' => $email, 'phone' => $phone], fn ($v) => $v !== null);
+        if ($acceptsMarketing) {
+            $attrs += ['accepts_marketing' => true, 'marketing_consent_at' => now()];
+        }
+
+        if ($contact) {
+            $contact->fill(array_filter($attrs, fn ($v, $k) => blank($contact->getAttribute($k)) || str_starts_with($k, 'accepts') || str_starts_with($k, 'marketing'), ARRAY_FILTER_USE_BOTH))->save();
+
+            return $contact;
+        }
+
+        return Contact::query()->create($attrs + ['restaurant_id' => $restaurantId, 'name' => $name, 'kind' => $kind]);
+    }
+
+    /**
      * @param  Builder<Contact>  $query
      * @return \Generator<int, list<string>>
      */

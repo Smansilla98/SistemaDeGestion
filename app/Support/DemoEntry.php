@@ -19,7 +19,7 @@ final class DemoEntry
     public static function decides(?User $user): bool
     {
         // Solo el demo pide elegir entrada; en una instalación de cliente se apaga con
-        // DEMO_ENTRY_ENABLED=false (por defecto sigue encendido, como hasta ahora).
+        // DEMO_ENTRY_ENABLED=false (en Patuka viene apagado: es una instalación propia, no un demo).
         if ($user === null || ! config('app.demo_entry', true)) {
             return false;
         }

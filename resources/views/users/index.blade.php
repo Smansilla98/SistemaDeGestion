@@ -68,7 +68,7 @@
                     <tr>
                         <td data-label="Nombre">
                             <div class="d-flex align-items-center justify-content-end">
-                                <div class="avatar-circle me-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #4e8d99, #2a5c68); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
+                                <div class="avatar-circle me-2" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #111111, #000000); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
                                 <strong>{{ $user->name }}</strong>
@@ -170,7 +170,7 @@ function confirmDeleteUser(userId, userName) {
         text: "Esta acción no se puede deshacer.",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#c94a2d',
+        confirmButtonColor: '#b3261e',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'

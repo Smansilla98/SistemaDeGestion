@@ -129,7 +129,7 @@ function confirmDeletePrinter(printerId, printerName) {
         title: '¿Eliminar Impresora?',
         html: `¿Estás seguro de eliminar la impresora <strong>${printerName}</strong>?<br><small class="text-muted">Esta acción no se puede deshacer.</small>`,
         showCancelButton: true,
-        confirmButtonColor: '#c94a2d',
+        confirmButtonColor: '#b3261e',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'

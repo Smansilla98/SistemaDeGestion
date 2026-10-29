@@ -13,7 +13,7 @@ class ConurbaniaRepairIntegrity extends Command
 {
     protected $signature = 'conurbania:repair {--force : Ejecutar sin preguntar}';
 
-    protected $description = 'Repara integridad de Al Toque (secuencias, sesiones, snapshots de precio)';
+    protected $description = 'Repara integridad de Patuka (secuencias, sesiones, snapshots de precio)';
 
     public function handle(): int
     {

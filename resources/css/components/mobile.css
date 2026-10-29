@@ -1,12 +1,12 @@
 /* Conurbania Mobile V2 — safe-area, bottom nav, dashboard */
 .m-app {
-  --m-bg: var(--t950, #10262c);
+  --m-bg: var(--t950, #050505);
   --m-surface: #051611;
-  --m-card: var(--t800, #1e4650);
-  --m-header-from: var(--t700, #2a5c68);
-  --m-header-to: var(--t800, #1e4650);
-  --m-muted: var(--t200, #c7e4e7);
-  --m-accent: var(--t300, #9dccd2);
+  --m-card: var(--t800, #1c1c1c);
+  --m-header-from: var(--t700, #000000);
+  --m-header-to: var(--t800, #1c1c1c);
+  --m-muted: var(--t200, #dcdcdc);
+  --m-accent: var(--t300, #bdbdbd);
   --m-text: #ffffff;
   --m-nav-bg: #04120e;
   --m-nav-inactive: var(--g500, #6b7f7a);
@@ -14,12 +14,12 @@
   --m-warn-border: #712b13;
   --m-warn-text: #f5c4b3;
   --m-warn-icon: #f0997b;
-  --m-ok-bg: #4e8d99;
+  --m-ok-bg: #111111;
   --m-ok-fg: #04342c;
   min-height: 100dvh;
   background: var(--m-bg);
   color: var(--m-text);
-  font-family: var(--font, 'Outfit', sans-serif);
+  font-family: var(--font, 'Roboto', sans-serif);
   padding-top: env(safe-area-inset-top, 0);
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);

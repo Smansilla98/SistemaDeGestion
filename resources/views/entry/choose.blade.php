@@ -8,7 +8,7 @@
     @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         * { box-sizing: border-box; }
@@ -21,7 +21,7 @@
             padding: 32px 20px;
             background: #f4f5f7;
             color: #1c2430;
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         .wrap { width: min(1220px, 100%); text-align: center; }
         h1 {
@@ -70,7 +70,7 @@
         }
         .ico.demo { color: #c4843a; }
         .ico.cfg { color: #5b8fd4; }
-        .ico.quote { color: #4e8d99; }
+        .ico.quote { color: #111111; }
         .ico.culture { color: #8a5cc2; }
         .card strong {
             display: block;

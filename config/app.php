@@ -13,13 +13,13 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Al Toque'),
+    'name' => env('APP_NAME', 'Patuka'),
 
     /*
     | Elección de entrada (demo completo o recorrido por módulos) para admin y superadmin.
     | Pensada para el demo público; una instalación de cliente la apaga.
     */
-    'demo_entry' => (bool) env('DEMO_ENTRY_ENABLED', true),
+    'demo_entry' => (bool) env('DEMO_ENTRY_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,16 +27,22 @@ return [
     |--------------------------------------------------------------------------
     |
     | Logo y nombre visibles en sidebar, login e impresiones.
-    | APP_LOGO es una ruta relativa a public/ (ej. logo.png o brand/cliente.png).
-    | Si está vacío, se muestra un logo genérico (ícono + nombre).
+    | APP_LOGO (fondo oscuro) y APP_LOGO_LIGHT (fondo claro) son rutas
+    | relativas a public/. Vacíos usan los logos de Patuka en public/brand.
     |
     */
 
     'brand' => [
-        'name' => env('APP_BRAND_NAME', 'Al Toque'),
-        'tagline' => 'Gestión gastronómica simple.',
-        'modules' => 'Comandas · Mesas · Cocina · Caja · Stock',
-        'logo' => env('APP_LOGO', ''),
+        'name' => env('APP_BRAND_NAME', 'Patuka'),
+        'tagline' => 'Espacio cultural',
+        'modules' => 'Talleres · Agenda · Comunidad · Feria · Barra',
+        // Logo para fondos oscuros (sidebar). Vacío en .env usa el de Patuka.
+        'logo' => env('APP_LOGO') ?: 'brand/patuka-logo-blanco.png',
+        // Logo para fondos claros e impresiones (tickets, PDF).
+        'logo_light' => env('APP_LOGO_LIGHT') ?: 'brand/patuka-logo-negro.png',
+        'icon' => 'brand/patuka-icon.png',
+        // Organización que muestra la web pública (talleres, agenda, inscripción). Vacío: el primer espacio cultural.
+        'public_org_id' => env('PUBLIC_ORG_ID'),
     ],
 
     /*

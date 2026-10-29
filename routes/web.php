@@ -68,12 +68,15 @@ use App\Http\Controllers\Table\TableController;
 Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
 Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
-// Portada pública: presenta el sistema a quien no inició sesión.
+// Web pública del espacio: talleres, agenda e inscripción online. Con sesión iniciada, al panel.
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')
-        : view('landing');
+        : app(\App\Http\Controllers\PublicSiteController::class)->home();
 })->name('home');
+Route::get('/taller/{workshop}', [\App\Http\Controllers\PublicSiteController::class, 'workshop'])->name('public.workshop');
+Route::post('/taller/{workshop}/inscripcion', [\App\Http\Controllers\PublicSiteController::class, 'enroll'])
+    ->middleware('throttle:6,1')->name('public.enroll');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -488,6 +491,7 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
     Route::prefix('configuration')->name('configuration.')->middleware('role:ADMIN,GERENTE')->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
+        Route::post('/web-publica', [\App\Http\Controllers\ConfigurationController::class, 'updatePublic'])->name('update-public');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
 
         Route::prefix('payment-methods')->name('payment-methods.')->group(function () {

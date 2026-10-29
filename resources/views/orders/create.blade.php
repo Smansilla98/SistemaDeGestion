@@ -257,7 +257,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             icon: 'warning',
             title: 'Pedido vacío',
             text: 'Debes agregar al menos un item al pedido',
-            confirmButtonColor: '#4e8d99'
+            confirmButtonColor: '#111111'
         });
         return;
     }
@@ -321,7 +321,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
                 html: 'El pedido se creó, pero el navegador bloqueó la ventana de impresión.<br><br>' +
                     '<a href="' + data.kitchen_ticket_url + '" target="_blank" rel="noopener" class="btn btn-sm btn-primary">' +
                     '<i class="bi bi-printer"></i> Abrir ticket de cocina</a>',
-                confirmButtonColor: '#4e8d99',
+                confirmButtonColor: '#111111',
                 confirmButtonText: 'Continuar'
             });
         }
@@ -335,7 +335,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             icon: 'error',
             title: 'Error',
             text: err.message || 'No se pudo crear el pedido',
-            confirmButtonColor: '#c94a2d'
+            confirmButtonColor: '#b3261e'
         });
     }
 });
@@ -347,7 +347,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             icon: 'error',
             title: 'Stock Insuficiente',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#c94a2d',
+            confirmButtonColor: '#b3261e',
             confirmButtonText: 'Entendido'
         });
     @else
@@ -355,7 +355,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
             icon: 'error',
             title: 'Error',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#c94a2d',
+            confirmButtonColor: '#b3261e',
             confirmButtonText: 'Entendido'
         });
     @endif
@@ -367,7 +367,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         icon: 'success',
         title: 'Éxito',
         text: '{{ session('success') }}',
-        confirmButtonColor: '#4e8d99',
+        confirmButtonColor: '#111111',
         confirmButtonText: 'Entendido'
     });
 @endif

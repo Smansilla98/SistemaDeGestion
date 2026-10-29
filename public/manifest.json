@@ -1,10 +1,10 @@
 {
-  "name": "Al Toque",
-  "short_name": "Al Toque",
+  "name": "Patuka Espacio Cultural",
+  "short_name": "Patuka",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#4e8d99",
-  "theme_color": "#4e8d99",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -19,4 +19,3 @@
     }
   ]
 }
-

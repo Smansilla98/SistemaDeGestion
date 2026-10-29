@@ -46,7 +46,7 @@
     .po-prod { position: relative; text-align: left; border: 1.5px solid #e6e8ea; background: #fff; border-radius: 14px; padding: .7rem .75rem; min-height: 86px; display: flex; flex-direction: column; justify-content: space-between; gap: .35rem; transition: border-color .12s, transform .12s; }
     .po-prod:hover:not(:disabled) { border-color: var(--conurbania-primary); transform: translateY(-1px); }
     .po-prod:active:not(:disabled) { transform: scale(.98); }
-    .po-prod strong { font-size: .92rem; line-height: 1.25; color: #1a2326; }
+    .po-prod strong { font-size: .92rem; line-height: 1.25; color: #1a1a1a; }
     .po-prod .po-price { font-weight: 800; color: var(--conurbania-secondary); }
     .po-prod .po-stock { font-size: .72rem; font-weight: 700; color: #94640a; }
     .po-prod:disabled { opacity: .5; background: #f7f7f8; cursor: not-allowed; }
@@ -87,7 +87,7 @@
         .po-scroll { padding-bottom: 96px; }
         .po-mobile-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1060; padding: .7rem 1rem calc(.7rem + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #eceef0; gap: .6rem; }
         .po-mobile-bar button { min-height: 50px; border-radius: 13px; font-weight: 800; border: 0; }
-        .po-mobile-bar .po-see { flex: 1; background: #f0f2f3; color: #1a2326; }
+        .po-mobile-bar .po-see { flex: 1; background: #f0f2f3; color: #1a1a1a; }
         .po-mobile-bar .po-go { flex: 1.3; color: #fff; background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); }
         .po-mobile-bar .po-go:disabled { opacity: .45; }
     }
@@ -204,7 +204,7 @@ window.TakeOrder = (function () {
     function stockAllows(productId) {
         const p = productsById[productId];
         if (!p || p.stock === null || qtyInCart(productId) + 1 <= p.stock) return true;
-        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', html: `Quedan <strong>${p.stock}</strong> de «${esc(p.name)}».`, confirmButtonColor: '#4e8d99' });
+        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', html: `Quedan <strong>${p.stock}</strong> de «${esc(p.name)}».`, confirmButtonColor: '#111111' });
         return false;
     }
 
@@ -299,14 +299,14 @@ window.TakeOrder = (function () {
                          ${data.kitchen_ticket_url ? `<a href="${esc(data.kitchen_ticket_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> Ticket de cocina</a>` : ''}
                          ${data.comanda_url ? `<a href="${esc(data.comanda_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary"><i class="bi bi-receipt"></i> Comanda</a>` : ''}
                        </div>`,
-                confirmButtonColor: '#4e8d99',
+                confirmButtonColor: '#111111',
                 confirmButtonText: 'Listo',
                 timer: data.print_ok === false ? undefined : 4000,
                 timerProgressBar: true,
             });
         } catch (err) {
             try { if (printWin && !printWin.closed) printWin.close(); } catch (e2) {}
-            Swal.fire({ icon: 'error', title: 'No se pudo enviar', text: err.message || 'No se pudo crear el pedido', confirmButtonColor: '#c94a2d' });
+            Swal.fire({ icon: 'error', title: 'No se pudo enviar', text: err.message || 'No se pudo crear el pedido', confirmButtonColor: '#b3261e' });
         } finally {
             sending = false;
             renderCart();

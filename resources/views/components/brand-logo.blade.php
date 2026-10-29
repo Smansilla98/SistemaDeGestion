@@ -2,14 +2,15 @@
     'settings' => null,
     'variant' => 'sidebar', // sidebar|auth|compact
     'maxHeight' => null,
+    'onLight' => false, // true: versión negra, para fondos claros
 ])
 
 @php
     use App\Support\Branding;
 
     $brandName = Branding::name();
-    $logoUrl = Branding::logoUrl($settings);
-    $height = $maxHeight ?? ($variant === 'auth' ? '64px' : '42px');
+    $logoUrl = Branding::logoUrl($settings, (bool) $onLight);
+    $height = $maxHeight ?? ($variant === 'auth' ? '110px' : '58px');
 @endphp
 
 @if($logoUrl)
@@ -30,7 +31,7 @@
         ]) }}
     >
         <span class="brand-logo-mark" aria-hidden="true">
-            <i class="bi bi-cup-hot"></i>
+            <i class="bi bi-easel"></i>
         </span>
         @if($variant === 'sidebar')
             <span class="brand-logo-text">

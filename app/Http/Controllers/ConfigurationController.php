@@ -25,17 +25,49 @@ class ConfigurationController extends Controller
         // Obtener configuraciones visuales
         $settings = $restaurant->settings ?? [];
         $logo = $settings['logo'] ?? null;
-        $colors = $settings['colors'] ?? [
-            'primary' => '#4e8d99',
-            'secondary' => '#2a5c68',
-            'accent' => '#c94a2d',
-        ];
+        $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
-            'primary' => 'Inter',
+            'primary' => 'Roboto',
             'secondary' => 'Roboto',
         ];
 
-        return view('configuration.index', compact('restaurant', 'logo', 'colors', 'fonts'));
+        $public = \App\Support\PublicSite::info($restaurant);
+
+        return view('configuration.index', compact('restaurant', 'logo', 'colors', 'fonts', 'public'));
+    }
+
+    /**
+     * Datos que muestra la web pública: presentación, horarios, redes y contacto.
+     */
+    public function updatePublic(Request $request)
+    {
+        $restaurant = Restaurant::findOrFail(auth()->user()->restaurant_id);
+
+        $validated = $request->validate([
+            'about' => 'nullable|string|max:400',
+            'hours' => 'nullable|string|max:150',
+            'instagram' => ['nullable', 'string', 'max:60', 'regex:/^@?[A-Za-z0-9._]+$/'],
+            'whatsapp' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:40',
+            'email' => 'nullable|email|max:150',
+        ], [], ['about' => 'presentación', 'hours' => 'horarios']);
+
+        $settings = $restaurant->settings ?? [];
+        $settings['public'] = [
+            'about' => $validated['about'] ?? null,
+            'hours' => $validated['hours'] ?? null,
+            'instagram' => $validated['instagram'] ?? null,
+            'whatsapp' => $validated['whatsapp'] ?? null,
+        ];
+        $restaurant->settings = $settings;
+        $restaurant->fill([
+            'address' => $validated['address'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? null,
+        ])->save();
+
+        return back()->with('success', 'Datos de la web pública actualizados.');
     }
 
     /**

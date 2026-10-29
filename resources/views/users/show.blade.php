@@ -24,7 +24,7 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-body text-center">
-                <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #4e8d99, #2a5c68); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 700;">
+                <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #111111, #000000); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 700;">
                     {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
                 <h4>{{ $user->name }}</h4>
@@ -247,7 +247,7 @@ function confirmResetPassword() {
         title: '¿Generar contraseña temporal?',
         html: 'Se <strong>reemplazará</strong> la contraseña actual de <strong>{{ $user->name }}</strong>. La anterior no se podrá recuperar.',
         showCancelButton: true,
-        confirmButtonColor: '#c94a2d',
+        confirmButtonColor: '#b3261e',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, generar',
         cancelButtonText: 'Cancelar'

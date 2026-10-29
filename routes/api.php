@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 /** Health / discovery — evita 404 al abrir /api en el navegador o healthchecks. */
 Route::get('/', function () {
     return \App\Core\ApiResponse::success([
-        'name' => config('app.name', 'Al Toque'),
+        'name' => config('app.name', 'Patuka'),
         'api' => 'jwt',
         'version' => '1.0',
         'docs' => url('/docs'),
@@ -32,7 +32,7 @@ Route::get('/', function () {
             'GET  /api/cash/summary',
             'POST /api/devices',
         ],
-    ], 200, 'API Al Toque OK');
+    ], 200, 'API Patuka OK');
 })->name('api.health');
 
 Route::get('/health', function () {

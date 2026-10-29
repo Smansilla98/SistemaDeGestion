@@ -15,13 +15,13 @@
 
     .receipt-header {
         text-align: center;
-        border-bottom: 3px solid #4e8d99;
+        border-bottom: 3px solid #111111;
         padding-bottom: 1.5rem;
         margin-bottom: 2rem;
     }
 
     .receipt-header h1 {
-        background: linear-gradient(135deg, #4e8d99, #2a5c68);
+        background: linear-gradient(135deg, #111111, #000000);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -36,7 +36,7 @@
         gap: 1rem;
         margin-bottom: 2rem;
         padding: 1.5rem;
-        background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+        background: linear-gradient(135deg, rgba(0,0,0, 0.1), rgba(0,0,0, 0.1));
         border-radius: 15px;
     }
 
@@ -67,7 +67,7 @@
     }
 
     .items-table thead {
-        background: linear-gradient(135deg, #4e8d99, #2a5c68);
+        background: linear-gradient(135deg, #111111, #000000);
         color: white;
     }
 
@@ -86,7 +86,7 @@
     }
 
     .items-table tbody tr:hover {
-        background: rgba(30, 128, 129, 0.05);
+        background: rgba(0,0,0, 0.05);
     }
 
     .items-table tbody tr:last-child td {
@@ -94,7 +94,7 @@
     }
 
     .totals-section {
-        background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+        background: linear-gradient(135deg, rgba(0,0,0, 0.1), rgba(0,0,0, 0.1));
         padding: 1.5rem;
         border-radius: 15px;
         margin-bottom: 2rem;
@@ -109,12 +109,12 @@
     }
 
     .total-line.final {
-        border-top: 2px solid #4e8d99;
+        border-top: 2px solid #111111;
         margin-top: 0.5rem;
         padding-top: 1rem;
         font-size: 1.5rem;
         font-weight: 700;
-        color: #4e8d99;
+        color: #111111;
     }
 
     .orders-list {
@@ -127,7 +127,7 @@
     .order-badge {
         display: inline-block;
         padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #4e8d99, #2a5c68);
+        background: linear-gradient(135deg, #111111, #000000);
         color: white;
         border-radius: 20px;
         font-weight: 600;

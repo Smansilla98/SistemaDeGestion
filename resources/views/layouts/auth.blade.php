@@ -7,7 +7,7 @@
         $settings = $restaurant?->settings ?? [];
         $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
-            'primary' => 'Inter',
+            'primary' => 'Roboto',
             'secondary' => 'Roboto',
         ];
         if (! function_exists('hexToRgba')) {
@@ -31,7 +31,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Login') - Al Toque</title>
+    <title>@yield('title', 'Ingresar') - {{ \App\Support\Branding::name() }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -54,7 +54,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #16343b;
+            --conurbania-dark: #0a0a0a;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -65,9 +65,9 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #0a0a0a 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #1a2326;
+            --mosaic-text-primary: #1a1a1a;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             
@@ -123,16 +123,11 @@
         }
 
         .auth-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.25rem;
+            max-width: 260px;
+            margin: 0 auto 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
-            border-radius: 20px;
-            padding: 1rem;
         }
 
         .auth-logo img {
@@ -301,9 +296,9 @@
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <div class="auth-logo">
-                                <x-brand-logo :settings="$settings ?? null" variant="auth" max-height="64px" />
+                                <x-brand-logo :settings="$settings ?? null" variant="auth" max-height="120px" :on-light="true" />
                             </div>
-                            <h2 class="auth-title">{{ \App\Support\Branding::name() }}</h2>
+                            <h2 class="auth-title {{ \App\Support\Branding::hasLogo($settings ?? null) ? 'visually-hidden' : '' }}">{{ \App\Support\Branding::name() }}</h2>
                             <p class="auth-tagline">{{ \App\Support\Branding::tagline() }}</p>
                             <p class="auth-modules">{{ \App\Support\Branding::modulesLine() }}</p>
                             <p class="auth-subtitle">@yield('subtitle', 'Inicia sesión para continuar')</p>

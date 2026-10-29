@@ -28,7 +28,7 @@ class PrivacyPolicyController extends Controller
     private function payload(): array
     {
         return [
-            'appName' => 'Al Toque',
+            'appName' => 'Patuka',
             'packageName' => 'com.conurbania.app',
             'developerName' => 'Santi Mansilla',
             'contactEmail' => 'samansilla.998@gmail.com',

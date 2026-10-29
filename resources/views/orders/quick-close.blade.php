@@ -32,7 +32,7 @@
     }
 
     .payment-total {
-        background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+        background: linear-gradient(135deg, rgba(0,0,0, 0.1), rgba(0,0,0, 0.1));
         padding: 1.5rem;
         border-radius: 15px;
         margin-top: 1rem;
@@ -50,7 +50,7 @@
 
     .payment-method-card:hover {
         border-color: var(--conurbania-primary);
-        box-shadow: 0 4px 15px rgba(30, 128, 129, 0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
     }
 
     .payment-amount-input {
@@ -471,7 +471,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#4e8d99',
+        confirmButtonColor: '#111111',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, procesar',
         cancelButtonText: 'Cancelar'
@@ -544,7 +544,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
                 icon: 'success',
                 title: '¡Pago procesado!',
                 text: data.message,
-                confirmButtonColor: '#4e8d99'
+                confirmButtonColor: '#111111'
             }).then(() => {
                 // Abrir ticket si hay URL
                 if (data.print_url) {

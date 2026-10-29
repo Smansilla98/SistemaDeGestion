@@ -327,7 +327,7 @@
             icon: 'error',
             title: 'Stock Insuficiente',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#c94a2d',
+            confirmButtonColor: '#b3261e',
             confirmButtonText: 'Entendido'
         });
     @else
@@ -335,7 +335,7 @@
             icon: 'error',
             title: 'Error',
             text: '{{ session('error') }}',
-            confirmButtonColor: '#c94a2d',
+            confirmButtonColor: '#b3261e',
             confirmButtonText: 'Entendido'
         });
     @endif
@@ -364,7 +364,7 @@
             icon: 'success',
             title: 'Éxito',
             text: '{{ session('success') }}',
-            confirmButtonColor: '#4e8d99',
+            confirmButtonColor: '#111111',
             confirmButtonText: 'Entendido'
         });
     @endif

@@ -10,13 +10,13 @@ class LandingPageTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_invitado_ve_la_portada_con_acceso_al_login(): void
+    public function test_invitado_ve_la_web_de_patuka_con_acceso_al_equipo(): void
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Todo el servicio en un solo sistema')
-            ->assertSee('Gestioná tu espacio, tus talleres y tu comunidad')
-            ->assertSee('Repartos 70/30')
+            ->assertSee('brand/patuka-logo-blanco.png', false)
+            ->assertSee('Talleres')
+            ->assertSee('Próximas fechas')
             ->assertSee(route('login'), false);
     }
 

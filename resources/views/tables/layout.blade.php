@@ -106,7 +106,7 @@
     .ta-num.libre { background: var(--pl-libre); } .ta-num.ocupada { background: var(--conurbania-primary); } .ta-num.reservada { background: var(--pl-reservada); }
     .ta-meta { color: #5d676b; font-size: .88rem; }
     .ta-list { display: grid; gap: .5rem; margin-top: 1rem; }
-    .ta-list a, .ta-list button { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; border: 1.5px solid #e6e8ea; background: #fff; border-radius: 14px; padding: .8rem .95rem; font-weight: 700; color: #1a2326; text-decoration: none; min-height: 52px; }
+    .ta-list a, .ta-list button { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; border: 1.5px solid #e6e8ea; background: #fff; border-radius: 14px; padding: .8rem .95rem; font-weight: 700; color: #1a1a1a; text-decoration: none; min-height: 52px; }
     .ta-list a:hover, .ta-list button:hover { border-color: var(--conurbania-primary); }
     .ta-list i { font-size: 1.2rem; color: var(--conurbania-secondary); width: 1.4rem; text-align: center; }
     .ta-list .is-main { background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); color: #fff; border: 0; }
@@ -411,7 +411,7 @@
             canvas.querySelectorAll('.auto').forEach((el) => el.classList.remove('auto'));
             Swal.fire({ icon: 'success', title: 'Plano guardado', timer: 1400, showConfirmButton: false });
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err.message, confirmButtonColor: '#c94a2d' });
+            Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err.message, confirmButtonColor: '#b3261e' });
         }
     });
 @endif

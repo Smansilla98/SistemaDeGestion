@@ -36,7 +36,7 @@
 
     .mu-sec { background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 1.1rem 1.2rem; margin-bottom: 1rem; scroll-margin-top: 1rem; }
     .mu-sec-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .6rem; flex-wrap: wrap; }
-    .mu-sec-head h3 { font-size: 1.12rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: .55rem; color: #1a2326; }
+    .mu-sec-head h3 { font-size: 1.12rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: .55rem; color: #1a1a1a; }
     .mu-sec-head h3 i { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--conurbania-primary-10); color: var(--conurbania-secondary); font-size: 1.05rem; }
     .mu-go { border: 1.5px solid #e2e5e7; border-radius: 10px; padding: .35rem .75rem; font-weight: 700; font-size: .85rem; color: var(--conurbania-secondary); text-decoration: none; white-space: nowrap; }
     .mu-go:hover { border-color: var(--conurbania-primary); }

@@ -111,7 +111,7 @@ function confirmDeleteDiscountType(discountTypeId, discountTypeName) {
         title: '¿Eliminar Tipo de Descuento?',
         html: `¿Estás seguro de eliminar el descuento <strong>${discountTypeName}</strong>?<br><small class="text-muted">Esta acción no se puede deshacer.</small>`,
         showCancelButton: true,
-        confirmButtonColor: '#c94a2d',
+        confirmButtonColor: '#b3261e',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'

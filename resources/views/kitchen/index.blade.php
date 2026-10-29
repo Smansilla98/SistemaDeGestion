@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Cocina - {{ config('app.name', 'Al Toque') }}</title>
+    <title>Cocina - {{ config('app.name', 'Patuka') }}</title>
     @include('partials.favicon')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -26,7 +26,7 @@
             margin: 0;
             background: var(--bg);
             color: var(--ink);
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             overflow: hidden;

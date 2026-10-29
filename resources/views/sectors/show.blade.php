@@ -226,7 +226,7 @@ function openItemsModal(subsectorId) {
         icon: 'info',
         title: 'Gestionar Elementos',
         text: 'Funcionalidad en desarrollo',
-        confirmButtonColor: '#4e8d99',
+        confirmButtonColor: '#111111',
         confirmButtonText: 'Entendido'
     });
 }

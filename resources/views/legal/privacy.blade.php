@@ -12,8 +12,8 @@
             --ink: #131a18;
             --muted: #4a5e59;
             --faint: #6b7f7a;
-            --brand: #4e8d99;
-            --canvas: #f6f8f8;
+            --brand: #111111;
+            --canvas: #f7f7f7;
             --surface: #ffffff;
             --line: rgba(19, 26, 24, 0.08);
         }
@@ -84,12 +84,12 @@
         }
         .callout {
             border-left: 4px solid var(--brand);
-            background: #f4fafa;
+            background: #f7f7f7;
             padding: 14px 16px;
             margin: 0 0 28px;
             font-family: system-ui, -apple-system, sans-serif;
             font-size: 14px;
-            color: #1e4650;
+            color: #1c1c1c;
         }
         h2 {
             font-size: 1.15rem;

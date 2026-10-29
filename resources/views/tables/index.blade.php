@@ -39,7 +39,7 @@
     .mz-stat { border: 2px solid transparent; background: #f5f6f7; border-radius: 14px; padding: .7rem .9rem; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
     .mz-stat:hover { background: #eef0f2; }
     .mz-stat.is-active { border-color: var(--conurbania-primary); background: var(--conurbania-primary-10); }
-    .mz-stat strong { display: block; font-size: 1.6rem; line-height: 1.1; color: #1a2326; }
+    .mz-stat strong { display: block; font-size: 1.6rem; line-height: 1.1; color: #1a1a1a; }
     .mz-stat span { font-size: .82rem; color: #5d676b; font-weight: 600; display: inline-flex; align-items: center; gap: .35rem; }
     .mz-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--mz-cerrada); }
     .mz-dot.libre { background: var(--mz-libre); } .mz-dot.ocupada { background: var(--mz-ocupada); } .mz-dot.reservada { background: var(--mz-reservada); }
@@ -58,7 +58,7 @@
 
     .mz-sector { background: rgba(255,255,255,.97); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 1rem 1rem 1.1rem; margin-bottom: 1.25rem; }
     .mz-sector-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .85rem; padding: 0 .15rem; }
-    .mz-sector-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; color: #1a2326; }
+    .mz-sector-head h2 { font-size: 1.15rem; font-weight: 800; margin: 0; color: #1a1a1a; }
     .mz-sector-head h2 small { font-weight: 500; color: #7b7d84; font-size: .85rem; margin-left: .4rem; }
     .mz-sector-sum { display: flex; gap: .75rem; font-size: .82rem; color: #5d676b; font-weight: 600; }
     .mz-sector-sum span { display: inline-flex; align-items: center; gap: .3rem; }
@@ -71,7 +71,7 @@
     .mz-table[hidden] { display: none; }
     .mz-table-top { display: flex; align-items: flex-start; gap: .5rem; }
     .mz-id { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; min-width: 0; }
-    .mz-num { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #1a2326; letter-spacing: -.03em; overflow-wrap: anywhere; }
+    .mz-num { font-size: 1.9rem; font-weight: 800; line-height: 1; color: #1a1a1a; letter-spacing: -.03em; overflow-wrap: anywhere; }
     .mz-badge { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; font-weight: 700; padding: .3rem .6rem; border-radius: 999px; background: #f0f2f3; color: #5d676b; white-space: nowrap; }
     .mz-badge .mz-dot { width: 8px; height: 8px; }
     .mz-badge.libre { background: rgba(47,158,110,.12); color: #217a53; }
@@ -82,9 +82,9 @@
     @keyframes mzPulse { 50% { box-shadow: 0 0 0 6px rgba(47,158,110,.18); } }
     .mz-table-top .dropdown { margin-left: auto; }
     .mz-more { width: 34px; height: 34px; margin-right: -6px; border: 0; border-radius: 10px; background: transparent; color: #7b8488; font-size: 1.1rem; display: grid; place-items: center; }
-    .mz-more:hover, .mz-more[aria-expanded="true"] { background: rgba(0,0,0,.05); color: #1a2326; }
+    .mz-more:hover, .mz-more[aria-expanded="true"] { background: rgba(0,0,0,.05); color: #1a1a1a; }
     .mz-body { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-end; gap: .45rem; padding: .6rem 0 .75rem; }
-    .mz-total { font-size: 1.45rem; font-weight: 800; color: #1a2326; letter-spacing: -.02em; line-height: 1.1; }
+    .mz-total { font-size: 1.45rem; font-weight: 800; color: #1a1a1a; letter-spacing: -.02em; line-height: 1.1; }
     .mz-tags { display: flex; flex-wrap: wrap; gap: .35rem; }
     .mz-tags span { display: inline-flex; align-items: center; gap: .3rem; max-width: 100%; background: rgba(255,255,255,.85); border: 1px solid #e8eaec; border-radius: 8px; padding: .2rem .5rem; font-size: .78rem; font-weight: 600; color: #4b5557; }
     .mz-tags em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -95,7 +95,7 @@
     .mz-actions { display: flex; gap: .4rem; align-items: stretch; }
     .mz-actions .mz-main { flex: 1; min-width: 0; border: 0; border-radius: 12px; padding: .55rem .5rem; font-weight: 700; font-size: .9rem; color: #fff; background: linear-gradient(135deg, var(--conurbania-primary), var(--conurbania-secondary)); display: inline-flex; align-items: center; justify-content: center; gap: .35rem; text-decoration: none; min-height: 42px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 12px var(--conurbania-primary-30); }
     .mz-actions .mz-main:hover { filter: brightness(1.06); color: #fff; }
-    .mz-actions .mz-main.is-soft { background: #f0f2f3; color: #1a2326; box-shadow: none; }
+    .mz-actions .mz-main.is-soft { background: #f0f2f3; color: #1a1a1a; box-shadow: none; }
     .mz-icon { flex: 0 0 42px; width: 42px; min-height: 42px; border-radius: 12px; border: 1.5px solid #e2e5e7; background: #fff; color: #33403f; display: grid; place-items: center; font-size: 1.05rem; text-decoration: none; }
     .mz-icon:hover { border-color: var(--conurbania-primary); color: var(--conurbania-primary); }
     .mz-table .dropdown-menu { border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.15); border: 0; padding: .35rem; }
@@ -450,7 +450,7 @@
                     icon: 'success', title: 'Pedido listo',
                     html: `Pedido <strong>#${order.number}</strong> para la <strong>mesa ${order.table_number}</strong>`,
                     toast: true, position: 'top-end', showConfirmButton: true, confirmButtonText: 'Ver pedidos',
-                    confirmButtonColor: '#4e8d99', timer: 10000, timerProgressBar: true,
+                    confirmButtonColor: '#111111', timer: 10000, timerProgressBar: true,
                 }).then((r) => { if (r.isConfirmed && order.table_id) window.location.href = `/tables/${order.table_id}/orders`; });
                 if (window.mzRefreshBoard) window.mzRefreshBoard();
             });

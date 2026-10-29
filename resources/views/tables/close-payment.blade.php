@@ -32,7 +32,7 @@
     }
 
     .payment-total {
-        background: linear-gradient(135deg, rgba(30, 128, 129, 0.1), rgba(34, 86, 94, 0.1));
+        background: linear-gradient(135deg, rgba(0,0,0, 0.1), rgba(0,0,0, 0.1));
         padding: 1.5rem;
         border-radius: 15px;
         margin-top: 1rem;
@@ -50,12 +50,12 @@
 
     .payment-method-card:hover {
         border-color: var(--conurbania-primary);
-        box-shadow: 0 4px 15px rgba(30, 128, 129, 0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
     }
 
     .payment-method-card.active {
         border-color: var(--conurbania-primary);
-        background: linear-gradient(135deg, rgba(30, 128, 129, 0.05), rgba(34, 86, 94, 0.05));
+        background: linear-gradient(135deg, rgba(0,0,0, 0.05), rgba(0,0,0, 0.05));
     }
 
     .payment-amount-input {
@@ -302,7 +302,7 @@ const paymentMethodConfigs = @json($paymentMethodConfigs);
 
 const paymentMethodOptions = {};
 paymentMethodConfigs.forEach((cfg) => {
-    paymentMethodOptions[cfg.type] = { icon: methodIcons[cfg.type] || 'bi-wallet2', label: cfg.label, color: '#4e8d99' };
+    paymentMethodOptions[cfg.type] = { icon: methodIcons[cfg.type] || 'bi-wallet2', label: cfg.label, color: '#111111' };
 });
 if (Object.keys(paymentMethodOptions).length === 0) {
     // Nunca debería pasar (el backend siempre manda al menos los 4 clásicos),
@@ -588,7 +588,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
             icon: 'error',
             title: 'Sin métodos de pago',
             text: 'Debes agregar al menos un método de pago.',
-            confirmButtonColor: '#c94a2d',
+            confirmButtonColor: '#b3261e',
             confirmButtonText: 'Entendido'
         });
         return;
@@ -626,7 +626,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#4e8d99',
+        confirmButtonColor: '#111111',
         cancelButtonColor: '#7b7d84',
         confirmButtonText: 'Sí, procesar pago',
         cancelButtonText: 'Cancelar'
@@ -686,7 +686,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
                             icon: 'error',
                             title: 'Error',
                             html: errorMessage,
-                            confirmButtonColor: '#c94a2d'
+                            confirmButtonColor: '#b3261e'
                         });
                     }
                 } else {
@@ -698,7 +698,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
                         icon: 'error',
                         title: 'Error',
                         html: 'Ocurrió un error al procesar el pago. Por favor, verifica los datos e intenta nuevamente.',
-                        confirmButtonColor: '#c94a2d'
+                        confirmButtonColor: '#b3261e'
                     });
                 }
             })
@@ -708,7 +708,7 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
                     icon: 'error',
                     title: 'Error de conexión',
                     text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión e intenta nuevamente.',
-                    confirmButtonColor: '#c94a2d'
+                    confirmButtonColor: '#b3261e'
                 });
             });
         }

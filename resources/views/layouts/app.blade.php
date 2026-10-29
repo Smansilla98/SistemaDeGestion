@@ -7,7 +7,7 @@
         $settings = $restaurant?->settings ?? [];
         $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
-            'primary' => 'Inter',
+            'primary' => 'Roboto',
             'secondary' => 'Roboto',
         ];
         if (! function_exists('hexToRgba')) {
@@ -34,7 +34,7 @@
     <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
     <meta name="route-name" content="{{ \Illuminate\Support\Facades\Route::currentRouteName() }}">
     <meta name="user-role" content="{{ auth()->check() ? auth()->user()->role : '' }}">
-    <title>@yield('title', 'Al Toque')</title>
+    <title>@yield('title', \App\Support\Branding::name())</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -43,7 +43,7 @@
     <meta name="theme-color" content="{{ $colors['primary'] }}">
     @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     @if($primaryFont !== $secondaryFont)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,7 +61,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #16343b;
+            --conurbania-dark: #0a0a0a;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -72,10 +72,10 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #16343b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #0a0a0a 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #0a0a0a 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #1a2326;
+            --mosaic-text-primary: #1a1a1a;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             --conurbania-primary-10: {{ $primaryRgba10 }};
@@ -444,7 +444,7 @@
             <button type="button" class="btn btn-g btn-sm d-md-none me-2" id="novaSidebarToggle" onclick="toggleSidebar()" aria-label="Abrir menú de navegación" aria-controls="novaSidebar" aria-expanded="false">
                 <i class="bi bi-list"></i>
             </button>
-            <span class="tb-title">@yield('title', 'Al Toque')</span>
+            <span class="tb-title">@yield('title', \App\Support\Branding::name())</span>
             <div class="tb-sp"></div>
             @auth
             @php
@@ -523,8 +523,8 @@
                     timer: 4000,
                     timerProgressBar: true,
                     background: '#e6ffed',
-                    color: '#4e8d99',
-                    iconColor: '#4e8d99',
+                    color: '#111111',
+                    iconColor: '#111111',
                 });
             @endif
 
@@ -539,8 +539,8 @@
                     timer: 5000,
                     timerProgressBar: true,
                     background: '#ffe6e6',
-                    color: '#c94a2d',
-                    iconColor: '#c94a2d',
+                    color: '#b3261e',
+                    iconColor: '#b3261e',
                 });
             @endif
 
@@ -581,7 +581,7 @@
                     icon: 'error',
                     title: 'Error de Validación',
                     html: '<ul style="text-align: left; margin: 1rem 0;">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
-                    confirmButtonColor: '#c94a2d',
+                    confirmButtonColor: '#b3261e',
                     confirmButtonText: 'Entendido',
                     width: '500px',
                 });
@@ -599,15 +599,15 @@
             const configs = {
                 success: {
                     icon: 'success',
-                    iconColor: '#4e8d99',
+                    iconColor: '#111111',
                     background: '#e6ffed',
-                    color: '#4e8d99'
+                    color: '#111111'
                 },
                 error: {
                     icon: 'error',
-                    iconColor: '#c94a2d',
+                    iconColor: '#b3261e',
                     background: '#ffe6e6',
-                    color: '#c94a2d'
+                    color: '#b3261e'
                 },
                 warning: {
                     icon: 'warning',
@@ -645,7 +645,7 @@
         };
         
         // Helper global para confirmaciones
-        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#4e8d99') {
+        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#111111') {
             return Swal.fire({
                 icon: 'question',
                 title: title,

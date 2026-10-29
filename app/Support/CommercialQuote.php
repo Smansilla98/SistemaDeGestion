@@ -31,7 +31,7 @@ final class CommercialQuote
         $until = $issued->copy()->addDays(30);
 
         return [
-            'product' => 'Al Toque',
+            'product' => 'Patuka',
             'tagline' => 'Gestión gastronómica simple.',
             'modules' => 'Comandas · Mesas · Cocina · Caja · Stock',
             'from' => 'Santiago Mansilla — Desarrollador Fullstack',
