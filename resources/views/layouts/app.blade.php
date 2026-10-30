@@ -146,6 +146,7 @@
                 $canCampaigns = $perm && $modOn('contacts') && $perm->allowed($navUser, 'contacts.campaign');
                 $canMarket = $perm && $modOn('market') && $perm->allowed($navUser, 'market.view');
                 $canDocuments = $perm && $modOn('documents') && $perm->allowed($navUser, 'documents.view');
+                $canDesign = $perm && $modOn('design') && $perm->allowed($navUser, 'design.view');
                 $canActivityFinance = $perm && $modOn('finance') && $perm->allowed($navUser, 'finance.view');
                 $navUnreadMessages = $navUser && $navUser->restaurant_id ? \App\Models\UserMessage::query()->where('restaurant_id', $navUser->restaurant_id)->where('recipient_id', $navUser->id)->whereNull('read_at')->count() : 0;
                 $navTablesCount = $canTables && $navUser && $navUser->restaurant_id ? \App\Models\Table::where('restaurant_id', $navUser->restaurant_id)->count() : 0;
@@ -190,7 +191,7 @@
             @endif
             @endif
 
-            @if($canContacts || $canCampaigns || ($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canMarket || $canDocuments)))
+            @if($canContacts || $canCampaigns || $canDesign || ($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canMarket || $canDocuments)))
             <div class="sb-div"></div>
             <div class="sb-label">Comunidad</div>
             @if($canContacts)
@@ -207,6 +208,12 @@
             <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
                 <i class="bi bi-megaphone sb-ico"></i>
                 <span>Comunicaciones</span>
+            </a>
+            @endif
+            @if($canDesign)
+            <a href="{{ route('design.index') }}" class="sb-link">
+                <i class="bi bi-palette sb-ico"></i>
+                <span>Diseño</span>
             </a>
             @endif
             @if($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canContacts || $canMarket || $canDocuments))

@@ -120,6 +120,11 @@ class Handler extends ExceptionHandler
             return $this->handleQueryException($request, $exception);
         }
 
+        // Route model binding sin resultado (o de otra organización): 404, también en pedidos JSON.
+        if ($exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            $exception = new NotFoundHttpException('No encontrado.', $exception);
+        }
+
         if ($exception instanceof NotFoundHttpException) {
             return $this->handleNotFound($request, $exception);
         }

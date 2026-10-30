@@ -38,11 +38,31 @@ Esta rama convierte el sistema en la herramienta de un espacio cultural real: Pa
 
 ## Panel pensado para el centro cultural
 
-- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
+- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Diseño, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
 - **Inicio («Hoy en Patuka»):** lo primero es la **agenda de la semana**: clases, eventos, etapas, actividades, entregas y avisos de los próximos 7 días, agrupados por día. Después vienen:
   - el resumen cultural: talleres activos, inscriptos, lista de espera y eventos de los próximos 14 días;
   - las últimas inscripciones.
 - **La barra queda al final, plegada,** en una sola línea: mesas ocupadas, pedidos en curso y caja abierta o cerrada. Para quien solo usa la barra (mozo, caja, cocina) aparece desplegada.
+
+## Nodo: oferta de cada ciclo
+
+En *Feria → Ciclos de pedidos* cada ciclo carga antes **qué productos ofrece**:
+
+- Por producto se marca si entra, el **precio del ciclo** (puede diferir del de lista) y un **cupo** opcional (total que se puede pedir entre todos).
+- Los pedidos solo se arman con esa oferta; si se pasa del cupo, avisa cuánto queda.
+- Al crear un ciclo nuevo se puede **copiar la oferta del anterior** (viene elegido por defecto).
+- No se puede sacar de la oferta un producto que ya tiene pedidos.
+
+## Diseño (editor gráfico)
+
+*Comunidad → Diseño* (`/diseno`) abre el editor OpenDesign (MIT), traído de chilinga-admin y adaptado:
+
+- **Plantillas de Patuka:** flyer de taller, historia de show, post de feria, agenda de la semana, afiche A4, banner web y frase. Usan el logo de la organización.
+- **Marca:** paleta, logos (blanco, negro, isotipo), kit de marca compartido, imágenes propias y las paletas de los emprendedores (cada emprendedor ve la suya).
+- **Canva / IA:** descarga la página o lo seleccionado, abre Canva (en otra pestaña: Canva no se deja mostrar dentro de otra web) o ArtCraft (IA, dentro del editor), y trae el resultado como capa, fondo o reemplazo.
+- **Permisos:** `design.view` (usar el editor; profes, artistas, emprendedores, marketing, coordinación) y `design.kit` (ver y editar los diseños de todos y manejar el kit; gestión, coordinación y marketing).
+- Las imágenes se guardan en `storage/app/design/{organización}` y se sirven por `/diseno/medios/...` sólo a la misma organización.
+- El Dockerfile compila el editor (`resources/opendesign` → `public/opendesign`).
 
 ## Registro con rol
 
@@ -51,6 +71,7 @@ En `/register` cada persona elige cómo participa. Puede elegir cualquier rol me
 - **Comunidad** (Alumno, Profesor, Artista, Emprendedor): la cuenta queda activa al instante.
   - Se crea o se vincula su contacto con la cuenta, así el profe ve sus talleres y el alumno sus clases.
   - Se avisa a la administración.
+- **Emprendedor:** además se crea (o se vincula) su ficha de emprendedor con el nombre del emprendimiento, así ve su stock, consignaciones y manual de marca desde el primer ingreso.
 - **Equipo** (Coordinador, Gerente, Encargado, Marketing, Inventario, Cajero, Mozo, Cocina, Supervisor): la cuenta queda **pendiente**.
   - Estos roles dan acceso a caja, contactos o finanzas, así que nadie entra sin aprobación.
   - Administración y gerencia reciben el aviso «Cuenta para aprobar». Para aprobarla, hay que marcarla como activa en *Usuarios*.
@@ -83,6 +104,8 @@ php artisan patuka:setup --org=2
 - El sistema está hecho y probado sobre MySQL 8 (utf8mb4).
 - No uses PostgreSQL: hay migraciones y reparaciones con sintaxis propia de MySQL.
 - El servicio MySQL trae su propio volumen persistente.
+
+**Archivos:** documentos, imágenes del editor de Diseño e importaciones se guardan en `storage/app`. El contenedor se recrea en cada deploy, así que agregá un **volumen** al servicio web montado en `/var/www/html/storage/app` (*Settings → Volumes*).
 
 **Variables del servicio web.** Las de la base se pueden referenciar desde el servicio MySQL. Si no las cargás, `docker/patuka-boot.sh` toma las `MYSQL*` del servicio MySQL.
 

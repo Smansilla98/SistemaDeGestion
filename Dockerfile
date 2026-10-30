@@ -7,6 +7,8 @@ COPY vite.config.js ./
 COPY resources ./resources
 COPY public ./public
 RUN npm run build
+# Editor de Diseño (OpenDesign, resources/opendesign) → public/opendesign
+RUN npm --prefix resources/opendesign ci --no-audit --no-fund && npm --prefix resources/opendesign run build
 
 # Laravel en Railway: nginx escucha $PORT y hace proxy a PHP-FPM (un solo contenedor).
 # PHP 8.3: lock (zipstream-php) exige ^8.3; gd: PhpSpreadsheet / maatwebsite/excel.
@@ -28,6 +30,7 @@ WORKDIR /var/www/html
 
 COPY . .
 COPY --from=vite /app/public/build ./public/build
+COPY --from=vite /app/public/opendesign ./public/opendesign
 
 RUN rm -f /etc/nginx/sites-enabled/default \
     && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts \

@@ -133,4 +133,13 @@ return [
         'web' => ['finance.'],
         'api' => [],
     ],
+    'design' => [
+        'community' => true,
+        'label' => 'Diseño',
+        'description' => 'Editor gráfico en el navegador (flyers, historias, afiches) con la marca, el kit y puente a Canva.',
+        'offered' => false,
+        'default' => true,
+        'web' => ['design.'],
+        'api' => [],
+    ],
 ];

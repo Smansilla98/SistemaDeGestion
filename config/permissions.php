@@ -33,6 +33,7 @@ return [
         ['key' => 'documents', 'label' => 'Documentos', 'actions' => ['view', 'create', 'update', 'delete']],
         ['key' => 'finance', 'label' => 'Finanzas de actividades', 'actions' => ['view', 'create', 'settle']],
         ['key' => 'messages', 'label' => 'Mensajes', 'actions' => ['send']],
+        ['key' => 'design', 'label' => 'Diseño (editor gráfico)', 'actions' => ['view', 'kit']],
     ],
 
     'action_labels' => [
@@ -45,6 +46,7 @@ return [
         'campaign' => 'Enviar comunicaciones',
         'settle' => 'Liquidar',
         'send' => 'Enviar',
+        'kit' => 'Kit de marca y diseños de todos',
     ],
 
     /*
@@ -56,6 +58,7 @@ return [
         'ADMIN' => true, // todos los permisos (se resuelve por módulo)
         'GERENTE' => [
             'stock_mozo.create' => false,
+            'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true,
             'tables.view' => true, 'tables.create' => true, 'tables.update' => true, 'tables.delete' => true,
             'orders.view' => true, 'orders.create' => true, 'orders.update' => true, 'orders.delete' => true,
@@ -135,6 +138,7 @@ return [
 
         // Roles de organizaciones culturales/educativas/comerciales (sólo por membresía).
         'COORDINADOR' => [
+            'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true, 'events.view' => true, 'events.create' => true, 'events.update' => true,
             'workshops.view' => true, 'workshops.create' => true, 'workshops.update' => true, 'workshops.delete' => true, 'workshops.attendance' => true,
             'agenda.view' => true, 'agenda.create' => true,
@@ -143,6 +147,7 @@ return [
             'finance.view' => true, 'finance.create' => true, 'messages.send' => true,
         ],
         'PROFESOR' => [
+            'design.view' => true,
             'dashboard.view' => true, 'workshops.view' => true, 'workshops.attendance' => true,
             'agenda.view' => true, 'documents.view' => true, 'messages.send' => true,
         ],
@@ -150,13 +155,16 @@ return [
             'dashboard.view' => true, 'agenda.view' => true, 'documents.view' => true, 'messages.send' => true,
         ],
         'EMPRENDEDOR' => [
+            'design.view' => true,
             'dashboard.view' => true, 'market.view' => true, 'agenda.view' => true,
             'documents.view' => true, 'messages.send' => true,
         ],
         'ARTISTA' => [
+            'design.view' => true,
             'dashboard.view' => true, 'agenda.view' => true, 'events.view' => true, 'documents.view' => true, 'messages.send' => true,
         ],
         'MARKETING' => [
+            'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true, 'agenda.view' => true, 'agenda.create' => true, 'events.view' => true,
             'contacts.view' => true, 'contacts.create' => true, 'contacts.update' => true, 'contacts.delete' => true,
             'contacts.export' => true, 'contacts.campaign' => true,

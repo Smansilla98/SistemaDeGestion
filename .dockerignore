@@ -7,3 +7,5 @@ node_modules
 vendor
 .phpunit.result.cache
 tests
+resources/opendesign/node_modules
+public/opendesign

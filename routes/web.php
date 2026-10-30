@@ -647,6 +647,31 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::post('/ciclos/{cycle}/pedidos/{order}/cancelar', [$y, 'cancelOrder'])->name('cycles.orders.cancel');
     });
 
+    // Diseño: editor OpenDesign (SPA) + su API (resources/opendesign, DesignEditorController)
+    Route::prefix('diseno')->name('design.')->group(function () {
+        $g = \App\Http\Controllers\Design\DesignEditorController::class;
+        Route::get('/', [$g, 'app'])->name('index');
+        Route::get('/design/{id}', [$g, 'app'])->whereNumber('id')->name('editor');
+        Route::get('/medios/{path}', [$g, 'media'])->where('path', '.*')->name('media');
+        Route::prefix('api')->name('api.')->group(function () use ($g) {
+            Route::get('designs', [$g, 'index'])->name('index');
+            Route::post('designs', [$g, 'store'])->name('store');
+            Route::get('designs/{design}', [$g, 'show'])->whereNumber('design')->name('show');
+            Route::put('designs/{design}', [$g, 'update'])->whereNumber('design')->name('update');
+            Route::delete('designs/{design}', [$g, 'destroy'])->whereNumber('design')->name('destroy');
+            Route::post('designs/{design}/pages', [$g, 'storePage'])->whereNumber('design')->name('pages.store');
+            Route::post('pages/{page}/duplicate', [$g, 'duplicatePage'])->whereNumber('page')->name('pages.duplicate');
+            Route::put('pages/{page}', [$g, 'updatePage'])->whereNumber('page')->name('pages.update');
+            Route::delete('pages/{page}', [$g, 'destroyPage'])->whereNumber('page')->name('pages.destroy');
+            Route::get('templates', [$g, 'templates'])->name('templates');
+            Route::get('templates/{id}', [$g, 'template'])->name('template');
+            Route::post('uploads', [$g, 'upload'])->middleware('throttle:60,1')->name('uploads');
+            Route::get('marca', [$g, 'brand'])->name('brand');
+            Route::post('marca/kit', [$g, 'kitStore'])->middleware('throttle:30,1')->name('kit.store');
+            Route::delete('marca/kit/{kit}', [$g, 'kitDestroy'])->whereNumber('kit')->name('kit.destroy');
+        });
+    });
+
     Route::prefix('documentos')->name('documents.')->group(function () {
         $d = \App\Http\Controllers\Documents\DocumentController::class;
         Route::get('/', [$d, 'index'])->name('index');
