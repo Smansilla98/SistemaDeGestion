@@ -20,10 +20,10 @@ class MobilePedidosController extends Controller
             Table::where('restaurant_id', $restaurantId)->get()
         );
 
-        $products = Product::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true), (int) $restaurantId)
             ->orderBy('name')
-            ->get();
+            ->get(), (int) $restaurantId);
 
         $orders = Order::where('restaurant_id', $restaurantId)
             ->latest()

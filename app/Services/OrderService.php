@@ -243,6 +243,9 @@ class OrderService
             throw new \RuntimeException("El producto '{$product->name}' no está activo");
         }
 
+        $specialMenus = app(SpecialMenuService::class);
+        $specialMenus->ensureSellable($product, (int) $order->restaurant_id);
+
         if (! isset($itemData['quantity']) || $itemData['quantity'] < 1) {
             throw new \RuntimeException('La cantidad debe ser mayor a 0');
         }
@@ -255,8 +258,9 @@ class OrderService
 
         $this->stockService->ensureStockForSale($order->restaurant_id, $product->id, $qty, $modifierIds);
 
-        // La variante define el precio de la línea; sin variante vale el del producto.
-        $unit = Money::fromDecimal($variant?->price ?? $product->price);
+        // La variante define el precio de la línea; sin variante vale el del producto
+        // (o el del menú especial que rige hoy).
+        $unit = Money::fromDecimal($variant?->price ?? $specialMenus->priceFor($product, (int) $order->restaurant_id));
         $line = $unit->times($qty);
 
         $payload = [

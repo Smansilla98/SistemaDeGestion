@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(Logger::class, static fn () => new Logger);
         $this->app->singleton(JwtTokenService::class, static fn () => new JwtTokenService);
         $this->app->singleton(CurrentRestaurant::class);
+        $this->app->scoped(\App\Services\SpecialMenuService::class);
 
         $this->app->bind(ProductRepository::class, static fn () => new ProductRepository(Database::connection()));
         $this->app->bind(UserRepository::class, static fn () => new UserRepository(Database::connection()));

@@ -157,10 +157,10 @@ class OrderController extends Controller
             ->where('status', 'OCUPADA')
             ->get();
 
-        $products = Product::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true), (int) $restaurantId)
             ->with(['category', 'modifiers'])
-            ->get()
+            ->get(), (int) $restaurantId)
             ->groupBy('category.name');
 
         $selectedTable = $tableId ? Table::find($tableId) : null;
@@ -252,10 +252,10 @@ class OrderController extends Controller
         // Agrupar items por producto
         $groupedItems = $this->groupOrderItems($order->items);
 
-        $products = Product::where('restaurant_id', $order->restaurant_id)
-            ->where('is_active', true)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $order->restaurant_id)
+            ->where('is_active', true), (int) $order->restaurant_id)
             ->with('category')
-            ->get()
+            ->get(), (int) $order->restaurant_id)
             ->sortBy(function ($p) {
                 $c = $p->category?->name ?? '';
 
@@ -654,12 +654,12 @@ class OrderController extends Controller
             ->get();
 
         // Obtener productos vendibles (no insumos) agrupados por categoría
-        $products = Product::where('restaurant_id', $restaurantId)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
             ->where('type', 'PRODUCT')
-            ->where('is_active', true)
+            ->where('is_active', true), (int) $restaurantId)
             ->with('category')
             ->orderBy('name')
-            ->get()
+            ->get(), (int) $restaurantId)
             ->groupBy(function ($product) {
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });
@@ -910,12 +910,12 @@ class OrderController extends Controller
 
         // Obtener productos para el modal de agregar items
         $restaurantId = auth()->user()->restaurant_id;
-        $products = Product::where('restaurant_id', $restaurantId)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
             ->where('type', 'PRODUCT')
-            ->where('is_active', true)
+            ->where('is_active', true), (int) $restaurantId)
             ->with('category')
             ->orderBy('name')
-            ->get()
+            ->get(), (int) $restaurantId)
             ->groupBy(function ($product) {
                 return $product->category ? $product->category->name : 'Sin Categoría';
             });

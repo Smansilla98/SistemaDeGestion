@@ -133,6 +133,16 @@ class StockService
     }
 
     /**
+     * Qué stock consumiría vender esa cantidad (insumos de la receta o el producto mismo).
+     *
+     * @return array<int, array{product: Product, quantity: int, unit: string, from_recipe: bool}>
+     */
+    public function plannedConsumption(Product $product, int $quantity): array
+    {
+        return $this->consumptionPlan($product, $quantity);
+    }
+
+    /**
      * Qué se descuenta al vender una unidad-línea: receta o stock propio del producto base,
      * más los insumos de la variante/extras elegidos (ej. Pizza + jamón y morrones).
      * Si un mismo insumo aparece en ambos, se suma.

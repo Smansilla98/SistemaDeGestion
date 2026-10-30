@@ -38,7 +38,7 @@ Esta rama convierte el sistema en la herramienta de un espacio cultural real: Pa
 
 ## Panel pensado para el centro cultural
 
-- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Guía de comunicación, Diseño, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
+- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Guía de comunicación, Diseño, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Menús especiales, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
 - **Inicio («Hoy en Patuka»):** lo primero es la **agenda de la semana**: clases, eventos, etapas, actividades, entregas y avisos de los próximos 7 días, agrupados por día. Después vienen:
   - el resumen cultural: talleres activos, inscriptos, lista de espera y eventos de los próximos 14 días;
   - las últimas inscripciones.
@@ -52,6 +52,18 @@ En *Feria → Ciclos de pedidos* cada ciclo carga antes **qué productos ofrece*
 - Los pedidos solo se arman con esa oferta; si se pasa del cupo, avisa cuánto queda.
 - Al crear un ciclo nuevo se puede **copiar la oferta del anterior** (viene elegido por defecto).
 - No se puede sacar de la oferta un producto que ya tiene pedidos.
+
+## Menús especiales (barra)
+
+*Barra → Menús especiales* (`/menus-especiales`) arma una carta para una fecha: fecha patria, show, feria.
+
+- **Fechas:** desde / hasta (inclusive). No se pueden superponer dos menús.
+- **Productos:** se eligen de la carta, con **precio del menú** opcional (vacío = precio de carta) y **cantidad prevista**.
+- **Exclusivo:** si se marca, mientras dura sólo se pueden vender sus productos (Mesas, Nuevo pedido, Caja y la toma de pedidos del celular muestran sólo esos, y el sistema rechaza otros). Si no, la carta sigue completa y los del menú usan su precio.
+- **Stock para lo previsto:** con las recetas (insumos) o el stock del producto calcula qué hace falta, qué hay y qué falta comprar.
+- **Agenda:** opcionalmente crea el aviso «Menú especial: …» como fecha especial, para que todo el equipo lo vea.
+- Mientras rige, Mesas y Nuevo pedido muestran un aviso con el nombre del menú.
+- Se puede copiar un menú anterior al crear uno nuevo.
 
 ## Guía de comunicación
 

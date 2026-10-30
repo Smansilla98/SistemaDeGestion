@@ -281,6 +281,10 @@
                 <i class="bi bi-cup-straw sb-ico"></i>
                 <span>Carta</span>
             </a>
+            <a href="{{ route('special-menus.index') }}" class="sb-link {{ request()->routeIs('special-menus.*') ? 'active' : '' }}">
+                <i class="bi bi-stars sb-ico"></i>
+                <span>Menús especiales</span>
+            </a>
             @endif
             @if($canCategories)
             <a href="{{ route('categories.index') }}" class="sb-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">

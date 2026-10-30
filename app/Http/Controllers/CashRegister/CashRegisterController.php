@@ -361,12 +361,12 @@ class CashRegisterController extends Controller
         }
 
         // Obtener productos vendibles (no insumos)
-        $products = Product::where('restaurant_id', $restaurantId)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
             ->where('type', 'PRODUCT')
-            ->where('is_active', true)
+            ->where('is_active', true), (int) $restaurantId)
             ->with('category')
             ->orderBy('name')
-            ->get();
+            ->get(), (int) $restaurantId);
 
         // Agrupar por categoría
         $categories = Category::where('restaurant_id', $restaurantId)

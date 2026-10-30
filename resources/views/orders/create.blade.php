@@ -3,6 +3,7 @@
 @section('title', 'Nuevo Pedido')
 
 @section('content')
+@include('special-menus._banner')
 @include('partials.variant-picker')
 <div class="row mb-4">
     <div class="col-12">

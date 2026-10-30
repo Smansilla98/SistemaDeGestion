@@ -125,6 +125,7 @@
 @endpush
 
 @section('content')
+@include('special-menus._banner')
 @include('partials.variant-picker')
 <div class="mz">
     <div class="mz-head">

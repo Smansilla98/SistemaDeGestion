@@ -84,11 +84,11 @@ class TableController extends Controller
             ->get();
 
         // Productos activos para el modal de pedidos (mozos)
-        $products = Product::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true), (int) $restaurantId)
             ->with(['category'])
             ->orderBy('name')
-            ->get()
+            ->get(), (int) $restaurantId)
             ->groupBy('category.name');
 
         return view('tables.index', compact('sectors', 'products', 'waiters', 'tableSort'));
@@ -295,11 +295,11 @@ class TableController extends Controller
             ->get();
 
         // Obtener productos para el modal de pedidos
-        $products = \App\Models\Product::where('restaurant_id', $restaurantId)
-            ->where('is_active', true)
+        $products = app(\App\Services\SpecialMenuService::class)->applyPrices(app(\App\Services\SpecialMenuService::class)->restrict(\App\Models\Product::where('restaurant_id', $restaurantId)
+            ->where('is_active', true), (int) $restaurantId)
             ->with(['category'])
             ->orderBy('name')
-            ->get()
+            ->get(), (int) $restaurantId)
             ->groupBy('category.name');
 
         return view('tables.layout', compact('sectors', 'selectedSector', 'tables', 'waiters', 'products'));

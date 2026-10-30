@@ -48,7 +48,7 @@ return [
         'offered' => true,
         'license_usd' => 800,
         'setup_usd' => 350,
-        'web' => ['products.', 'categories.', 'discount-types.'],
+        'web' => ['products.', 'categories.', 'discount-types.', 'special-menus.'],
         'api' => ['products', 'categories', 'catalog/categories', 'catalog/discounts', 'clients'],
     ],
     'stock' => [

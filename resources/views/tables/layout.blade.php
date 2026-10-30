@@ -121,6 +121,7 @@
 @endpush
 
 @section('content')
+@include('special-menus._banner')
 @include('partials.variant-picker')
 <div class="pl" id="plRoot">
     <div class="pl-head">

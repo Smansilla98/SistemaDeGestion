@@ -334,6 +334,16 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::delete('/{sector}/items/{item}', [\App\Http\Controllers\Sector\SectorController::class, 'destroyItem'])->name('items.destroy');
     });
 
+    Route::prefix('menus-especiales')->name('special-menus.')->group(function () {
+        $sm = \App\Http\Controllers\Product\SpecialMenuController::class;
+        Route::get('/', [$sm, 'index'])->name('index');
+        Route::post('/', [$sm, 'store'])->name('store');
+        Route::get('/{specialMenu}', [$sm, 'show'])->name('show');
+        Route::put('/{specialMenu}', [$sm, 'update'])->name('update');
+        Route::post('/{specialMenu}/productos', [$sm, 'saveItems'])->name('items');
+        Route::delete('/{specialMenu}', [$sm, 'destroy'])->name('destroy');
+    });
+
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Product\ProductController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Product\ProductController::class, 'create'])->name('create');

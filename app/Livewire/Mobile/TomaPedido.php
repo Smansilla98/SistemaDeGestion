@@ -64,7 +64,7 @@ class TomaPedido extends Component
                     ->map(fn ($v) => ['id' => (int) $v->id, 'name' => $v->name, 'price' => (float) $v->price])
                     ->all();
                 // Con variantes no hay precio hasta que se elige una.
-                $this->precioActual = $this->variantes === [] ? (float) $product->price : null;
+                $this->precioActual = $this->variantes === [] ? (float) app(\App\Services\SpecialMenuService::class)->priceFor($product, (int) Auth::user()->restaurant_id) : null;
                 $this->stockDisponible = $product->has_stock
                     ? $product->getCurrentStock(Auth::user()->restaurant_id)
                     : null;
@@ -111,7 +111,7 @@ class TomaPedido extends Component
             return;
         }
 
-        $precio = (float) ($variant['price'] ?? $product->price);
+        $precio = (float) ($variant['price'] ?? app(\App\Services\SpecialMenuService::class)->priceFor($product, (int) Auth::user()->restaurant_id));
         $variantId = $variant['id'] ?? null;
         $existing = null;
         foreach ($this->items as $i => $item) {
@@ -223,7 +223,10 @@ class TomaPedido extends Component
             $query->where('name', 'like', '%'.$this->busqueda.'%');
         }
 
-        return $query->limit(60)->get();
+        $restaurantId = (int) Auth::user()->restaurant_id;
+
+        return app(\App\Services\SpecialMenuService::class)->applyPrices(
+            app(\App\Services\SpecialMenuService::class)->restrict($query, $restaurantId)->limit(60)->get(), $restaurantId);
     }
 
     public function render()
