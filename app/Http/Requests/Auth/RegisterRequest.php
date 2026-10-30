@@ -24,12 +24,13 @@ class RegisterRequest extends FormRequest
             'role' => ['required', Rule::in(array_merge(User::SELF_SIGNUP_COMMUNITY, User::SELF_SIGNUP_STAFF))],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:40'],
+            'business_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 
     public function attributes(): array
     {
-        return ['name' => 'nombre', 'username' => 'usuario', 'password' => 'contraseña', 'role' => 'rol', 'phone' => 'teléfono'];
+        return ['name' => 'nombre', 'username' => 'usuario', 'password' => 'contraseña', 'role' => 'rol', 'phone' => 'teléfono', 'business_name' => 'nombre del emprendimiento'];
     }
 
     public function messages(): array

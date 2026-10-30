@@ -86,13 +86,14 @@ final class DemoCommunityData
                 'brand' => ['tagline' => 'De la tierra a tu mesa', 'colors' => ['#2E7D32', '#F9A825', '#5D4037'], 'font_primary' => 'Lora']]);
             $bolson = MarketProduct::query()->create(['restaurant_id' => $org, 'entrepreneur_id' => $huerta->id, 'name' => 'Bolsón de verdura',
                 'category' => 'Verdura', 'unit' => 'bolsón', 'price_cents' => 900000, 'min_stock' => 3, 'is_active' => true]);
-            MarketProduct::query()->create(['restaurant_id' => $org, 'entrepreneur_id' => $huerta->id, 'name' => 'Miel',
+            $miel = MarketProduct::query()->create(['restaurant_id' => $org, 'entrepreneur_id' => $huerta->id, 'name' => 'Miel',
                 'category' => 'Almacén', 'unit' => 'frasco', 'price_cents' => 650000, 'is_active' => true]);
             app(ConsignmentService::class)->receive($huerta, today()->subDays(5)->toDateString(), 20, [['market_product_id' => $bolson->id, 'quantity' => 12]], $user);
             app(MarketStockService::class)->sell($bolson, 4, $user, 'Venta en feria');
 
-            OrderCycle::query()->create(['restaurant_id' => $org, 'name' => 'Nodo — pedidos de la quincena (ejemplo)',
+            $cycle = OrderCycle::query()->create(['restaurant_id' => $org, 'name' => 'Nodo — pedidos de la quincena (ejemplo)',
                 'opens_at' => now()->subDay(), 'closes_at' => now()->addDays(4), 'delivery_on' => today()->addDays(5), 'status' => 'ABIERTO']);
+            app(\App\Services\Market\OrderCycleService::class)->saveOffer($cycle, [$bolson->id => ['max' => 20], $miel->id => []]);
 
             AgendaNotice::query()->create(['restaurant_id' => $org, 'kind' => 'FECHA_ESPECIAL', 'title' => 'Menú especial por fecha patria (ejemplo)',
                 'date' => today()->addDays(3), 'created_by' => $user->id]);

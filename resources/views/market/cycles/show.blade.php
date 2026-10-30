@@ -45,7 +45,9 @@
             </ul>
         </div>
 
-        @if($canManage && $cycle->status !== 'ENTREGADO')
+        @if($canManage && $cycle->status !== 'ENTREGADO' && $offer->isEmpty())
+        <div class="alert alert-warning"><i class="bi bi-basket"></i> Este ciclo todavía no tiene productos. Cargá la oferta (abajo a la derecha) para empezar a tomar pedidos.</div>
+        @elseif($canManage && $cycle->status !== 'ENTREGADO')
         <div class="card"><div class="card-header"><h6 class="mb-0">Cargar o modificar un pedido</h6></div><div class="card-body">
             <form method="POST" action="{{ route('market.cycles.orders.store', $cycle) }}">@csrf
                 <div class="row g-2 mb-2">
@@ -54,9 +56,12 @@
                     <div class="col-md-3"><input name="new_phone" class="form-control" placeholder="Teléfono"></div>
                 </div>
                 <div class="table-responsive" style="max-height: 340px"><table class="table table-sm mb-2">
-                    @foreach($products as $p)
-                    <tr><td>{{ $p->name }} <span class="small text-muted">{{ $p->entrepreneur?->business_name }}</span></td><td class="text-nowrap">{{ $money($p->price_cents) }} / {{ $p->unit }}</td>
-                        <td style="width: 110px"><input type="number" step="0.001" min="0" name="qty[{{ $p->id }}]" class="form-control form-control-sm" placeholder="0"></td></tr>
+                    @foreach($offer as $o)
+                    @php $left = $o->max_quantity === null ? null : max(0, $o->max_quantity - ($taken[$o->market_product_id] ?? 0)); @endphp
+                    <tr><td>{{ $o->product->name }} <span class="small text-muted">{{ $o->product->entrepreneur?->business_name }}</span>
+                            @if($left !== null)<div class="small {{ $left <= 0 ? 'text-danger' : 'text-muted' }}">Quedan {{ $qty($left) }} {{ $o->product->unit }}</div>@endif</td>
+                        <td class="text-nowrap">{{ $money($o->price_cents) }} / {{ $o->product->unit }}</td>
+                        <td style="width: 110px"><input type="number" step="0.001" min="0" name="qty[{{ $o->market_product_id }}]" class="form-control form-control-sm" placeholder="0"></td></tr>
                     @endforeach
                 </table></div>
                 <button class="btn btn-primary">Guardar pedido</button>
@@ -81,6 +86,40 @@
             </tbody>
         </table></div>
         <div class="card-footer small text-muted">Cuando llega la mercadería, cargala como ingreso o consignación: al entregar cada pedido se descuenta del stock.</div>
+    </div>
+
+    <div class="card mt-4" id="oferta">
+        <div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Productos del ciclo</h5><span class="badge bg-secondary">{{ $offer->count() }}</span></div>
+        @if($canManage && $cycle->status !== 'ENTREGADO')
+        @php $inOffer = $offer->keyBy('market_product_id'); @endphp
+        <form method="POST" action="{{ route('market.cycles.offer', $cycle) }}">@csrf
+            <div class="table-responsive" style="max-height: 460px"><table class="table table-sm mb-0 small align-middle">
+                <thead><tr><th></th><th>Producto</th><th style="width: 110px">Precio</th><th style="width: 90px">Cupo</th></tr></thead>
+                <tbody>
+                @forelse($products as $p)
+                @php $o = $inOffer->get($p->id); @endphp
+                <tr>
+                    <td><input type="checkbox" class="form-check-input" name="offer[{{ $p->id }}]" value="1" @checked($o)></td>
+                    <td>{{ $p->name }} <div class="text-muted">{{ $p->entrepreneur?->business_name ?? 'Propio' }} · {{ $p->unit }}</div></td>
+                    <td><input name="price[{{ $p->id }}]" class="form-control form-control-sm" value="{{ number_format(($o?->price_cents ?? $p->price_cents) / 100, 2, ',', '.') }}"></td>
+                    <td><input type="number" step="0.001" min="0" name="max[{{ $p->id }}]" class="form-control form-control-sm" value="{{ $o?->max_quantity }}" placeholder="—"></td>
+                </tr>
+                @empty
+                <tr><td colspan="4" class="text-muted text-center py-4">Primero cargá productos en <a href="{{ route('market.products.index') }}">Productos</a>.</td></tr>
+                @endforelse
+                </tbody>
+            </table></div>
+            <div class="card-footer d-flex justify-content-between align-items-center gap-2">
+                <span class="small text-muted">Precio para este ciclo. Cupo: total que se puede pedir (vacío = sin tope).</span>
+                <button class="btn btn-primary btn-sm">Guardar oferta</button>
+            </div>
+        </form>
+        @else
+        <ul class="list-group list-group-flush small">
+            @forelse($offer as $o)<li class="list-group-item d-flex justify-content-between"><span>{{ $o->product->name }}</span><span>{{ $money($o->price_cents) }} / {{ $o->product->unit }}</span></li>
+            @empty<li class="list-group-item text-muted">Sin productos cargados.</li>@endforelse
+        </ul>
+        @endif
     </div></div>
 </div>
 @endsection

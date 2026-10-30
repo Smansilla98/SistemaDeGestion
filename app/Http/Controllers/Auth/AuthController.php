@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\Entrepreneur;
 use App\Models\User;
 use App\Services\Community\ContactService;
 use App\Services\Community\OrganizationDirectory;
@@ -74,6 +75,15 @@ class AuthController extends Controller
                 $contact = $contacts->findOrCreate((int) $org->id, $validated['name'], $validated['email'] ?? null, $validated['phone'] ?? null, $role);
                 if ($contact->user_id === null) {
                     $contact->forceFill(['user_id' => $user->id])->save();
+                }
+                // El emprendedor queda ligado a su ficha: así ve su stock, consignaciones y manual de marca.
+                if ($role === User::ROLE_EMPRENDEDOR) {
+                    $entrepreneur = Entrepreneur::query()->where('restaurant_id', $org->id)->whereNull('user_id')
+                        ->where('contact_id', $contact->id)->first()
+                        ?? new Entrepreneur(['restaurant_id' => $org->id, 'contact_id' => $contact->id,
+                            'business_name' => filled($validated['business_name'] ?? null) ? $validated['business_name'] : $validated['name'], 'is_active' => true]);
+                    $entrepreneur->user_id = $user->id;
+                    $entrepreneur->save();
                 }
             }
 

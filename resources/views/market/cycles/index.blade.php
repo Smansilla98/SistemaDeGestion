@@ -22,6 +22,12 @@
             <div class="col-12"><label class="form-label small">Abre</label><input type="datetime-local" name="opens_at" class="form-control" value="{{ now()->format('Y-m-d\TH:i') }}" required></div>
             <div class="col-12"><label class="form-label small">Cierra</label><input type="datetime-local" name="closes_at" class="form-control" required></div>
             <div class="col-12"><label class="form-label small">Entrega</label><input type="date" name="delivery_on" class="form-control" required></div>
+            @if($previous->isNotEmpty())
+            <div class="col-12"><label class="form-label small">Productos</label><select name="copy_from" class="form-select">
+                <option value="">Cargarlos después</option>
+                @foreach($previous as $p)<option value="{{ $p->id }}" @selected($loop->first)>Copiar de «{{ $p->name }}» ({{ $p->delivery_on->format('d/m') }})</option>@endforeach
+            </select></div>
+            @endif
             <div class="col-12"><textarea name="notes" class="form-control" rows="2" placeholder="Notas (punto de retiro, horario…)"></textarea></div>
             <div class="col-12"><button class="btn btn-primary w-100">Crear</button></div>
         </form>

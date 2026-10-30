@@ -24,6 +24,12 @@ class OrderCycle extends Model
         return $this->hasMany(CycleOrder::class);
     }
 
+    /** Productos que se pueden pedir en este ciclo (se cargan antes de abrir). */
+    public function offer(): HasMany
+    {
+        return $this->hasMany(OrderCycleProduct::class);
+    }
+
     public function acceptsOrders(): bool
     {
         return $this->status === 'ABIERTO' && now()->between($this->opens_at, $this->closes_at);

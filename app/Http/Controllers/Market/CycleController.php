@@ -29,6 +29,7 @@ class CycleController extends Controller
             'cycles' => OrderCycle::query()->where('restaurant_id', $this->org())->withCount(['orders as orders_count' => fn ($q) => $q->where('status', '!=', 'CANCELADO')])
                 ->latest('delivery_on')->paginate(20),
             'canCreate' => $this->can('market.create'),
+            'previous' => OrderCycle::query()->where('restaurant_id', $this->org())->has('offer')->latest('delivery_on')->limit(10)->get(['id', 'name', 'delivery_on']),
         ]);
     }
 
@@ -38,10 +39,16 @@ class CycleController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'opens_at' => ['required', 'date'], 'closes_at' => ['required', 'date', 'after:opens_at'],
             'delivery_on' => ['required', 'date', 'after_or_equal:closes_at'], 'notes' => ['nullable', 'string', 'max:2000'],
+            'copy_from' => ['nullable', 'integer'],
         ]);
+        $from = ! empty($data['copy_from']) ? OrderCycle::query()->where('restaurant_id', $this->org())->findOrFail($data['copy_from']) : null;
+        unset($data['copy_from']);
         $cycle = OrderCycle::query()->create($data + ['restaurant_id' => $this->org(), 'status' => 'ABIERTO']);
+        $copied = $from ? $this->service->copyOffer($from, $cycle) : 0;
 
-        return redirect()->route('market.cycles.show', $cycle)->with('success', 'Ciclo creado.');
+        return redirect()->route('market.cycles.show', $cycle)->with('success', $copied
+            ? "Ciclo creado con los {$copied} productos de «{$from->name}». Revisá precios y cupos."
+            : 'Ciclo creado. Cargá los productos que ofrece antes de tomar pedidos.');
     }
 
     public function show(OrderCycle $cycle): View
@@ -53,6 +60,8 @@ class CycleController extends Controller
             'cycle' => $cycle,
             'orders' => $cycle->orders()->with(['contact', 'items.product'])->orderByRaw("FIELD(status, 'PENDIENTE', 'ENTREGADO', 'CANCELADO')")->get(),
             'consolidated' => $this->service->consolidated($cycle),
+            'offer' => $cycle->offer()->with('product.entrepreneur')->get()->sortBy(fn ($o) => ($o->product?->category ?? '').$o->product?->name)->values(),
+            'taken' => $this->service->takenQuantities($cycle),
             'products' => MarketProduct::query()->where('restaurant_id', $this->org())->where('is_active', true)->with('entrepreneur')->orderBy('category')->orderBy('name')->get(),
             'contacts' => Contact::query()->where('restaurant_id', $this->org())->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'canManage' => $this->can('market.update'),
@@ -67,6 +76,27 @@ class CycleController extends Controller
         $cycle->update($data);
 
         return back()->with('success', 'Ciclo: '.OrderCycle::STATUSES[$data['status']].'.');
+    }
+
+    public function saveOffer(Request $request, OrderCycle $cycle): RedirectResponse
+    {
+        $this->ensureOrg($cycle);
+        $this->requirePermission('market.update');
+        abort_if($cycle->status === 'ENTREGADO', 422, 'El ciclo ya se entregó.');
+        $data = $request->validate([
+            'offer' => ['nullable', 'array'], 'offer.*' => ['nullable', 'boolean'],
+            'price' => ['nullable', 'array'], 'price.*' => ['nullable', 'string', 'max:20'],
+            'max' => ['nullable', 'array'], 'max.*' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        $items = [];
+        foreach (array_keys(array_filter($data['offer'] ?? [])) as $id) {
+            $price = $data['price'][$id] ?? null;
+            $items[(int) $id] = ['price' => filled($price) ? ActivityFinanceService::toCents((string) $price) : null,
+                'max' => isset($data['max'][$id]) && $data['max'][$id] !== '' ? (float) $data['max'][$id] : null];
+        }
+        $this->service->saveOffer($cycle, $items);
+
+        return back()->with('success', count($items).' productos en la oferta del ciclo.');
     }
 
     public function storeOrder(Request $request, OrderCycle $cycle): RedirectResponse

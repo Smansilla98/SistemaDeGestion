@@ -66,6 +66,13 @@
         <div class="form-text" id="roleHelp">Alumnos, profes, artistas y emprendedores entran al instante. Los roles del equipo los aprueba la administración.</div>
     </div>
 
+    <div class="mb-4" id="businessField" @if(old('role') !== 'EMPRENDEDOR') hidden @endif>
+        <label for="business_name" class="form-label"><i class="bi bi-shop"></i> Nombre del emprendimiento</label>
+        <input type="text" class="form-control @error('business_name') is-invalid @enderror" id="business_name" name="business_name"
+               value="{{ old('business_name') }}" maxlength="255" placeholder="Ej. Huerta del Sur">
+        @error('business_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+
     <div class="row">
         <div class="col-sm-6 mb-4">
             <label for="phone" class="form-label"><i class="bi bi-whatsapp"></i> Teléfono</label>
@@ -121,6 +128,9 @@
 
 @push('scripts')
 <script>
+document.getElementById('role').addEventListener('change', function () {
+    document.getElementById('businessField').hidden = this.value !== 'EMPRENDEDOR';
+});
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;

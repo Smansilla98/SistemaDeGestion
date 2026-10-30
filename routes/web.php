@@ -641,6 +641,7 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::post('/ciclos', [$y, 'store'])->name('cycles.store');
         Route::get('/ciclos/{cycle}', [$y, 'show'])->name('cycles.show');
         Route::post('/ciclos/{cycle}/estado', [$y, 'updateStatus'])->name('cycles.status');
+        Route::post('/ciclos/{cycle}/oferta', [$y, 'saveOffer'])->name('cycles.offer');
         Route::post('/ciclos/{cycle}/pedidos', [$y, 'storeOrder'])->name('cycles.orders.store');
         Route::post('/ciclos/{cycle}/pedidos/{order}/entregar', [$y, 'deliver'])->name('cycles.orders.deliver');
         Route::post('/ciclos/{cycle}/pedidos/{order}/cancelar', [$y, 'cancelOrder'])->name('cycles.orders.cancel');

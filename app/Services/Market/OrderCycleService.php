@@ -33,6 +33,9 @@ final class OrderCycleService
         if ((int) $contact->restaurant_id !== (int) $cycle->restaurant_id) {
             throw ValidationException::withMessages(['contact_id' => 'El contacto no es de esta organización.']);
         }
+        if (! $cycle->offer()->exists()) {
+            throw ValidationException::withMessages(['items' => 'Cargá primero los productos que ofrece este ciclo.']);
+        }
         $lines = collect($quantities)->map(fn ($q) => round((float) $q, 3))->filter(fn ($q) => $q > 0);
         if ($lines->isEmpty()) {
             throw ValidationException::withMessages(['items' => 'El pedido está vacío.']);
@@ -46,22 +49,85 @@ final class OrderCycleService
             $order->fill(['status' => 'PENDIENTE', 'note' => $note])->save();
             $order->items()->delete();
 
-            $products = MarketProduct::query()->where('restaurant_id', $cycle->restaurant_id)->where('is_active', true)
-                ->whereIn('id', $lines->keys()->map(fn ($k) => (int) $k))->get()->keyBy('id');
+            $offer = $cycle->offer()->with('product')->get()->keyBy('market_product_id');
+            $taken = $this->takenQuantities($cycle, $order->id);
             $total = 0;
             foreach ($lines as $productId => $qty) {
-                $product = $products->get((int) $productId);
-                if (! $product) {
-                    throw ValidationException::withMessages(['items' => 'Hay un producto que no está disponible.']);
+                $item = $offer->get((int) $productId);
+                if (! $item || ! $item->product?->is_active) {
+                    throw ValidationException::withMessages(['items' => 'Hay un producto que no está en la oferta de este ciclo.']);
                 }
-                $line = (int) round($qty * $product->price_cents);
-                $order->items()->create(['market_product_id' => $product->id, 'quantity' => $qty, 'unit_price_cents' => $product->price_cents, 'line_cents' => $line]);
+                if ($item->max_quantity !== null && $qty + ($taken[$item->market_product_id] ?? 0) > $item->max_quantity + 0.0005) {
+                    $left = max(0, $item->max_quantity - ($taken[$item->market_product_id] ?? 0));
+                    throw ValidationException::withMessages(['items' => "De {$item->product->name} quedan ".MarketStockService::qty($left)." {$item->product->unit} en este ciclo."]);
+                }
+                $line = (int) round($qty * $item->price_cents);
+                $order->items()->create(['market_product_id' => $item->market_product_id, 'quantity' => $qty, 'unit_price_cents' => $item->price_cents, 'line_cents' => $line]);
                 $total += $line;
             }
             $order->update(['total_cents' => $total]);
 
             return $order->fresh('items');
         });
+    }
+
+    /**
+     * Reemplaza la oferta del ciclo. Los productos con pedidos no se pueden quitar.
+     *
+     * @param  array<int|string, array{price?: int|null, max?: float|null}>  $items  market_product_id => precio en centavos y cupo
+     */
+    public function saveOffer(OrderCycle $cycle, array $items): void
+    {
+        $products = MarketProduct::query()->where('restaurant_id', $cycle->restaurant_id)
+            ->whereIn('id', array_map('intval', array_keys($items)))->get()->keyBy('id');
+        $ordered = array_keys($this->takenQuantities($cycle));
+        $missing = array_diff($ordered, $products->keys()->all());
+        if ($missing !== []) {
+            $names = MarketProduct::query()->whereIn('id', $missing)->pluck('name')->implode(', ');
+            throw ValidationException::withMessages(['offer' => "No se puede sacar de la oferta lo que ya tiene pedidos: {$names}."]);
+        }
+
+        DB::transaction(function () use ($cycle, $items, $products) {
+            $cycle->offer()->whereNotIn('market_product_id', $products->keys())->delete();
+            foreach ($products as $id => $product) {
+                $row = $items[$id] ?? $items[(string) $id] ?? [];
+                $max = isset($row['max']) && $row['max'] !== null ? round((float) $row['max'], 3) : null;
+                $cycle->offer()->updateOrCreate(['market_product_id' => $id], [
+                    'price_cents' => isset($row['price']) && $row['price'] !== null ? (int) $row['price'] : (int) $product->price_cents,
+                    'max_quantity' => $max !== null && $max > 0 ? $max : null,
+                ]);
+            }
+        });
+    }
+
+    /** Copia la oferta de otro ciclo (productos activos, con sus precios y cupos). */
+    public function copyOffer(OrderCycle $from, OrderCycle $to): int
+    {
+        $items = [];
+        foreach ($from->offer()->with('product')->get() as $o) {
+            if ($o->product?->is_active) {
+                $items[$o->market_product_id] = ['price' => $o->price_cents, 'max' => $o->max_quantity];
+            }
+        }
+        $this->saveOffer($to, $items);
+
+        return count($items);
+    }
+
+    /**
+     * Cantidad pedida por producto en el ciclo (pedidos no cancelados), sin contar un pedido.
+     *
+     * @return array<int, float>
+     */
+    public function takenQuantities(OrderCycle $cycle, ?int $exceptOrderId = null): array
+    {
+        return DB::table('cycle_order_items')
+            ->join('cycle_orders', 'cycle_orders.id', '=', 'cycle_order_items.cycle_order_id')
+            ->where('cycle_orders.order_cycle_id', $cycle->id)->where('cycle_orders.status', '!=', 'CANCELADO')
+            ->when($exceptOrderId, fn ($q) => $q->where('cycle_orders.id', '!=', $exceptOrderId))
+            ->groupBy('cycle_order_items.market_product_id')
+            ->selectRaw('cycle_order_items.market_product_id as pid, SUM(cycle_order_items.quantity) as qty')
+            ->pluck('qty', 'pid')->map(fn ($q) => (float) $q)->all();
     }
 
     public function deliver(CycleOrder $order, User $by, ?int $paidCents = null): CycleOrder

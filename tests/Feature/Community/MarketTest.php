@@ -65,6 +65,7 @@ it('ciclo de pedidos: consolida, entrega descontando stock y bloquea si falta me
     $cycle = OrderCycle::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Bolsones', 'opens_at' => now()->subDay(), 'closes_at' => now()->addDay(), 'delivery_on' => today()->addDays(2), 'status' => 'ABIERTO']);
     $ana = Contact::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Ana', 'kind' => 'CLIENTE']);
     $svc = app(OrderCycleService::class);
+    $svc->saveOffer($cycle, [$this->miel->id => []]);
 
     $order = $svc->placeOrder($cycle, $ana, [$this->miel->id => 2]);
     $svc->placeOrder($cycle, $ana, [$this->miel->id => 3]); // reemplaza
@@ -81,6 +82,34 @@ it('ciclo de pedidos: consolida, entrega descontando stock y bloquea si falta me
 
     $cycle->update(['status' => 'CERRADO']);
     expect(fn () => $svc->placeOrder($cycle->fresh(), $ana, [$this->miel->id => 1]))->toThrow(ValidationException::class);
+});
+
+it('nodo: sólo se pide lo que el ciclo ofrece, con su precio y cupo, y la oferta se copia al ciclo siguiente', function () {
+    $dulce = MarketProduct::query()->create(['restaurant_id' => $this->org->id, 'entrepreneur_id' => $this->ent->id, 'name' => 'Dulce', 'unit' => 'frasco', 'price_cents' => 300000]);
+    $cycle = OrderCycle::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Bolsones 1', 'opens_at' => now()->subDay(), 'closes_at' => now()->addDay(), 'delivery_on' => today()->addDays(2), 'status' => 'ABIERTO']);
+    $ana = Contact::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Ana', 'kind' => 'CLIENTE']);
+    $beto = Contact::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Beto', 'kind' => 'CLIENTE']);
+    $svc = app(OrderCycleService::class);
+
+    expect(fn () => $svc->placeOrder($cycle, $ana, [$this->miel->id => 1]))->toThrow(ValidationException::class);
+
+    $this->post(route('market.cycles.offer', $cycle), ['offer' => [$this->miel->id => 1], 'price' => [$this->miel->id => '4.500,00'], 'max' => [$this->miel->id => 3]])
+        ->assertSessionHasNoErrors();
+    expect($cycle->offer()->count())->toBe(1)->and($cycle->offer()->first()->price_cents)->toBe(450000);
+
+    expect(fn () => $svc->placeOrder($cycle, $ana, [$dulce->id => 1]))->toThrow(ValidationException::class);
+    $order = $svc->placeOrder($cycle, $ana, [$this->miel->id => 2]);
+    expect($order->total_cents)->toBe(900000);
+    expect(fn () => $svc->placeOrder($cycle, $beto, [$this->miel->id => 2]))->toThrow(ValidationException::class);
+    $svc->placeOrder($cycle, $ana, [$this->miel->id => 3]); // reemplaza su pedido: no se cuenta dos veces
+
+    expect(fn () => $svc->saveOffer($cycle, [$dulce->id => []]))->toThrow(ValidationException::class);
+
+    $this->post(route('market.cycles.store'), ['name' => 'Bolsones 2', 'opens_at' => now()->toDateTimeString(), 'closes_at' => now()->addDays(3)->toDateTimeString(),
+        'delivery_on' => today()->addDays(4)->toDateString(), 'copy_from' => $cycle->id])->assertSessionHasNoErrors();
+    $next = OrderCycle::query()->where('name', 'Bolsones 2')->firstOrFail();
+    expect($next->offer()->first()->price_cents)->toBe(450000)->and($next->offer()->first()->max_quantity)->toBe(3.0);
+    $this->get(route('market.cycles.show', $next))->assertOk()->assertSee('Productos del ciclo')->assertSee('Quedan 3');
 });
 
 it('el emprendedor sólo ve lo suyo', function () {

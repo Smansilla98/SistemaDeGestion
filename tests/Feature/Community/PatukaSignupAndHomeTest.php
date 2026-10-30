@@ -47,6 +47,19 @@ it('un rol del equipo queda pendiente hasta que la administración lo aprueba', 
     $this->assertGuest();
 });
 
+it('un emprendedor que se registra queda ligado a su ficha y ve sus productos', function () use ($signup) {
+    $this->post(route('register'), $signup(['username' => 'huerta', 'role' => 'EMPRENDEDOR', 'business_name' => 'Huerta del Sur']))->assertSessionHasNoErrors();
+
+    $user = User::query()->where('username', 'huerta')->firstOrFail();
+    $ent = \App\Models\Entrepreneur::query()->where('user_id', $user->id)->firstOrFail();
+    expect($ent->business_name)->toBe('Huerta del Sur')->and($ent->restaurant_id)->toBe($this->org->id)
+        ->and($ent->contact_id)->toBe(Contact::query()->where('user_id', $user->id)->value('id'));
+
+    \App\Models\MarketProduct::query()->create(['restaurant_id' => $this->org->id, 'entrepreneur_id' => $ent->id, 'name' => 'Acelga', 'unit' => 'atado', 'price_cents' => 100000]);
+    \App\Models\MarketProduct::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Producto ajeno', 'unit' => 'u', 'price_cents' => 100]);
+    $this->actingAs($user)->get(route('market.products.index'))->assertOk()->assertSee('Acelga')->assertDontSee('Producto ajeno');
+});
+
 it('no se puede elegir administrador al registrarse', function () use ($signup) {
     foreach (['ADMIN', 'SUPERADMIN'] as $role) {
         $this->post(route('register'), $signup(['username' => 'x'.$role, 'role' => $role]))->assertSessionHasErrors('role');
