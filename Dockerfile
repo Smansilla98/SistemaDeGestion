@@ -8,7 +8,8 @@ COPY resources ./resources
 COPY public ./public
 RUN npm run build
 # Editor de Diseño (OpenDesign, resources/opendesign) → public/opendesign
-RUN npm --prefix resources/opendesign ci --no-audit --no-fund && npm --prefix resources/opendesign run build
+# npm install (no ci): las dependencias opcionales de fabric resuelven distinto según la versión de npm.
+RUN npm --prefix resources/opendesign install --no-audit --no-fund && npm --prefix resources/opendesign run build
 
 # Laravel en Railway: nginx escucha $PORT y hace proxy a PHP-FPM (un solo contenedor).
 # PHP 8.3: lock (zipstream-php) exige ^8.3; gd: PhpSpreadsheet / maatwebsite/excel.

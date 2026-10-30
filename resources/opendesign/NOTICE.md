@@ -18,5 +18,5 @@ Cambios respecto del original:
   ArtCraft (dentro del editor) y trae el resultado como capa, fondo o reemplazo.
 - Miniatura del diseño al guardar (`getThumbnailForPage`).
 
-Se compila con `npm --prefix resources/opendesign ci && npm --prefix resources/opendesign run build`
+Se compila con `npm --prefix resources/opendesign install && npm --prefix resources/opendesign run build`
 (lo hace el Dockerfile); la salida va a `public/opendesign`.
