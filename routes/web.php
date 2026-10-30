@@ -647,6 +647,18 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::post('/ciclos/{cycle}/pedidos/{order}/cancelar', [$y, 'cancelOrder'])->name('cycles.orders.cancel');
     });
 
+    Route::prefix('guia-de-comunicacion')->name('guide.')->group(function () {
+        $gc = \App\Http\Controllers\Community\GuideController::class;
+        Route::get('/', [$gc, 'index'])->name('index');
+        Route::post('/guia-base', [$gc, 'install'])->name('install');
+        Route::get('/nueva', [$gc, 'create'])->name('create');
+        Route::post('/', [$gc, 'store'])->name('store');
+        Route::get('/{section}/editar', [$gc, 'edit'])->name('edit');
+        Route::put('/{section}', [$gc, 'update'])->name('update');
+        Route::delete('/{section}', [$gc, 'destroy'])->name('destroy');
+        Route::post('/{section}/mover', [$gc, 'move'])->name('move');
+    });
+
     // Diseño: editor OpenDesign (SPA) + su API (resources/opendesign, DesignEditorController)
     Route::prefix('diseno')->name('design.')->group(function () {
         $g = \App\Http\Controllers\Design\DesignEditorController::class;

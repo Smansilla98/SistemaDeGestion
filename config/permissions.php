@@ -34,6 +34,7 @@ return [
         ['key' => 'finance', 'label' => 'Finanzas de actividades', 'actions' => ['view', 'create', 'settle']],
         ['key' => 'messages', 'label' => 'Mensajes', 'actions' => ['send']],
         ['key' => 'design', 'label' => 'Diseño (editor gráfico)', 'actions' => ['view', 'kit']],
+        ['key' => 'guide', 'label' => 'Guía de comunicación', 'actions' => ['update']],
     ],
 
     'action_labels' => [
@@ -57,6 +58,7 @@ return [
         'SUPERADMIN' => true,
         'ADMIN' => true, // todos los permisos (se resuelve por módulo)
         'GERENTE' => [
+            'guide.update' => true,
             'stock_mozo.create' => false,
             'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true,
@@ -138,6 +140,7 @@ return [
 
         // Roles de organizaciones culturales/educativas/comerciales (sólo por membresía).
         'COORDINADOR' => [
+            'guide.update' => true,
             'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true, 'events.view' => true, 'events.create' => true, 'events.update' => true,
             'workshops.view' => true, 'workshops.create' => true, 'workshops.update' => true, 'workshops.delete' => true, 'workshops.attendance' => true,
@@ -164,6 +167,7 @@ return [
             'dashboard.view' => true, 'agenda.view' => true, 'events.view' => true, 'documents.view' => true, 'messages.send' => true,
         ],
         'MARKETING' => [
+            'guide.update' => true,
             'design.view' => true, 'design.kit' => true,
             'dashboard.view' => true, 'agenda.view' => true, 'agenda.create' => true, 'events.view' => true,
             'contacts.view' => true, 'contacts.create' => true, 'contacts.update' => true, 'contacts.delete' => true,

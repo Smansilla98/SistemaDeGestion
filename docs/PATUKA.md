@@ -38,7 +38,7 @@ Esta rama convierte el sistema en la herramienta de un espacio cultural real: Pa
 
 ## Panel pensado para el centro cultural
 
-- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Diseño, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
+- **Menú:** Inicio → *Espacio cultural* (Agenda, Talleres, Eventos y shows, Actividades recurrentes) → *Comunidad* (Contactos, Formularios, Comunicaciones, Guía de comunicación, Diseño, Mensajes) → *Feria* → *Barra* (Mesas, Pedidos, Caja, Carta, Stock) → *Administración* (Finanzas, Documentos, Usuarios y roles, Organización, Sedes, Configuración y web).
 - **Inicio («Hoy en Patuka»):** lo primero es la **agenda de la semana**: clases, eventos, etapas, actividades, entregas y avisos de los próximos 7 días, agrupados por día. Después vienen:
   - el resumen cultural: talleres activos, inscriptos, lista de espera y eventos de los próximos 14 días;
   - las últimas inscripciones.
@@ -52,6 +52,15 @@ En *Feria → Ciclos de pedidos* cada ciclo carga antes **qué productos ofrece*
 - Los pedidos solo se arman con esa oferta; si se pasa del cupo, avisa cuánto queda.
 - Al crear un ciclo nuevo se puede **copiar la oferta del anterior** (viene elegido por defecto).
 - No se puede sacar de la oferta un producto que ya tiene pedidos.
+
+## Guía de comunicación
+
+*Comunidad → Guía de comunicación* (`/guia-de-comunicacion`) es el manual interno de marketing: qué publicar, cómo, cuándo y con qué formato.
+
+- **Guía base:** `patuka:setup` la carga (o el botón *Cargar la guía base*). Diez secciones: para qué sirve, pilares de contenido, semana tipo, cómo escribir, formatos y medidas, fotos y video, profes y artistas, emprendedores, WhatsApp y checklist antes de publicar.
+- **Por público:** cada sección es para todos, equipo, profes y artistas o emprendedores; cada rol ve lo suyo.
+- **Edición:** quien tiene `guide.update` (gestión, coordinación, marketing) agrega, edita, ordena y borra secciones. El contenido usa formato simple (negrita, listas, casillas, tablas) y puede sugerir una plantilla de *Diseño*.
+- *Restaurar secciones base que falten* vuelve a agregar las que se borraron sin tocar las editadas.
 
 ## Diseño (editor gráfico)
 

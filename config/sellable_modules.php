@@ -142,4 +142,13 @@ return [
         'web' => ['design.'],
         'api' => [],
     ],
+    'guide' => [
+        'community' => true,
+        'label' => 'Guía de comunicación',
+        'description' => 'Manual interno de qué publicar, cómo, cuándo y con qué formato, por tipo de público.',
+        'offered' => false,
+        'default' => true,
+        'web' => ['guide.'],
+        'api' => [],
+    ],
 ];

@@ -67,6 +67,8 @@ class PatukaSetup extends Command
             foreach (self::CATEGORIES as $name => $color) {
                 ActivityCategory::withoutGlobalScopes()->firstOrCreate(['restaurant_id' => $org->id, 'name' => $name], ['color' => $color]);
             }
+            \App\Support\GuideDefaults::install($org);
+
             DistributionRule::withoutGlobalScopes()->firstOrCreate(['restaurant_id' => $org->id, 'name' => 'Talleres 70/30'], [
                 'base' => 'NETO', 'parties' => [['label' => 'Docente', 'percent' => 70], ['label' => 'Espacio', 'percent' => 30]],
             ]);
