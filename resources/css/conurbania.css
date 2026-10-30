@@ -102,6 +102,17 @@
   background:#333333 !important;
   border-color:#333333 !important;
 }
+/* Bootstrap carga después y deja el outline transparente: sobre el fondo negro no se veía. */
+.conurbania-app .btn-outline{
+  background:#fff;
+  color:var(--g700);
+  border-color:var(--g200);
+}
+.conurbania-app .btn-outline:hover{
+  background:var(--g50);
+  color:var(--g800);
+  border-color:var(--g300);
+}
 .conurbania-app .btn-success{
   background:#20c05f !important;
   border-color:#20c05f !important;

@@ -85,3 +85,11 @@ it('el inicio muestra primero la agenda y lo cultural; la barra queda plegada al
     // Menú: primero lo cultural, la barra después.
     $this->get(route('dashboard'))->assertSeeInOrder(['Espacio cultural', 'Comunidad', 'Feria', 'Barra', 'Administración']);
 });
+
+it('en el celular el inicio es el mismo que en la web', function () {
+    $iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148';
+
+    $this->actingAs($this->admin)->withHeader('User-Agent', $iphone)
+        ->get(route('dashboard'))->assertOk()->assertSee('Hoy en');
+    $this->actingAs($this->admin)->get('/m/dashboard')->assertRedirect('/dashboard');
+});

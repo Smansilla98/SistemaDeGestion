@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div class="page">
+<div>
 @if($agendaWeek !== null)
 <div class="mb-4">
     <div class="card">
@@ -68,8 +68,6 @@
         <x-card href="{{ route('agenda.index') }}" icon="bi-music-note-beamed" label="Eventos próximos 14 días" :value="$culture['upcoming_events']">
             <x-badge tone="teal">Ver agenda</x-badge>
         </x-card>
-    </div>
-
     </div>
 </div>
 @endif

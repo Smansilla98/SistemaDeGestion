@@ -70,7 +70,6 @@ class Kernel extends HttpKernel
         'jwt.auth' => \App\Middleware\AuthenticateJwt::class,
         'permission' => \App\Middleware\EnsurePermission::class,
         'session.timeout' => \App\Http\Middleware\CheckSessionTimeout::class,
-        'detect.mobile' => \App\Http\Middleware\DetectMobile::class,
         'module.license' => \App\Http\Middleware\EnsureLicensedModule::class,
         'entry.choice' => \App\Http\Middleware\EnsureDemoEntryChosen::class,
         'perm' => \App\Http\Middleware\RequirePermission::class,

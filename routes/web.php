@@ -96,7 +96,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->group(function () {
+Route::middleware(['auth', 'entry.choice', 'module.license'])->group(function () {
 
     Route::get('/entrada', [\App\Http\Controllers\Entry\EntryController::class, 'choose'])->name('entry.choose');
     Route::post('/entrada/demo', [\App\Http\Controllers\Entry\EntryController::class, 'demo'])->name('entry.demo');
@@ -394,7 +394,8 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
     |--------------------------------------------------------------------------
     */
     Route::prefix('m')->name('m.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Mobile\MobileDashboardController::class, 'index'])->name('dashboard');
+        // En el celular se usa el mismo inicio que en la web; se deja la ruta vieja por enlaces guardados.
+        Route::redirect('/dashboard', '/dashboard')->name('dashboard');
 
         Route::prefix('pedidos')->name('pedidos.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'index'])->name('index');

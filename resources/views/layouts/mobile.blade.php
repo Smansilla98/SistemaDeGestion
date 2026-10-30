@@ -2,7 +2,7 @@
   Layout mobile Patuka.
   Se mantiene separado de layouts/app.blade.php a propósito:
   - Bottom navigation + safe-area (iOS notch)
-  - Flujo PWA / detect.mobile distinto al sidebar desktop
+  - Toma de pedidos del salón (mozo) con navegación inferior
   - Menos peso en vistas de salón (mozo) vs shell admin completo
   Comparte tokens Vite (app.css + mobile.css) con la web.
 --}}
