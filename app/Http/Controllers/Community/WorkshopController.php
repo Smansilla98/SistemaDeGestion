@@ -135,6 +135,58 @@ class WorkshopController extends Controller
         return back()->with('success', 'Inscripción cancelada.'.($promoted ? " {$promoted->contact->name} pasó de la lista de espera a inscripto/a." : ''));
     }
 
+    /** Corrige una inscripción mal cargada: datos de la persona, estado, fecha y nota. */
+    public function updateEnrollment(Request $request, Workshop $workshop, WorkshopEnrollment $enrollment): RedirectResponse
+    {
+        $this->ensureOrg($workshop);
+        $this->requirePermission('workshops.update');
+        abort_unless($enrollment->workshop_id === $workshop->id, 404);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'], 'phone' => ['nullable', 'string', 'max:40'], 'email' => ['nullable', 'email', 'max:255'],
+            'status' => ['required', Rule::in(array_keys(WorkshopEnrollment::LABELS))],
+            'enrolled_at' => ['nullable', 'date'], 'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $contact = Contact::query()->where('restaurant_id', $this->org())->findOrFail($enrollment->contact_id);
+        $contact->update(['name' => $data['name'], 'phone' => $data['phone'] ?? null, 'email' => $data['email'] ?? null]);
+
+        $extra = '';
+        if ($data['status'] === WorkshopEnrollment::CANCELADA && $enrollment->status !== WorkshopEnrollment::CANCELADA) {
+            $promoted = $this->service->cancel($enrollment);
+            $extra = $promoted ? " {$promoted->contact->name} pasó de la lista de espera a inscripto/a." : '';
+        } elseif ($data['status'] !== $enrollment->status) {
+            $waitlist = $data['status'] === WorkshopEnrollment::EN_ESPERA
+                ? (int) WorkshopEnrollment::query()->where('workshop_id', $workshop->id)->where('status', WorkshopEnrollment::EN_ESPERA)->max('waitlist_position') + 1
+                : null;
+            $enrollment->update(['status' => $data['status'], 'waitlist_position' => $waitlist,
+                'cancelled_at' => null]);
+            $active = WorkshopEnrollment::query()->where('workshop_id', $workshop->id)->where('status', WorkshopEnrollment::ACTIVA)->count();
+            if ($data['status'] === WorkshopEnrollment::ACTIVA && $workshop->capacity !== null && $active > $workshop->capacity) {
+                $extra = " Ojo: el taller quedó con {$active} inscriptos para {$workshop->capacity} lugares.";
+            }
+        }
+        $enrollment->update(['note' => $data['note'] ?? null]
+            + (! empty($data['enrolled_at']) ? ['enrolled_at' => CarbonImmutable::parse($data['enrolled_at'])] : []));
+
+        return back()->with('success', "Inscripción de {$contact->name} corregida.".$extra);
+    }
+
+    /** Borra una inscripción cargada por error (sin pagos registrados). */
+    public function destroyEnrollment(Workshop $workshop, WorkshopEnrollment $enrollment): RedirectResponse
+    {
+        $this->ensureOrg($workshop);
+        $this->requirePermission('workshops.update');
+        abort_unless($enrollment->workshop_id === $workshop->id, 404);
+        if ($workshop->entries()->whereNull('voided_at')->where('workshop_enrollment_id', $enrollment->id)->exists()) {
+            return back()->with('error', 'Esta inscripción tiene pagos registrados: anulalos primero desde Finanzas o cancelala.');
+        }
+        // Se borra sin avisar a la persona: fue un error de carga, no una baja.
+        $name = $enrollment->contact?->name;
+        $enrollment->delete();
+
+        return back()->with('success', "Se borró la inscripción de {$name}.");
+    }
+
     // ── Clases ────────────────────────────────────────────────────────────────
 
     public function generateSessions(Request $request, Workshop $workshop): RedirectResponse

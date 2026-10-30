@@ -567,6 +567,8 @@ Route::middleware(['auth', 'entry.choice', 'module.license'])->group(function ()
         Route::put('/{workshop}', [$c, 'update'])->name('update');
         Route::post('/{workshop}/inscripciones', [$c, 'enroll'])->name('enroll');
         Route::post('/{workshop}/inscripciones/{enrollment}/cancelar', [$c, 'cancelEnrollment'])->name('enrollments.cancel');
+        Route::put('/{workshop}/inscripciones/{enrollment}', [$c, 'updateEnrollment'])->name('enrollments.update');
+        Route::delete('/{workshop}/inscripciones/{enrollment}', [$c, 'destroyEnrollment'])->name('enrollments.destroy');
         Route::post('/{workshop}/clases/generar', [$c, 'generateSessions'])->name('sessions.generate');
         Route::post('/{workshop}/clases/{session}', [$c, 'updateSession'])->name('sessions.update');
         Route::get('/{workshop}/clases/{session}/asistencia', [$c, 'attendance'])->name('attendance');
