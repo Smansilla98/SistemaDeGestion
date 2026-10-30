@@ -1,5 +1,6 @@
 @extends('layouts.auth')
 
+@section('card-width', '520px')
 @section('title', 'Registro')
 @section('subtitle', 'Creá tu cuenta en el espacio')
 
