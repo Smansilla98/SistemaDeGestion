@@ -75,6 +75,23 @@ class EventController extends Controller
             ];
         }
 
+        // Clases de los talleres: el calendario muestra también lo que ya está cargado en Talleres.
+        $user = auth()->user();
+        if (app(\App\Services\ModuleLicenseService::class)->enabledForUser($user, 'workshops')
+            && app(\App\Services\PermissionService::class)->allowed($user, 'workshops.view')) {
+            $classes = app(\App\Services\Community\AgendaService::class)->between(
+                $user, (int) $restaurantId, $startDate->toImmutable(), $endDate->toImmutable(), ['types' => ['Clase']]
+            );
+            foreach ($classes as $day => $items) {
+                foreach ($items as $item) {
+                    $eventsByDay[$day][] = ['type' => 'class', 'data' => $item];
+                }
+            }
+        }
+        foreach ($eventsByDay as $day => $items) {
+            usort($eventsByDay[$day], fn ($a, $b) => strcmp($this->sortTime($a), $this->sortTime($b)));
+        }
+
         // Calcular días del mes para el calendario
         $firstDayOfWeek = $startDate->dayOfWeek; // 0 = domingo, 6 = sábado
         $daysInMonth = $startDate->daysInMonth;
@@ -99,6 +116,18 @@ class EventController extends Controller
             'nextMonth',
             'stockAlerts'
         ));
+    }
+
+    /** @param  array{type: string, data: mixed}  $item */
+    private function sortTime(array $item): string
+    {
+        $time = match ($item['type']) {
+            'event' => $item['data']->time,
+            'recurring' => $item['data']['time'] ?? null,
+            default => $item['data']['time'] ?? null,
+        };
+
+        return $time ? substr((string) $time, 0, 5) : '';
     }
 
     /**
