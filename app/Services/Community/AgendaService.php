@@ -85,7 +85,7 @@ final class AgendaService
                     'kind' => 'Evento', 'title' => $e->name, 'detail' => null, 'url' => route('events.show', $e),
                     'cancelled' => $e->status === Event::STATUS_CANCELADO, 'type' => 'Evento'] + $cat($e));
             }
-            $stages = EventStage::query()->with('event.category')->whereHas('event', fn ($q) => $q->where('restaurant_id', $restaurantId))
+            $stages = EventStage::query()->with(['event.category', 'responsible'])->whereHas('event', fn ($q) => $q->where('restaurant_id', $restaurantId))
                 ->whereBetween('starts_at', [$from->startOfDay(), $to->endOfDay()])->get();
             foreach ($stages as $st) {
                 $items->push(['date' => $st->starts_at->toDateString(), 'time' => $st->starts_at->format('H:i'), 'kind' => 'Etapa',
