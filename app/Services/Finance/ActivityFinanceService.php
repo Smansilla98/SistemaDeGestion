@@ -189,7 +189,7 @@ final class ActivityFinanceService
     /** Convierte "1.234,50" / "1234.5" en centavos. */
     public static function toCents(mixed $value): int
     {
-        $s = trim((string) $value);
+        $s = preg_replace('/[^\d.,-]/', '', trim((string) $value)) ?? '';
         if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/', $s) || str_contains($s, ',')) {
             $s = str_replace(['.', ','], ['', '.'], $s);
         }

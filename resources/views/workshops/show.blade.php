@@ -51,13 +51,43 @@
                         <td><span class="badge bg-{{ ['ACTIVA' => 'success', 'EN_ESPERA' => 'warning', 'CANCELADA' => 'secondary', 'FINALIZADA' => 'info'][$e->status] ?? 'secondary' }}">
                             {{ \App\Models\WorkshopEnrollment::LABELS[$e->status] ?? $e->status }}{{ $e->waitlist_position ? ' #'.$e->waitlist_position : '' }}</span></td>
                         @if($workshop->fee_cents > 0)<td>@isset($balances[$e->id]){{ $balances[$e->id]['pending_cents'] > 0 ? 'Debe '.$money($balances[$e->id]['pending_cents']) : 'Al día' }}@endisset</td>@endif
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
+                            @if($canManage)
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#enr-edit-{{ $e->id }}" aria-expanded="false" aria-controls="enr-edit-{{ $e->id }}">
+                                <i class="bi bi-pencil"></i> Corregir</button>
+                            @endif
                             @if($canManage && in_array($e->status, ['ACTIVA', 'EN_ESPERA'], true))
-                            <form method="POST" action="{{ route('workshops.enrollments.cancel', [$workshop, $e]) }}" onsubmit="return confirm('¿Cancelar esta inscripción?')">@csrf
+                            <form method="POST" action="{{ route('workshops.enrollments.cancel', [$workshop, $e]) }}" class="d-inline" onsubmit="return confirm('¿Cancelar esta inscripción?')">@csrf
                                 <button class="btn btn-sm btn-outline-danger">Cancelar</button></form>
                             @endif
                         </td>
                     </tr>
+                    @if($canManage)
+                    <tr class="collapse" id="enr-edit-{{ $e->id }}">
+                        <td colspan="4" class="bg-light">
+                            <form method="POST" action="{{ route('workshops.enrollments.update', [$workshop, $e]) }}" class="row g-2 align-items-end">
+                                @csrf @method('PUT')
+                                <div class="col-md-4"><label class="form-label small">Nombre</label><input name="name" class="form-control form-control-sm" value="{{ $e->contact->name }}" required maxlength="255"></div>
+                                <div class="col-md-3"><label class="form-label small">Teléfono</label><input name="phone" class="form-control form-control-sm" value="{{ $e->contact->phone }}" maxlength="40"></div>
+                                <div class="col-md-5"><label class="form-label small">Email</label><input type="email" name="email" class="form-control form-control-sm" value="{{ $e->contact->email }}" maxlength="255"></div>
+                                <div class="col-md-3"><label class="form-label small">Estado</label>
+                                    <select name="status" class="form-select form-select-sm">
+                                        @foreach(\App\Models\WorkshopEnrollment::LABELS as $value => $label)<option value="{{ $value }}" @selected($e->status === $value)>{{ $label }}</option>@endforeach
+                                    </select></div>
+                                <div class="col-md-3"><label class="form-label small">Fecha de inscripción</label><input type="date" name="enrolled_at" class="form-control form-control-sm" value="{{ $e->enrolled_at?->toDateString() }}"></div>
+                                <div class="col-md-6"><label class="form-label small">Nota</label><input name="note" class="form-control form-control-sm" value="{{ $e->note }}" maxlength="255"></div>
+                                <div class="col-12 d-flex flex-wrap gap-2 align-items-center">
+                                    <button class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Guardar cambios</button>
+                                    <span class="small text-muted">Los datos de la persona se corrigen también en Contactos. El saldo se ajusta desde <a href="{{ route('workshops.edit', $workshop) }}">el arancel</a> o los pagos en Finanzas.</span>
+                                </div>
+                            </form>
+                            <form method="POST" action="{{ route('workshops.enrollments.destroy', [$workshop, $e]) }}" class="mt-2" onsubmit="return confirm('¿Borrar esta inscripción? Usalo sólo si se cargó por error.')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash"></i> Borrar inscripción (cargada por error)</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endif
                     @empty
                     <tr><td colspan="4" class="text-center text-muted py-4">Sin inscripciones todavía.</td></tr>
                     @endforelse
