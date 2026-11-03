@@ -10,6 +10,7 @@ require_once __DIR__.'/helpers.php';
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
+    config(['app.demo_entry' => false]);
     $this->org = communityOrg();
     $this->admin = orgUser($this->org);
     $this->ws = Workshop::query()->create(['restaurant_id' => $this->org->id, 'name' => 'Fotografía', 'status' => 'ABIERTO', 'capacity' => 1]);

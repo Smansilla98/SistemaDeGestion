@@ -104,7 +104,86 @@ class UserManual
                     'Todas las semanas: reportes de ventas, productos y personal.',
                     'Cuando haga falta: descuentos, gastos fijos, sucursales y permisos.',
                 ],
-                'sections' => ['ingreso', 'tablero', 'sectores', 'mesas_crear', 'plano_editar', 'mesas_ver', 'tomar_pedido', 'cobrar_mesa', 'categorias', 'productos', 'descuentos', 'stock_ver', 'puesta_a_punto', 'caja_admin', 'caja_abrir', 'caja_cerrar', 'impresoras', 'usuarios', 'sucursales', 'reportes', 'gastos', 'eventos', 'notificaciones', 'estados'],
+                'sections' => ['ingreso', 'tablero', 'sectores', 'mesas_crear', 'plano_editar', 'mesas_ver', 'tomar_pedido', 'cobrar_mesa', 'categorias', 'productos', 'descuentos', 'stock_ver', 'puesta_a_punto', 'caja_admin', 'caja_abrir', 'caja_cerrar', 'impresoras', 'usuarios', 'sucursales', 'reportes', 'gastos', 'eventos', 'agenda', 'talleres', 'inscripciones', 'contactos', 'finanzas_actividades', 'nodo', 'notificaciones', 'estados'],
+            ],
+            'COORDINADOR' => [
+                'label' => 'Coordinación',
+                'icon' => 'bi-diagram-3',
+                'summary' => 'Organizás la vida del espacio: talleres, agenda, inscripciones, contactos, documentos y las cuentas de cada actividad.',
+                'day' => [
+                    'Abrí el Inicio: arriba está la agenda de la semana y las últimas inscripciones.',
+                    'Revisá Talleres: cupos, lista de espera y clases suspendidas o reprogramadas.',
+                    'Cargá en la Agenda los eventos y avisos que tiene que ver todo el equipo.',
+                    'Respondé los Mensajes y corregí lo que haya quedado mal cargado.',
+                    'A fin de mes, mirá las Finanzas de cada actividad y liquidá lo que corresponda.',
+                ],
+                'sections' => ['ingreso', 'agenda', 'talleres', 'inscripciones', 'asistencia', 'evaluaciones', 'contactos', 'difusion', 'formularios', 'documentos', 'finanzas_actividades', 'mensajes', 'notificaciones'],
+            ],
+            'PROFESOR' => [
+                'label' => 'Profe',
+                'icon' => 'bi-person-video3',
+                'summary' => 'Ves tus talleres y tus clases, tomás asistencia y cargás las evaluaciones de tus alumnos.',
+                'day' => [
+                    'En el Inicio ves la agenda de la semana con tus clases.',
+                    'En cada clase, abrí la planilla de asistencia y marcá presente, tarde o ausente.',
+                    'Si alguien falta varias clases seguidas, te llega un aviso para que lo contactes.',
+                    'Cargá las evaluaciones o devoluciones cuando las tengas.',
+                ],
+                'sections' => ['ingreso', 'agenda', 'asistencia', 'evaluaciones', 'documentos', 'mensajes', 'notificaciones'],
+            ],
+            'ALUMNO' => [
+                'label' => 'Alumno/a',
+                'icon' => 'bi-mortarboard',
+                'summary' => 'Ves tus clases y las fechas del espacio, recibís avisos y te comunicás con el equipo.',
+                'day' => [
+                    'En el Inicio y en la Agenda ves tus clases y lo que viene en el espacio.',
+                    'Si una clase se suspende o se cambia de día, te llega un aviso.',
+                    'Para consultas, escribile al equipo desde Mensajes.',
+                ],
+                'sections' => ['ingreso', 'mi_agenda', 'documentos', 'mensajes', 'notificaciones'],
+            ],
+            'EMPRENDEDOR' => [
+                'label' => 'Emprendedor/a',
+                'icon' => 'bi-shop',
+                'summary' => 'Ves tus productos en la feria, tu stock, tus consignaciones y los pedidos del nodo.',
+                'day' => [
+                    'En Feria ves tus productos, cuánto quedó en consignación y lo que ya se vendió.',
+                    'Antes de cada ciclo del nodo, confirmá con el equipo qué vas a ofrecer.',
+                    'Cuando se liquida una consignación, te llega el aviso con el detalle.',
+                ],
+                'sections' => ['ingreso', 'feria_propia', 'nodo', 'mi_agenda', 'documentos', 'mensajes', 'notificaciones'],
+            ],
+            'ARTISTA' => [
+                'label' => 'Artista',
+                'icon' => 'bi-music-note-beamed',
+                'summary' => 'Ves los eventos y shows en los que participás y te comunicás con el equipo.',
+                'day' => [
+                    'En la Agenda ves tus fechas, ensayos y etapas de cada evento.',
+                    'Escribile al equipo desde Mensajes para coordinar.',
+                ],
+                'sections' => ['ingreso', 'mi_agenda', 'eventos', 'documentos', 'mensajes', 'notificaciones'],
+            ],
+            'MARKETING' => [
+                'label' => 'Comunicación',
+                'icon' => 'bi-megaphone',
+                'summary' => 'Difundís lo que pasa en el espacio: contactos, campañas, avisos en la agenda y piezas de comunicación.',
+                'day' => [
+                    'Mirá la Agenda de la semana: es lo que hay que comunicar.',
+                    'Mantené los Contactos al día (quién acepta recibir novedades).',
+                    'Armá las campañas por grupo desde Difusión.',
+                ],
+                'sections' => ['ingreso', 'agenda', 'contactos', 'difusion', 'formularios', 'documentos', 'mensajes', 'notificaciones'],
+            ],
+            'INVENTARIO' => [
+                'label' => 'Inventario de la feria',
+                'icon' => 'bi-box-seam',
+                'summary' => 'Llevás el stock de la feria: los productos de cada emprendedor, lo que entra en consignación y lo que se vende.',
+                'day' => [
+                    'Revisá los productos de la feria: arriba están los que quedan por debajo del mínimo.',
+                    'Registrá cada entrega de un emprendedor como consignación.',
+                    'Antes de cada ciclo del nodo, confirmá qué hay para ofrecer.',
+                ],
+                'sections' => ['ingreso', 'feria_stock', 'nodo', 'mensajes', 'notificaciones'],
             ],
             'SUPERADMIN' => [
                 'label' => 'Superadmin',
@@ -523,6 +602,148 @@ class UserManual
                 'steps' => [
                     'La campana de arriba muestra cuántos avisos sin leer tenés.',
                     'Tocala para ver la lista. Con «Marcar todas como leídas» la dejás en cero.',
+                ],
+            ],
+            'agenda' => [
+                'title' => 'Agenda del espacio',
+                'icon' => 'bi-calendar-week',
+                'route' => 'agenda.index',
+                'intro' => 'Clases, eventos y sus etapas, actividades recurrentes, entregas del nodo y avisos, en un solo lugar.',
+                'steps' => [
+                    'Elegí semana o mes y filtrá por tipo o categoría.',
+                    'Con «Nuevo taller» o «Nuevo evento» cargás una actividad nueva desde la misma pantalla.',
+                    'Los avisos y fechas especiales los ve todo el equipo en su agenda.',
+                ],
+                'tips' => ['Las clases de los talleres abiertos o en curso se crean solas para las próximas 8 semanas.'],
+            ],
+            'mi_agenda' => [
+                'title' => 'Mis clases y fechas',
+                'icon' => 'bi-calendar-check',
+                'route' => 'agenda.index',
+                'steps' => [
+                    'En la Agenda ves sólo lo tuyo: tus clases, tus eventos y los avisos del espacio.',
+                    'Una clase suspendida aparece tachada; una reprogramada, en su nuevo día.',
+                ],
+            ],
+            'talleres' => [
+                'title' => 'Crear y editar un taller',
+                'icon' => 'bi-easel',
+                'route' => 'workshops.index',
+                'steps' => [
+                    'Talleres → «Nuevo taller»: nombre, profe, sala, cupo, arancel y horarios semanales.',
+                    'Con el estado «Inscripción abierta» o «En curso», las clases de las próximas 8 semanas se crean solas.',
+                    'Para cubrir más adelante, en la tarjeta «Clases» elegí el rango y tocá «+».',
+                    'Una clase se puede suspender o reprogramar desde su menú (⋯): a los inscriptos les llega el aviso.',
+                ],
+            ],
+            'inscripciones' => [
+                'title' => 'Inscripciones y lista de espera',
+                'icon' => 'bi-person-plus',
+                'route' => 'workshops.index',
+                'steps' => [
+                    'En la ficha del taller, elegí un contacto o escribí nombre y teléfono y tocá «Inscribir».',
+                    'Si no hay cupo queda en lista de espera; al liberarse un lugar pasa sola y se le avisa.',
+                    '«Corregir» en cada inscripción: datos de la persona, estado, fecha y nota.',
+                    '«Borrar inscripción» sólo si se cargó por error (si tiene pagos, primero se anulan en Finanzas).',
+                ],
+            ],
+            'asistencia' => [
+                'title' => 'Tomar asistencia',
+                'icon' => 'bi-clipboard-check',
+                'route' => 'workshops.index',
+                'steps' => [
+                    'En la ficha del taller, tocá el botón de asistencia de la clase.',
+                    'Marcá presente, tarde, ausente o ausente con aviso y guardá.',
+                    'Si te equivocaste, volvé a abrir la planilla y guardá de nuevo: se corrige.',
+                ],
+                'tips' => ['Con tres faltas seguidas sin aviso, coordinación y el profe reciben una alerta.'],
+            ],
+            'evaluaciones' => [
+                'title' => 'Evaluaciones y devoluciones',
+                'icon' => 'bi-star',
+                'route' => 'workshops.index',
+                'steps' => [
+                    'En la ficha del taller, elegí el alumno, la instancia (por ejemplo, «Muestra final»), la nota y la devolución.',
+                    '«Corregir» en cada evaluación para cambiarla o borrarla si se cargó por error.',
+                ],
+            ],
+            'contactos' => [
+                'title' => 'Contactos',
+                'icon' => 'bi-person-lines-fill',
+                'route' => 'contacts.index',
+                'steps' => [
+                    'Alumnos, profes, artistas, emprendedores y público, todos en una lista con filtros.',
+                    'Importá desde Excel o CSV y exportá cuando lo necesites.',
+                    'Respetá la casilla «Acepta novedades»: sólo esos contactos reciben campañas.',
+                ],
+            ],
+            'difusion' => [
+                'title' => 'Campañas de difusión',
+                'icon' => 'bi-megaphone',
+                'route' => 'campaigns.index',
+                'steps' => [
+                    'Elegí el grupo (un taller, el público de shows, emprendedores…) y escribí el mensaje.',
+                    'El sistema arma los enlaces de WhatsApp o el envío por mail para cada contacto.',
+                ],
+            ],
+            'formularios' => [
+                'title' => 'Formularios de Google o Excel',
+                'icon' => 'bi-ui-checks',
+                'route' => 'forms.index',
+                'steps' => [
+                    'Conectá la planilla de respuestas y decí qué columna es cada dato.',
+                    'Las respuestas nuevas se importan como contactos o inscripciones; las dudosas quedan para revisar.',
+                ],
+            ],
+            'documentos' => [
+                'title' => 'Documentos',
+                'icon' => 'bi-folder2-open',
+                'route' => 'documents.index',
+                'steps' => ['Reglamentos, manuales y materiales del espacio. Cada uno indica quién lo puede ver.'],
+            ],
+            'finanzas_actividades' => [
+                'title' => 'Finanzas de cada actividad',
+                'icon' => 'bi-pie-chart',
+                'route' => 'finance.index',
+                'steps' => [
+                    'Cada taller o evento tiene sus ingresos (cuotas, entradas) y gastos.',
+                    'La regla de reparto dice qué parte va al profe o artista y qué parte al espacio.',
+                    'Registrá los pagos realizados; un movimiento mal cargado se anula (queda registrado quién y por qué).',
+                ],
+            ],
+            'mensajes' => [
+                'title' => 'Mensajes internos',
+                'icon' => 'bi-chat-dots',
+                'route' => 'messages.index',
+                'steps' => ['Escribile a otra persona del espacio. Te llega un aviso cuando te responden.'],
+            ],
+            'feria_propia' => [
+                'title' => 'Mis productos y consignaciones',
+                'icon' => 'bi-basket',
+                'route' => 'market.consignments.index',
+                'steps' => [
+                    'Ves los productos que dejaste en consignación, cuánto se vendió y cuánto queda.',
+                    'Cuando el espacio liquida, ves el detalle de lo que te corresponde.',
+                ],
+            ],
+            'feria_stock' => [
+                'title' => 'Productos y stock de la feria',
+                'icon' => 'bi-basket',
+                'route' => 'market.products.index',
+                'steps' => [
+                    'Cada producto es de un emprendedor (o del espacio), con unidad, precio y stock mínimo.',
+                    'Las consignaciones suman stock; las ventas y las devoluciones lo descuentan.',
+                    'Un producto que no se vende más se desactiva: el historial queda.',
+                ],
+            ],
+            'nodo' => [
+                'title' => 'Ciclos de pedidos (nodo)',
+                'icon' => 'bi-arrow-repeat',
+                'route' => 'market.cycles.index',
+                'steps' => [
+                    'Cada ciclo tiene apertura, cierre y día de entrega.',
+                    'Al cerrar, el sistema suma qué hay que pedirle a cada productor.',
+                    'El día de la entrega se marca cada pedido como entregado.',
                 ],
             ],
             'estados' => [
