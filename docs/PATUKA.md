@@ -128,6 +128,10 @@ php artisan patuka:setup --org=2
 
 **Archivos:** documentos, imágenes del editor de Diseño e importaciones se guardan en `storage/app`. El contenedor se recrea en cada deploy, así que agregá un **volumen** al servicio web montado en `/var/www/html/storage/app` (*Settings → Volumes*).
 
+**Backups:** todos los días a las 3:00 se guarda un backup comprimido de la base en ese mismo volumen (`storage/app/private/backups`, quedan los últimos 14). En *Configuración → Copias de seguridad* se ve el estado, se hace uno en el momento y se descargan. Bajá uno cada tanto y guardalo fuera de Railway. Restaurar: `gunzip -c backup-AAAAMMDD-HHMMSS.sql.gz | mysql -h HOST -P PUERTO -u USUARIO -p BASE`.
+
+**Clases de talleres:** el comando diario `workshops:sessions` (6:00) mantiene creadas las clases de las próximas 8 semanas de cada taller abierto o en curso.
+
 **Variables del servicio web.** Las de la base se pueden referenciar desde el servicio MySQL. Si no las cargás, `docker/patuka-boot.sh` toma las `MYSQL*` del servicio MySQL.
 
 ```
