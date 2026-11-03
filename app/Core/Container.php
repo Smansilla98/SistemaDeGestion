@@ -7,7 +7,6 @@ namespace App\Core;
 use Closure;
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionNamedType;
 
 /**
@@ -16,7 +15,7 @@ use ReflectionNamedType;
  */
 final class Container
 {
-    /** @var array<string, object> */
+    /** @var array<string, object|null> null: singleton registrado que todavía no se construyó */
     private static array $singletons = [];
 
     /** @var array<string, Closure|class-string> */
@@ -96,11 +95,10 @@ final class Container
      */
     private static function build(string $class): object
     {
-        try {
-            $ref = new ReflectionClass($class);
-        } catch (ReflectionException $e) {
-            throw new InvalidArgumentException($e->getMessage(), 0, $e);
+        if (! class_exists($class)) {
+            throw new InvalidArgumentException("La clase {$class} no existe.");
         }
+        $ref = new ReflectionClass($class);
 
         $constructor = $ref->getConstructor();
         if ($constructor === null) {

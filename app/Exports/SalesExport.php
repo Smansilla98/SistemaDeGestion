@@ -16,6 +16,7 @@ class SalesExport implements FromQuery, WithHeadings, WithMapping
         protected int $restaurantId
     ) {}
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\Payment> */
     public function query()
     {
         return Payment::where('restaurant_id', $this->restaurantId)

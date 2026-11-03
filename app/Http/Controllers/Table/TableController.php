@@ -11,7 +11,6 @@ use App\Models\Table;
 use App\Models\TableSession;
 use App\Services\OrderService;
 use App\Services\PrintService;
-use App\Services\StockService;
 use App\Services\TableService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +23,6 @@ class TableController extends Controller
     public function __construct(
         private OrderService $orderService,
         private PrintService $printService,
-        private StockService $stockService,
         private TableService $tableService,
         private \App\Services\PaymentMethodConfigurationService $paymentMethods,
     ) {}

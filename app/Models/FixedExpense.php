@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property float|null $monthly_equivalent calculado en el listado
+ * @property float|null $monthly_projected calculado en el listado
+ */
 class FixedExpense extends Model
 {
     use HasFactory;

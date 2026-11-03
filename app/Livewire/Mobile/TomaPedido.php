@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
+/**
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\Table> $mesas
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\Product> $productos
+ */
 class TomaPedido extends Component
 {
     public ?int $mesa = null;

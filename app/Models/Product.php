@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Atributos que algunas pantallas calculan y le asignan al vuelo (no son columnas).
+ *
+ * @property float|null $current_stock
+ * @property bool|null $is_low_stock
+ * @property-read (\Illuminate\Database\Eloquent\Relations\Pivot&object{quantity: float|int|string, unit: string|null})|null $pivot cantidad y unidad en la receta
+ */
 class Product extends Model
 {
     use Concerns\BelongsToRestaurant;
