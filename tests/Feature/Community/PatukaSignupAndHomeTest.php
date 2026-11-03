@@ -103,3 +103,9 @@ it('el calendario de eventos muestra las clases de los talleres y cada día perm
         ->assertSee(route('events.create', ['date' => '2026-11-10']), false);
     $this->actingAs($this->admin)->get(route('events.create', ['date' => '2026-11-10']))->assertOk()->assertSee('2026-11-10', false);
 });
+
+it('las pantallas móviles viejas llevan a su equivalente de la web', function () {
+    $this->actingAs($this->admin)->get('/m/pedidos')->assertRedirect(route('tables.index'));
+    $this->actingAs($this->admin)->get('/m/caja')->assertRedirect(route('cash-register.index'));
+    $this->actingAs($this->admin)->get('/m/pedidos/15')->assertRedirect(route('orders.show', 15));
+});

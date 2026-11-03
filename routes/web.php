@@ -397,17 +397,17 @@ Route::middleware(['auth', 'entry.choice', 'module.license'])->group(function ()
     |--------------------------------------------------------------------------
     */
     Route::prefix('m')->name('m.')->group(function () {
-        // En el celular se usa el mismo inicio que en la web; se deja la ruta vieja por enlaces guardados.
+        // En el celular se usa la misma web que en la computadora (Patuka). Las rutas viejas
+        // quedan sólo para que los enlaces guardados lleven a la pantalla equivalente.
         Route::redirect('/dashboard', '/dashboard')->name('dashboard');
 
         Route::prefix('pedidos')->name('pedidos.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'store'])->name('store');
-            Route::get('/{id}', [\App\Http\Controllers\Mobile\MobilePedidosController::class, 'show'])->name('show');
+            Route::get('/', fn () => redirect()->route('tables.index'))->name('index');
+            Route::get('/{id}', fn (string $id) => redirect()->route('orders.show', $id))->whereNumber('id')->name('show');
         });
 
         Route::prefix('caja')->name('caja.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Mobile\MobileCajaController::class, 'resumen'])->name('resumen');
+            Route::get('/', fn () => redirect()->route('cash-register.index'))->name('resumen');
         });
     });
 
