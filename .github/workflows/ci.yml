@@ -86,3 +86,81 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: root
         run: php artisan test
+
+  e2e:
+    # Navegador real contra la app: login, celular sin scroll lateral, menú, errores de JS.
+    runs-on: ubuntu-latest
+    needs: tests
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: e2e
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: e2e
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DEMO_ENTRY_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, bcmath, intl, zip, gd
+          coverage: none
+
+      - name: Cache de dependencias Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias y compilar
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          npm run build
+
+      - name: Base sembrada
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - name: Reporte si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            tests/e2e/report
+            tests/e2e/test-results
+          retention-days: 7
