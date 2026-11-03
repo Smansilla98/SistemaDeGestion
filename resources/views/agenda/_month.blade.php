@@ -34,6 +34,7 @@
                                 @if($it['time'])<span class="agenda-chip-time">{{ $it['time'] }}</span>@endif {{ \Illuminate\Support\Str::limit($it['title'], 22) }}
                             </{{ $tag }}>
                         @endforeach
+                        <a class="agenda-day-week" href="{{ route('agenda.index', ['vista' => 'semana', 'desde' => $key] + $keep) }}" aria-label="Ver la semana del {{ $day->format('d/m') }}"></a>
                         @if($items->count() > $maxPerDay)
                             <a class="agenda-more" href="{{ route('agenda.index', ['vista' => 'semana', 'desde' => $key] + $keep) }}">+{{ $items->count() - $maxPerDay }} más</a>
                         @endif
@@ -48,8 +49,9 @@
 
 @push('styles')
 <style>
+.agenda-grid { table-layout: fixed; width: 100%; }
 .agenda-grid th { background: #f4f4f4; }
-.agenda-day { width: calc(100% / 7); height: 118px; vertical-align: top; padding: 6px !important; min-width: 110px; }
+.agenda-grid td.agenda-day { vertical-align: top !important; height: 118px; padding: 6px !important; overflow: hidden; }
 .agenda-day.is-out { background: #fafafa; color: #adb5bd; }
 .agenda-day.is-today { box-shadow: inset 0 0 0 2px #111; }
 .agenda-day.can-create { cursor: pointer; }
@@ -59,7 +61,7 @@
 .agenda-day.can-create:hover .agenda-day-add, .agenda-day-add:focus { opacity: 1; }
 .agenda-day-add:hover { background: #111; color: #fff; }
 @media (hover: none) { .agenda-day-add { opacity: .7; } }
-.agenda-chip { display: block; font-size: .72rem; line-height: 1.25; margin-top: 3px; padding: 2px 5px; border-radius: 4px;
+.agenda-chip { display: block; font-size: .72rem; line-height: 1.25; margin-top: 3px; padding: 2px 5px; border-radius: 4px; max-width: 100%;
     background: #f1f1f1; color: #111 !important; border-left: 3px solid #111; text-decoration: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .agenda-chip:hover { background: #e6e6e6; }
 .agenda-chip.kind-evento { background: #111; color: #fff !important; }
@@ -69,6 +71,20 @@
 .agenda-chip.is-cancelled { text-decoration: line-through; opacity: .55; }
 .agenda-chip-time { font-weight: 700; }
 .agenda-more { display: block; font-size: .72rem; margin-top: 3px; }
+.agenda-day-week { display: none; }
+/* Celular: siete columnas no entran con texto; cada actividad es un punto y el día abre esa semana. */
+@media (max-width: 767.98px) {
+    .agenda-grid th { font-size: .62rem; padding: 4px 0 !important; }
+    .agenda-grid td.agenda-day { height: 58px; padding: 3px !important; }
+    .agenda-day-n { font-size: .78rem; }
+    .agenda-day-add, .agenda-more { display: none; }
+    .agenda-chip { display: inline-block; width: 7px; height: 7px; padding: 0; margin: 1px; border-radius: 50%; border: 0; font-size: 0; vertical-align: middle; }
+    .agenda-chip.kind-clase, .agenda-chip.kind-actividad { background: #6c757d; }
+    .agenda-chip.kind-aviso { background: #e0a800; }
+    .agenda-chip.kind-entrega { background: #2f9e5a; }
+    .agenda-day-week { display: block; position: absolute; inset: 0; }
+    .agenda-grid td.agenda-day { position: relative; }
+}
 </style>
 @endpush
 
