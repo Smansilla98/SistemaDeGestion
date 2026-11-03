@@ -75,6 +75,26 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="agenda"
+        options={{
+          title: 'Agenda',
+          href: isPrimaryTab(user, 'agenda') ? undefined : null,
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.agenda.active, tabIcons.agenda.inactive, focused),
+          tabBarLabel: ({ focused }) => <TabLabel label="Agenda" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="talleres"
+        options={{
+          title: 'Talleres',
+          href: isPrimaryTab(user, 'talleres') ? undefined : null,
+          tabBarIcon: ({ focused }) =>
+            tabIcon(tabIcons.talleres.active, tabIcons.talleres.inactive, focused),
+          tabBarLabel: ({ focused }) => <TabLabel label="Talleres" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="pedidos"
         options={{
           title: 'Pedidos',

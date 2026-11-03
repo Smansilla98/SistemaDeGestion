@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CashOpsController;
 use App\Http\Controllers\Api\CatalogOpsController;
 use App\Http\Controllers\Api\CategoryOpsController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\CommunityOpsController;
 use App\Http\Controllers\Api\DashboardOpsController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\KitchenOpsController;
@@ -136,6 +137,12 @@ final class ApiRouter
             ['methods' => ['GET'], 'uri' => 'reports/sales/export-pdf', 'action' => [AdminExtrasOpsController::class, 'exportSalesPdf'], 'middleware' => array_merge($jwt, ['permission:reports.read'])],
             ['methods' => ['GET'], 'uri' => 'reports/products/export', 'action' => [AdminExtrasOpsController::class, 'exportProductsExcel'], 'middleware' => array_merge($jwt, ['permission:reports.read'])],
             ['methods' => ['GET'], 'uri' => 'reports/staff/export', 'action' => [AdminExtrasOpsController::class, 'exportStaffExcel'], 'middleware' => array_merge($jwt, ['permission:reports.read'])],
+            // Espacio cultural: agenda, talleres y asistencia (módulo «workshops»).
+            ['methods' => ['GET'], 'uri' => 'agenda', 'action' => [CommunityOpsController::class, 'agenda'], 'middleware' => array_merge($jwt, ['permission:agenda.read'])],
+            ['methods' => ['GET'], 'uri' => 'workshops', 'action' => [CommunityOpsController::class, 'workshops'], 'middleware' => array_merge($jwt, ['permission:workshops.read'])],
+            ['methods' => ['GET'], 'uri' => 'workshops/{id}', 'action' => [CommunityOpsController::class, 'workshop'], 'middleware' => array_merge($jwt, ['permission:workshops.read'])],
+            ['methods' => ['GET'], 'uri' => 'workshops/{id}/sessions/{session}/attendance', 'action' => [CommunityOpsController::class, 'attendance'], 'middleware' => array_merge($jwt, ['permission:workshops.attendance'])],
+            ['methods' => ['POST'], 'uri' => 'workshops/{id}/sessions/{session}/attendance', 'action' => [CommunityOpsController::class, 'storeAttendance'], 'middleware' => array_merge($jwt, ['permission:workshops.attendance'])],
             ['methods' => ['GET'], 'uri' => 'events', 'action' => [AdminExtrasOpsController::class, 'events'], 'middleware' => array_merge($jwt, ['permission:events.read'])],
             ['methods' => ['POST'], 'uri' => 'events', 'action' => [AdminExtrasOpsController::class, 'storeEvent'], 'middleware' => array_merge($jwt, ['permission:events.write'])],
             ['methods' => ['PUT', 'PATCH'], 'uri' => 'events/{id}', 'action' => [AdminExtrasOpsController::class, 'updateEvent'], 'middleware' => array_merge($jwt, ['permission:events.write'])],

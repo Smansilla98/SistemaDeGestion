@@ -634,3 +634,42 @@ paths:
       summary: Eliminar push token
       security:
         - bearerAuth: []
+
+  /agenda:
+    get:
+      tags: [Comunidad]
+      summary: Agenda agrupada por día (alumnos y profes ven sólo lo suyo)
+      description: Requiere agenda.read y el módulo «workshops».
+      parameters:
+        - { name: desde, in: query, schema: { type: string, format: date } }
+        - { name: dias, in: query, schema: { type: integer, minimum: 1, maximum: 62, default: 14 } }
+      security:
+        - bearerAuth: []
+
+  /workshops:
+    get:
+      tags: [Comunidad]
+      summary: Talleres abiertos o en curso (el profe ve sólo los suyos)
+      security:
+        - bearerAuth: []
+
+  /workshops/{id}:
+    get:
+      tags: [Comunidad]
+      summary: Detalle del taller con las clases de -2 a +4 semanas
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      security:
+        - bearerAuth: []
+
+  /workshops/{id}/sessions/{session}/attendance:
+    get:
+      tags: [Comunidad]
+      summary: Planilla de asistencia de una clase
+      security:
+        - bearerAuth: []
+    post:
+      tags: [Comunidad]
+      summary: Guardar asistencia (statuses = {contact_id → PRESENTE|TARDE|AUSENTE|JUSTIFICADA})
+      security:
+        - bearerAuth: []

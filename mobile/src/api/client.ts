@@ -730,6 +730,24 @@ export const api = {
   deleteFixedExpense: (id: number) =>
     apiRequest(`/fixed-expenses/${id}`, { method: 'DELETE' }),
 
+  // Espacio cultural
+  agenda: (desde?: string, dias = 14) =>
+    apiRequest<import('./types').AgendaPayload>(`/agenda?dias=${dias}${desde ? `&desde=${encodeURIComponent(desde)}` : ''}`),
+
+  workshops: () =>
+    apiRequest<import('./types').WorkshopRow[]>('/workshops').then((d) => asList<import('./types').WorkshopRow>(d)),
+
+  workshop: (id: number) => apiRequest<import('./types').WorkshopDetail>(`/workshops/${id}`),
+
+  attendance: (workshopId: number, sessionId: number) =>
+    apiRequest<import('./types').AttendanceSheet>(`/workshops/${workshopId}/sessions/${sessionId}/attendance`),
+
+  saveAttendance: (workshopId: number, sessionId: number, statuses: Record<number, string>) =>
+    apiRequest(`/workshops/${workshopId}/sessions/${sessionId}/attendance`, {
+      method: 'POST',
+      body: JSON.stringify({ statuses }),
+    }),
+
   notifications: () =>
     apiRequest<NotificationRow[]>('/notifications').then((d) => asList<NotificationRow>(d)),
 

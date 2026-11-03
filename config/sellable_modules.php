@@ -95,7 +95,7 @@ return [
         'offered' => false,
         'default' => false,
         'web' => ['workshops.', 'agenda.'],
-        'api' => [],
+        'api' => ['agenda', 'workshops'],
     ],
     'contacts' => [
         'community' => true,
