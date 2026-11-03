@@ -56,7 +56,8 @@ class AppServiceProvider extends ServiceProvider
 
         Order::observe(OrderObserver::class);
 
-        Model::shouldBeStrict($this->app->environment('local'));
+        // También en tests: una carga diferida o un atributo descartado sin querer tiene que romper el CI, no producción.
+        Model::shouldBeStrict($this->app->environment(['local', 'testing']));
 
         DB::whenQueryingForLongerThan(500, function ($connection, $event) {
             $sql = (string) $event->sql;
