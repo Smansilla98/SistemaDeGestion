@@ -18,5 +18,12 @@ Cambios respecto del original:
   ArtCraft (dentro del editor) y trae el resultado como capa, fondo o reemplazo.
 - Miniatura del diseño al guardar (`getThumbnailForPage`).
 
-Se compila con `npm --prefix resources/opendesign install && npm --prefix resources/opendesign run build`
+Se compila con `npm --prefix resources/opendesign ci && npm --prefix resources/opendesign run build`
 (lo hace el Dockerfile); la salida va a `public/opendesign`.
+
+El `package-lock.json` está generado con el npm de la imagen (node:22 → npm 10). Si hay que
+regenerarlo, hacerlo con esa misma versión para que `npm ci` no falle en el build:
+
+```bash
+docker run --rm -v "$PWD/resources/opendesign:/w" -w /w node:22-alpine npm install --package-lock-only
+```
