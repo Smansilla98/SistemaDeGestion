@@ -9,7 +9,7 @@
     $quickHtml = collect($quick)->map(fn ($url, $k) => '<a href="'.e($url).'" class="btn btn-'.($k === 'workshop' ? 'primary' : 'outline-light').'"><i class="bi '.$quickLabels[$k][0].'"></i> '.$quickLabels[$k][1].'</a>')->implode(' ');
 @endphp
 @include('community._head', ['icon' => 'bi-calendar-week', 'title' => 'Agenda',
-    'subtitle' => 'Clases, eventos y etapas, actividades, entregas, fechas especiales y avisos en un solo lugar.',
+    'subtitle' => 'Clases, eventos y etapas, actividades, entregas, fechas especiales y avisos en un solo lugar.'.($canCreateEvent ? ' En el mes, tocá un día para crear un evento.' : ''),
     'actions' => $quickHtml !== '' ? $quickHtml : null])
 
 @php $keep = array_filter(['tipo' => $filters['types'] ?: null, 'categoria' => $filters['category_id']]); @endphp
@@ -42,7 +42,14 @@
     @if($canCreate)<a href="{{ route('agenda.categories.index') }}" class="small ms-auto"><i class="bi bi-tags"></i> Categorías</a>@endif
 </div></form>
 
-<div class="row g-4">
+@include('events._stock-alerts', ['stockAlerts' => $stockAlerts])
+
+@if($view === 'mes')
+    @include('agenda._month')
+@endif
+
+<div class="row g-4 {{ $view === 'mes' ? 'mt-0' : '' }}">
+    @if($view !== 'mes')
     <div class="{{ $canCreate ? 'col-lg-8' : 'col-12' }}">
         <div class="card">
             <ul class="list-group list-group-flush">
@@ -65,9 +72,10 @@
             </ul>
         </div>
     </div>
+    @endif
 
     @if($canCreate)
-    <div class="col-lg-4">
+    <div class="{{ $view === 'mes' ? 'col-lg-6' : 'col-lg-4' }}">
         <div class="card mb-4">
             <div class="card-header"><h5 class="mb-0">Agregar aviso o fecha especial</h5></div>
             <div class="card-body">

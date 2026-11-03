@@ -46,6 +46,11 @@ class AgendaController extends Controller
                 'cycle' => $this->can('market.create') && $this->moduleOn('market') ? route('market.cycles.index') : null,
                 'entrepreneur' => $this->can('market.create') && $this->moduleOn('market') ? route('market.entrepreneurs.create') : null,
             ]),
+            // La agenda reemplaza al calendario de eventos: clic en un día crea un evento y se ven las faltas de stock.
+            'canCreateEvent' => $this->can('events.create') && $this->moduleOn('events'),
+            'stockAlerts' => $view === 'mes' && $this->can('events.view') && $this->moduleOn('events')
+                ? app(\App\Services\Events\EventStockAlerts::class)->between($this->org(), max($from, CarbonImmutable::today()), $to->addMonth())
+                : [],
             'notices' => $this->can('agenda.create') ? AgendaNotice::query()->where('restaurant_id', $this->org())
                 ->whereDate('date', '>=', today()->subDays(30))->orderBy('date')->get() : collect(),
         ]);

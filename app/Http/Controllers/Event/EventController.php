@@ -20,6 +20,13 @@ class EventController extends Controller
     {
         Gate::authorize('viewAny', Event::class);
 
+        // Donde está la Agenda, el calendario es ella (una sola pantalla): se abre en el mes pedido, filtrada en eventos.
+        if (self::agendaAvailable($request->user())) {
+            $month = Carbon::create((int) $request->get('year', now()->year), (int) $request->get('month', now()->month), 1);
+
+            return redirect()->route('agenda.index', ['vista' => 'mes', 'desde' => $month->toDateString(), 'tipo' => ['Evento', 'Etapa']]);
+        }
+
         $restaurantId = auth()->user()->restaurant_id;
 
         // Obtener mes y año de la solicitud (por defecto: mes actual)
@@ -101,7 +108,7 @@ class EventController extends Controller
         $nextMonth = $startDate->copy()->addMonth();
 
         // Verificar alertas de stock para eventos futuros
-        $stockAlerts = $this->checkStockAlerts($restaurantId, $events->where('status', Event::STATUS_PROGRAMADO));
+        $stockAlerts = app(\App\Services\Events\EventStockAlerts::class)->forEvents((int) $restaurantId, $events->where('status', Event::STATUS_PROGRAMADO));
 
         return view('events.index', compact(
             'events',
@@ -324,34 +331,15 @@ class EventController extends Controller
             ->with('success', 'Evento eliminado exitosamente');
     }
 
-    /**
-     * Verificar alertas de stock para eventos futuros
-     */
-    private function checkStockAlerts($restaurantId, $events)
+    /** La persona ve la Agenda (permiso y módulo contratado): ahí se muestran los eventos. */
+    public static function agendaAvailable(?\App\Models\User $user): bool
     {
-        $alerts = [];
-
-        foreach ($events as $event) {
-            foreach ($event->products as $product) {
-                $stock = Stock::where('restaurant_id', $restaurantId)
-                    ->where('product_id', $product->id)
-                    ->first();
-
-                $currentStock = $stock ? $stock->quantity : 0;
-                $expectedQuantity = $product->pivot->expected_quantity ?? 0;
-
-                if ($currentStock < $expectedQuantity) {
-                    $alerts[] = [
-                        'event' => $event,
-                        'product' => $product,
-                        'current_stock' => $currentStock,
-                        'expected_quantity' => $expectedQuantity,
-                        'shortage' => $expectedQuantity - $currentStock,
-                    ];
-                }
-            }
+        if ($user === null || ! app(\App\Services\PermissionService::class)->allowed($user, 'agenda.view')) {
+            return false;
         }
+        $licenses = app(\App\Services\ModuleLicenseService::class);
+        $module = $licenses->moduleForWebRoute('agenda.index');
 
-        return $alerts;
+        return $module === null || $licenses->enabledForUser($user, $module);
     }
 }

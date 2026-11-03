@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property float|null $current_stock
  * @property bool|null $is_low_stock
- * @property-read (\Illuminate\Database\Eloquent\Relations\Pivot&object{quantity: float|int|string, unit: string|null})|null $pivot cantidad y unidad en la receta
+ * @property-read (\Illuminate\Database\Eloquent\Relations\Pivot&object{quantity: float|int|string, unit: string|null, expected_quantity: float|int|string|null})|null $pivot cantidad y unidad en la receta, o lo esperado en un evento
  */
 class Product extends Model
 {
