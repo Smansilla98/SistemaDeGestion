@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // Clases de las próximas semanas de cada taller activo (antes de los recordatorios).
+        $schedule->command('workshops:sessions')->dailyAt('06:00')->withoutOverlapping();
         // Recordatorios de talleres, agenda, aranceles y consignaciones (idempotente).
         $schedule->command('community:reminders')->dailyAt('09:00')->withoutOverlapping();
         // Respuestas nuevas de los formularios de Google conectados.

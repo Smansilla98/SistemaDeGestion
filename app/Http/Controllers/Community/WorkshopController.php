@@ -59,8 +59,9 @@ class WorkshopController extends Controller
         $this->requirePermission('workshops.create');
         $workshop = Workshop::query()->create($this->validated($request) + ['restaurant_id' => $this->org()]);
         $this->syncSchedules($workshop, $request);
+        $n = $this->service->syncUpcomingSessions($workshop);
 
-        return redirect()->route('workshops.show', $workshop)->with('success', 'Taller creado. Generá las clases desde «Clases».');
+        return redirect()->route('workshops.show', $workshop)->with('success', 'Taller creado.'.$this->sessionsNote($workshop, $n));
     }
 
     public function edit(Workshop $workshop): View
@@ -77,8 +78,9 @@ class WorkshopController extends Controller
         $this->requirePermission('workshops.update');
         $workshop->update($this->validated($request));
         $this->syncSchedules($workshop, $request);
+        $n = $this->service->syncUpcomingSessions($workshop);
 
-        return redirect()->route('workshops.show', $workshop)->with('success', 'Taller actualizado.');
+        return redirect()->route('workshops.show', $workshop)->with('success', 'Taller actualizado.'.$this->sessionsNote($workshop, $n));
     }
 
     public function show(Workshop $workshop, ActivityFinanceService $finance): View
@@ -292,6 +294,17 @@ class WorkshopController extends Controller
         unset($data['fee'], $data['schedules']);
 
         return $data;
+    }
+
+    private function sessionsNote(Workshop $workshop, int $created): string
+    {
+        if ($created > 0) {
+            return " Se crearon {$created} clases de las próximas semanas.";
+        }
+
+        $waiting = ! in_array($workshop->status, WorkshopService::ACTIVE_STATUSES, true) && $workshop->schedules()->exists();
+
+        return $waiting ? ' Cuando abra la inscripción se crean solas las clases de sus horarios.' : '';
     }
 
     private function syncSchedules(Workshop $workshop, Request $request): void

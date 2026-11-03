@@ -166,6 +166,33 @@ final class WorkshopService
 
     // ── Clases ────────────────────────────────────────────────────────────────
 
+    /** Semanas hacia adelante que se mantienen con las clases creadas. */
+    public const UPCOMING_WEEKS = 8;
+
+    /** Estados en los que el taller tiene clases por delante. */
+    public const ACTIVE_STATUSES = ['ABIERTO', 'EN_CURSO'];
+
+    /**
+     * Deja creadas las clases de las próximas semanas y quita las futuras de horarios que ya
+     * no existen. Sólo toca clases programadas, sin asistencia: las reprogramadas, suspendidas
+     * o ya dictadas quedan como están.
+     */
+    public function syncUpcomingSessions(Workshop $workshop, int $weeks = self::UPCOMING_WEEKS): int
+    {
+        if (! in_array($workshop->status, self::ACTIVE_STATUSES, true)) {
+            return 0;
+        }
+        $today = CarbonImmutable::today();
+        $scheduleIds = $workshop->schedules()->pluck('id');
+        WorkshopSession::query()->where('workshop_id', $workshop->id)
+            ->where('status', WorkshopSession::PROGRAMADA)->whereDate('date', '>', $today->toDateString())
+            ->where(fn ($q) => $q->whereNull('workshop_schedule_id')->orWhereNotIn('workshop_schedule_id', $scheduleIds))
+            ->whereDoesntHave('attendances')
+            ->delete();
+
+        return $this->generateSessions($workshop, $today, $today->addWeeks($weeks));
+    }
+
     /**
      * Crea las clases de los horarios semanales entre dos fechas. No pisa las existentes:
      * una clase reprogramada o cancelada conserva su estado.
