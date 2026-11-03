@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # main es el producto base; Patuka y Conurbania son las ramas que se despliegan.
+    branches: [main, Patuka, Conurbania]
   pull_request:
-    branches: [main]
+    branches: [main, Patuka, Conurbania]
 
 jobs:
   tests:
