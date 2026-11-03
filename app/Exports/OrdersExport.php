@@ -16,6 +16,7 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping
         protected ?string $status = null
     ) {}
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\Order> */
     public function query()
     {
         $query = Order::where('restaurant_id', $this->restaurantId)

@@ -87,9 +87,6 @@ final class JwtAuthService
         }
 
         $hash = password_hash($dto->password, PASSWORD_DEFAULT);
-        if ($hash === false) {
-            throw new ApiException('No se pudo procesar la contraseña.', 500, 'HASH_ERROR');
-        }
 
         $created = $this->users->create([
             'restaurant_id' => $restaurant->id,

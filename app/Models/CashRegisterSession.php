@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Totales que el resumen de caja calcula y le asigna al vuelo (no son columnas).
+ *
+ * @property float|null $total_ingresos
+ * @property float|null $total_egresos
+ * @property float|null $total_payments
+ */
 class CashRegisterSession extends Model
 {
     use HasFactory;

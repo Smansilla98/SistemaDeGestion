@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Columnas del formato histórico (la tabla convive con el formato auditable_*).
+ *
+ * @property string|null $action
+ * @property string|null $model_type
+ * @property array<string, mixed>|null $changes
+ * @property int|null $total agregado en consultas de resumen
+ */
 class AuditLog extends Model
 {
     public $timestamps = false;

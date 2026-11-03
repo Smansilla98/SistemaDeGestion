@@ -600,7 +600,7 @@ class OrderController extends Controller
         ], $validated['reason'] ?? 'Descuento en cuenta abierta');
 
         return back()->with('success', $newDiscount > 0
-            ? 'Descuento aplicado: $'.number_format($newDiscount, 2)
+            ? 'Descuento aplicado: $'.number_format((float) $newDiscount, 2)
             : 'Descuento quitado.');
     }
 
@@ -1037,8 +1037,8 @@ class OrderController extends Controller
                 }
 
                 // Calcular total
-                $totalAmount = $order->total;
-                $totalPaid = collect($validated['payments'])->sum('amount');
+                $totalAmount = (float) $order->total;
+                $totalPaid = (float) collect($validated['payments'])->sum('amount');
 
                 // Validar que el total pagado sea mayor o igual al total
                 if ($totalPaid < $totalAmount - 0.01) {
@@ -1261,7 +1261,7 @@ class OrderController extends Controller
 
                     return response()->json([
                         'success' => false,
-                        'message' => 'El total pagado ($'.number_format($totalPaid, 2).') es menor al total a pagar ($'.number_format($order->total, 2).'). Faltan $'.number_format($order->total - $totalPaid, 2),
+                        'message' => 'El total pagado ($'.number_format($totalPaid, 2).') es menor al total a pagar ($'.number_format((float) $order->total, 2).'). Faltan $'.number_format((float) $order->total - $totalPaid, 2),
                     ], 422);
                 }
 
