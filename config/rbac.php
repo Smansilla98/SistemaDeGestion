@@ -38,12 +38,18 @@ return [
         'expenses.read',
         'expenses.write',
         'devices.write',
+        'agenda.read',
+        'workshops.read',
+        'workshops.attendance',
     ],
     'role_permissions' => [
         'SUPERADMIN' => ['*'],
         'ADMIN' => ['*'],
         'GERENTE' => [
             'auth.me',
+            'agenda.read',
+            'workshops.read',
+            'workshops.attendance',
             'dashboard.read',
             'products.read',
             'products.write',
@@ -143,5 +149,13 @@ return [
             'reports.read',
             'devices.write',
         ],
+        // Espacio cultural: la app muestra la agenda a todos y talleres/asistencia a quien los gestiona.
+        'COORDINADOR' => ['auth.me', 'devices.write', 'agenda.read', 'workshops.read', 'workshops.attendance', 'events.read'],
+        'PROFESOR' => ['auth.me', 'devices.write', 'agenda.read', 'workshops.read', 'workshops.attendance'],
+        'ALUMNO' => ['auth.me', 'devices.write', 'agenda.read'],
+        'EMPRENDEDOR' => ['auth.me', 'devices.write', 'agenda.read'],
+        'ARTISTA' => ['auth.me', 'devices.write', 'agenda.read', 'events.read'],
+        'MARKETING' => ['auth.me', 'devices.write', 'agenda.read', 'events.read'],
+        'INVENTARIO' => ['auth.me', 'devices.write', 'agenda.read'],
     ],
 ];
