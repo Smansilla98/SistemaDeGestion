@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Jobs\SendExpoPushNotification;
 use App\Models\DeviceToken;
@@ -12,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-final class DeviceController extends Controller
+final class DeviceController extends ApiController
 {
     public function store(Request $request): JsonResponse
     {

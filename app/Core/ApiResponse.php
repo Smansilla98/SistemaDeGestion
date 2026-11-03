@@ -13,7 +13,7 @@ use Illuminate\Http\JsonResponse;
 final class ApiResponse
 {
     /**
-     * @param  array<string, mixed>|object|null  $data
+     * @param  array<array-key, mixed>|object|null  $data  objeto o lista: ambos son JSON válido
      */
     public static function success(mixed $data = null, int $status = 200, ?string $message = null): JsonResponse
     {

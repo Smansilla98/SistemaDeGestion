@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Core\Rbac\RbacChecker;
 use App\Models\Product;
@@ -19,7 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
-final class StockOpsController extends Controller
+final class StockOpsController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
@@ -61,7 +60,7 @@ final class StockOpsController extends Controller
             ->keyBy('product_id');
 
         $rows = $products->map(function (Product $product) use ($stockMap) {
-            $qty = (int) ($stockMap->get($product->id)?->quantity ?? 0);
+            $qty = (int) ($stockMap->get($product->id)->quantity ?? 0);
             $min = (int) ($product->stock_minimum ?? 0);
 
             return [
@@ -94,15 +93,15 @@ final class StockOpsController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->string('date_from'));
+            $query->whereDate('created_at', '>=', $request->string('date_from')->toString());
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->string('date_to'));
+            $query->whereDate('created_at', '<=', $request->string('date_to')->toString());
         }
 
         if ($request->user()?->role === User::ROLE_MOZO) {
-            $canMozoInsumo = RbacChecker::roleHasAny($request->user()?->role, ['stock_mozo.create', 'stock.write']);
+            $canMozoInsumo = RbacChecker::roleHasAny($request->user()->role, ['stock_mozo.create', 'stock.write']);
             if ($canMozoInsumo) {
                 $query->whereHas('product', fn ($q) => $q->whereIn('type', ['PRODUCT', 'INSUMO']));
             } else {
@@ -259,7 +258,7 @@ final class StockOpsController extends Controller
             'name' => $p->name,
             'type' => $p->type,
             'unit' => $p->unit,
-            'current_stock' => (int) ($stockMap->get($p->id)?->quantity ?? 0),
+            'current_stock' => (int) ($stockMap->get($p->id)->quantity ?? 0),
         ])->values()->all();
 
         return ApiResponse::success($rows);

@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\User;
 use App\Services\PermissionService;
@@ -15,7 +14,7 @@ use Illuminate\Validation\Rule;
 /**
  * Matriz de permisos web (role_permissions / user_permissions) expuesta a mobile.
  */
-final class PermissionOpsController extends Controller
+final class PermissionOpsController extends ApiController
 {
     public function modules(Request $request, PermissionService $permissions): JsonResponse
     {

@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Pagination\PaginationQueryDto;
 use App\Models\Product;
@@ -18,7 +17,7 @@ use InvalidArgumentException;
 /**
  * Controlador HTTP fino: autorización, delegación al servicio y respuesta JSON unificada.
  */
-final class ProductController extends Controller
+final class ProductController extends ApiController
 {
     public function index(Request $request, ProductService $products): JsonResponse
     {

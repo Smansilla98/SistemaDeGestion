@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Pagination\PaginationQueryDto;
 use App\Models\Order;
@@ -19,7 +18,7 @@ use InvalidArgumentException;
 /**
  * API REST de pedidos: creación vía OrderService; lectura híbrida; mutaciones con Eloquent.
  */
-final class OrderController extends Controller
+final class OrderController extends ApiController
 {
     public function index(Request $request, OrderRestService $orders): JsonResponse
     {

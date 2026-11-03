@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Domain\Money\Money;
 use App\Enums\OrderStatus;
@@ -21,7 +20,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
-final class OrderOpsController extends Controller
+final class OrderOpsController extends ApiController
 {
     public function sendToKitchen(Request $request, int $id, OrderService $orders): JsonResponse
     {

@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class CategoryOpsController extends Controller
+final class CategoryOpsController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {

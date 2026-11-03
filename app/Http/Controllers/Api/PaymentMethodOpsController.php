@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\PaymentMethodConfiguration;
 use App\Services\PaymentMethodConfigurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class PaymentMethodOpsController extends Controller
+final class PaymentMethodOpsController extends ApiController
 {
     public function index(Request $request, PaymentMethodConfigurationService $service): JsonResponse
     {

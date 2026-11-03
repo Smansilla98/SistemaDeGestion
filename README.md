@@ -52,7 +52,7 @@ Aplicación web para la operación completa de un restaurante: salón, pedidos, 
 
 | Capa | Ubicación | Responsabilidad |
 |------|-----------|-----------------|
-| **Controladores HTTP (API)** | `app/Controllers/Api/` | Request/response JSON, autorización (`Gate` / policies), delegación al servicio |
+| **Controladores HTTP (API)** | `app/Http/Controllers/Api/` | Request/response JSON, autorización (`Gate` / policies), delegación al servicio |
 | **Controladores web (legado gradual)** | `app/Http/Controllers/` | Vistas Blade, Livewire; se documentan puntos de entrada hacia la nueva API |
 | **Servicios** | `app/Services/` | Reglas de negocio; `ProductService`, `UserService`, `ClientService`, `OrderRestService` orquestan repositorios y, en pedidos, reutilizan `OrderService` / Eloquent para no romper observers y notificaciones |
 | **Repositorios** | `app/Repositories/` | Acceso a datos con **PDO** y **sentencias preparadas** |
