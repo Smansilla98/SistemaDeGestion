@@ -84,8 +84,31 @@
             @endif
             <ul class="list-group list-group-flush">
                 @forelse($evaluations as $ev)
-                <li class="list-group-item"><strong>{{ $ev->contact->name }}</strong> — {{ $ev->title }} @if($ev->grade)<span class="badge bg-primary">{{ $ev->grade }}</span>@endif
-                    <span class="small text-muted">{{ $ev->evaluated_on->format('d/m/Y') }}</span>@if($ev->comment)<div class="small">{{ $ev->comment }}</div>@endif</li>
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div><strong>{{ $ev->contact->name }}</strong> — {{ $ev->title }} @if($ev->grade)<span class="badge bg-primary">{{ $ev->grade }}</span>@endif
+                            <span class="small text-muted">{{ $ev->evaluated_on->format('d/m/Y') }}</span>@if($ev->comment)<div class="small">{{ $ev->comment }}</div>@endif</div>
+                        @if($canAttend)
+                        <button type="button" class="btn btn-sm btn-outline-secondary flex-shrink-0" data-bs-toggle="collapse" data-bs-target="#ev-edit-{{ $ev->id }}" aria-expanded="false" aria-controls="ev-edit-{{ $ev->id }}"><i class="bi bi-pencil"></i> Corregir</button>
+                        @endif
+                    </div>
+                    @if($canAttend)
+                    <div class="collapse mt-2" id="ev-edit-{{ $ev->id }}">
+                        <form method="POST" action="{{ route('workshops.evaluations.update', [$workshop, $ev]) }}" class="row g-2">
+                            @csrf @method('PUT')
+                            <div class="col-md-5"><input name="title" class="form-control form-control-sm" value="{{ $ev->title }}" required maxlength="255" aria-label="Instancia"></div>
+                            <div class="col-md-3"><input name="grade" class="form-control form-control-sm" value="{{ $ev->grade }}" maxlength="30" placeholder="Nota" aria-label="Nota"></div>
+                            <div class="col-md-4"><input type="date" name="evaluated_on" class="form-control form-control-sm" value="{{ $ev->evaluated_on->toDateString() }}" required aria-label="Fecha"></div>
+                            <div class="col-12"><input name="comment" class="form-control form-control-sm" value="{{ $ev->comment }}" maxlength="2000" placeholder="Devolución (opcional)" aria-label="Devolución"></div>
+                            <div class="col-12 d-flex gap-2"><button class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Guardar</button></div>
+                        </form>
+                        <form method="POST" action="{{ route('workshops.evaluations.destroy', [$workshop, $ev]) }}" class="mt-1" onsubmit="return confirm('¿Borrar esta evaluación?')">
+                            @csrf @method('DELETE')
+                            <button class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash"></i> Borrar evaluación</button>
+                        </form>
+                    </div>
+                    @endif
+                </li>
                 @empty
                 <li class="list-group-item text-muted">Sin evaluaciones.</li>
                 @endforelse

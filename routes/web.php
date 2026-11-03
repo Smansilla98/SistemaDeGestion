@@ -557,6 +557,8 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::get('/{workshop}/clases/{session}/asistencia', [$c, 'attendance'])->name('attendance');
         Route::post('/{workshop}/clases/{session}/asistencia', [$c, 'storeAttendance'])->name('attendance.store');
         Route::post('/{workshop}/evaluaciones', [$c, 'storeEvaluation'])->name('evaluations.store');
+        Route::put('/{workshop}/evaluaciones/{evaluation}', [$c, 'updateEvaluation'])->name('evaluations.update');
+        Route::delete('/{workshop}/evaluaciones/{evaluation}', [$c, 'destroyEvaluation'])->name('evaluations.destroy');
     });
 
     Route::prefix('agenda')->name('agenda.')->group(function () {
