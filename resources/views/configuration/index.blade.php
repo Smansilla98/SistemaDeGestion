@@ -190,6 +190,50 @@
     </div>
 </div>
 
+@if(\App\Services\DatabaseBackupService::canDownload(auth()->user()))
+@php
+    $lastBackup = \App\Services\DatabaseBackupService::last();
+    $backupFiles = \App\Services\DatabaseBackupService::files();
+    $backupDate = isset($lastBackup['date']) ? \Illuminate\Support\Carbon::parse($lastBackup['date']) : null;
+    $backupStale = ! $lastBackup || ! ($lastBackup['ok'] ?? false) || ! $backupDate || $backupDate->lt(now()->subHours(36));
+@endphp
+<!-- Copias de seguridad -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0"><i class="bi bi-database-check"></i> Copias de seguridad</h5>
+                <form method="POST" action="{{ route('configuration.backups.store') }}" class="m-0">@csrf
+                    <button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat"></i> Hacer un backup ahora</button>
+                </form>
+            </div>
+            <div class="card-body">
+                @if($backupStale)
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @if(! $lastBackup) Todavía no hay backups.
+                        @elseif(! ($lastBackup['ok'] ?? false)) El último backup falló: {{ $lastBackup['error'] ?? 'error desconocido' }}.
+                        @else El último backup tiene más de 36 horas.
+                        @endif
+                        Se hace uno solo todos los días a las 3:00.
+                    </div>
+                @else
+                    <p class="mb-3 text-success"><i class="bi bi-check-circle"></i> Último backup: {{ $backupDate->translatedFormat('d/m/Y H:i') }}.</p>
+                @endif
+                @if($backupFiles !== [])
+                    <ul class="list-unstyled small mb-3">
+                        @foreach(array_slice($backupFiles, 0, 5) as $f)
+                            <li><a href="{{ route('configuration.backups.download', basename($f)) }}"><i class="bi bi-download"></i> {{ basename($f) }}</a></li>
+                        @endforeach
+                    </ul>
+                @endif
+                <p class="small text-muted mb-0">Se guardan los últimos 14 en el disco del servidor. Bajá uno cada tanto y guardalo fuera de él: tiene datos personales, no lo compartas.</p>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Mantenimiento del Sistema -->
 <div class="row">
     <div class="col-12">

@@ -489,6 +489,8 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
+        Route::post('/backups', [\App\Http\Controllers\BackupController::class, 'store'])->name('backups.store')->middleware('throttle:3,10');
+        Route::get('/backups/{file}', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download')->where('file', '[A-Za-z0-9._-]+');
 
         Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
             Route::get('/', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'index'])->name('index');

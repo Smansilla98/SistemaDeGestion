@@ -32,7 +32,7 @@ class UserFactory extends Factory
             'email_verified_at' => null,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'restaurant_id' => \App\Models\Restaurant::factory()->create()->id,
+            'restaurant_id' => \App\Models\Restaurant::factory(),
             'role' => 'MOZO',
             'is_active' => true,
         ];
