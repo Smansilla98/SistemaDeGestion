@@ -77,6 +77,9 @@ Route::get('/', function () {
 Route::get('/taller/{workshop}', [\App\Http\Controllers\PublicSiteController::class, 'workshop'])->name('public.workshop');
 Route::post('/taller/{workshop}/inscripcion', [\App\Http\Controllers\PublicSiteController::class, 'enroll'])
     ->middleware('throttle:6,1')->name('public.enroll');
+Route::get('/nodo/{cycle}', [\App\Http\Controllers\PublicNodoController::class, 'show'])->whereNumber('cycle')->name('public.nodo');
+Route::post('/nodo/{cycle}', [\App\Http\Controllers\PublicNodoController::class, 'store'])->whereNumber('cycle')
+    ->middleware('throttle:6,1')->name('public.nodo.order');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

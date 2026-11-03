@@ -35,6 +35,7 @@ class PublicSiteController extends Controller
             'info' => PublicSite::info($org),
             'workshops' => $org ? $this->openWorkshops($org) : collect(),
             'upcoming' => $org ? $this->upcoming($org) : collect(),
+            'cycles' => $org ? $this->openCycles($org) : collect(),
         ]);
     }
 
@@ -96,6 +97,14 @@ class PublicSiteController extends Controller
             && in_array($workshop->status, PublicSite::OPEN_STATUSES, true), 404);
 
         return $org;
+    }
+
+    /** Ciclos del nodo que hoy toman pedidos y tienen oferta cargada. @return Collection<int, \App\Models\OrderCycle> */
+    private function openCycles(Restaurant $org): Collection
+    {
+        return \App\Models\OrderCycle::withoutGlobalScopes()->where('restaurant_id', $org->id)->where('status', 'ABIERTO')
+            ->where('opens_at', '<=', now())->where('closes_at', '>=', now())->whereHas('offer')
+            ->orderBy('closes_at')->get();
     }
 
     /** @return Collection<int, Workshop> */

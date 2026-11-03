@@ -9,6 +9,7 @@ use App\Models\CycleOrder;
 use App\Models\MarketProduct;
 use App\Models\OrderCycle;
 use App\Models\User;
+use App\Services\Community\OrganizationDirectory;
 use App\Services\Notifier;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,19 @@ use Illuminate\Validation\ValidationException;
  */
 final class OrderCycleService
 {
-    public function __construct(private readonly MarketStockService $stock, private readonly Notifier $notifier) {}
+    public function __construct(
+        private readonly MarketStockService $stock,
+        private readonly Notifier $notifier,
+        private readonly OrganizationDirectory $directory,
+    ) {}
+
+    /** Aviso a la gestión de un pedido que llegó desde la web pública. */
+    public function notifyNewPublicOrder(OrderCycle $cycle, CycleOrder $order, string $name): void
+    {
+        $this->notifier->sendMany($this->directory->managers((int) $cycle->restaurant_id), 'pedidos', "Pedido nuevo en el nodo: {$name}",
+            "Ciclo «{$cycle->name}» · ".\App\Services\Finance\ActivityFinanceService::money((int) $order->total_cents).' · desde la web',
+            route('market.cycles.show', $cycle), "public-cycle-order:{$order->id}", (int) $cycle->restaurant_id);
+    }
 
     /**
      * @param  array<int|string, float|int|string|null>  $quantities  market_product_id => cantidad

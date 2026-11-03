@@ -90,6 +90,27 @@
         </div>
     </section>
 
+    @if($cycles->isNotEmpty())
+    <section id="nodo" class="block" style="padding-top: 0">
+        <div class="wrap">
+            <p class="kicker">Nodo</p>
+            <h2>Pedidos abiertos</h2>
+            <ul class="agenda">
+                @foreach($cycles as $c)
+                    <li>
+                        <div class="date"><b>{{ $c->delivery_on->format('d') }}</b><span>{{ $c->delivery_on->locale('es')->isoFormat('MMM') }}</span></div>
+                        <div>
+                            <h3 style="margin-top: 0">{{ $c->name }}</h3>
+                            <small>Pedí hasta el {{ $c->closes_at->locale('es')->isoFormat('dddd D [de] MMMM, H:mm') }} h · retirás el {{ $c->delivery_on->locale('es')->isoFormat('dddd D') }}</small>
+                            <p><a href="{{ route('public.nodo', $c->id) }}" class="btn">Hacer mi pedido</a></p>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+    @endif
+
     <section id="agenda" class="block" style="padding-top: 0">
         <div class="wrap">
             <p class="kicker">Agenda</p>

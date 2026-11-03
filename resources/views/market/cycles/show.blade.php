@@ -17,6 +17,19 @@
 </form>
 @endif
 
+@if($canManage && $offer->isNotEmpty())
+@php $publicUrl = route('public.nodo', $cycle->id); @endphp
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+        <span class="fw-semibold"><i class="bi bi-link-45deg"></i> Link para que cada vecino haga su pedido:</span>
+        <input type="text" class="form-control form-control-sm flex-grow-1" style="max-width: 420px" value="{{ $publicUrl }}" readonly id="nodoPublicUrl" aria-label="Link público del ciclo">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('nodoPublicUrl').value).then(() => { this.innerHTML = '<i class=\'bi bi-check2\'></i> Copiado'; })"><i class="bi bi-clipboard"></i> Copiar</button>
+        <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/?text={{ rawurlencode('Hacé tu pedido del nodo «'.$cycle->name.'» hasta el '.$cycle->closes_at->format('d/m H:i').' h: '.$publicUrl) }}"><i class="bi bi-whatsapp"></i> Compartir</a>
+        <span class="small text-muted w-100">Funciona mientras el ciclo esté abierto. Los pedidos de la web llegan acá y te avisan; desde la web no se puede cambiar un pedido ya hecho.</span>
+    </div>
+</div>
+@endif
+
 <div class="row g-4">
     <div class="col-xl-7">
         <div class="card mb-4">

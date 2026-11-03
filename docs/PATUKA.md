@@ -53,6 +53,8 @@ En *Feria → Ciclos de pedidos* cada ciclo carga antes **qué productos ofrece*
 - Al crear un ciclo nuevo se puede **copiar la oferta del anterior** (viene elegido por defecto).
 - No se puede sacar de la oferta un producto que ya tiene pedidos.
 
+**Pedidos desde la web:** mientras el ciclo está abierto y tiene oferta, aparece en la portada («Pedidos abiertos») y en `/nodo/{id}` cada vecino arma su pedido sin cuenta (nombre y teléfono; se paga al retirar). Respeta el cupo de cada producto, avisa a la gestión y no deja pisar un pedido ya hecho con el mismo teléfono. En la ficha del ciclo está el link para copiar o compartir por WhatsApp.
+
 ## Menús especiales (barra)
 
 *Barra → Menús especiales* (`/menus-especiales`) arma una carta para una fecha: fecha patria, show, feria.
