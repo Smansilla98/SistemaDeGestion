@@ -139,7 +139,7 @@
                     @endif
                 </li>
                 @empty
-                <li class="list-group-item text-muted">No hay clases en estas semanas. @if($canManage)Creálas desde los horarios.@endif</li>
+                <li class="list-group-item text-muted">No hay clases en estas semanas. @if($canManage)Con el taller abierto o en curso, las de las próximas {{ \App\Services\Community\WorkshopService::UPCOMING_WEEKS }} semanas se crean solas desde los horarios; para más adelante elegí el rango y tocá <strong>+</strong>.@endif</li>
                 @endforelse
             </ul>
         </div>
