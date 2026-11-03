@@ -23,6 +23,8 @@ class OrderItemModifier extends Model
 
     /**
      * Relación: Un modificador de item pertenece a un item
+     *
+     * @return BelongsTo<OrderItem, $this>
      */
     public function orderItem(): BelongsTo
     {
@@ -31,6 +33,8 @@ class OrderItemModifier extends Model
 
     /**
      * Relación: Un modificador de item puede pertenecer a un modificador de producto
+     *
+     * @return BelongsTo<ProductModifier, $this>
      */
     public function productModifier(): BelongsTo
     {

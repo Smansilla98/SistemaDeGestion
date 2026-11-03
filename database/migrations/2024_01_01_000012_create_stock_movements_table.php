@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('reason')->nullable(); // Motivo del movimiento
             $table->string('reference')->nullable(); // Referencia externa (ej: order_id, factura)
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'product_id']);
             $table->index('created_at');
         });
@@ -37,5 +37,3 @@ return new class extends Migration
         Schema::dropIfExists('stock_movements');
     }
 };
-
-

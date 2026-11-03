@@ -44,7 +44,7 @@ export function AppTopbar() {
       <View style={styles.bar}>
         <View style={styles.brandBlock}>
           <AppText weight="semibold" style={styles.brand}>
-            Conurbania
+            Al Toque
           </AppText>
           <View style={styles.pillRow}>
             <View style={styles.rolePill}>

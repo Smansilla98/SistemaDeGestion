@@ -41,7 +41,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (!inBranch) router.replace('/branch' as Href);
       return;
     }
-    if (inAuth) router.replace(homeHrefForRole(user.role));
+    if (inAuth) router.replace(homeHrefForRole(user));
   }, [user, loading, fontsReady, segments, router]);
 
   if (loading || !fontsReady) {
@@ -60,10 +60,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>C</Text>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>A</Text>
         </View>
         <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>
-          Conurbania
+          Al Toque
         </Text>
         <ActivityIndicator color="#fff" size="large" />
         <Text style={{ color: colors.teal200, fontSize: 13 }}>Cargando…</Text>

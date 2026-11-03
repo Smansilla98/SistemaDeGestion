@@ -8,7 +8,51 @@ class Branding
 {
     public static function name(): string
     {
-        return (string) config('app.brand.name', config('app.name', 'Sistema de Gestión'));
+        return (string) config('app.brand.name', config('app.name', 'Al Toque'));
+    }
+
+    public static function tagline(): string
+    {
+        return (string) config('app.brand.tagline', 'Gestión gastronómica simple.');
+    }
+
+    public static function modulesLine(): string
+    {
+        return (string) config('app.brand.modules', 'Comandas · Mesas · Cocina · Caja · Stock');
+    }
+
+    /**
+     * Paleta visible. Los verdes de la marca anterior se leen como la base de Al Toque.
+     *
+     * @param  array<string, mixed>|null  $settings
+     * @return array{primary: string, secondary: string, accent: string}
+     */
+    public static function palette(?array $settings = null): array
+    {
+        $legacy = [
+            '#1e8081' => '#4e8d99',
+            '#22565e' => '#2a5c68',
+            '#1d9e75' => '#4e8d99',
+            '#155240' => '#2a5c68',
+            '#082822' => '#16343b',
+            '#d06a1f' => '#4e8d99',
+            '#6b3a1e' => '#2a5c68',
+            '#24160f' => '#16343b',
+        ];
+        $stored = is_array($settings['colors'] ?? null) ? $settings['colors'] : [];
+        $colors = [
+            'primary' => (string) ($stored['primary'] ?? '#4e8d99'),
+            'secondary' => (string) ($stored['secondary'] ?? '#2a5c68'),
+            'accent' => (string) ($stored['accent'] ?? '#c94a2d'),
+        ];
+        foreach (['primary', 'secondary'] as $key) {
+            $needle = strtolower($colors[$key]);
+            if (isset($legacy[$needle])) {
+                $colors[$key] = $legacy[$needle];
+            }
+        }
+
+        return $colors;
     }
 
     /**

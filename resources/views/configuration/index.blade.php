@@ -55,14 +55,14 @@
                                        class="form-control form-control-color" 
                                        id="primary_color" 
                                        name="primary_color" 
-                                       value="{{ $colors['primary'] ?? '#1e8081' }}"
+                                       value="{{ $colors['primary'] ?? '#4e8d99' }}"
                                        title="Elige el color primario">
                                 <input type="text" 
                                        class="form-control" 
-                                       value="{{ $colors['primary'] ?? '#1e8081' }}"
+                                       value="{{ $colors['primary'] ?? '#4e8d99' }}"
                                        id="primary_color_text"
                                        pattern="^#[0-9A-Fa-f]{6}$"
-                                       placeholder="#1e8081">
+                                       placeholder="#4e8d99">
                             </div>
                             <small class="form-text text-muted">Color principal de la interfaz</small>
                         </div>
@@ -73,14 +73,14 @@
                                        class="form-control form-control-color" 
                                        id="secondary_color" 
                                        name="secondary_color" 
-                                       value="{{ $colors['secondary'] ?? '#22565e' }}"
+                                       value="{{ $colors['secondary'] ?? '#2a5c68' }}"
                                        title="Elige el color secundario">
                                 <input type="text" 
                                        class="form-control" 
-                                       value="{{ $colors['secondary'] ?? '#22565e' }}"
+                                       value="{{ $colors['secondary'] ?? '#2a5c68' }}"
                                        id="secondary_color_text"
                                        pattern="^#[0-9A-Fa-f]{6}$"
-                                       placeholder="#22565e">
+                                       placeholder="#2a5c68">
                             </div>
                             <small class="form-text text-muted">Color secundario de la interfaz</small>
                         </div>
@@ -156,11 +156,11 @@
                 <h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
             </div>
             <div class="card-body">
-                <div class="preview-box" style="border: 2px solid {{ $colors['primary'] ?? '#1e8081' }}; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
-                    <h6 style="color: {{ $colors['primary'] ?? '#1e8081' }}; font-family: {{ $fonts['primary'] ?? 'Inter' }};">
+                <div class="preview-box" style="border: 2px solid {{ $colors['primary'] ?? '#4e8d99' }}; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <h6 style="color: {{ $colors['primary'] ?? '#4e8d99' }}; font-family: {{ $fonts['primary'] ?? 'Inter' }};">
                         Texto Primario
                     </h6>
-                    <p style="color: {{ $colors['secondary'] ?? '#22565e' }}; font-family: {{ $fonts['secondary'] ?? 'Roboto' }};">
+                    <p style="color: {{ $colors['secondary'] ?? '#2a5c68' }}; font-family: {{ $fonts['secondary'] ?? 'Roboto' }};">
                         Texto Secundario
                     </p>
                     <button class="btn btn-sm" style="background-color: {{ $colors['accent'] ?? '#c94a2d' }}; color: white; border: none;">
@@ -189,6 +189,50 @@
         </div>
     </div>
 </div>
+
+@if(\App\Services\DatabaseBackupService::canDownload(auth()->user()))
+@php
+    $lastBackup = \App\Services\DatabaseBackupService::last();
+    $backupFiles = \App\Services\DatabaseBackupService::files();
+    $backupDate = isset($lastBackup['date']) ? \Illuminate\Support\Carbon::parse($lastBackup['date']) : null;
+    $backupStale = ! $lastBackup || ! ($lastBackup['ok'] ?? false) || ! $backupDate || $backupDate->lt(now()->subHours(36));
+@endphp
+<!-- Copias de seguridad -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0"><i class="bi bi-database-check"></i> Copias de seguridad</h5>
+                <form method="POST" action="{{ route('configuration.backups.store') }}" class="m-0">@csrf
+                    <button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat"></i> Hacer un backup ahora</button>
+                </form>
+            </div>
+            <div class="card-body">
+                @if($backupStale)
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @if(! $lastBackup) Todavía no hay backups.
+                        @elseif(! ($lastBackup['ok'] ?? false)) El último backup falló: {{ $lastBackup['error'] ?? 'error desconocido' }}.
+                        @else El último backup tiene más de 36 horas.
+                        @endif
+                        Se hace uno solo todos los días a las 3:00.
+                    </div>
+                @else
+                    <p class="mb-3 text-success"><i class="bi bi-check-circle"></i> Último backup: {{ $backupDate->translatedFormat('d/m/Y H:i') }}.</p>
+                @endif
+                @if($backupFiles !== [])
+                    <ul class="list-unstyled small mb-3">
+                        @foreach(array_slice($backupFiles, 0, 5) as $f)
+                            <li><a href="{{ route('configuration.backups.download', basename($f)) }}"><i class="bi bi-download"></i> {{ basename($f) }}</a></li>
+                        @endforeach
+                    </ul>
+                @endif
+                <p class="small text-muted mb-0">Se guardan los últimos 14 en el disco del servidor. Bajá uno cada tanto y guardalo fuera de él: tiene datos personales, no lo compartas.</p>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 <!-- Mantenimiento del Sistema -->
 <div class="row">

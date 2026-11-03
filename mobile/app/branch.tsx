@@ -30,7 +30,7 @@ export default function BranchScreen() {
     setBusyId(branch.id);
     try {
       await selectBranch(branch.id);
-      router.replace(homeHrefForRole(user?.role));
+      router.replace(homeHrefForRole(user));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo cambiar de sucursal');
     } finally {

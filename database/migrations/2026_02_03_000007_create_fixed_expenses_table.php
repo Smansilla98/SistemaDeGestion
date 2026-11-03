@@ -23,7 +23,7 @@ return new class extends Migration
                 'PERSONAL', // Mozo, Limpieza
                 'OPERATIVOS', // Rotura de vajillas, mantenimiento
                 'TALLER', // Ingresos por talleres/actividades
-                'OTROS'
+                'OTROS',
             ])->default('OTROS');
             $table->decimal('amount', 10, 2); // Monto fijo
             $table->enum('frequency', ['MENSUAL', 'QUINCENAL', 'SEMANAL', 'DIARIO', 'ANUAL'])->default('MENSUAL');
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->date('end_date')->nullable(); // Fecha de fin (null = indefinido)
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'is_active']);
             $table->index('category');
         });
@@ -45,4 +45,3 @@ return new class extends Migration
         Schema::dropIfExists('fixed_expenses');
     }
 };
-

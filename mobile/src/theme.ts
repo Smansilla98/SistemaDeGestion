@@ -1,26 +1,26 @@
-/** Tokens Conurbania — paridad con resources/css/conurbania.css */
+/** Tokens de Al Toque — paridad con resources/css/conurbania.css */
 export const colors = {
-  teal950: '#031a16',
-  teal900: '#082822',
-  teal800: '#0f3d32',
-  teal700: '#155240',
-  teal600: '#1d7a5c',
-  teal500: '#1d9e75',
-  teal400: '#2ec28f',
-  teal300: '#5dcaa5',
-  teal200: '#9fe1cb',
-  teal100: '#d4f2e8',
-  teal50: '#edf9f4',
-  gray900: '#131a18',
-  gray800: '#1e2a27',
-  gray700: '#2d3d39',
-  gray600: '#4a5e59',
-  gray500: '#6b7f7a',
-  gray400: '#8fa39e',
-  gray300: '#b3c4bf',
-  gray200: '#d1ddd9',
-  gray100: '#e8eeec',
-  gray50: '#f4f7f6',
+  teal950: '#10262c',
+  teal900: '#16343b',
+  teal800: '#1e4650',
+  teal700: '#2a5c68',
+  teal600: '#3a7380',
+  teal500: '#4e8d99',
+  teal400: '#6aadb6',
+  teal300: '#9dccd2',
+  teal200: '#c7e4e7',
+  teal100: '#e5f3f4',
+  teal50: '#f4fafa',
+  gray900: '#1a2326',
+  gray800: '#243033',
+  gray700: '#3a4a4e',
+  gray600: '#5c6e73',
+  gray500: '#7d9094',
+  gray400: '#a3b4b7',
+  gray300: '#c5d1d3',
+  gray200: '#dde5e6',
+  gray100: '#eef3f3',
+  gray50: '#f6f8f8',
   white: '#FFFFFF',
   danger: '#ef4444',
   dangerBg: '#fee2e2',
@@ -34,20 +34,20 @@ export const colors = {
   blue: '#3b82f6',
   blueBg: '#dbeafe',
   /** Override web .btn-primary en conurbania.css */
-  btnPrimary: '#1f9fb5',
-  btnPrimaryHover: '#1a8ca0',
+  btnPrimary: '#4e8d99',
+  btnPrimaryHover: '#3d7580',
   /** Stops mosaic (legacy array) */
-  mosaic: ['#24696b', '#5f7477', '#262c3b'] as const,
+  mosaic: ['#2a5c68', '#6aadb6', '#16343b'] as const,
 };
 
 /**
  * Degradés exactos de conurbania.css
- * --mosaic-bg: linear-gradient(135deg,#24696b 0%,#5f7477 50%,#262c3b 100%)
+ * --mosaic-bg: linear-gradient(135deg,#2a5c68 0%,#6aadb6 48%,#16343b 100%)
  * .page-header: linear-gradient(135deg,t900 0%,t700 100%)
  */
 export const gradients = {
-  mosaic: ['#24696b', '#5f7477', '#262c3b'] as const,
-  pageHeader: ['#082822', '#155240'] as const,
+  mosaic: ['#2a5c68', '#6aadb6', '#16343b'] as const,
+  pageHeader: ['#16343b', '#2a5c68'] as const,
   /** Locations 0 / 0.5 / 1 para mosaic */
   mosaicLocations: [0, 0.5, 1] as const,
 };
@@ -104,12 +104,12 @@ export const fx = {
   brand: colors.teal500,
   brandSoft: colors.teal50,
   brandInk: colors.teal800,
-  canvas: '#F2F5F4',
+  canvas: '#F6F8F8',
   surface: colors.white,
   ink: colors.gray900,
   inkMuted: colors.gray500,
   inkFaint: colors.gray400,
-  hairline: 'rgba(19, 26, 24, 0.06)',
+  hairline: 'rgba(28, 20, 18, 0.06)',
   success: colors.green,
   warning: colors.amber,
   danger: colors.danger,
@@ -134,7 +134,7 @@ export const fx = {
     micro: 11,
   },
   shadow: {
-    color: '#031a16',
+    color: '#10262c',
     opacity: 0.06,
     radius: 12,
     offset: { width: 0, height: 4 } as const,

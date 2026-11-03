@@ -24,6 +24,8 @@ class Stock extends Model
 
     /**
      * Relación: Un stock pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -32,6 +34,8 @@ class Stock extends Model
 
     /**
      * Relación: Un stock pertenece a un producto
+     *
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {

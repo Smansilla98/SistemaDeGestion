@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'is_active']);
         });
     }
@@ -32,4 +32,3 @@ return new class extends Migration
         Schema::dropIfExists('discount_types');
     }
 };
-

@@ -66,10 +66,13 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'role' => \App\Middleware\EnsureRole::class,
-        'jwt.auth' => \App\Middleware\AuthenticateJwt::class,
-        'permission' => \App\Middleware\EnsurePermission::class,
+        'role' => \App\Http\Middleware\EnsureRole::class,
+        'jwt.auth' => \App\Http\Middleware\AuthenticateJwt::class,
+        'permission' => \App\Http\Middleware\EnsurePermission::class,
         'session.timeout' => \App\Http\Middleware\CheckSessionTimeout::class,
         'detect.mobile' => \App\Http\Middleware\DetectMobile::class,
+        'module.license' => \App\Http\Middleware\EnsureLicensedModule::class,
+        'entry.choice' => \App\Http\Middleware\EnsureDemoEntryChosen::class,
+        'perm' => \App\Http\Middleware\RequirePermission::class,
     ];
 }

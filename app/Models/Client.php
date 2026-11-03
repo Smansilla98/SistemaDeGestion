@@ -22,6 +22,7 @@ class Client extends Model
         'notes',
     ];
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);

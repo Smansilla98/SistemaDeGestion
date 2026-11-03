@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->after('restaurant_id')->constrained('sectors')->onDelete('cascade');
             $table->string('type')->default('SECTOR')->after('parent_id'); // SECTOR o SUBSECTOR
             $table->integer('capacity')->nullable()->after('type'); // Capacidad total del subsector (ej: 4 para la barra)
-            
+
             $table->index('parent_id');
         });
     }
@@ -31,4 +31,3 @@ return new class extends Migration
         });
     }
 };
-

@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('table_sessions')) {
+        if (! Schema::hasTable('table_sessions')) {
             return;
         }
 
@@ -29,7 +29,7 @@ return new class extends Migration
         }
 
         $currentType = $columnInfo[0]->Type;
-        
+
         // Si el enum no contiene ABIERTA y CERRADA, actualizarlo
         if (strpos($currentType, 'ABIERTA') === false || strpos($currentType, 'CERRADA') === false) {
             // Primero actualizar los valores existentes
@@ -40,7 +40,7 @@ return new class extends Migration
                 WHEN status = 'CERRADA' THEN 'CERRADA'
                 ELSE 'ABIERTA' 
             END");
-            
+
             // Luego modificar el enum
             DB::statement("ALTER TABLE table_sessions MODIFY COLUMN status ENUM('ABIERTA', 'CERRADA') DEFAULT 'ABIERTA'");
         }
@@ -59,4 +59,3 @@ return new class extends Migration
         }
     }
 };
-

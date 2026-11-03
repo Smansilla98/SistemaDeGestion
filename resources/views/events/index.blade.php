@@ -3,6 +3,7 @@
 @section('title', 'Calendario de Eventos')
 
 @section('content')
+@php $canCreateEvent = auth()->user()->can('create', App\Models\Event::class); @endphp
 <div class="row mb-3 mb-md-4">
     <div class="col-12">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
@@ -20,36 +21,7 @@
     </div>
 </div>
 
-@if(count($stockAlerts) > 0)
-<div class="alert alert-danger mb-4">
-    <h5 class="mb-3"><i class="bi bi-exclamation-triangle-fill"></i> Alertas de Stock para Eventos</h5>
-    <p class="mb-3 fw-semibold">Los siguientes eventos requieren productos que no tienen suficiente stock:</p>
-    <ul class="mb-0 alert-list">
-        @foreach($stockAlerts as $alert)
-        <li class="mb-2 pb-2 border-bottom border-danger border-opacity-25">
-            <div class="d-flex flex-column flex-md-row flex-wrap align-items-start align-items-md-center gap-2">
-                <div class="flex-grow-1">
-                    <strong class="d-block mb-1">{{ $alert['event']->name }}</strong>
-                    <small class="text-muted d-block mb-1">{{ $alert['event']->formatted_date_time }}</small>
-                    <strong class="d-block">{{ $alert['product']->name }}</strong>
-                </div>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger">
-                        Stock: <strong>{{ $alert['current_stock'] }}</strong>
-                    </span>
-                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning">
-                        Necesario: <strong>{{ $alert['expected_quantity'] }}</strong>
-                    </span>
-                    <span class="badge bg-danger text-white">
-                        Faltan: <strong>{{ $alert['shortage'] }}</strong>
-                    </span>
-                </div>
-            </div>
-        </li>
-        @endforeach
-    </ul>
-</div>
-@endif
+@include('events._stock-alerts')
 
 <div class="card mb-3 mb-md-4">
     <div class="card-header">
@@ -105,8 +77,15 @@
                                 $dateKey = $isCurrentMonth ? $startDate->copy()->addDays($cellDay - 1)->format('Y-m-d') : null;
                                 $dayEvents = $dateKey && isset($eventsByDay[$dateKey]) ? $eventsByDay[$dateKey] : [];
                             @endphp
-                            <td class="calendar-day {{ $isToday ? 'today' : '' }} {{ !$isCurrentMonth ? 'other-month' : '' }}">
-                                <div class="day-number">{{ $isCurrentMonth ? $cellDay : '' }}</div>
+                            @php $createUrl = $canCreateEvent && $dateKey ? route('events.create', ['date' => $dateKey]) : null; @endphp
+                            <td class="calendar-day {{ $isToday ? 'today' : '' }} {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $createUrl ? 'can-create' : '' }}"
+                                @if($createUrl) data-create-url="{{ $createUrl }}" title="Crear un evento el {{ $cellDay }}/{{ $startDate->month }}" @endif>
+                                <div class="day-number d-flex justify-content-between align-items-center">
+                                    <span>{{ $isCurrentMonth ? $cellDay : '' }}</span>
+                                    @if($createUrl)
+                                        <a href="{{ $createUrl }}" class="day-add" aria-label="Crear evento el {{ $cellDay }}"><i class="bi bi-plus-lg"></i></a>
+                                    @endif
+                                </div>
                                 <div class="day-events">
                                     @foreach($dayEvents as $item)
                                         @if($item['type'] === 'event')
@@ -139,6 +118,17 @@
                                                     <span class="event-name">{{ \Illuminate\Support\Str::limit($activity['name'], 12) }}</span>
                                                 </small>
                                             </div>
+                                        @elseif($item['type'] === 'class')
+                                            @php $class = $item['data']; @endphp
+                                            <a class="event-item event-class {{ $class['cancelled'] ? 'is-cancelled' : '' }}"
+                                               @if($class['url']) href="{{ $class['url'] }}" @endif
+                                               title="Clase: {{ $class['title'] }}{{ $class['time'] ? ' - '.$class['time'].'hs' : '' }}{{ $class['detail'] ? ' · '.$class['detail'] : '' }}">
+                                                <small class="event-text">
+                                                    <i class="bi bi-easel event-icon"></i>
+                                                    @if($class['time'])<span class="event-time">{{ $class['time'] }}hs</span>@endif
+                                                    <span class="event-name">{{ \Illuminate\Support\Str::limit($class['title'], 15) }}</span>
+                                                </small>
+                                            </a>
                                         @endif
                                     @endforeach
                                 </div>
@@ -399,6 +389,32 @@
     color: white;
 }
 
+.event-class {
+    display: block;
+    background-color: #f1f1f1;
+    color: #111 !important;
+    border-left: 3px solid #111;
+    text-decoration: none;
+}
+.event-class.is-cancelled { text-decoration: line-through; opacity: .6; }
+
+/* Clic en el día para crear un evento */
+.calendar-day.can-create { cursor: pointer; }
+.calendar-day.can-create:hover { background-color: #fafafa; }
+.day-add {
+    color: #6c757d;
+    font-size: .85rem;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    opacity: 0;
+    text-decoration: none;
+}
+.calendar-day.can-create:hover .day-add,
+.day-add:focus { opacity: 1; }
+.day-add:hover { background: #111; color: #fff; }
+@media (hover: none) { .day-add { opacity: .7; } }
+
 .event-recurring {
     background-color: #6f42c1;
     color: white;
@@ -601,6 +617,18 @@
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+// Clic en un día vacío del calendario: crear un evento con esa fecha.
+document.querySelectorAll('.calendar-day[data-create-url]').forEach(function (cell) {
+    cell.addEventListener('click', function (e) {
+        if (e.target.closest('.event-item, a, button')) return;
+        window.location.href = cell.dataset.createUrl;
+    });
+});
+</script>
 @endpush
 @endsection
 

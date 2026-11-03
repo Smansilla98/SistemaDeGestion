@@ -32,9 +32,10 @@
         <span class="brand-logo-mark" aria-hidden="true">
             <i class="bi bi-cup-hot"></i>
         </span>
-        @if($variant !== 'compact')
+        @if($variant === 'sidebar')
             <span class="brand-logo-text">
                 <span class="brand-logo-name">{{ $brandName }}</span>
+                <span class="brand-logo-tag">{{ \App\Support\Branding::tagline() }}</span>
             </span>
         @endif
     </div>

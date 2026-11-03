@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamp('sent_at')->nullable(); // Cuando se envió a cocina
             $table->timestamp('closed_at')->nullable(); // Cuando se cerró el pedido
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'table_id']);
             $table->index('status');
             $table->index('created_at');
@@ -40,5 +40,3 @@ return new class extends Migration
         Schema::dropIfExists('orders');
     }
 };
-
-

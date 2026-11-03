@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('display_order')->default(0); // Orden de visualización
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index('restaurant_id');
         });
     }
@@ -32,5 +32,3 @@ return new class extends Migration
         Schema::dropIfExists('categories');
     }
 };
-
-

@@ -34,6 +34,8 @@ class Sector extends Model
 
     /**
      * Relación: Un sector pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -42,6 +44,8 @@ class Sector extends Model
 
     /**
      * Relación: Un sector tiene muchas mesas
+     *
+     * @return HasMany<Table, $this>
      */
     public function tables(): HasMany
     {
@@ -50,6 +54,8 @@ class Sector extends Model
 
     /**
      * Relación: Un sector puede tener un sector padre (si es subsector)
+     *
+     * @return BelongsTo<Sector, $this>
      */
     public function parent(): BelongsTo
     {
@@ -58,6 +64,8 @@ class Sector extends Model
 
     /**
      * Relación: Un sector puede tener muchos subsectores
+     *
+     * @return HasMany<Sector, $this>
      */
     public function subsectors(): HasMany
     {
@@ -66,6 +74,8 @@ class Sector extends Model
 
     /**
      * Relación: Un subsector tiene muchos items (lugares, elementos)
+     *
+     * @return HasMany<SubsectorItem, $this>
      */
     public function items(): HasMany
     {
@@ -74,6 +84,8 @@ class Sector extends Model
 
     /**
      * Relación: Un sector tiene muchas categorías
+     *
+     * @return HasMany<Category, $this>
      */
     public function categories(): HasMany
     {

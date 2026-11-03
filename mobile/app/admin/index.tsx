@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/auth/AuthContext';
-import { canSeeAdminHub, hasPermission } from '../../src/auth/permissions';
+import { canSeeAdminHub, hasModule, hasPermission } from '../../src/auth/permissions';
 import { fx } from '../../src/theme';
 import { AppText } from '../../src/ui/primitives';
 import { FadeIn, FxHeader, Surface } from '../../src/ui/fintech';
@@ -39,56 +39,56 @@ export default function AdminHubScreen() {
       subtitle: 'Catálogo de productos',
       href: '/admin/categories' as Href,
       icon: 'folder-outline',
-      show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
+      show: hasModule(user, 'catalog') && (hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write')),
     },
     {
       title: 'Sectores',
       subtitle: 'Zonas de mesas',
       href: '/admin/sectors' as Href,
       icon: 'map-outline',
-      show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
+      show: hasModule(user, 'tables') && (hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write')),
     },
     {
       title: 'Descuentos',
       subtitle: 'Tipos de descuento',
       href: '/admin/discounts' as Href,
       icon: 'pricetag-outline',
-      show: hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write'),
+      show: hasModule(user, 'catalog') && (hasPermission(user, 'catalog.read') || hasPermission(user, 'catalog.write')),
     },
     {
       title: 'Clientes',
       subtitle: 'Agenda de clientes',
       href: '/admin/clients' as Href,
       icon: 'people-outline',
-      show: hasPermission(user, 'clients.read') || hasPermission(user, 'clients.write'),
+      show: hasModule(user, 'catalog') && (hasPermission(user, 'clients.read') || hasPermission(user, 'clients.write')),
     },
     {
       title: 'Reportes',
       subtitle: 'Ventas del período',
       href: '/admin/reports' as Href,
       icon: 'bar-chart-outline',
-      show: hasPermission(user, 'reports.read'),
+      show: hasModule(user, 'reports') && hasPermission(user, 'reports.read'),
     },
     {
       title: 'Eventos',
       subtitle: 'Eventos y agenda',
       href: '/admin/events' as Href,
       icon: 'calendar-outline',
-      show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
+      show: hasModule(user, 'events') && (hasPermission(user, 'events.read') || hasPermission(user, 'events.write')),
     },
     {
       title: 'Recurrentes',
       subtitle: 'Actividades semanales',
       href: '/admin/recurring' as Href,
       icon: 'repeat-outline',
-      show: hasPermission(user, 'events.read') || hasPermission(user, 'events.write'),
+      show: hasModule(user, 'events') && (hasPermission(user, 'events.read') || hasPermission(user, 'events.write')),
     },
     {
       title: 'Gastos fijos',
       subtitle: 'Gastos e ingresos fijos',
       href: '/admin/expenses' as Href,
       icon: 'wallet-outline',
-      show: hasPermission(user, 'expenses.read') || hasPermission(user, 'expenses.write'),
+      show: hasModule(user, 'fixed-expenses') && (hasPermission(user, 'expenses.read') || hasPermission(user, 'expenses.write')),
     },
     {
       title: 'Notificaciones',

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('waiter_id')->nullable()->after('table_id')->constrained('users')->onDelete('set null');
             $table->foreignId('opened_by_user_id')->nullable()->after('waiter_id')->constrained('users')->onDelete('set null');
             $table->enum('status', ['ABIERTA', 'CERRADA'])->default('ABIERTA')->after('ended_at');
-            
+
             $table->index('waiter_id');
             $table->index('status');
         });
@@ -27,4 +27,3 @@ return new class extends Migration
         });
     }
 };
-

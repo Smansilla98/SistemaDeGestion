@@ -14,6 +14,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
         protected ?string $type = 'PRODUCT'
     ) {}
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\Product> */
     public function query()
     {
         return Product::where('restaurant_id', $this->restaurantId)
@@ -33,7 +34,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
 
         return [
             $product->name,
-            $product->category?->name ?? '-',
+            $product->category->name ?? '-',
             $product->cost_price,
             $product->price,
             $product->profit_margin,

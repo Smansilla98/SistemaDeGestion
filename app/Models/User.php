@@ -3,21 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     // Roles de usuario
     const ROLE_SUPERADMIN = 'SUPERADMIN';
 
@@ -35,10 +34,31 @@ class User extends Authenticatable
 
     const ROLE_ENCARGADO = 'ENCARGADO';
 
+    // Roles de organizaciones culturales, educativas y comerciales. Se asignan sólo por
+    // membresía (organization_memberships), no en users.role.
+    const ROLE_COORDINADOR = 'COORDINADOR';
+
+    const ROLE_PROFESOR = 'PROFESOR';
+
+    const ROLE_ALUMNO = 'ALUMNO';
+
+    const ROLE_EMPRENDEDOR = 'EMPRENDEDOR';
+
+    const ROLE_ARTISTA = 'ARTISTA';
+
+    const ROLE_MARKETING = 'MARKETING';
+
+    const ROLE_INVENTARIO = 'INVENTARIO';
+
     /**
      * Sucursal activa en esta request (no se persiste). Ver useRestaurant().
      */
     private ?int $activeRestaurantId = null;
+
+    /**
+     * Rol de la membresía en la organización activa (no se persiste). Ver useRestaurant().
+     */
+    private ?string $activeRole = null;
 
     protected $fillable = [
         'restaurant_id',
@@ -80,12 +100,83 @@ class User extends Authenticatable
      * Opera esta request como otra sucursal sin tocar la fila del usuario.
      * Quien valida que tenga acceso es BranchAccess, antes de llamar acá.
      */
+    /** Roles de la comunidad: al registrarse quedan activos al instante. */
+    public const SELF_SIGNUP_COMMUNITY = [self::ROLE_ALUMNO, self::ROLE_PROFESOR, self::ROLE_ARTISTA, self::ROLE_EMPRENDEDOR];
+
+    /** Roles del equipo: se pueden pedir al registrarse, pero la cuenta espera la aprobación de la administración. */
+    public const SELF_SIGNUP_STAFF = [self::ROLE_COORDINADOR, self::ROLE_GERENTE, self::ROLE_ENCARGADO, self::ROLE_MARKETING,
+        self::ROLE_INVENTARIO, self::ROLE_CAJERO, self::ROLE_MOZO, self::ROLE_COCINA, self::ROLE_SUPERVISOR];
+
     public function useRestaurant(?int $restaurantId): static
     {
         $this->activeRestaurantId = $restaurantId;
+        $this->activeRole = null;
         $this->unsetRelation('restaurant');
 
+        if ($restaurantId !== null && $restaurantId !== $this->homeRestaurantId() && ($this->attributes['role'] ?? null) !== self::ROLE_SUPERADMIN) {
+            $membershipRole = OrganizationMembership::query()
+                ->where('user_id', $this->id)
+                ->where('restaurant_id', $restaurantId)
+                ->where('is_active', true)
+                ->value('role');
+            $this->activeRole = is_string($membershipRole) ? $membershipRole : null;
+        }
+
         return $this;
+    }
+
+    /**
+     * Rol con el que opera esta request: el de la membresía si se eligió otra organización.
+     */
+    public function getRoleAttribute($value)
+    {
+        return $this->activeRole ?? $value;
+    }
+
+    /**
+     * Rol guardado en la cuenta, sin importar la organización activa.
+     */
+    public function homeRole(): ?string
+    {
+        $raw = $this->attributes['role'] ?? null;
+
+        return is_string($raw) ? $raw : null;
+    }
+
+    /** @return HasMany<OrganizationMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(OrganizationMembership::class);
+    }
+
+    /**
+     * Roles que se pueden dar por membresía en otra organización.
+     *
+     * @return list<string>
+     */
+    public static function membershipRoles(): array
+    {
+        return [
+            self::ROLE_ADMIN, self::ROLE_COORDINADOR, self::ROLE_ENCARGADO, self::ROLE_PROFESOR,
+            self::ROLE_ALUMNO, self::ROLE_EMPRENDEDOR, self::ROLE_ARTISTA, self::ROLE_MARKETING,
+            self::ROLE_INVENTARIO, self::ROLE_GERENTE, self::ROLE_CAJERO, self::ROLE_MOZO,
+            self::ROLE_COCINA, self::ROLE_SUPERVISOR,
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function roleLabels(): array
+    {
+        return [
+            self::ROLE_SUPERADMIN => 'Superadministrador', self::ROLE_ADMIN => 'Administrador',
+            self::ROLE_GERENTE => 'Gerente', self::ROLE_CAJERO => 'Cajero', self::ROLE_MOZO => 'Mozo',
+            self::ROLE_COCINA => 'Cocina', self::ROLE_SUPERVISOR => 'Supervisor', self::ROLE_ENCARGADO => 'Encargado',
+            self::ROLE_COORDINADOR => 'Coordinador', self::ROLE_PROFESOR => 'Profesor', self::ROLE_ALUMNO => 'Alumno',
+            self::ROLE_EMPRENDEDOR => 'Emprendedor', self::ROLE_ARTISTA => 'Artista',
+            self::ROLE_MARKETING => 'Responsable de marketing', self::ROLE_INVENTARIO => 'Responsable de inventario',
+        ];
     }
 
     /**
@@ -108,48 +199,60 @@ class User extends Authenticatable
 
     /**
      * Relación: Un usuario pertenece a un restaurante (nullable para super admin)
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
-    public function restaurant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
     /**
      * Relación: Un usuario tiene muchos pedidos
+     *
+     * @return HasMany<Order, $this>
      */
-    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
     /**
      * Relación: Un usuario tiene muchas mesas asignadas
+     *
+     * @return HasMany<Table, $this>
      */
-    public function assignedTables(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedTables(): HasMany
     {
         return $this->hasMany(Table::class, 'assigned_user_id');
     }
 
     /**
      * Relación: Un usuario tiene muchos movimientos de stock
+     *
+     * @return HasMany<StockMovement, $this>
      */
-    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
     }
 
     /**
      * Relación: Un usuario tiene muchos logs de auditoría
+     *
+     * @return HasMany<AuditLog, $this>
      */
-    public function auditLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
     }
 
     /**
      * Permisos específicos del usuario (sobreescriben los del rol)
+     *
+     * @return HasMany<UserPermission, $this>
      */
-    public function userPermissions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function userPermissions(): HasMany
     {
         return $this->hasMany(UserPermission::class);
     }
@@ -178,7 +281,9 @@ class User extends Authenticatable
      */
     public static function getAssignableRoles(?self $actor = null): array
     {
-        $all = self::getRoles();
+        // También los roles del espacio cultural (coordinación, profe, alumno, etc.).
+        $all = array_values(array_unique(array_merge(self::getRoles(), self::SELF_SIGNUP_COMMUNITY, self::SELF_SIGNUP_STAFF,
+            [self::ROLE_MARKETING, self::ROLE_INVENTARIO])));
         if ($actor !== null && $actor->isSuperAdmin()) {
             return $all;
         }
@@ -282,8 +387,10 @@ class User extends Authenticatable
 
     /**
      * Relación: Un usuario tiene muchas sesiones de mesa como mozo
+     *
+     * @return HasMany<TableSession, $this>
      */
-    public function tableSessionsAsWaiter(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function tableSessionsAsWaiter(): HasMany
     {
         return $this->hasMany(TableSession::class, 'waiter_id');
     }
@@ -309,14 +416,14 @@ class User extends Authenticatable
         }
 
         // Si ya es un objeto Carbon, devolverlo
-        if ($value instanceof \Carbon\Carbon) {
+        if ($value instanceof Carbon) {
             return $value;
         }
 
         // Si es string, convertirlo a Carbon
         if (is_string($value)) {
             try {
-                return \Carbon\Carbon::parse($value);
+                return Carbon::parse($value);
             } catch (\Exception $e) {
                 return null;
             }

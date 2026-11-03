@@ -9,8 +9,54 @@
             <i class="bi bi-speedometer2"></i> Monitor de utilización de módulos
         </h1>
         <p class="text-white-50 mb-0">
-            Solo visible para superadmin. Conteos basados en registros, auditoría y movimientos del sistema.
+            Solo visible para superadmin. Acá se habilitan los módulos vendidos a cada local y se ve el uso real.
         </p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-toggles"></i> Licencia por restaurante</h5>
+        @if($licenseRestaurant)
+            <span class="badge bg-dark">{{ $licenseRestaurant->name }}</span>
+        @endif
+    </div>
+    <div class="card-body">
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(! $licenseRestaurant)
+            <p class="mb-0 text-muted">Elegí un restaurante en el filtro y aplicá para encender o apagar módulos de ese local.</p>
+        @else
+            <p class="text-muted">Los módulos apagados desaparecen del menú web y de la app. El personal de ese local no puede entrar aunque tenga permiso.</p>
+            <form method="POST" action="{{ route('module-usage.update') }}">
+                @csrf
+                <input type="hidden" name="restaurant_id" value="{{ $licenseRestaurant->id }}">
+                <div class="row g-3">
+                    @foreach($catalog as $key => $module)
+                        <div class="col-md-6 col-xl-4">
+                            <label class="border rounded p-3 h-100 d-flex gap-3 align-items-start w-100" style="cursor: pointer;">
+                                <input type="hidden" name="modules[{{ $key }}]" value="0">
+                                <input
+                                    class="form-check-input mt-1"
+                                    type="checkbox"
+                                    name="modules[{{ $key }}]"
+                                    value="1"
+                                    @checked($licenseMap[$key] ?? true)
+                                >
+                                <span>
+                                    <strong class="d-block">{{ $module['label'] }}</strong>
+                                    <span class="text-muted small">{{ $module['description'] }}</span>
+                                </span>
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="bi bi-check2-circle"></i> Guardar licencia
+                </button>
+            </form>
+        @endif
     </div>
 </div>
 

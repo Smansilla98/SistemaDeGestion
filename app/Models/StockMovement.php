@@ -38,6 +38,8 @@ class StockMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -46,6 +48,8 @@ class StockMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a un producto
+     *
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {
@@ -54,6 +58,8 @@ class StockMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a un usuario
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -62,6 +68,8 @@ class StockMovement extends Model
 
     /**
      * Relación: Un movimiento puede tener una compra asociada (solo para ENTRADAS)
+     *
+     * @return HasOne<Purchase, $this>
      */
     public function purchase(): HasOne
     {

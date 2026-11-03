@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('actual_quantity')->nullable(); // Cantidad real usada (se completa después)
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['event_id', 'product_id']);
             $table->index('event_id');
             $table->index('product_id');
@@ -34,4 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('event_products');
     }
 };
-

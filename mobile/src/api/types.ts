@@ -14,6 +14,8 @@ export type ApiUser = {
   requires_branch_selection?: boolean;
   is_active: boolean;
   permissions?: string[];
+  /** Licencia vendible por restaurante. Ausente = todo habilitado. */
+  modules?: Record<string, boolean>;
 };
 
 export type Branch = {

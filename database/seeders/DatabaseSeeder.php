@@ -2,17 +2,16 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use App\Models\Restaurant;
-use App\Models\User;
-use App\Models\Sector;
+use App\Models\CashRegister;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Table;
-use App\Models\CashRegister;
+use App\Models\Restaurant;
+use App\Models\Sector;
 use App\Models\Stock;
-
+use App\Models\Table;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -106,18 +105,18 @@ class DatabaseSeeder extends Seeder
             ['category' => 0, 'name' => 'Ensalada César', 'price' => 850.00, 'has_stock' => false],
             ['category' => 0, 'name' => 'Bruschettas', 'price' => 650.00, 'has_stock' => false],
             ['category' => 0, 'name' => 'Empanadas (x6)', 'price' => 1200.00, 'has_stock' => true, 'stock_minimum' => 20],
-            
+
             // Platos Principales
             ['category' => 1, 'name' => 'Bife de Chorizo', 'price' => 3500.00, 'has_stock' => true, 'stock_minimum' => 10],
             ['category' => 1, 'name' => 'Pollo al Disco', 'price' => 2800.00, 'has_stock' => true, 'stock_minimum' => 8],
             ['category' => 1, 'name' => 'Pasta Carbonara', 'price' => 2200.00, 'has_stock' => false],
             ['category' => 1, 'name' => 'Pizza Margarita', 'price' => 1800.00, 'has_stock' => true, 'stock_minimum' => 5],
-            
+
             // Postres
             ['category' => 2, 'name' => 'Tiramisú', 'price' => 950.00, 'has_stock' => false],
             ['category' => 2, 'name' => 'Flan Casero', 'price' => 650.00, 'has_stock' => false],
             ['category' => 2, 'name' => 'Helado (x3 bochas)', 'price' => 800.00, 'has_stock' => false],
-            
+
             // Bebidas
             ['category' => 3, 'name' => 'Coca Cola 500ml', 'price' => 450.00, 'has_stock' => true, 'stock_minimum' => 50],
             ['category' => 3, 'name' => 'Agua Mineral', 'price' => 350.00, 'has_stock' => true, 'stock_minimum' => 30],
@@ -147,7 +146,6 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
-
 
         // Crear 4 lugares fijos en la Barra (sector separado)
         $sectorBarra = Sector::where('name', 'Barra')->first();

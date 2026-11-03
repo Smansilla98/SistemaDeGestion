@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->integer('quantity')->default(0);
             $table->timestamps();
-            
+
             $table->unique(['restaurant_id', 'product_id']);
             $table->index('restaurant_id');
         });
@@ -31,5 +31,3 @@ return new class extends Migration
         Schema::dropIfExists('stocks');
     }
 };
-
-

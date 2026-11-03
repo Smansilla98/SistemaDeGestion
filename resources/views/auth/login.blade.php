@@ -6,7 +6,7 @@
 <form method="POST" action="{{ route('login') }}" id="loginForm">
     @csrf
 
-    <div class="mb-4">
+    <div class="mb-3">
         <label for="username" class="form-label">
             <i class="bi bi-person"></i> Usuario
         </label>
@@ -24,7 +24,7 @@
         @enderror
     </div>
 
-    <div class="mb-4">
+    <div class="mb-3">
         <label for="password" class="form-label">
             <i class="bi bi-lock"></i> Contraseña
         </label>
@@ -39,20 +39,20 @@
         @enderror
     </div>
 
-    <div class="mb-4 form-check">
+    <div class="mb-3 form-check">
         <input type="checkbox" class="form-check-input" id="remember" name="remember">
         <label class="form-check-label" for="remember">
             Recordarme
         </label>
     </div>
 
-    <button type="submit" class="btn btn-primary w-100 mb-4">
+    <button type="submit" class="btn btn-primary w-100 mb-2">
         <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
     </button>
 </form>
 
 @if(\Illuminate\Support\Facades\Route::has('register'))
-<div class="text-center mt-3">
+<div class="text-center mt-2">
     <a href="{{ route('register') }}" class="text-decoration-none" style="color: var(--conurbania-primary);">
         <i class="bi bi-person-plus"></i> Crear cuenta
     </a>

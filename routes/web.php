@@ -68,6 +68,13 @@ use App\Http\Controllers\Table\TableController;
 Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
 Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
+// Portada pública: presenta el sistema a quien no inició sesión.
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : view('landing');
+})->name('home');
+
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -86,13 +93,17 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'detect.mobile'])->group(function () {
+Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->group(function () {
+
+    Route::get('/entrada', [\App\Http\Controllers\Entry\EntryController::class, 'choose'])->name('entry.choose');
+    Route::post('/entrada/demo', [\App\Http\Controllers\Entry\EntryController::class, 'demo'])->name('entry.demo');
+    Route::post('/entrada/centro-cultural', [\App\Http\Controllers\Entry\EntryController::class, 'culture'])->name('entry.culture');
+    Route::get('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'modules'])->name('entry.modules');
+    Route::post('/entrada/modulos', [\App\Http\Controllers\Entry\EntryController::class, 'storeModules'])->name('entry.modules.store');
+    Route::get('/entrada/presupuesto', [\App\Http\Controllers\Entry\EntryController::class, 'quote'])->name('entry.quote');
+    Route::get('/entrada/presupuesto.pdf', [\App\Http\Controllers\Entry\EntryController::class, 'quotePdf'])->name('entry.quote.pdf');
 
     // Dashboard
-    Route::get('/', function () {
-        return redirect()->route('dashboard');
-    });
-
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // Manual de uso: cada rol ve primero el suyo y puede consultar los demás.
@@ -101,6 +112,8 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     // Notificaciones (campana y listado)
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/preferencias', [\App\Http\Controllers\Community\MessageController::class, 'preferences'])->name('preferences');
+        Route::post('/preferencias', [\App\Http\Controllers\Community\MessageController::class, 'savePreferences'])->name('preferences.save');
         Route::get('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('read');
         Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
     });
@@ -241,6 +254,9 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/{event}/edit', [\App\Http\Controllers\Event\EventController::class, 'edit'])->name('edit');
         Route::put('/{event}', [\App\Http\Controllers\Event\EventController::class, 'update'])->name('update');
         Route::delete('/{event}', [\App\Http\Controllers\Event\EventController::class, 'destroy'])->name('destroy');
+        Route::post('/{event}/etapas', [\App\Http\Controllers\Event\EventStageController::class, 'store'])->name('stages.store');
+        Route::put('/{event}/etapas/{stage}', [\App\Http\Controllers\Event\EventStageController::class, 'update'])->name('stages.update');
+        Route::delete('/{event}/etapas/{stage}', [\App\Http\Controllers\Event\EventStageController::class, 'destroy'])->name('stages.destroy');
     });
 
     /*
@@ -404,6 +420,7 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
     */
     Route::prefix('module-usage')->name('module-usage.')->middleware('role:SUPERADMIN')->group(function () {
         Route::get('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\ModuleUsage\ModuleUsageController::class, 'updateLicenses'])->name('update');
     });
 
     Route::prefix('reports')->name('reports.')->middleware('role:ADMIN,GERENTE,CAJERO')->group(function () {
@@ -472,6 +489,8 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ConfigurationController::class, 'index'])->name('index');
         Route::post('/visual', [\App\Http\Controllers\ConfigurationController::class, 'updateVisual'])->name('update-visual');
         Route::post('/reset-database', [\App\Http\Controllers\ConfigurationController::class, 'resetDatabase'])->name('reset-database');
+        Route::post('/backups', [\App\Http\Controllers\BackupController::class, 'store'])->name('backups.store')->middleware('throttle:3,10');
+        Route::get('/backups/{file}', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download')->where('file', '[A-Za-z0-9._-]+');
 
         Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
             Route::get('/', [\App\Http\Controllers\PaymentMethodConfigurationController::class, 'index'])->name('index');
@@ -501,5 +520,153 @@ Route::middleware(['auth', 'detect.mobile'])->group(function () {
         Route::post('/role', [\App\Http\Controllers\PermissionController::class, 'updateRole'])->name('update-role');
         Route::post('/user', [\App\Http\Controllers\PermissionController::class, 'updateUser'])->name('update-user');
         Route::get('/user/{user}/matrix', [\App\Http\Controllers\PermissionController::class, 'userMatrix'])->name('user-matrix');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Organizaciones culturales, educativas y comerciales
+    |--------------------------------------------------------------------------
+    | Integración con lo resuelto en adminChilingo (docs/INTEGRACION_ADMINCHILINGO.md).
+    | Cada módulo se habilita por organización (config/sellable_modules.php) y cada
+    | acción exige su permiso (config/permissions.php) en el controlador.
+    */
+    Route::prefix('organizacion')->name('organization.')->middleware('role:ADMIN')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Community\OrganizationController::class, 'show'])->name('show');
+        Route::post('/tipo', [\App\Http\Controllers\Community\OrganizationController::class, 'updateKind'])->name('kind');
+        Route::post('/miembros', [\App\Http\Controllers\Community\OrganizationController::class, 'storeMember'])->name('members.store');
+        Route::patch('/miembros/{membership}', [\App\Http\Controllers\Community\OrganizationController::class, 'updateMember'])->name('members.update');
+    });
+
+    Route::prefix('mensajes')->name('messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Community\MessageController::class, 'index'])->name('index');
+        Route::get('/nuevo', [\App\Http\Controllers\Community\MessageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Community\MessageController::class, 'store'])->name('store')->middleware('throttle:30,1');
+        Route::get('/{message}', [\App\Http\Controllers\Community\MessageController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('talleres')->name('workshops.')->group(function () {
+        $c = \App\Http\Controllers\Community\WorkshopController::class;
+        Route::get('/', [$c, 'index'])->name('index')->middleware('perm:workshops.view');
+        Route::get('/nuevo', [$c, 'create'])->name('create');
+        Route::post('/', [$c, 'store'])->name('store');
+        Route::get('/{workshop}', [$c, 'show'])->name('show');
+        Route::get('/{workshop}/editar', [$c, 'edit'])->name('edit');
+        Route::put('/{workshop}', [$c, 'update'])->name('update');
+        Route::post('/{workshop}/inscripciones', [$c, 'enroll'])->name('enroll');
+        Route::post('/{workshop}/inscripciones/{enrollment}/cancelar', [$c, 'cancelEnrollment'])->name('enrollments.cancel');
+        Route::put('/{workshop}/inscripciones/{enrollment}', [$c, 'updateEnrollment'])->name('enrollments.update');
+        Route::delete('/{workshop}/inscripciones/{enrollment}', [$c, 'destroyEnrollment'])->name('enrollments.destroy');
+        Route::post('/{workshop}/clases/generar', [$c, 'generateSessions'])->name('sessions.generate');
+        Route::post('/{workshop}/clases/{session}', [$c, 'updateSession'])->name('sessions.update');
+        Route::get('/{workshop}/clases/{session}/asistencia', [$c, 'attendance'])->name('attendance');
+        Route::post('/{workshop}/clases/{session}/asistencia', [$c, 'storeAttendance'])->name('attendance.store');
+        Route::post('/{workshop}/evaluaciones', [$c, 'storeEvaluation'])->name('evaluations.store');
+        Route::put('/{workshop}/evaluaciones/{evaluation}', [$c, 'updateEvaluation'])->name('evaluations.update');
+        Route::delete('/{workshop}/evaluaciones/{evaluation}', [$c, 'destroyEvaluation'])->name('evaluations.destroy');
+    });
+
+    Route::prefix('agenda')->name('agenda.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Community\AgendaController::class, 'index'])->name('index');
+        Route::get('/categorias', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categorias', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'store'])->name('categories.store');
+        Route::put('/categorias/{category}', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categorias/{category}', [\App\Http\Controllers\Community\ActivityCategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::post('/avisos', [\App\Http\Controllers\Community\AgendaController::class, 'storeNotice'])->name('notices.store');
+        Route::delete('/avisos/{notice}', [\App\Http\Controllers\Community\AgendaController::class, 'destroyNotice'])->name('notices.destroy');
+    });
+
+    Route::prefix('contactos')->name('contacts.')->group(function () {
+        $c = \App\Http\Controllers\Community\ContactController::class;
+        Route::get('/', [$c, 'index'])->name('index');
+        Route::get('/nuevo', [$c, 'create'])->name('create');
+        Route::post('/', [$c, 'store'])->name('store');
+        Route::get('/importar', [$c, 'importForm'])->name('import');
+        Route::post('/importar', [$c, 'import'])->name('import.store');
+        Route::get('/exportar', [$c, 'export'])->name('export');
+        Route::post('/grupos', [$c, 'storeGroup'])->name('groups.store');
+        Route::post('/grupos/agregar', [$c, 'addToGroup'])->name('groups.add');
+        Route::get('/{contact}/editar', [$c, 'edit'])->name('edit');
+        Route::put('/{contact}', [$c, 'update'])->name('update');
+        Route::delete('/{contact}', [$c, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('formularios')->name('forms.')->group(function () {
+        $c = \App\Http\Controllers\Community\FormSourceController::class;
+        Route::get('/', [$c, 'index'])->name('index');
+        Route::get('/nuevo', [$c, 'create'])->name('create');
+        Route::post('/', [$c, 'store'])->name('store')->middleware('throttle:20,1');
+        Route::get('/{form}', [$c, 'show'])->name('show');
+        Route::get('/{form}/editar', [$c, 'edit'])->name('edit');
+        Route::put('/{form}', [$c, 'update'])->name('update');
+        Route::post('/{form}/mapeo', [$c, 'mapping'])->name('mapping');
+        Route::post('/{form}/sincronizar', [$c, 'sync'])->name('sync')->middleware('throttle:20,1');
+        Route::delete('/{form}', [$c, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('comunicaciones')->name('campaigns.')->group(function () {
+        $c = \App\Http\Controllers\Community\CampaignController::class;
+        Route::get('/', [$c, 'index'])->name('index');
+        Route::get('/nueva', [$c, 'create'])->name('create');
+        Route::post('/', [$c, 'store'])->name('store');
+        Route::get('/{campaign}', [$c, 'show'])->name('show');
+        Route::post('/{campaign}/enviar', [$c, 'send'])->name('send');
+    });
+
+    Route::prefix('mercado')->name('market.')->group(function () {
+        $e = \App\Http\Controllers\Market\EntrepreneurController::class;
+        Route::get('/emprendedores', [$e, 'index'])->name('entrepreneurs.index');
+        Route::get('/emprendedores/nuevo', [$e, 'create'])->name('entrepreneurs.create');
+        Route::post('/emprendedores', [$e, 'store'])->name('entrepreneurs.store');
+        Route::post('/emprendedores/grupos', [$e, 'storeGroup'])->name('entrepreneurs.groups.store');
+        Route::get('/emprendedores/{entrepreneur}', [$e, 'show'])->name('entrepreneurs.show');
+        Route::get('/emprendedores/{entrepreneur}/editar', [$e, 'edit'])->name('entrepreneurs.edit');
+        Route::put('/emprendedores/{entrepreneur}', [$e, 'update'])->name('entrepreneurs.update');
+        Route::post('/emprendedores/{entrepreneur}/manual-de-marca', [$e, 'brandManual'])->name('entrepreneurs.brand-manual');
+
+        $p = \App\Http\Controllers\Market\ProductController::class;
+        Route::get('/productos', [$p, 'index'])->name('products.index');
+        Route::post('/productos', [$p, 'store'])->name('products.store');
+        Route::get('/productos/{product}', [$p, 'show'])->name('products.show');
+        Route::put('/productos/{product}', [$p, 'update'])->name('products.update');
+        Route::post('/productos/{product}/movimientos', [$p, 'move'])->name('products.move');
+
+        $k = \App\Http\Controllers\Market\ConsignmentController::class;
+        Route::get('/consignaciones', [$k, 'index'])->name('consignments.index');
+        Route::get('/consignaciones/nueva', [$k, 'create'])->name('consignments.create');
+        Route::post('/consignaciones', [$k, 'store'])->name('consignments.store');
+        Route::get('/consignaciones/{consignment}', [$k, 'show'])->name('consignments.show');
+        Route::post('/consignaciones/{consignment}/items/{item}/devolver', [$k, 'returnItem'])->name('consignments.return');
+        Route::post('/consignaciones/{consignment}/liquidar', [$k, 'settle'])->name('consignments.settle');
+
+        $y = \App\Http\Controllers\Market\CycleController::class;
+        Route::get('/ciclos', [$y, 'index'])->name('cycles.index');
+        Route::post('/ciclos', [$y, 'store'])->name('cycles.store');
+        Route::get('/ciclos/{cycle}', [$y, 'show'])->name('cycles.show');
+        Route::post('/ciclos/{cycle}/estado', [$y, 'updateStatus'])->name('cycles.status');
+        Route::post('/ciclos/{cycle}/pedidos', [$y, 'storeOrder'])->name('cycles.orders.store');
+        Route::post('/ciclos/{cycle}/pedidos/{order}/entregar', [$y, 'deliver'])->name('cycles.orders.deliver');
+        Route::post('/ciclos/{cycle}/pedidos/{order}/cancelar', [$y, 'cancelOrder'])->name('cycles.orders.cancel');
+    });
+
+    Route::prefix('documentos')->name('documents.')->group(function () {
+        $d = \App\Http\Controllers\Documents\DocumentController::class;
+        Route::get('/', [$d, 'index'])->name('index');
+        Route::get('/nuevo', [$d, 'create'])->name('create');
+        Route::post('/', [$d, 'store'])->name('store');
+        Route::get('/{document}', [$d, 'show'])->name('show');
+        Route::put('/{document}', [$d, 'update'])->name('update');
+        Route::post('/{document}/versiones', [$d, 'storeVersion'])->name('versions.store');
+        Route::get('/{document}/versiones/{version}/descargar', [$d, 'download'])->name('download');
+    });
+
+    Route::prefix('finanzas-actividades')->name('finance.')->group(function () {
+        $f = \App\Http\Controllers\Finance\ActivityFinanceController::class;
+        Route::get('/', [$f, 'index'])->name('index');
+        Route::post('/reglas', [$f, 'storeRule'])->name('rules.store');
+        Route::post('/movimientos/{entry}/anular', [$f, 'voidEntry'])->name('entries.void');
+        Route::get('/{type}/{id}', [$f, 'show'])->whereIn('type', ['workshop', 'event'])->whereNumber('id')->name('activity');
+        Route::post('/{type}/{id}/regla', [$f, 'setRule'])->whereIn('type', ['workshop', 'event'])->whereNumber('id')->name('activity.rule');
+        Route::post('/{type}/{id}/movimientos', [$f, 'storeEntry'])->whereIn('type', ['workshop', 'event'])->whereNumber('id')->name('activity.entries.store');
+        Route::post('/{type}/{id}/pagos', [$f, 'storePayout'])->whereIn('type', ['workshop', 'event'])->whereNumber('id')->name('activity.payouts.store');
     });
 });

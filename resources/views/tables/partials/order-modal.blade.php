@@ -204,7 +204,7 @@ window.TakeOrder = (function () {
     function stockAllows(productId) {
         const p = productsById[productId];
         if (!p || p.stock === null || qtyInCart(productId) + 1 <= p.stock) return true;
-        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', html: `Quedan <strong>${p.stock}</strong> de «${esc(p.name)}».`, confirmButtonColor: '#1e8081' });
+        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', html: `Quedan <strong>${p.stock}</strong> de «${esc(p.name)}».`, confirmButtonColor: '#4e8d99' });
         return false;
     }
 
@@ -299,7 +299,7 @@ window.TakeOrder = (function () {
                          ${data.kitchen_ticket_url ? `<a href="${esc(data.kitchen_ticket_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> Ticket de cocina</a>` : ''}
                          ${data.comanda_url ? `<a href="${esc(data.comanda_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary"><i class="bi bi-receipt"></i> Comanda</a>` : ''}
                        </div>`,
-                confirmButtonColor: '#1e8081',
+                confirmButtonColor: '#4e8d99',
                 confirmButtonText: 'Listo',
                 timer: data.print_ok === false ? undefined : 4000,
                 timerProgressBar: true,

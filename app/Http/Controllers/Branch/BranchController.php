@@ -9,7 +9,7 @@ use App\Http\Middleware\ResolveActiveRestaurant;
 use App\Models\Restaurant;
 use App\Services\BranchService;
 use App\Support\BranchAccess;
-use App\Support\HomeRoute;
+use App\Support\DemoEntry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -27,7 +27,7 @@ class BranchController extends Controller
         $branches = $this->access->branchesFor($user);
 
         if ($branches->count() <= 1) {
-            return redirect()->route(HomeRoute::for($user));
+            return redirect()->route(DemoEntry::homeRoute($user));
         }
 
         return view('branches.select', [
@@ -52,7 +52,11 @@ class BranchController extends Controller
         $request->session()->put(ResolveActiveRestaurant::SESSION_KEY, $restaurantId);
         $user->useRestaurant($restaurantId);
 
-        return redirect()->route(HomeRoute::for($user));
+        if (DemoEntry::decides($user) && DemoEntry::mode() === null) {
+            return redirect()->route('entry.choose');
+        }
+
+        return redirect()->route(DemoEntry::homeRoute($user));
     }
 
     /**

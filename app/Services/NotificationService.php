@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Jobs\SendExpoPushNotification;
+use App\Models\DeviceToken;
 use App\Models\Order;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +21,7 @@ class NotificationService
                 'order_id' => $order->id,
                 'order_number' => $order->number,
                 'table_id' => $order->table_id,
-                'table_number' => $order->table?->number ?? 'N/A',
+                'table_number' => $order->table->number ?? 'N/A',
                 'timestamp' => now()->toIso8601String(),
             ];
 
@@ -52,7 +54,7 @@ class NotificationService
     {
         $userIds = collect([$order->user_id])->filter()->all();
 
-        $tokens = \App\Models\DeviceToken::query()
+        $tokens = DeviceToken::query()
             ->where('restaurant_id', $order->restaurant_id)
             ->when($userIds !== [], fn ($q) => $q->whereIn('user_id', $userIds))
             ->pluck('token')
@@ -64,7 +66,7 @@ class NotificationService
             return;
         }
 
-        \App\Jobs\SendExpoPushNotification::dispatch(
+        SendExpoPushNotification::dispatch(
             $tokens,
             'Pedido listo',
             'Mesa '.($payload['table_number'] ?? '?').' — '.$payload['order_number'],

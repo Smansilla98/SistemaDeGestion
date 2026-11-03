@@ -24,6 +24,7 @@ class RefreshToken extends Model
         'revoked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

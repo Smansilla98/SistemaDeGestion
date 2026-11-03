@@ -23,6 +23,8 @@ class CashRegister extends Model
 
     /**
      * Relación: Una caja pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -31,6 +33,8 @@ class CashRegister extends Model
 
     /**
      * Relación: Una caja tiene muchas sesiones
+     *
+     * @return HasMany<CashRegisterSession, $this>
      */
     public function sessions(): HasMany
     {

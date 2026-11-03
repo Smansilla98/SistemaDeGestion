@@ -8,8 +8,8 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Restaurant;
 use App\Models\User;
 use App\Support\BranchAccess;
+use App\Support\DemoEntry;
 use App\Support\DemoLogin;
-use App\Support\HomeRoute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -86,7 +86,11 @@ class AuthController extends Controller
                 return redirect()->route('branch.select');
             }
 
-            return redirect()->route(HomeRoute::for($user));
+            if (DemoEntry::decides($user)) {
+                return redirect()->route('entry.choose');
+            }
+
+            return redirect()->route(DemoEntry::homeRoute($user));
         }
 
         return back()->withErrors([

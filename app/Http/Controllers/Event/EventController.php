@@ -20,6 +20,13 @@ class EventController extends Controller
     {
         Gate::authorize('viewAny', Event::class);
 
+        // Donde está la Agenda, el calendario es ella (una sola pantalla): se abre en el mes pedido, filtrada en eventos.
+        if (self::agendaAvailable($request->user())) {
+            $month = Carbon::create((int) $request->get('year', now()->year), (int) $request->get('month', now()->month), 1);
+
+            return redirect()->route('agenda.index', ['vista' => 'mes', 'desde' => $month->toDateString(), 'tipo' => ['Evento', 'Etapa']]);
+        }
+
         $restaurantId = auth()->user()->restaurant_id;
 
         // Obtener mes y año de la solicitud (por defecto: mes actual)
@@ -75,6 +82,23 @@ class EventController extends Controller
             ];
         }
 
+        // Clases de los talleres: el calendario muestra también lo que ya está cargado en Talleres.
+        $user = auth()->user();
+        if (app(\App\Services\ModuleLicenseService::class)->enabledForUser($user, 'workshops')
+            && app(\App\Services\PermissionService::class)->allowed($user, 'workshops.view')) {
+            $classes = app(\App\Services\Community\AgendaService::class)->between(
+                $user, (int) $restaurantId, $startDate->toImmutable(), $endDate->toImmutable(), ['types' => ['Clase']]
+            );
+            foreach ($classes as $day => $items) {
+                foreach ($items as $item) {
+                    $eventsByDay[$day][] = ['type' => 'class', 'data' => $item];
+                }
+            }
+        }
+        foreach ($eventsByDay as $day => $items) {
+            usort($eventsByDay[$day], fn ($a, $b) => strcmp($this->sortTime($a), $this->sortTime($b)));
+        }
+
         // Calcular días del mes para el calendario
         $firstDayOfWeek = $startDate->dayOfWeek; // 0 = domingo, 6 = sábado
         $daysInMonth = $startDate->daysInMonth;
@@ -84,7 +108,7 @@ class EventController extends Controller
         $nextMonth = $startDate->copy()->addMonth();
 
         // Verificar alertas de stock para eventos futuros
-        $stockAlerts = $this->checkStockAlerts($restaurantId, $events->where('status', Event::STATUS_PROGRAMADO));
+        $stockAlerts = app(\App\Services\Events\EventStockAlerts::class)->forEvents((int) $restaurantId, $events->where('status', Event::STATUS_PROGRAMADO));
 
         return view('events.index', compact(
             'events',
@@ -99,6 +123,18 @@ class EventController extends Controller
             'nextMonth',
             'stockAlerts'
         ));
+    }
+
+    /** @param  array{type: string, data: mixed}  $item */
+    private function sortTime(array $item): string
+    {
+        $time = match ($item['type']) {
+            'event' => $item['data']->time,
+            'recurring' => $item['data']['time'] ?? null,
+            default => $item['data']['time'] ?? null,
+        };
+
+        return $time ? substr((string) $time, 0, 5) : '';
     }
 
     /**
@@ -125,7 +161,9 @@ class EventController extends Controller
         // Fecha preseleccionada si viene por query
         $selectedDate = $request->get('date');
 
-        return view('events.create', compact('products', 'selectedDate'));
+        $categories = \App\Models\ActivityCategory::query()->where('restaurant_id', $restaurantId)->orderBy('name')->get();
+
+        return view('events.create', compact('products', 'selectedDate', 'categories'));
     }
 
     /**
@@ -141,6 +179,7 @@ class EventController extends Controller
             'date' => 'required|date',
             'time' => 'nullable|date_format:H:i',
             'expected_attendance' => 'nullable|integer|min:0',
+            'activity_category_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('activity_categories', 'id')->where('restaurant_id', auth()->user()->restaurant_id)],
             'products' => 'nullable|array',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.expected_quantity' => 'required|integer|min:1',
@@ -158,6 +197,7 @@ class EventController extends Controller
             'date' => $validated['date'],
             'time' => $validated['time'] ?? null,
             'expected_attendance' => $validated['expected_attendance'] ?? null,
+            'activity_category_id' => $validated['activity_category_id'] ?? null,
             'status' => Event::STATUS_PROGRAMADO,
         ]);
 
@@ -223,7 +263,9 @@ class EventController extends Controller
 
         $event->load('products');
 
-        return view('events.edit', compact('event', 'products'));
+        $categories = \App\Models\ActivityCategory::query()->where('restaurant_id', $restaurantId)->orderBy('name')->get();
+
+        return view('events.edit', compact('event', 'products', 'categories'));
     }
 
     /**
@@ -240,6 +282,7 @@ class EventController extends Controller
             'time' => 'nullable|date_format:H:i',
             'expected_attendance' => 'nullable|integer|min:0',
             'status' => 'required|in:PROGRAMADO,EN_CURSO,FINALIZADO,CANCELADO',
+            'activity_category_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('activity_categories', 'id')->where('restaurant_id', auth()->user()->restaurant_id)],
             'products' => 'nullable|array',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.expected_quantity' => 'required|integer|min:1',
@@ -253,6 +296,7 @@ class EventController extends Controller
             'date' => $validated['date'],
             'time' => $validated['time'] ?? null,
             'expected_attendance' => $validated['expected_attendance'] ?? null,
+            'activity_category_id' => $validated['activity_category_id'] ?? null,
             'status' => $validated['status'],
         ]);
 
@@ -287,34 +331,15 @@ class EventController extends Controller
             ->with('success', 'Evento eliminado exitosamente');
     }
 
-    /**
-     * Verificar alertas de stock para eventos futuros
-     */
-    private function checkStockAlerts($restaurantId, $events)
+    /** La persona ve la Agenda (permiso y módulo contratado): ahí se muestran los eventos. */
+    public static function agendaAvailable(?\App\Models\User $user): bool
     {
-        $alerts = [];
-
-        foreach ($events as $event) {
-            foreach ($event->products as $product) {
-                $stock = Stock::where('restaurant_id', $restaurantId)
-                    ->where('product_id', $product->id)
-                    ->first();
-
-                $currentStock = $stock ? $stock->quantity : 0;
-                $expectedQuantity = $product->pivot->expected_quantity ?? 0;
-
-                if ($currentStock < $expectedQuantity) {
-                    $alerts[] = [
-                        'event' => $event,
-                        'product' => $product,
-                        'current_stock' => $currentStock,
-                        'expected_quantity' => $expectedQuantity,
-                        'shortage' => $expectedQuantity - $currentStock,
-                    ];
-                }
-            }
+        if ($user === null || ! app(\App\Services\PermissionService::class)->allowed($user, 'agenda.view')) {
+            return false;
         }
+        $licenses = app(\App\Services\ModuleLicenseService::class);
+        $module = $licenses->moduleForWebRoute('agenda.index');
 
-        return $alerts;
+        return $module === null || $licenses->enabledForUser($user, $module);
     }
 }

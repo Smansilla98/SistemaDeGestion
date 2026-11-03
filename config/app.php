@@ -13,7 +13,13 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Sistema de Gestión'),
+    'name' => env('APP_NAME', 'Al Toque'),
+
+    /*
+    | Elección de entrada (demo completo o recorrido por módulos) para admin y superadmin.
+    | Pensada para el demo público; una instalación de cliente la apaga.
+    */
+    'demo_entry' => (bool) env('DEMO_ENTRY_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,9 +33,10 @@ return [
     */
 
     'brand' => [
-        'name' => env('APP_BRAND_NAME', env('APP_NAME', 'Conurbania')),
-        // En Conurbania el logo del cliente viene por defecto; en main se deja vacío.
-        'logo' => env('APP_LOGO', 'logo.png'),
+        'name' => env('APP_BRAND_NAME', 'Al Toque'),
+        'tagline' => 'Gestión gastronómica simple.',
+        'modules' => 'Comandas · Mesas · Cocina · Caja · Stock',
+        'logo' => env('APP_LOGO', ''),
     ],
 
     /*

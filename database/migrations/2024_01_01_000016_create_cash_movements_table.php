@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('description');
             $table->string('reference')->nullable();
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'cash_register_session_id']);
             $table->index('created_at');
         });
@@ -35,5 +35,3 @@ return new class extends Migration
         Schema::dropIfExists('cash_movements');
     }
 };
-
-

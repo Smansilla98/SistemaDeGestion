@@ -5,11 +5,7 @@
         // Definir $colors y $fonts PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $restaurant = \App\Models\Restaurant::first();
         $settings = $restaurant?->settings ?? [];
-        $colors = $settings['colors'] ?? [
-            'primary' => '#1e8081',
-            'secondary' => '#22565e',
-            'accent' => '#c94a2d',
-        ];
+        $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
             'primary' => 'Inter',
             'secondary' => 'Roboto',
@@ -35,7 +31,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Login') - Sistema de Gestión de Restaurante</title>
+    <title>@yield('title', 'Login') - Al Toque</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -58,7 +54,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #262c3b;
+            --conurbania-dark: #16343b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -69,9 +65,9 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #262c3b 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #262c3b;
+            --mosaic-text-primary: #1a2326;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             
@@ -100,7 +96,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1rem;
+            padding: 1.25rem 1rem;
+        }
+
+        .auth-wrap {
+            width: 100%;
+            max-width: @yield('card-width', '400px');
+            margin: 0 auto;
         }
 
         .auth-card {
@@ -123,16 +125,17 @@
         }
 
         .auth-card .card-body {
-            padding: 3rem;
+            padding: 1.75rem 2rem;
         }
 
         .auth-logo {
             width: 80px;
             height: 80px;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
             background: linear-gradient(135deg, var(--conurbania-primary-10), var(--conurbania-secondary-10));
             border-radius: 20px;
             padding: 1rem;
@@ -159,23 +162,42 @@
             margin-bottom: 0.5rem;
         }
 
+        .auth-tagline,
+        .auth-modules,
         .auth-subtitle {
             color: var(--mosaic-text-secondary);
             font-family: var(--font-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .auth-tagline {
+            font-size: 0.95rem;
+        }
+
+        .auth-modules {
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
+        }
+
+        .auth-subtitle {
+            margin-top: 0.6rem;
+            font-size: .95rem;
         }
 
         .form-label {
             font-weight: 600;
             color: var(--mosaic-text-primary);
             font-family: var(--font-primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
+            font-size: .92rem;
         }
 
         .form-control,
         .form-select {
             border-radius: 12px;
             border: 2px solid var(--mosaic-border);
-            padding: 0.75rem 1rem;
+            padding: 0.55rem 0.9rem;
             transition: all 0.3s ease;
             font-family: var(--font-secondary);
         }
@@ -200,7 +222,7 @@
         .btn {
             border-radius: 12px;
             font-weight: 600;
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.25rem;
             transition: all 0.3s ease;
             border: none;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -228,7 +250,8 @@
             border-radius: 15px;
             border: none;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            padding: 1.25rem 1.5rem;
+            padding: .75rem 1rem;
+            font-size: .92rem;
         }
 
         .alert-danger {
@@ -266,30 +289,40 @@
             color: var(--conurbania-danger);
         }
 
+        /* Notebooks y pantallas bajas: todo entra sin scroll */
+        @media (max-height: 760px) {
+            body { padding-top: .75rem; padding-bottom: .75rem; }
+            .auth-card .card-body { padding: 1.25rem 1.5rem; }
+            .auth-logo { max-width: 160px; }
+            .auth-logo img { max-height: 56px !important; }
+            .auth-modules { display: none; }
+            .auth-card .mb-4 { margin-bottom: .85rem !important; }
+        }
+
         @media (max-width: 768px) {
             .auth-card .card-body {
-                padding: 1.5rem 1rem;
+                padding: 1.5rem 1.1rem;
             }
             .auth-title { font-size: 1.5rem; }
             .container { padding-left: 0.75rem; padding-right: 0.75rem; }
         }
         .auth-card .form-control {
             font-size: 16px;
-            min-height: 48px;
+            min-height: 42px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-6">
+    <div class="auth-wrap">
                 <div class="card auth-card">
                     <div class="card-body">
-                        <div class="text-center mb-4">
+                        <div class="text-center mb-3">
                             <div class="auth-logo">
                                 <x-brand-logo :settings="$settings ?? null" variant="auth" max-height="64px" />
                             </div>
                             <h2 class="auth-title">{{ \App\Support\Branding::name() }}</h2>
+                            <p class="auth-tagline">{{ \App\Support\Branding::tagline() }}</p>
+                            <p class="auth-modules">{{ \App\Support\Branding::modulesLine() }}</p>
                             <p class="auth-subtitle">@yield('subtitle', 'Inicia sesión para continuar')</p>
                         </div>
 
@@ -310,8 +343,6 @@
                         @yield('content')
                     </div>
                 </div>
-            </div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-use App\Controllers\Api\AdminExtrasOpsController;
-use App\Controllers\Api\AuthJwtController;
-use App\Controllers\Api\CashOpsController;
-use App\Controllers\Api\CatalogOpsController;
-use App\Controllers\Api\CategoryOpsController;
-use App\Controllers\Api\ClientController;
-use App\Controllers\Api\DashboardOpsController;
-use App\Controllers\Api\DeviceController;
-use App\Controllers\Api\KitchenOpsController;
-use App\Controllers\Api\OrderController;
-use App\Controllers\Api\OrderOpsController;
-use App\Controllers\Api\PaymentMethodOpsController;
-use App\Controllers\Api\PermissionOpsController;
-use App\Controllers\Api\ProductController;
-use App\Controllers\Api\StockOpsController;
-use App\Controllers\Api\TableOpsController;
-use App\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AdminExtrasOpsController;
+use App\Http\Controllers\Api\AuthJwtController;
+use App\Http\Controllers\Api\CashOpsController;
+use App\Http\Controllers\Api\CatalogOpsController;
+use App\Http\Controllers\Api\CategoryOpsController;
+use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\DashboardOpsController;
+use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\KitchenOpsController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderOpsController;
+use App\Http\Controllers\Api\PaymentMethodOpsController;
+use App\Http\Controllers\Api\PermissionOpsController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\StockOpsController;
+use App\Http\Controllers\Api\TableOpsController;
+use App\Http\Controllers\Api\UserController;
 
 /**
  * Tabla central método + path + middleware RBAC para la API JWT.
@@ -34,7 +34,7 @@ final class ApiRouter
      */
     public static function sharedRestRoutes(): array
     {
-        $jwt = ['jwt.auth', 'throttle:jwt-api'];
+        $jwt = ['jwt.auth', 'module.license', 'throttle:jwt-api'];
 
         return [
             ['methods' => ['GET'], 'uri' => 'products', 'action' => [ProductController::class, 'index'], 'middleware' => array_merge($jwt, ['permission:products.read'])],

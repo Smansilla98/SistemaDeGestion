@@ -33,7 +33,8 @@ class NotificationController extends Controller
 
     public function markAsRead(Request $request, string $id)
     {
-        $notification = auth()->user()->unreadNotifications()->where('id', $id)->firstOrFail();
+        // También desde una notificación ya leída: lleva igual al recurso.
+        $notification = auth()->user()->notifications()->where('id', $id)->firstOrFail();
         $notification->markAsRead();
         $url = $notification->data['url'] ?? null;
         if ($request->wantsJson()) {

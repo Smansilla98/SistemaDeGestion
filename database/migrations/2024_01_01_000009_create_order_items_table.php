@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('observations')->nullable(); // Observaciones del item
             $table->enum('status', ['PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'])->default('PENDIENTE');
             $table->timestamps();
-            
+
             $table->index(['order_id', 'status']);
         });
     }
@@ -34,5 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('order_items');
     }
 };
-
-

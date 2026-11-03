@@ -16,6 +16,7 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping
         protected ?string $status = null
     ) {}
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\Order> */
     public function query()
     {
         $query = Order::where('restaurant_id', $this->restaurantId)
@@ -43,9 +44,9 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             $order->number,
-            $order->table?->number ?? '-',
+            $order->table->number ?? '-',
             $order->customer_name ?? '-',
-            $order->user?->name ?? '-',
+            $order->user->name ?? '-',
             $order->status,
             $order->subtotal,
             $order->discount,

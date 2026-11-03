@@ -13,7 +13,7 @@ class ProductPricingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->pricing = new ProductPricingService();
+        $this->pricing = new ProductPricingService;
     }
 
     public function test_calculates_one_hundred_percent_profit_margin(): void

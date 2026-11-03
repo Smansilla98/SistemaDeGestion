@@ -5,11 +5,7 @@
         // Definir $colors y $fonts PRIMERO para que estén disponibles en todo el layout (evitar "Undefined variable $colors")
         $restaurant = auth()->check() ? \App\Models\Restaurant::find(auth()->user()->restaurant_id) : null;
         $settings = $restaurant?->settings ?? [];
-        $colors = $settings['colors'] ?? [
-            'primary' => '#1e8081',
-            'secondary' => '#22565e',
-            'accent' => '#c94a2d',
-        ];
+        $colors = \App\Support\Branding::palette(is_array($settings) ? $settings : null);
         $fonts = $settings['fonts'] ?? [
             'primary' => 'Inter',
             'secondary' => 'Roboto',
@@ -38,7 +34,7 @@
     <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
     <meta name="route-name" content="{{ \Illuminate\Support\Facades\Route::currentRouteName() }}">
     <meta name="user-role" content="{{ auth()->check() ? auth()->user()->role : '' }}">
-    <title>@yield('title', 'Sistema de Gestión de Restaurante')</title>
+    <title>@yield('title', 'Al Toque')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -65,7 +61,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #262c3b;
+            --conurbania-dark: #16343b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -76,10 +72,10 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #262c3b 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #16343b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
             --mosaic-card-bg: #ffffff;
-            --mosaic-text-primary: #262c3b;
+            --mosaic-text-primary: #1a2326;
             --mosaic-text-secondary: #7b7d84;
             --mosaic-border: #cfcecd;
             --conurbania-primary-10: {{ $primaryRgba10 }};
@@ -127,6 +123,31 @@
                 $canReports = $perm && $perm->allowed($navUser, 'reports.view');
                 $canConfiguration = $perm && $perm->allowed($navUser, 'configuration.view');
                 $canTutorials = $perm && $perm->allowed($navUser, 'tutorials.view');
+                $license = app(\App\Services\ModuleLicenseService::class);
+                $modOn = fn (string $key) => $license->enabledForUser($navUser, $key);
+                $canTables = $canTables && $modOn('tables');
+                $canOrders = $canOrders && $modOn('orders');
+                $canKitchen = $canKitchen && $modOn('kitchen');
+                $canCashRegister = $canCashRegister && $modOn('cash');
+                $canDiscountTypes = $canDiscountTypes && $modOn('catalog');
+                $canSectors = $canSectors && $modOn('tables');
+                $canCategories = $canCategories && $modOn('catalog');
+                $canProducts = $canProducts && $modOn('catalog');
+                $canStock = $canStock && $modOn('stock');
+                $canStockMozoIns = $canStockMozoIns && $modOn('stock');
+                $canEvents = $canEvents && $modOn('events');
+                $canRecurring = $canRecurring && $modOn('events');
+                $canFixedExpenses = $canFixedExpenses && $modOn('fixed-expenses');
+                $canReports = $canReports && $modOn('reports');
+                // Módulos de organizaciones (talleres, contactos, mercado, documentos, finanzas)
+                $canWorkshops = $perm && $modOn('workshops') && $perm->allowed($navUser, 'workshops.view');
+                $canAgenda = $perm && $modOn('workshops') && $perm->allowed($navUser, 'agenda.view');
+                $canContacts = $perm && $modOn('contacts') && $perm->allowed($navUser, 'contacts.view');
+                $canCampaigns = $perm && $modOn('contacts') && $perm->allowed($navUser, 'contacts.campaign');
+                $canMarket = $perm && $modOn('market') && $perm->allowed($navUser, 'market.view');
+                $canDocuments = $perm && $modOn('documents') && $perm->allowed($navUser, 'documents.view');
+                $canActivityFinance = $perm && $modOn('finance') && $perm->allowed($navUser, 'finance.view');
+                $navUnreadMessages = $navUser && $navUser->restaurant_id ? \App\Models\UserMessage::query()->where('restaurant_id', $navUser->restaurant_id)->where('recipient_id', $navUser->id)->whereNull('read_at')->count() : 0;
                 $navTablesCount = $canTables && $navUser && $navUser->restaurant_id ? \App\Models\Table::where('restaurant_id', $navUser->restaurant_id)->count() : 0;
                 $navPendingOrdersCount = $canOrders && $navUser && $navUser->restaurant_id ? \App\Models\Order::where('restaurant_id', $navUser->restaurant_id)->whereIn('status', ['ABIERTO', 'ENVIADO', 'EN_PREPARACION', 'LISTO'])->count() : 0;
             @endphp
@@ -254,9 +275,74 @@
             @endif
             @endif
 
-            @if($canFixedExpenses || $canReports)
+            @if($canAgenda || $canWorkshops || $canContacts || $canMarket || $canDocuments)
+            <div class="sb-div"></div>
+            <div class="sb-label">Comunidad</div>
+            @if($canAgenda)
+            <a href="{{ route('agenda.index') }}" class="sb-link {{ request()->routeIs('agenda.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-week sb-ico"></i>
+                <span>Agenda</span>
+            </a>
+            @endif
+            @if($canWorkshops)
+            <a href="{{ route('workshops.index') }}" class="sb-link {{ request()->routeIs('workshops.*') ? 'active' : '' }}">
+                <i class="bi bi-easel sb-ico"></i>
+                <span>Talleres</span>
+            </a>
+            @endif
+            @if($canContacts)
+            <a href="{{ route('contacts.index') }}" class="sb-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
+                <i class="bi bi-person-lines-fill sb-ico"></i>
+                <span>Contactos</span>
+            </a>
+            @endif
+            @if($canContacts)
+            <a href="{{ route('forms.index') }}" class="sb-link {{ request()->routeIs('forms.*') ? 'active' : '' }}">
+                <i class="bi bi-ui-checks sb-ico"></i>
+                <span>Formularios</span>
+            </a>
+            @endif
+            @if($canCampaigns)
+            <a href="{{ route('campaigns.index') }}" class="sb-link {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
+                <i class="bi bi-megaphone sb-ico"></i>
+                <span>Comunicaciones</span>
+            </a>
+            @endif
+            @if($canMarket)
+            <a href="{{ route('market.entrepreneurs.index') }}" class="sb-link {{ request()->routeIs('market.entrepreneurs.*') ? 'active' : '' }}">
+                <i class="bi bi-shop-window sb-ico"></i>
+                <span>Emprendedores</span>
+            </a>
+            <a href="{{ route('market.products.index') }}" class="sb-link {{ request()->routeIs('market.products.*') ? 'active' : '' }}">
+                <i class="bi bi-basket sb-ico"></i>
+                <span>Productos y stock</span>
+            </a>
+            <a href="{{ route('market.consignments.index') }}" class="sb-link {{ request()->routeIs('market.consignments.*') ? 'active' : '' }}">
+                <i class="bi bi-box-arrow-in-down sb-ico"></i>
+                <span>Consignaciones</span>
+            </a>
+            <a href="{{ route('market.cycles.index') }}" class="sb-link {{ request()->routeIs('market.cycles.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-repeat sb-ico"></i>
+                <span>Ciclos de pedidos</span>
+            </a>
+            @endif
+            @if($canDocuments)
+            <a href="{{ route('documents.index') }}" class="sb-link {{ request()->routeIs('documents.*') ? 'active' : '' }}">
+                <i class="bi bi-folder2-open sb-ico"></i>
+                <span>Documentos</span>
+            </a>
+            @endif
+            @endif
+
+            @if($canFixedExpenses || $canReports || $canActivityFinance)
             <div class="sb-div"></div>
             <div class="sb-label">Finanzas</div>
+            @if($canActivityFinance)
+            <a href="{{ route('finance.index') }}" class="sb-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
+                <i class="bi bi-pie-chart sb-ico"></i>
+                <span>Talleres y eventos</span>
+            </a>
+            @endif
             @if($canFixedExpenses)
             <a href="{{ route('fixed-expenses.index') }}" class="sb-link {{ request()->routeIs('fixed-expenses.*') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack sb-ico"></i>
@@ -273,6 +359,19 @@
 
             @if(auth()->check())
             <div class="sb-div"></div>
+            @if($navUser && $navUser->restaurant_id && ($navUnreadMessages > 0 || $canAgenda || $canContacts || $canMarket || $canDocuments))
+            <a href="{{ route('messages.index') }}" class="sb-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots sb-ico"></i>
+                <span>Mensajes</span>
+                @if($navUnreadMessages > 0)<span class="sb-badge sb-ba">{{ $navUnreadMessages }}</span>@endif
+            </a>
+            @endif
+            @if($navUser && $navUser->isAdminLevel())
+            <a href="{{ route('organization.show') }}" class="sb-link {{ request()->routeIs('organization.*') ? 'active' : '' }}">
+                <i class="bi bi-diagram-3 sb-ico"></i>
+                <span>Organización y miembros</span>
+            </a>
+            @endif
             <a href="{{ route('manual') }}" class="sb-link {{ request()->routeIs('manual') ? 'active' : '' }}">
                 <i class="bi bi-question-circle sb-ico"></i>
                 <span>Manual de uso</span>
@@ -317,7 +416,7 @@
 
         @auth
         @php
-            $roleLabels = ['SUPERADMIN' => 'Superadmin', 'ADMIN' => 'Administrador', 'GERENTE' => 'Gerente', 'SUPERVISOR' => 'Supervisor', 'MANAGER' => 'Manager', 'CAJERO' => 'Cajero', 'COCINA' => 'Cocina', 'MOZO' => 'Mozo', 'VENDEDOR' => 'Vendedor', 'ENCARGADO' => 'Encargado'];
+            $roleLabels = \App\Models\User::roleLabels() + ['MANAGER' => 'Manager', 'VENDEDOR' => 'Vendedor'];
             $sidebarRoleLabel = $roleLabels[auth()->user()->role ?? ''] ?? auth()->user()->role;
         @endphp
         <div class="sb-footer">
@@ -345,7 +444,7 @@
             <button type="button" class="btn btn-g btn-sm d-md-none me-2" id="novaSidebarToggle" onclick="toggleSidebar()" aria-label="Abrir menú de navegación" aria-controls="novaSidebar" aria-expanded="false">
                 <i class="bi bi-list"></i>
             </button>
-            <span class="tb-title">@yield('title', 'Sistema de Gestión')</span>
+            <span class="tb-title">@yield('title', 'Al Toque')</span>
             <div class="tb-sp"></div>
             @auth
             @php
@@ -374,6 +473,9 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
                     <li><span class="dropdown-item-text small text-muted">Rol: {{ auth()->user()->role }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ route('notifications.index') }}"><i class="bi bi-bell me-2"></i> Notificaciones</a></li>
+                    <li><a class="dropdown-item" href="{{ route('notifications.preferences') }}"><i class="bi bi-sliders me-2"></i> Preferencias de avisos</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form action="{{ route('logout') }}" method="POST">
@@ -421,8 +523,8 @@
                     timer: 4000,
                     timerProgressBar: true,
                     background: '#e6ffed',
-                    color: '#1e8081',
-                    iconColor: '#1e8081',
+                    color: '#4e8d99',
+                    iconColor: '#4e8d99',
                 });
             @endif
 
@@ -497,9 +599,9 @@
             const configs = {
                 success: {
                     icon: 'success',
-                    iconColor: '#1e8081',
+                    iconColor: '#4e8d99',
                     background: '#e6ffed',
-                    color: '#1e8081'
+                    color: '#4e8d99'
                 },
                 error: {
                     icon: 'error',
@@ -543,7 +645,7 @@
         };
         
         // Helper global para confirmaciones
-        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#1e8081') {
+        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#4e8d99') {
             return Swal.fire({
                 icon: 'question',
                 title: title,

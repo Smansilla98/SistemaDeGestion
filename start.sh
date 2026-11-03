@@ -114,6 +114,12 @@ php artisan conurbania:repair --force 2>/dev/null || {
 echo "=== Verificando enum de table_sessions ==="
 php artisan fix:table-sessions-enum 2>/dev/null || true
 
+# Scheduler (recordatorios diarios). Con más de una réplica, dejarlo en una sola: SCHEDULER_ENABLED=0 en las demás.
+if [ "${SCHEDULER_ENABLED:-1}" = "1" ]; then
+    echo "=== Iniciando scheduler en segundo plano ==="
+    php artisan schedule:work > /dev/null 2>&1 &
+fi
+
 # Storage
 echo "=== Verificando storage ==="
 php artisan storage:link || true

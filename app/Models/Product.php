@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Services\ProductPricingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Atributos que algunas pantallas calculan y le asignan al vuelo (no son columnas).
+ *
+ * @property float|null $current_stock
+ * @property bool|null $is_low_stock
+ * @property-read (\Illuminate\Database\Eloquent\Relations\Pivot&object{quantity: float|int|string, unit: string|null, expected_quantity: float|int|string|null})|null $pivot cantidad y unidad en la receta, o lo esperado en un evento
+ */
 class Product extends Model
 {
     use Concerns\BelongsToRestaurant;
@@ -43,6 +51,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -51,6 +61,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto pertenece a una categoría
+     *
+     * @return BelongsTo<Category, $this>
      */
     public function category(): BelongsTo
     {
@@ -59,6 +71,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto tiene muchos modificadores
+     *
+     * @return HasMany<ProductModifier, $this>
      */
     public function modifiers(): HasMany
     {
@@ -67,6 +81,8 @@ class Product extends Model
 
     /**
      * Variantes activas (ej. sabores de una pizza): definen el precio de venta.
+     *
+     * @return HasMany<ProductModifier, $this>
      */
     public function variants(): HasMany
     {
@@ -87,6 +103,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto puede estar en muchos eventos
+     *
+     * @return BelongsToMany<Event, $this>
      */
     public function events(): BelongsToMany
     {
@@ -97,6 +115,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto tiene muchas entradas de pedido
+     *
+     * @return HasMany<OrderItem, $this>
      */
     public function orderItems(): HasMany
     {
@@ -105,6 +125,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto tiene stock
+     *
+     * @return HasMany<Stock, $this>
      */
     public function stock(): HasMany
     {
@@ -113,6 +135,8 @@ class Product extends Model
 
     /**
      * Relación: Un producto tiene movimientos de stock
+     *
+     * @return HasMany<StockMovement, $this>
      */
     public function stockMovements(): HasMany
     {
@@ -122,6 +146,8 @@ class Product extends Model
     /**
      * Relación: Un producto vendible puede estar compuesto por insumos (receta).
      * product_id = este producto, ingredient_id = producto tipo INSUMO.
+     *
+     * @return BelongsToMany<Product, $this>
      */
     public function ingredients(): BelongsToMany
     {
@@ -132,6 +158,8 @@ class Product extends Model
 
     /**
      * Relación: Un insumo puede ser usado en varios productos (recetas que lo incluyen).
+     *
+     * @return BelongsToMany<Product, $this>
      */
     public function usedInProducts(): BelongsToMany
     {
@@ -142,6 +170,8 @@ class Product extends Model
 
     /**
      * Relación: Un insumo puede tener un proveedor
+     *
+     * @return BelongsTo<Supplier, $this>
      */
     public function supplier(): BelongsTo
     {
@@ -183,7 +213,7 @@ class Product extends Model
      */
     public function getProfitMarginAttribute(): ?float
     {
-        return app(\App\Services\ProductPricingService::class)->profitMargin(
+        return app(ProductPricingService::class)->profitMargin(
             $this->cost_price !== null ? (float) $this->cost_price : null,
             $this->price !== null ? (float) $this->price : null
         );

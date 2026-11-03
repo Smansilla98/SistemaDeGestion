@@ -25,7 +25,7 @@ return new class extends Migration
             $table->enum('status', ['ABIERTA', 'CERRADA'])->default('ABIERTA');
             $table->text('notes')->nullable(); // Notas del cierre
             $table->timestamps();
-            
+
             $table->index(['restaurant_id', 'cash_register_id']);
             $table->index('status');
             $table->index('opened_at');
@@ -40,5 +40,3 @@ return new class extends Migration
         Schema::dropIfExists('cash_register_sessions');
     }
 };
-
-

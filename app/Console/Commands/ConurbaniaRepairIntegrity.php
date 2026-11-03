@@ -13,7 +13,7 @@ class ConurbaniaRepairIntegrity extends Command
 {
     protected $signature = 'conurbania:repair {--force : Ejecutar sin preguntar}';
 
-    protected $description = 'Repara integridad Conurbania (secuencias, sesiones, snapshots de precio)';
+    protected $description = 'Repara integridad de Al Toque (secuencias, sesiones, snapshots de precio)';
 
     public function handle(): int
     {
@@ -26,7 +26,7 @@ class ConurbaniaRepairIntegrity extends Command
         $this->backfillOrderItemCents();
         $this->ensureOpenFlagIndex();
 
-        $this->info('✓ Reparación Conurbania finalizada.');
+        $this->info('✓ Reparación finalizada.');
 
         return self::SUCCESS;
     }

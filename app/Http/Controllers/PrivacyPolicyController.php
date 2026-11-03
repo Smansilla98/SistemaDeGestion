@@ -21,14 +21,14 @@ class PrivacyPolicyController extends Controller
         $pdf = Pdf::loadView('legal.privacy-pdf', $this->payload())
             ->setPaper('a4');
 
-        return $pdf->download('Conurbania-Politica-de-Privacidad.pdf');
+        return $pdf->download('Al-Toque-Politica-de-Privacidad.pdf');
     }
 
     /** @return array<string, mixed> */
     private function payload(): array
     {
         return [
-            'appName' => 'Conurbania',
+            'appName' => 'Al Toque',
             'packageName' => 'com.conurbania.app',
             'developerName' => 'Santi Mansilla',
             'contactEmail' => 'samansilla.998@gmail.com',

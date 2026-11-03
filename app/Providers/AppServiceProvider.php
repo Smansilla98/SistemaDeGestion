@@ -44,13 +44,20 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('es');
         date_default_timezone_set(config('app.timezone'));
 
+        // Tipos estables para ingresos/gastos y repartos por actividad (no se fuerza en el resto).
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'workshop' => \App\Models\Workshop::class,
+            'event' => \App\Models\Event::class,
+        ]);
+
         if (config('app.env') === 'production' || request()->secure()) {
             URL::forceScheme('https');
         }
 
         Order::observe(OrderObserver::class);
 
-        Model::shouldBeStrict($this->app->environment('local'));
+        // También en tests: una carga diferida o un atributo descartado sin querer tiene que romper el CI, no producción.
+        Model::shouldBeStrict($this->app->environment(['local', 'testing']));
 
         DB::whenQueryingForLongerThan(500, function ($connection, $event) {
             $sql = (string) $event->sql;

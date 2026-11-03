@@ -7,12 +7,17 @@ use App\Models\User;
 
 class EventPolicy
 {
+    /** Roles de organizaciones culturales (por membresía) que ven o gestionan eventos. */
+    private const COMMUNITY_VIEW = ['COORDINADOR', 'ARTISTA', 'MARKETING'];
+
+    private const COMMUNITY_MANAGE = ['COORDINADOR'];
+
     /**
      * Determinar si el usuario puede ver cualquier evento
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO', ...self::COMMUNITY_VIEW]);
     }
 
     /**
@@ -24,7 +29,7 @@ class EventPolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'CAJERO', ...self::COMMUNITY_VIEW]);
     }
 
     /**
@@ -32,7 +37,7 @@ class EventPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'MOZO', ...self::COMMUNITY_MANAGE]);
     }
 
     /**
@@ -44,7 +49,7 @@ class EventPolicy
             return false;
         }
 
-        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'MOZO']);
+        return in_array($user->role, ['SUPERADMIN', 'ADMIN', 'MOZO', ...self::COMMUNITY_MANAGE]);
     }
 
     /**

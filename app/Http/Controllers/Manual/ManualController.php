@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manual;
 
 use App\Http\Controllers\Controller;
+use App\Services\ModuleLicenseService;
 use App\Support\UserManual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Route;
  */
 class ManualController extends Controller
 {
-    public function __invoke(Request $request, ?string $rol = null)
+    public function __invoke(Request $request, ModuleLicenseService $licenses, ?string $rol = null)
     {
         $user = $request->user();
         $ownRole = UserManual::normalizeRole($user->role);
@@ -30,6 +31,12 @@ class ManualController extends Controller
             $routeName = $section['route'] ?? null;
             if ($routeName !== null && ! Route::has($routeName)) {
                 $routeName = null;
+            }
+
+            // Lo que el local no tiene contratado no se explica en el manual propio.
+            $module = $routeName !== null ? $licenses->moduleForWebRoute($routeName) : null;
+            if ($isOwn && $module !== null && ! $licenses->enabledForUser($user, $module)) {
+                continue;
             }
 
             $section['key'] = $key;

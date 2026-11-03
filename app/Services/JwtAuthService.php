@@ -87,9 +87,6 @@ final class JwtAuthService
         }
 
         $hash = password_hash($dto->password, PASSWORD_DEFAULT);
-        if ($hash === false) {
-            throw new ApiException('No se pudo procesar la contraseña.', 500, 'HASH_ERROR');
-        }
 
         $created = $this->users->create([
             'restaurant_id' => $restaurant->id,
@@ -230,6 +227,7 @@ final class JwtAuthService
             'requires_branch_selection' => $branches->count() > 1 && ! $branchSelected,
             'is_active' => (bool) $user->is_active,
             'permissions' => \App\Core\Rbac\RbacChecker::permissionsForRole($user->role),
+            'modules' => app(\App\Services\ModuleLicenseService::class)->mapFor($user->restaurant_id),
         ];
     }
 }

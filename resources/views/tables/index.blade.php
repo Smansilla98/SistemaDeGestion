@@ -450,7 +450,7 @@
                     icon: 'success', title: 'Pedido listo',
                     html: `Pedido <strong>#${order.number}</strong> para la <strong>mesa ${order.table_number}</strong>`,
                     toast: true, position: 'top-end', showConfirmButton: true, confirmButtonText: 'Ver pedidos',
-                    confirmButtonColor: '#1e8081', timer: 10000, timerProgressBar: true,
+                    confirmButtonColor: '#4e8d99', timer: 10000, timerProgressBar: true,
                 }).then((r) => { if (r.isConfirmed && order.table_id) window.location.href = `/tables/${order.table_id}/orders`; });
                 if (window.mzRefreshBoard) window.mzRefreshBoard();
             });

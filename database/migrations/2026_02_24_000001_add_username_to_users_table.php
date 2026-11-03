@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -25,7 +25,7 @@ return new class extends Migration
             $n = 0;
             while (in_array($username, $used, true)) {
                 $n++;
-                $username = $base . $n;
+                $username = $base.$n;
             }
             $used[] = $username;
             DB::table('users')->where('id', $user->id)->update(['username' => $username]);

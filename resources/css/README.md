@@ -1,4 +1,4 @@
-# Conurbania — Design tokens
+# Al Toque — Design tokens
 
 Fuente de verdad: `conurbania.css` (clase raíz `.conurbania-app`).
 
@@ -51,7 +51,7 @@ Layout `layouts/mobile.blade.php` se mantiene **separado** de `app.blade.php`: b
 
 | Archivo | Contenido |
 |---------|-----------|
-| `conurbania.css` | Tokens + shell Conurbania (`.sidebar`, `.sc`, `.btn-p`, …) |
+| `conurbania.css` | Tokens + shell (`.sidebar`, `.sc`, `.btn-p`, …) |
 | `components/theme-fallbacks.css` | Defaults de `--conurbania-*` / `--mosaic-*` |
 | `components/layout-base.css` | Reset body / fuentes del layout web |
 | `components/sidebar.css` | Nav legacy `nova-sidebar*` |
