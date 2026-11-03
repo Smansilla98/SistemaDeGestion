@@ -40,3 +40,9 @@ it('no se toca una evaluación de otro taller ni sin permiso', function () {
     $this->actingAs(orgUser($this->org, 'COCINA'))->delete(route('workshops.evaluations.destroy', [$this->ws, $this->ev]))->assertForbidden();
     expect(WorkshopEvaluation::query()->find($this->ev->id))->not->toBeNull();
 });
+
+it('la matriz de permisos y el alta de usuarios ofrecen los roles del espacio cultural', function () {
+    $alumna = orgUser($this->org, 'ALUMNO');
+    expect($alumna->fresh()->role)->toBe('ALUMNO')
+        ->and(\App\Models\User::getAssignableRoles($this->admin))->toContain('COORDINADOR', 'PROFESOR', 'ALUMNO', 'EMPRENDEDOR', 'MARKETING');
+});
