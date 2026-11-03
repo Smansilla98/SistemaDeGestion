@@ -60,6 +60,39 @@
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
+    },
+    "patuka-preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "APP_ENV": "production",
+        "APP_VARIANT": "patuka",
+        "EXPO_PUBLIC_API_URL": "https://patuka.up.railway.app/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
+      }
+    },
+    "patuka": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "APP_VARIANT": "patuka",
+        "EXPO_PUBLIC_API_URL": "https://patuka.up.railway.app/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
+      },
+      "autoIncrement": true
     }
   },
   "submit": {

@@ -120,6 +120,28 @@ php artisan patuka:setup --org=2
 - Crea la regla de reparto *Talleres 70/30* (Docente 70 / Espacio 30, sobre neto).
 - Crea el administrador.
 
+## App (celular)
+
+La app Expo de `mobile/` tiene una variante Patuka (`APP_VARIANT=patuka`): nombre, ícono y colores
+de Patuka, y apunta a `https://patuka.up.railway.app/api`. Los roles del espacio entran con su
+usuario de la web:
+
+- **Agenda** (todos): clases, eventos, entregas y avisos; alumnos y profes ven lo suyo.
+- **Talleres** (coordinación, profes, gestión): clases de cada taller y **asistencia** con un toque por alumno.
+- **Avisos push**: lo que el sistema avisa en la web (inscripciones, clases suspendidas, faltas seguidas, pedidos del nodo) llega al celular.
+
+Primera vez (una sola, con tu cuenta de Expo):
+
+```bash
+cd mobile
+APP_VARIANT=patuka npx eas-cli@latest init        # crea el proyecto «patuka» y muestra su ID
+# guardar ese ID como EAS_PROJECT_ID_PATUKA (en .env y en los secrets de EAS)
+APP_VARIANT=patuka npx eas-cli@latest build --profile patuka-preview --platform android   # APK para probar
+APP_VARIANT=patuka npx eas-cli@latest build --profile patuka                               # tiendas
+```
+
+Sin `EAS_PROJECT_ID_PATUKA` la app funciona, pero no registra el celular para recibir push.
+
 ## Railway
 
 **Base de datos:** agregá al proyecto un servicio **MySQL**, desde *New → Database → Add MySQL*.

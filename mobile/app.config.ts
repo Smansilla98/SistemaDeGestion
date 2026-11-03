@@ -18,30 +18,75 @@ const easProjectId =
   (process.env.EAS_PROJECT_ID ?? '').trim() ||
   '8079310e-3205-4c1e-88d3-22964fb97c60';
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
+/**
+ * Variante de marca. APP_VARIANT=patuka arma la app de Patuka Espacio Cultural: otro nombre,
+ * identificadores de tienda, servidor, ícono y colores (blanco y negro). Necesita su propio
+ * proyecto EAS: EAS_PROJECT_ID_PATUKA (ver docs/PATUKA.md → App).
+ */
+const VARIANT = (process.env.APP_VARIANT ?? '').trim();
+
+type Brand = {
+  name: string; slug: string; scheme: string; bundle: string; projectId: string; apiUrl: string;
+  icon: string; adaptive: string; adaptiveBg: string; splash: string; splashBg: string; color: string; brandColor?: string;
+};
+
+const brands: Record<string, Brand> = {
+  patuka: {
+    name: 'Patuka',
+    slug: 'patuka',
+    scheme: 'patuka',
+    bundle: 'com.patuka.app',
+    projectId: (process.env.EAS_PROJECT_ID_PATUKA ?? '').trim(),
+    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'https://patuka.up.railway.app/api',
+    icon: './assets/patuka/icon.png',
+    adaptive: './assets/patuka/android-icon-foreground.png',
+    adaptiveBg: '#000000',
+    splash: './assets/patuka/splash-icon.png',
+    splashBg: '#000000',
+    color: '#111111',
+    brandColor: '#111111',
+  },
+};
+
+const brand: Brand = brands[VARIANT] ?? {
   name: 'Al Toque',
   slug: 'conurbania',
+  scheme: 'conurbania',
+  bundle: 'com.conurbania.app',
+  projectId: easProjectId,
+  apiUrl: apiUrls[APP_ENV] ?? apiUrls.development,
+  icon: './assets/icon.png',
+  adaptive: './assets/android-icon-foreground.png',
+  adaptiveBg: '#4e8d99',
+  splash: './assets/splash-icon.png',
+  splashBg: '#16343b',
+  color: '#4e8d99',
+};
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: brand.name,
+  slug: brand.slug,
   version: '1.0.0',
   orientation: 'portrait',
-  scheme: 'conurbania',
+  scheme: brand.scheme,
   userInterfaceStyle: 'light',
-  icon: './assets/icon.png',
+  icon: brand.icon,
   owner: 'smansilla',
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.conurbania.app',
+    bundleIdentifier: brand.bundle,
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
-    package: 'com.conurbania.app',
+    package: brand.bundle,
     softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
-      foregroundImage: './assets/android-icon-foreground.png',
-      backgroundColor: '#4e8d99',
+      foregroundImage: brand.adaptive,
+      backgroundColor: brand.adaptiveBg,
     },
   },
   plugins: [
@@ -51,23 +96,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#16343b',
-        image: './assets/splash-icon.png',
+        backgroundColor: brand.splashBg,
+        image: brand.splash,
       },
     ],
     [
       'expo-notifications',
       {
-        color: '#4e8d99',
+        color: brand.color,
       },
     ],
   ],
   extra: {
     appEnv: APP_ENV,
-    apiUrl: apiUrls[APP_ENV] ?? apiUrls.development,
-    eas: {
-      projectId: easProjectId,
-    },
+    apiUrl: brand.apiUrl,
+    brandColor: brand.brandColor,
+    variant: VARIANT || 'altoque',
+    ...(brand.projectId ? { eas: { projectId: brand.projectId } } : {}),
   },
   experiments: {
     typedRoutes: true,
