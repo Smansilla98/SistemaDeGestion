@@ -257,6 +257,28 @@ class WorkshopController extends Controller
         return back()->with('success', 'Evaluación registrada.');
     }
 
+    /** Corrige una evaluación cargada con un error (instancia, nota, fecha o devolución). */
+    public function updateEvaluation(Request $request, Workshop $workshop, WorkshopEvaluation $evaluation): RedirectResponse
+    {
+        $this->authorizeAttendance($workshop, null);
+        abort_unless($evaluation->workshop_id === $workshop->id, 404);
+        $evaluation->update($request->validate([
+            'title' => ['required', 'string', 'max:255'], 'grade' => ['nullable', 'string', 'max:30'],
+            'comment' => ['nullable', 'string', 'max:2000'], 'evaluated_on' => ['required', 'date'],
+        ]));
+
+        return back()->with('success', 'Evaluación corregida.');
+    }
+
+    public function destroyEvaluation(Workshop $workshop, WorkshopEvaluation $evaluation): RedirectResponse
+    {
+        $this->authorizeAttendance($workshop, null);
+        abort_unless($evaluation->workshop_id === $workshop->id, 404);
+        $evaluation->delete();
+
+        return back()->with('success', 'Evaluación borrada.');
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function authorizeView(Workshop $workshop): void
