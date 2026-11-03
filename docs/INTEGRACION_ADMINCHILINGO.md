@@ -177,5 +177,5 @@ persistencia → vista) y, donde se indica, con la suite de tests de cada proyec
 - **WhatsApp automático** (adminChilingo usa Twilio): acá sólo hay enlaces `wa.me` desde contactos y comunicaciones.
 - **Inscripción pública** (formulario sin cuenta) y **autogestión de pedidos** del vecino en un ciclo: hoy los carga la gestión.
 - **Manual de uso** (`app/Support/UserManual.php`): sumar secciones para los roles nuevos.
-- **Backups** automáticos como el de adminChilingo.
-- La matriz de permisos editable (`/permissions`) no lista todavía los roles nuevos (sus valores por defecto están en `config/permissions.php`).
+- ~~**Backups** automáticos~~: resuelto (03/11/2026) — `backup:database` diario y descarga en Configuración.
+- ~~La matriz de permisos no listaba los roles nuevos~~: resuelto (03/11/2026).
