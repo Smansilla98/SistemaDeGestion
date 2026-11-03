@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // Backup diario de la base en el volumen (se conservan los últimos 14).
+        $schedule->command('backup:database')->dailyAt('03:00')->withoutOverlapping();
         // Clases de las próximas semanas de cada taller activo (antes de los recordatorios).
         $schedule->command('workshops:sessions')->dailyAt('06:00')->withoutOverlapping();
         // Recordatorios de talleres, agenda, aranceles y consignaciones (idempotente).
