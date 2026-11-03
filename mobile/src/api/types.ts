@@ -409,3 +409,48 @@ export type DashboardPayload = {
     today_orders: number;
   } | null;
 };
+
+/** Espacio cultural: agenda y talleres (GET /agenda, /workshops). */
+export type AgendaItem = {
+  time: string | null;
+  kind: string;
+  type: string;
+  title: string;
+  detail: string | null;
+  cancelled: boolean;
+  category: string | null;
+  color: string | null;
+};
+
+export type AgendaDay = { date: string; items: AgendaItem[] };
+
+export type AgendaPayload = { from: string; to: string; days: AgendaDay[] };
+
+export type WorkshopRow = {
+  id: number;
+  name: string;
+  status: string;
+  room: string | null;
+  teacher: string | null;
+  schedules: string[];
+  capacity: number | null;
+  active_count: number;
+};
+
+export type WorkshopSessionRow = {
+  id: number;
+  date: string;
+  start: string;
+  end: string;
+  status: string;
+  note: string | null;
+  attendance_taken: boolean;
+};
+
+export type WorkshopDetail = WorkshopRow & { description: string | null; sessions: WorkshopSessionRow[] };
+
+export type AttendanceSheet = {
+  session: { id: number; date: string; start: string; status: string };
+  statuses: Record<string, string>;
+  students: { contact_id: number; name: string; status: string | null }[];
+};

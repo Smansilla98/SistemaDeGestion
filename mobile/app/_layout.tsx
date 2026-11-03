@@ -112,6 +112,8 @@ export default function RootLayout() {
                 <Stack.Screen name="tables/edit" />
                 <Stack.Screen name="tables/reserve" />
                 <Stack.Screen name="cash/[id]" options={{ ...stackHeader, title: 'Sesión de caja' }} />
+                <Stack.Screen name="workshop/[id]" />
+                <Stack.Screen name="workshop/attendance" />
                 <Stack.Screen name="products/index" />
                 <Stack.Screen name="products/new" />
                 <Stack.Screen name="products/[id]" />

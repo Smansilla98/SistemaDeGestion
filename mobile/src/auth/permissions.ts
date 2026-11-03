@@ -24,11 +24,20 @@ export function canSeeAdminHub(user: ApiUser | null | undefined): boolean {
   return isAdminRole(user.role) || user.role === 'GERENTE';
 }
 
+export type TabKey = 'dashboard' | 'agenda' | 'talleres' | 'mesas' | 'pedido' | 'pedidos' | 'cocina' | 'caja' | 'stock';
+
+/** Roles del espacio cultural: la app arranca en la agenda. */
+const COMMUNITY_ROLES = ['COORDINADOR', 'PROFESOR', 'ALUMNO', 'EMPRENDEDOR', 'ARTISTA', 'MARKETING', 'INVENTARIO'];
+
 export function canSeeTab(
   user: ApiUser | null | undefined,
-  tab: 'dashboard' | 'mesas' | 'pedido' | 'pedidos' | 'cocina' | 'caja' | 'stock',
+  tab: TabKey,
 ): boolean {
   switch (tab) {
+    case 'agenda':
+      return hasPermission(user, 'agenda.read') && hasModule(user, 'workshops');
+    case 'talleres':
+      return hasPermission(user, 'workshops.read') && hasModule(user, 'workshops');
     case 'dashboard':
       return hasPermission(user, 'dashboard.read');
     case 'mesas':
@@ -48,7 +57,6 @@ export function canSeeTab(
   }
 }
 
-type TabKey = 'dashboard' | 'mesas' | 'pedido' | 'pedidos' | 'cocina' | 'caja' | 'stock';
 
 /**
  * Bottom nav por rol — pocos accesos claros.
@@ -68,14 +76,20 @@ export function isPrimaryTab(
         ? ['cocina', 'pedidos']
         : role === 'CAJERO'
           ? ['caja', 'mesas', 'pedidos']
-          : /* ADMIN / SUPERADMIN / GERENTE / ENCARGADO / default */
-            ['dashboard', 'mesas', 'pedidos', 'caja'];
+          : role === 'COORDINADOR' || role === 'PROFESOR'
+            ? ['agenda', 'talleres']
+            : COMMUNITY_ROLES.includes(role)
+              ? ['agenda']
+              : /* ADMIN / SUPERADMIN / GERENTE / ENCARGADO / default. Con talleres: también la agenda. */
+                ['dashboard', 'agenda', 'mesas', 'pedidos', 'caja'];
 
   return primary.includes(tab);
 }
 
 const TAB_HREF: Record<TabKey, Href> = {
   dashboard: '/(tabs)/dashboard' as Href,
+  agenda: '/(tabs)/agenda' as Href,
+  talleres: '/(tabs)/talleres' as Href,
   mesas: '/(tabs)/mesas' as Href,
   pedido: '/(tabs)/pedido' as Href,
   pedidos: '/(tabs)/pedidos' as Href,
@@ -94,7 +108,9 @@ export function homeHrefForRole(user: ApiUser | null | undefined): Href {
         ? ['caja', 'mesas', 'pedidos', 'dashboard']
         : role === 'MOZO'
           ? ['mesas', 'pedidos', 'caja', 'dashboard']
-          : ['dashboard', 'mesas', 'pedidos', 'caja'];
+          : COMMUNITY_ROLES.includes(role)
+            ? ['agenda', 'talleres']
+            : ['dashboard', 'mesas', 'pedidos', 'caja', 'agenda'];
 
   for (const tab of order) {
     if (canSeeTab(user, tab)) return TAB_HREF[tab];
