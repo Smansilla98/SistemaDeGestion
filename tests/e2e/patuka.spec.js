@@ -21,10 +21,11 @@ test.describe('celular', () => {
     });
 });
 
-test('en el calendario, un clic en el día abre «Nuevo evento» con esa fecha', async ({ page }) => {
+test('en «Eventos y shows», un clic en el día crea un evento con esa fecha', async ({ page }) => {
     await login(page);
+    // Con la Agenda contratada abre la grilla de la Agenda; sin ella, el calendario de eventos. Los dos crean desde el día.
     await page.goto('/events?year=2030&month=3');
-    await page.locator('.calendar-day[data-create-url]').nth(9).click({ position: { x: 40, y: 60 } });
+    await page.locator('[data-create-url$="date=2030-03-10"]').click({ position: { x: 50, y: 70 } });
     await expect(page).toHaveURL(/\/events\/create\?date=2030-03-10/);
     await expect(page.locator('[name=date]')).toHaveValue('2030-03-10');
 });
