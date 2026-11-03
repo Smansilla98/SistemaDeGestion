@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class OrderItem extends Model
 {
@@ -43,6 +44,8 @@ class OrderItem extends Model
 
     /**
      * Relación: Un item pertenece a un pedido
+     *
+     * @return BelongsTo<Order, $this>
      */
     public function order(): BelongsTo
     {
@@ -51,6 +54,8 @@ class OrderItem extends Model
 
     /**
      * Relación: Un item pertenece a un producto
+     *
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {
@@ -59,6 +64,8 @@ class OrderItem extends Model
 
     /**
      * Relación: Un item tiene muchos modificadores
+     *
+     * @return HasMany<OrderItemModifier, $this>
      */
     public function modifiers(): HasMany
     {
@@ -103,7 +110,7 @@ class OrderItem extends Model
         $itemSubtotal = ($unit * $qty) + ($modifiersTotal * $qty);
         $this->subtotal = $itemSubtotal;
 
-        if (\Illuminate\Support\Facades\Schema::hasColumn('order_items', 'unit_price_cents')) {
+        if (Schema::hasColumn('order_items', 'unit_price_cents')) {
             $this->unit_price_cents = (int) round($unit * 100);
             $this->line_total_cents = (int) round($itemSubtotal * 100);
         }

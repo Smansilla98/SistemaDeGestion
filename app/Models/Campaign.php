@@ -18,11 +18,13 @@ class Campaign extends Model
 
     protected $casts = ['audience' => 'array', 'send_email' => 'boolean', 'sent_at' => 'datetime'];
 
+    /** @return HasMany<CampaignRecipient, $this> */
     public function recipients(): HasMany
     {
         return $this->hasMany(CampaignRecipient::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

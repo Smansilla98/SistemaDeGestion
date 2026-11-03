@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Money\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,17 +44,19 @@ class Payment extends Model
     {
         static::saving(function (Payment $payment) {
             if ($payment->isDirty('amount') && ! $payment->isDirty('amount_cents')) {
-                $payment->amount_cents = \App\Domain\Money\Money::fromDecimal($payment->amount ?? 0)->cents;
+                $payment->amount_cents = Money::fromDecimal($payment->amount ?? 0)->cents;
             } elseif ($payment->isDirty('amount_cents') && ! $payment->isDirty('amount')) {
                 $payment->amount = round(((int) $payment->amount_cents) / 100, 2);
             } elseif ($payment->amount !== null && $payment->amount_cents === null) {
-                $payment->amount_cents = \App\Domain\Money\Money::fromDecimal($payment->amount)->cents;
+                $payment->amount_cents = Money::fromDecimal($payment->amount)->cents;
             }
         });
     }
 
     /**
      * Relación: Un pago pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -62,6 +65,8 @@ class Payment extends Model
 
     /**
      * Relación: Un pago pertenece a un pedido
+     *
+     * @return BelongsTo<Order, $this>
      */
     public function order(): BelongsTo
     {
@@ -70,6 +75,8 @@ class Payment extends Model
 
     /**
      * Relación: Un pago pertenece a una sesión de caja
+     *
+     * @return BelongsTo<CashRegisterSession, $this>
      */
     public function cashRegisterSession(): BelongsTo
     {
@@ -78,6 +85,8 @@ class Payment extends Model
 
     /**
      * Relación: Un pago pertenece a un usuario
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -86,6 +95,8 @@ class Payment extends Model
 
     /**
      * Relación: Un pago pertenece a una sesión de mesa
+     *
+     * @return BelongsTo<TableSession, $this>
      */
     public function tableSession(): BelongsTo
     {

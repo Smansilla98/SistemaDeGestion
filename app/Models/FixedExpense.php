@@ -65,6 +65,7 @@ class FixedExpense extends Model
 
     const FREQUENCY_ANUAL = 'ANUAL';
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
@@ -212,9 +213,12 @@ class FixedExpense extends Model
             return 0;
         }
 
+        // Días de calendario entre ambas fechas (Carbon 3 devuelve fracciones si las horas difieren).
+        $days = (int) $overlapStart->copy()->startOfDay()->diffInDays($overlapEnd->copy()->startOfDay());
+
         return match ($this->frequency) {
-            self::FREQUENCY_DIARIO => $overlapStart->diffInDays($overlapEnd) + 1,
-            self::FREQUENCY_SEMANAL => (int) floor($overlapStart->diffInDays($overlapEnd) / 7) + 1,
+            self::FREQUENCY_DIARIO => $days + 1,
+            self::FREQUENCY_SEMANAL => intdiv($days, 7) + 1,
             self::FREQUENCY_QUINCENAL => $this->countActiveMonths($periodStart, $periodEnd, $expenseStart, $expenseEnd) * 2,
             self::FREQUENCY_MENSUAL => $this->countActiveMonths($periodStart, $periodEnd, $expenseStart, $expenseEnd),
             self::FREQUENCY_ANUAL => $this->countAnnualOccurrencesInPeriod($periodStart, $periodEnd, $expenseStart, $expenseEnd),

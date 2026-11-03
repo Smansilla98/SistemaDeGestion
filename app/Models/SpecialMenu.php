@@ -26,11 +26,13 @@ class SpecialMenu extends Model
         static::deleted($forget);
     }
 
+    /** @return HasMany<SpecialMenuItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(SpecialMenuItem::class);
     }
 
+    /** @return BelongsTo<AgendaNotice, $this> */
     public function notice(): BelongsTo
     {
         return $this->belongsTo(AgendaNotice::class, 'agenda_notice_id');

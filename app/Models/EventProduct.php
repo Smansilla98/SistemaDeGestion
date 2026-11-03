@@ -25,6 +25,8 @@ class EventProduct extends Model
 
     /**
      * Relación: Un event_product pertenece a un evento
+     *
+     * @return BelongsTo<Event, $this>
      */
     public function event(): BelongsTo
     {
@@ -33,6 +35,8 @@ class EventProduct extends Model
 
     /**
      * Relación: Un event_product pertenece a un producto
+     *
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {

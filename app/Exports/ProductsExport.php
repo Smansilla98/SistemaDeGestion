@@ -33,7 +33,7 @@ class ProductsExport implements FromQuery, WithHeadings, WithMapping
 
         return [
             $product->name,
-            $product->category?->name ?? '-',
+            $product->category->name ?? '-',
             $product->cost_price,
             $product->price,
             $product->profit_margin,

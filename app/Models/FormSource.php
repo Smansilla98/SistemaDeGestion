@@ -45,16 +45,19 @@ class FormSource extends Model
 
     protected $casts = ['mapping' => 'array', 'headers' => 'array', 'auto_sync' => 'boolean', 'is_active' => 'boolean', 'last_synced_at' => 'datetime'];
 
+    /** @return HasMany<FormSourceRow, $this> */
     public function rows(): HasMany
     {
         return $this->hasMany(FormSourceRow::class);
     }
 
+    /** @return BelongsTo<Workshop, $this> */
     public function workshop(): BelongsTo
     {
         return $this->belongsTo(Workshop::class);
     }
 
+    /** @return BelongsTo<ActivityCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(ActivityCategory::class, 'activity_category_id');

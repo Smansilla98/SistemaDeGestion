@@ -51,7 +51,7 @@ final class ConsignmentService
                 $qty = round((float) $i['quantity'], 3);
                 $item = $consignment->items()->create([
                     'market_product_id' => $product->id, 'qty_delivered' => $qty,
-                    'unit_price_cents' => isset($i['unit_price_cents']) && $i['unit_price_cents'] !== null ? (int) $i['unit_price_cents'] : $product->price_cents,
+                    'unit_price_cents' => isset($i['unit_price_cents']) ? (int) $i['unit_price_cents'] : $product->price_cents,
                 ]);
                 $this->stock->move($product, 'CONSIGNACION', $qty, $by, "Consignación #{$consignment->id}", $item->id);
             }

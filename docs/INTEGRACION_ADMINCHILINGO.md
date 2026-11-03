@@ -10,7 +10,7 @@ aprovechando lo que ya resolvió adminChilingo.
 
 | Aspecto | SistemaDeGestion (`main`) | adminChilingo (`main`) |
 |---|---|---|
-| Laravel / PHP | Laravel 10.48, PHP ^8.2 | Laravel 12, PHP ^8.2 |
+| Laravel / PHP | Laravel 12 (antes 10.48), PHP ^8.2 | Laravel 12, PHP ^8.2 |
 | Composer relevantes | sanctum 3, firebase/php-jwt (API móvil), dompdf, maatwebsite/excel, livewire 4 | sanctum 4, **spatie/laravel-permission 7**, maatwebsite/excel, twilio, resend |
 | Front | Blade + Bootstrap 5 + Tailwind 4 (Vite), Livewire en móvil | Blade + Bootstrap 5 + Tailwind 4, React/Vite (editor Diseño), Chart.js, VexFlow |
 | Arquitectura | Controllers + `app/Services` + `app/Domain` (Money, Orders), policies por modelo | Controllers + `app/Domain/*` (servicios por dominio) |

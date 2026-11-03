@@ -28,6 +28,8 @@ class Supplier extends Model
 
     /**
      * Relación: Un proveedor pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -36,6 +38,8 @@ class Supplier extends Model
 
     /**
      * Relación: Un proveedor tiene muchas compras
+     *
+     * @return HasMany<Purchase, $this>
      */
     public function purchases(): HasMany
     {

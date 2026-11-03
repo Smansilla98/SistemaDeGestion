@@ -13,6 +13,7 @@ class WorkshopSchedule extends Model
 
     protected $casts = ['weekday' => 'integer'];
 
+    /** @return BelongsTo<Workshop, $this> */
     public function workshop(): BelongsTo
     {
         return $this->belongsTo(Workshop::class);

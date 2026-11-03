@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Notifications\OrderCreatedNotification;
 use App\Support\Concurrency;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -260,7 +261,7 @@ class OrderService
 
         // La variante define el precio de la línea; sin variante vale el del producto
         // (o el del menú especial que rige hoy).
-        $unit = Money::fromDecimal($variant?->price ?? $specialMenus->priceFor($product, (int) $order->restaurant_id));
+        $unit = Money::fromDecimal($variant->price ?? $specialMenus->priceFor($product, (int) $order->restaurant_id));
         $line = $unit->times($qty);
 
         $payload = [
@@ -350,9 +351,9 @@ class OrderService
     /**
      * Extras opcionales de la línea (suman su delta al precio).
      *
-     * @return \Illuminate\Support\Collection<int, ProductModifier>
+     * @return Collection<int, ProductModifier>
      */
-    private function resolveExtras(Product $product, array $itemData): \Illuminate\Support\Collection
+    private function resolveExtras(Product $product, array $itemData): Collection
     {
         $ids = is_array($itemData['modifiers'] ?? null) ? array_map('intval', $itemData['modifiers']) : [];
         if ($ids === []) {

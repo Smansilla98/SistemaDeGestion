@@ -18,11 +18,13 @@ class Design extends Model
 
     protected $casts = ['width' => 'integer', 'height' => 'integer'];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<DesignPage, $this> */
     public function pages(): HasMany
     {
         return $this->hasMany(DesignPage::class)->orderBy('position')->orderBy('id');

@@ -28,7 +28,7 @@ class StockService
                 ->lockForUpdate()
                 ->first();
 
-            $currentStock = $stock?->quantity ?? $product->getCurrentStock($data['restaurant_id']);
+            $currentStock = $stock->quantity ?? $product->getCurrentStock($data['restaurant_id']);
 
             // Calcular nuevo stock según el tipo
             $newStock = match ($data['type']) {
@@ -127,7 +127,7 @@ class StockService
      */
     public function isLowStock(Stock $stock): bool
     {
-        $minimum = $stock->minimum_stock ?? $stock->product?->stock_minimum ?? 0;
+        $minimum = $stock->minimum_stock ?? $stock->product->stock_minimum ?? 0;
 
         return $stock->quantity <= $minimum;
     }

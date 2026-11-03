@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Event extends Model
 {
@@ -42,6 +43,8 @@ class Event extends Model
 
     /**
      * Relación: Un evento pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -50,6 +53,8 @@ class Event extends Model
 
     /**
      * Relación: Un evento fue creado por un usuario
+     *
+     * @return BelongsTo<User, $this>
      */
     public function creator(): BelongsTo
     {
@@ -58,6 +63,8 @@ class Event extends Model
 
     /**
      * Relación: Un evento tiene muchos productos (con cantidad esperada)
+     *
+     * @return BelongsToMany<Product, $this>
      */
     public function products(): BelongsToMany
     {
@@ -68,6 +75,8 @@ class Event extends Model
 
     /**
      * Relación: Un evento tiene muchos event_products
+     *
+     * @return HasMany<EventProduct, $this>
      */
     public function eventProducts(): HasMany
     {
@@ -76,23 +85,28 @@ class Event extends Model
 
     /**
      * Etapas del evento (responsable, presupuesto, estado).
+     *
+     * @return HasMany<EventStage, $this>
      */
     public function stages(): HasMany
     {
         return $this->hasMany(EventStage::class)->orderBy('position')->orderBy('id');
     }
 
+    /** @return BelongsTo<DistributionRule, $this> */
     public function distributionRule(): BelongsTo
     {
         return $this->belongsTo(DistributionRule::class);
     }
 
-    public function entries(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    /** @return MorphMany<ActivityEntry, $this> */
+    public function entries(): MorphMany
     {
         return $this->morphMany(ActivityEntry::class, 'entryable');
     }
 
-    public function payouts(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    /** @return MorphMany<DistributionPayout, $this> */
+    public function payouts(): MorphMany
     {
         return $this->morphMany(DistributionPayout::class, 'payoutable');
     }
@@ -154,7 +168,8 @@ class Event extends Model
         return $date;
     }
 
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<ActivityCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
     }

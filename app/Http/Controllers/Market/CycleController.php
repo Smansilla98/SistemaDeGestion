@@ -60,7 +60,7 @@ class CycleController extends Controller
             'cycle' => $cycle,
             'orders' => $cycle->orders()->with(['contact', 'items.product'])->orderByRaw("FIELD(status, 'PENDIENTE', 'ENTREGADO', 'CANCELADO')")->get(),
             'consolidated' => $this->service->consolidated($cycle),
-            'offer' => $cycle->offer()->with('product.entrepreneur')->get()->sortBy(fn ($o) => ($o->product?->category ?? '').$o->product?->name)->values(),
+            'offer' => $cycle->offer()->with('product.entrepreneur')->get()->sortBy(fn ($o) => ($o->product->category ?? '').$o->product?->name)->values(),
             'taken' => $this->service->takenQuantities($cycle),
             'products' => MarketProduct::query()->where('restaurant_id', $this->org())->where('is_active', true)->with('entrepreneur')->orderBy('category')->orderBy('name')->get(),
             'contacts' => Contact::query()->where('restaurant_id', $this->org())->where('is_active', true)->orderBy('name')->get(['id', 'name']),

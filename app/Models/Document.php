@@ -24,6 +24,7 @@ class Document extends Model
 
     protected $casts = ['published_at' => 'datetime'];
 
+    /** @return HasMany<DocumentVersion, $this> */
     public function versions(): HasMany
     {
         return $this->hasMany(DocumentVersion::class)->orderByDesc('version');
@@ -34,6 +35,7 @@ class Document extends Model
         return $this->versions()->first();
     }
 
+    /** @return BelongsTo<Entrepreneur, $this> */
     public function entrepreneur(): BelongsTo
     {
         return $this->belongsTo(Entrepreneur::class);

@@ -28,6 +28,8 @@ class Purchase extends Model
 
     /**
      * Relación: Una compra pertenece a un movimiento de stock
+     *
+     * @return BelongsTo<StockMovement, $this>
      */
     public function stockMovement(): BelongsTo
     {
@@ -36,6 +38,8 @@ class Purchase extends Model
 
     /**
      * Relación: Una compra pertenece a un proveedor
+     *
+     * @return BelongsTo<Supplier, $this>
      */
     public function supplier(): BelongsTo
     {

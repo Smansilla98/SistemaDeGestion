@@ -11,6 +11,7 @@ class CycleOrderItem extends Model
 
     protected $casts = ['quantity' => 'float', 'unit_price_cents' => 'integer', 'line_cents' => 'integer'];
 
+    /** @return BelongsTo<MarketProduct, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(MarketProduct::class, 'market_product_id');

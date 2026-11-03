@@ -16,7 +16,6 @@ use App\Support\Branding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -216,19 +215,19 @@ class DesignEditorController extends Controller
     {
         $this->requirePermission('design.view');
 
-        return response()->json($this->templateList()->values());
+        return response()->json($this->templateList());
     }
 
     public function template(string $id): JsonResponse
     {
         $this->requirePermission('design.view');
-        $template = $this->templateList()->firstWhere('id', $id);
+        $template = collect($this->templateList())->firstWhere('id', $id);
 
         return $template ? response()->json($template) : response()->json(['error' => 'No existe la plantilla.'], 404);
     }
 
-    /** @return Collection<int, non-empty-array<string, mixed>> Plantillas de database/data/design-templates.json. */
-    private function templateList(): Collection
+    /** @return list<array<string, mixed>> Plantillas de database/data/design-templates.json, ordenadas. */
+    private function templateList(): array
     {
         $logoDark = '/'.ltrim((string) config('app.brand.logo'), '/');
         $logoLight = '/'.ltrim((string) config('app.brand.logo_light'), '/');
@@ -239,7 +238,10 @@ class DesignEditorController extends Controller
         /** @var list<array<string, mixed>> $templates */
         $templates = json_decode($raw, true) ?: [];
 
-        return collect($templates)->map(fn (array $t): array => $t + ['thumbnail_url' => null])->sortBy('sort_order');
+        $templates = array_map(fn (array $t): array => $t + ['thumbnail_url' => null], $templates);
+        usort($templates, fn (array $a, array $b): int => ($a['sort_order'] ?? 0) <=> ($b['sort_order'] ?? 0));
+
+        return $templates;
     }
 
     // ── Imágenes y marca ───────────────────────────────────────────────

@@ -18,11 +18,13 @@ class SpecialMenuItem extends Model
         static::deleted($forget);
     }
 
+    /** @return BelongsTo<SpecialMenu, $this> */
     public function menu(): BelongsTo
     {
         return $this->belongsTo(SpecialMenu::class, 'special_menu_id');
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

@@ -25,6 +25,8 @@ class DiscountType extends Model
 
     /**
      * Relación: Un tipo de descuento pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {

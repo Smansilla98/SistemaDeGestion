@@ -11,6 +11,7 @@ class FormSourceRow extends Model
 
     protected $casts = ['data' => 'array'];
 
+    /** @return BelongsTo<Contact, $this> */
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);

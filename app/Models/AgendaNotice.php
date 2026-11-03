@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Fecha especial, aviso institucional, reunión, feria o entrega cargada a mano en la agenda.
@@ -19,7 +20,8 @@ class AgendaNotice extends Model
 
     protected $casts = ['date' => 'date', 'end_date' => 'date'];
 
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<ActivityCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
     }

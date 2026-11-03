@@ -62,7 +62,7 @@ class KitchenController extends Controller
                 'table' => $order->table?->number,
                 'place' => $order->table
                     ? $order->table->displayName()
-                    : ($order->subsectorItem?->name ?? ($order->customer_name ?: 'Barra')),
+                    : ($order->subsectorItem->name ?? ($order->customer_name ?: 'Barra')),
                 'sector' => $order->table?->sector?->name,
                 'waiter' => $order->user?->name,
                 'observations' => $order->observations,
@@ -71,7 +71,7 @@ class KitchenController extends Controller
                     + $order->items->where('status', 'ENTREGADO')->count(),
                 'items' => $order->items->map(fn (OrderItem $item) => [
                     'id' => $item->id,
-                    'name' => $item->product?->name ?? $item->product_name_snapshot,
+                    'name' => $item->product->name ?? $item->product_name_snapshot,
                     'quantity' => $item->quantity,
                     'status' => $item->status,
                     'observations' => $item->observations,

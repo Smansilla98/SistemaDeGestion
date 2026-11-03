@@ -19,16 +19,19 @@ class Consignment extends Model
 
     protected $casts = ['received_on' => 'date', 'commission_percent' => 'float'];
 
+    /** @return BelongsTo<Entrepreneur, $this> */
     public function entrepreneur(): BelongsTo
     {
         return $this->belongsTo(Entrepreneur::class);
     }
 
+    /** @return HasMany<ConsignmentItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(ConsignmentItem::class);
     }
 
+    /** @return HasMany<ConsignmentSettlement, $this> */
     public function settlements(): HasMany
     {
         return $this->hasMany(ConsignmentSettlement::class);

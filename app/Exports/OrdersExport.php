@@ -43,9 +43,9 @@ class OrdersExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             $order->number,
-            $order->table?->number ?? '-',
+            $order->table->number ?? '-',
             $order->customer_name ?? '-',
-            $order->user?->name ?? '-',
+            $order->user->name ?? '-',
             $order->status,
             $order->subtotal,
             $order->discount,

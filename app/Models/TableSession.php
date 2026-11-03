@@ -42,31 +42,37 @@ class TableSession extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
+    /** @return BelongsTo<Table, $this> */
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function waiter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'waiter_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function openedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by_user_id');
     }
 
+    /** @return HasMany<Order, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'table_session_id');
     }
 
+    /** @return HasMany<Payment, $this> */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'table_session_id');
@@ -74,6 +80,8 @@ class TableSession extends Model
 
     /**
      * Relación: Una sesión pertenece a una caja
+     *
+     * @return BelongsTo<CashRegister, $this>
      */
     public function cashRegister(): BelongsTo
     {

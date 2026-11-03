@@ -41,6 +41,8 @@ class ProductModifier extends Model
 
     /**
      * Insumos propios de la variante (ej. jamón y morrones), además de los del producto base.
+     *
+     * @return BelongsToMany<Product, $this>
      */
     public function ingredients(): BelongsToMany
     {
@@ -51,6 +53,8 @@ class ProductModifier extends Model
 
     /**
      * Relación: Un modificador pertenece a un producto
+     *
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {

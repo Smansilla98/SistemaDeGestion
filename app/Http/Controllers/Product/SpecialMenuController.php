@@ -66,7 +66,7 @@ class SpecialMenuController extends Controller
         return view('special-menus.show', [
             'menu' => $specialMenu->load('items.product.category', 'notice'),
             'products' => Product::query()->where('restaurant_id', $this->org())->where('type', 'PRODUCT')->where('is_active', true)
-                ->with('category')->orderBy('name')->get()->groupBy(fn (Product $p) => $p->category?->name ?? 'Sin categoría'),
+                ->with('category')->orderBy('name')->get()->groupBy(fn (Product $p) => $p->category->name ?? 'Sin categoría'),
             'plan' => $this->service->stockPlan($specialMenu),
             'canEdit' => $this->can('products.update'),
         ]);

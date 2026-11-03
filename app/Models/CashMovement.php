@@ -31,6 +31,8 @@ class CashMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -39,6 +41,8 @@ class CashMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a una sesión de caja
+     *
+     * @return BelongsTo<CashRegisterSession, $this>
      */
     public function cashRegisterSession(): BelongsTo
     {
@@ -47,6 +51,8 @@ class CashMovement extends Model
 
     /**
      * Relación: Un movimiento pertenece a un usuario
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

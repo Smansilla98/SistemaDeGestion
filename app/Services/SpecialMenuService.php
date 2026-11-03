@@ -85,7 +85,7 @@ final class SpecialMenuService
     {
         $item = $this->activeFor($restaurantId)?->items->firstWhere('product_id', $product->id);
 
-        return (string) ($item?->price ?? $product->price);
+        return (string) ($item->price ?? $product->price);
     }
 
     /** Falla si hay un menú exclusivo y el producto no está en él. */

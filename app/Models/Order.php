@@ -69,41 +69,49 @@ class Order extends Model
         'lock_version' => 'integer',
     ];
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
+    /** @return BelongsTo<Table, $this> */
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
     }
 
+    /** @return BelongsTo<SubsectorItem, $this> */
     public function subsectorItem(): BelongsTo
     {
         return $this->belongsTo(SubsectorItem::class, 'subsector_item_id');
     }
 
+    /** @return BelongsTo<TableSession, $this> */
     public function tableSession(): BelongsTo
     {
         return $this->belongsTo(TableSession::class, 'table_session_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<OrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return HasMany<Payment, $this> */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
+    /** @return HasMany<OrderStatusChange, $this> */
     public function statusChanges(): HasMany
     {
         return $this->hasMany(OrderStatusChange::class);
@@ -131,10 +139,10 @@ class Order extends Model
 
     public function calculateTotal(): void
     {
-        if (\Illuminate\Support\Facades\Schema::hasColumn('order_items', 'line_total_cents')) {
+        if (Schema::hasColumn('order_items', 'line_total_cents')) {
             $cents = (int) $this->items()->sum('line_total_cents');
             if ($cents > 0 || $this->items()->exists()) {
-                $discountCents = \Illuminate\Support\Facades\Schema::hasColumn('orders', 'discount_cents')
+                $discountCents = Schema::hasColumn('orders', 'discount_cents')
                     ? (int) ($this->discount_cents ?? Money::fromDecimal($this->discount ?? 0)->cents)
                     : Money::fromDecimal($this->discount ?? 0)->cents;
 
@@ -144,7 +152,7 @@ class Order extends Model
                     'total' => round($totalCents / 100, 2),
                     'discount' => round($discountCents / 100, 2),
                 ];
-                if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'subtotal_cents')) {
+                if (Schema::hasColumn('orders', 'subtotal_cents')) {
                     $payload['subtotal_cents'] = $cents;
                     $payload['discount_cents'] = $discountCents;
                     $payload['total_cents'] = $totalCents;
@@ -187,7 +195,7 @@ class Order extends Model
             'order_id' => $this->id,
             'from_status' => $from->value,
             'to_status' => $to->value,
-            'user_id' => $actor?->id ?? auth()->id(),
+            'user_id' => $actor->id ?? auth()->id(),
             'reason' => $reason,
             'created_at' => now(),
         ]);

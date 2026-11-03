@@ -11,11 +11,13 @@ class WorkshopAttendance extends Model
 
     protected $fillable = ['workshop_session_id', 'contact_id', 'status', 'recorded_by'];
 
+    /** @return BelongsTo<WorkshopSession, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(WorkshopSession::class, 'workshop_session_id');
     }
 
+    /** @return BelongsTo<Contact, $this> */
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);

@@ -12,6 +12,7 @@ class EntrepreneurGroup extends Model
 
     protected $fillable = ['restaurant_id', 'name', 'description'];
 
+    /** @return BelongsToMany<Entrepreneur, $this> */
     public function entrepreneurs(): BelongsToMany
     {
         return $this->belongsToMany(Entrepreneur::class, 'entrepreneur_group_member');

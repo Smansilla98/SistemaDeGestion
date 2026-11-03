@@ -14,11 +14,13 @@ class OrderCycleProduct extends Model
 
     protected $casts = ['price_cents' => 'integer', 'max_quantity' => 'float'];
 
+    /** @return BelongsTo<OrderCycle, $this> */
     public function cycle(): BelongsTo
     {
         return $this->belongsTo(OrderCycle::class, 'order_cycle_id');
     }
 
+    /** @return BelongsTo<MarketProduct, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(MarketProduct::class, 'market_product_id');

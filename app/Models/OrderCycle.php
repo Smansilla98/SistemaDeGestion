@@ -19,12 +19,17 @@ class OrderCycle extends Model
 
     protected $casts = ['opens_at' => 'datetime', 'closes_at' => 'datetime', 'delivery_on' => 'date'];
 
+    /** @return HasMany<CycleOrder, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(CycleOrder::class);
     }
 
-    /** Productos que se pueden pedir en este ciclo (se cargan antes de abrir). */
+    /**
+     * Productos que se pueden pedir en este ciclo (se cargan antes de abrir).
+     *
+     * @return HasMany<OrderCycleProduct, $this>
+     */
     public function offer(): HasMany
     {
         return $this->hasMany(OrderCycleProduct::class);

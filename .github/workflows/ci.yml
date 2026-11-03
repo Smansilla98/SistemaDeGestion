@@ -65,9 +65,8 @@ jobs:
       - name: Analisis estatico (PHPStan)
         run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 
-      - name: Dependencias con vulnerabilidades conocidas (informativo)
-        # laravel/framework 10 ya no recibe parches: queda visible hasta migrar a 12.
-        run: composer audit --no-interaction || true
+      - name: Dependencias sin vulnerabilidades conocidas
+        run: composer audit --locked --no-interaction
 
       - name: Esperar a MySQL
         run: |

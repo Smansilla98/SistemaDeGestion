@@ -41,7 +41,7 @@ it('el admin reactiva una inscripción cancelada por error y pasa otra a lista d
 
 it('borra una inscripción cargada por error, salvo que tenga pagos', function () {
     $this->ws->entries()->create(['restaurant_id' => $this->org->id, 'type' => 'INGRESO', 'amount_cents' => 1000, 'concept' => 'Cuota',
-        'date' => today(), 'workshop_enrollment_id' => $this->enrollment->id, 'created_by' => $this->admin->id]);
+        'date' => today(), 'workshop_enrollment_id' => $this->enrollment->id, 'recorded_by' => $this->admin->id]);
     $this->actingAs($this->admin)->delete(route('workshops.enrollments.destroy', [$this->ws, $this->enrollment]))->assertSessionHas('error');
     expect(WorkshopEnrollment::query()->find($this->enrollment->id))->not->toBeNull();
 

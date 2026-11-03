@@ -91,9 +91,9 @@ final class OrderCycleService
             $cycle->offer()->whereNotIn('market_product_id', $products->keys())->delete();
             foreach ($products as $id => $product) {
                 $row = $items[$id] ?? $items[(string) $id] ?? [];
-                $max = isset($row['max']) && $row['max'] !== null ? round((float) $row['max'], 3) : null;
+                $max = isset($row['max']) ? round((float) $row['max'], 3) : null;
                 $cycle->offer()->updateOrCreate(['market_product_id' => $id], [
-                    'price_cents' => isset($row['price']) && $row['price'] !== null ? (int) $row['price'] : (int) $product->price_cents,
+                    'price_cents' => isset($row['price']) ? (int) $row['price'] : (int) $product->price_cents,
                     'max_quantity' => $max !== null && $max > 0 ? $max : null,
                 ]);
             }
@@ -184,6 +184,6 @@ final class OrderCycleService
             }
         }
 
-        return $out->sortBy(fn ($r) => ($r['product']->entrepreneur?->business_name ?? '').$r['product']->name)->values();
+        return $out->sortBy(fn ($r) => ($r['product']->entrepreneur->business_name ?? '').$r['product']->name)->values();
     }
 }

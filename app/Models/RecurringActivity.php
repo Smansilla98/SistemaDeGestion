@@ -52,6 +52,8 @@ class RecurringActivity extends Model
 
     /**
      * Relación: Una actividad recurrente pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {

@@ -19,11 +19,13 @@ class MarketProduct extends Model
 
     protected $casts = ['price_cents' => 'integer', 'stock_quantity' => 'float', 'min_stock' => 'float', 'is_active' => 'boolean'];
 
+    /** @return BelongsTo<Entrepreneur, $this> */
     public function entrepreneur(): BelongsTo
     {
         return $this->belongsTo(Entrepreneur::class);
     }
 
+    /** @return HasMany<MarketStockMovement, $this> */
     public function movements(): HasMany
     {
         return $this->hasMany(MarketStockMovement::class)->latest('id');

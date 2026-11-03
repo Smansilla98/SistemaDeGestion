@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Ingreso o gasto de un taller o evento. No se borra: se anula (voided_at) para conservar el historial.
@@ -18,16 +19,18 @@ class ActivityEntry extends Model
 
     protected $casts = ['date' => 'date', 'amount_cents' => 'integer', 'voided_at' => 'datetime'];
 
-    public function entryable(): \Illuminate\Database\Eloquent\Relations\MorphTo
+    public function entryable(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /** @return BelongsTo<Contact, $this> */
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
     }
 
+    /** @return BelongsTo<EventStage, $this> */
     public function stage(): BelongsTo
     {
         return $this->belongsTo(EventStage::class, 'event_stage_id');

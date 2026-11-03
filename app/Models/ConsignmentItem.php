@@ -11,11 +11,13 @@ class ConsignmentItem extends Model
 
     protected $casts = ['unit_price_cents' => 'integer', 'qty_delivered' => 'float', 'qty_sold' => 'float', 'qty_returned' => 'float', 'sold_cents' => 'integer'];
 
+    /** @return BelongsTo<Consignment, $this> */
     public function consignment(): BelongsTo
     {
         return $this->belongsTo(Consignment::class);
     }
 
+    /** @return BelongsTo<MarketProduct, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(MarketProduct::class, 'market_product_id');

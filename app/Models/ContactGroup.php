@@ -12,6 +12,7 @@ class ContactGroup extends Model
 
     protected $fillable = ['restaurant_id', 'name', 'description'];
 
+    /** @return BelongsToMany<Contact, $this> */
     public function contacts(): BelongsToMany
     {
         return $this->belongsToMany(Contact::class, 'contact_group_member');

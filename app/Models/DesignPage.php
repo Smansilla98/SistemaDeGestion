@@ -11,6 +11,7 @@ class DesignPage extends Model
 
     protected $casts = ['position' => 'integer'];
 
+    /** @return BelongsTo<Design, $this> */
     public function design(): BelongsTo
     {
         return $this->belongsTo(Design::class);
