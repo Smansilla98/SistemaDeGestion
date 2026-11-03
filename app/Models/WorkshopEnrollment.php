@@ -21,11 +21,13 @@ class WorkshopEnrollment extends Model
 
     protected $casts = ['enrolled_at' => 'datetime', 'cancelled_at' => 'datetime', 'waitlist_position' => 'integer'];
 
+    /** @return BelongsTo<Workshop, $this> */
     public function workshop(): BelongsTo
     {
         return $this->belongsTo(Workshop::class);
     }
 
+    /** @return BelongsTo<Contact, $this> */
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);

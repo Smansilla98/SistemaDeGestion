@@ -26,21 +26,25 @@ class Contact extends Model
 
     protected $casts = ['birth_date' => 'date', 'accepts_marketing' => 'boolean', 'marketing_consent_at' => 'datetime', 'is_active' => 'boolean'];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsToMany<ContactTag, $this> */
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(ContactTag::class, 'contact_tag');
     }
 
+    /** @return BelongsToMany<ContactGroup, $this> */
     public function groups(): BelongsToMany
     {
         return $this->belongsToMany(ContactGroup::class, 'contact_group_member');
     }
 
+    /** @return HasMany<WorkshopEnrollment, $this> */
     public function enrollments(): HasMany
     {
         return $this->hasMany(WorkshopEnrollment::class);

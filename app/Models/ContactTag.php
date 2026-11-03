@@ -12,6 +12,7 @@ class ContactTag extends Model
 
     protected $fillable = ['restaurant_id', 'name'];
 
+    /** @return BelongsToMany<Contact, $this> */
     public function contacts(): BelongsToMany
     {
         return $this->belongsToMany(Contact::class, 'contact_tag');

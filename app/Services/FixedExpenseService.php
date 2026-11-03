@@ -159,8 +159,8 @@ class FixedExpenseService
             })
             ->filter(fn (array $row) => $row['amount'] > 0)
             ->sort(function (array $a, array $b) {
-                $dayA = $a['due_date']?->day ?? 32;
-                $dayB = $b['due_date']?->day ?? 32;
+                $dayA = $a['due_date']->day ?? 32;
+                $dayB = $b['due_date']->day ?? 32;
                 if ($dayA !== $dayB) {
                     return $dayA <=> $dayB;
                 }

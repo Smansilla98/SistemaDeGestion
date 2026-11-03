@@ -118,6 +118,6 @@ final class OrderCycleService
             }
         }
 
-        return $out->sortBy(fn ($r) => ($r['product']->entrepreneur?->business_name ?? '').$r['product']->name)->values();
+        return $out->sortBy(fn ($r) => ($r['product']->entrepreneur->business_name ?? '').$r['product']->name)->values();
     }
 }

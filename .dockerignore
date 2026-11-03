@@ -7,3 +7,6 @@ node_modules
 vendor
 .phpunit.result.cache
 tests
+
+# Cachés locales de Laravel (en la imagen se generan al arrancar)
+bootstrap/cache/*.php

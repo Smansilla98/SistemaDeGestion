@@ -104,7 +104,7 @@ final class Notifier
     {
         $row = NotificationPreference::query()->where('user_id', $user->id)->where('category', $category)->first();
 
-        return ['in_app' => $row?->in_app ?? true, 'email' => $row?->email ?? false];
+        return ['in_app' => $row->in_app ?? true, 'email' => $row->email ?? false];
     }
 
     /**

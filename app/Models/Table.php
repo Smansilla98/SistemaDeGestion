@@ -44,6 +44,8 @@ class Table extends Model
 
     /**
      * Relación: Una mesa pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -52,6 +54,8 @@ class Table extends Model
 
     /**
      * Relación: Una mesa pertenece a un sector
+     *
+     * @return BelongsTo<Sector, $this>
      */
     public function sector(): BelongsTo
     {
@@ -60,6 +64,8 @@ class Table extends Model
 
     /**
      * Relación: Una mesa tiene un pedido actual
+     *
+     * @return BelongsTo<Order, $this>
      */
     public function currentOrder(): BelongsTo
     {
@@ -68,6 +74,8 @@ class Table extends Model
 
     /**
      * Relación: la sesión actual (si existe)
+     *
+     * @return BelongsTo<TableSession, $this>
      */
     public function currentSession(): BelongsTo
     {
@@ -76,6 +84,8 @@ class Table extends Model
 
     /**
      * Relación: Una mesa tiene muchos pedidos
+     *
+     * @return HasMany<Order, $this>
      */
     public function orders(): HasMany
     {
@@ -84,6 +94,8 @@ class Table extends Model
 
     /**
      * Relación: Una mesa tiene muchas sesiones
+     *
+     * @return HasMany<TableSession, $this>
      */
     public function sessions(): HasMany
     {

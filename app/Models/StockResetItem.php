@@ -19,11 +19,13 @@ class StockResetItem extends Model
         'counted_quantity' => 'integer',
     ];
 
+    /** @return BelongsTo<StockReset, $this> */
     public function stockReset(): BelongsTo
     {
         return $this->belongsTo(StockReset::class);
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

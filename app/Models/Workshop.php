@@ -22,41 +22,49 @@ class Workshop extends Model
 
     protected $casts = ['starts_on' => 'date', 'ends_on' => 'date', 'capacity' => 'integer', 'fee_cents' => 'integer'];
 
+    /** @return BelongsTo<Contact, $this> */
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'teacher_contact_id');
     }
 
+    /** @return HasMany<WorkshopSchedule, $this> */
     public function schedules(): HasMany
     {
         return $this->hasMany(WorkshopSchedule::class)->orderBy('weekday')->orderBy('start_time');
     }
 
+    /** @return HasMany<WorkshopSession, $this> */
     public function sessions(): HasMany
     {
         return $this->hasMany(WorkshopSession::class)->orderBy('date')->orderBy('start_time');
     }
 
+    /** @return HasMany<WorkshopEnrollment, $this> */
     public function enrollments(): HasMany
     {
         return $this->hasMany(WorkshopEnrollment::class);
     }
 
+    /** @return HasMany<WorkshopEvaluation, $this> */
     public function evaluations(): HasMany
     {
         return $this->hasMany(WorkshopEvaluation::class);
     }
 
+    /** @return BelongsTo<DistributionRule, $this> */
     public function distributionRule(): BelongsTo
     {
         return $this->belongsTo(DistributionRule::class);
     }
 
+    /** @return MorphMany<ActivityEntry, $this> */
     public function entries(): MorphMany
     {
         return $this->morphMany(ActivityEntry::class, 'entryable');
     }
 
+    /** @return MorphMany<DistributionPayout, $this> */
     public function payouts(): MorphMany
     {
         return $this->morphMany(DistributionPayout::class, 'payoutable');
@@ -79,7 +87,8 @@ class Workshop extends Model
             && Contact::withoutGlobalScopes()->whereKey($this->teacher_contact_id)->where('user_id', $user->id)->exists();
     }
 
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<ActivityCategory, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
     }

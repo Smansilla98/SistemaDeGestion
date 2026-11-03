@@ -3,21 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     // Roles de usuario
     const ROLE_SUPERADMIN = 'SUPERADMIN';
 
@@ -137,7 +136,8 @@ class User extends Authenticatable
         return is_string($raw) ? $raw : null;
     }
 
-    public function memberships(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<OrganizationMembership, $this> */
+    public function memberships(): HasMany
     {
         return $this->hasMany(OrganizationMembership::class);
     }
@@ -192,48 +192,60 @@ class User extends Authenticatable
 
     /**
      * Relación: Un usuario pertenece a un restaurante (nullable para super admin)
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
-    public function restaurant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
     /**
      * Relación: Un usuario tiene muchos pedidos
+     *
+     * @return HasMany<Order, $this>
      */
-    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
     /**
      * Relación: Un usuario tiene muchas mesas asignadas
+     *
+     * @return HasMany<Table, $this>
      */
-    public function assignedTables(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedTables(): HasMany
     {
         return $this->hasMany(Table::class, 'assigned_user_id');
     }
 
     /**
      * Relación: Un usuario tiene muchos movimientos de stock
+     *
+     * @return HasMany<StockMovement, $this>
      */
-    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
     }
 
     /**
      * Relación: Un usuario tiene muchos logs de auditoría
+     *
+     * @return HasMany<AuditLog, $this>
      */
-    public function auditLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
     }
 
     /**
      * Permisos específicos del usuario (sobreescriben los del rol)
+     *
+     * @return HasMany<UserPermission, $this>
      */
-    public function userPermissions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function userPermissions(): HasMany
     {
         return $this->hasMany(UserPermission::class);
     }
@@ -366,8 +378,10 @@ class User extends Authenticatable
 
     /**
      * Relación: Un usuario tiene muchas sesiones de mesa como mozo
+     *
+     * @return HasMany<TableSession, $this>
      */
-    public function tableSessionsAsWaiter(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function tableSessionsAsWaiter(): HasMany
     {
         return $this->hasMany(TableSession::class, 'waiter_id');
     }
@@ -393,14 +407,14 @@ class User extends Authenticatable
         }
 
         // Si ya es un objeto Carbon, devolverlo
-        if ($value instanceof \Carbon\Carbon) {
+        if ($value instanceof Carbon) {
             return $value;
         }
 
         // Si es string, convertirlo a Carbon
         if (is_string($value)) {
             try {
-                return \Carbon\Carbon::parse($value);
+                return Carbon::parse($value);
             } catch (\Exception $e) {
                 return null;
             }

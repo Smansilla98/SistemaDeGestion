@@ -22,11 +22,13 @@ class WorkshopSession extends Model
 
     protected $casts = ['date' => 'date', 'original_date' => 'date'];
 
+    /** @return BelongsTo<Workshop, $this> */
     public function workshop(): BelongsTo
     {
         return $this->belongsTo(Workshop::class);
     }
 
+    /** @return HasMany<WorkshopAttendance, $this> */
     public function attendances(): HasMany
     {
         return $this->hasMany(WorkshopAttendance::class);

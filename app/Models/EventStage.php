@@ -18,16 +18,19 @@ class EventStage extends Model
 
     protected $casts = ['starts_at' => 'datetime', 'budget_cents' => 'integer'];
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsTo<Contact, $this> */
     public function responsible(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'responsible_contact_id');
     }
 
+    /** @return HasMany<ActivityEntry, $this> */
     public function entries(): HasMany
     {
         return $this->hasMany(ActivityEntry::class);

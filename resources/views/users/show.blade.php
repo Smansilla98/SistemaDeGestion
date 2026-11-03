@@ -205,11 +205,11 @@
                                 <td>
                                     @if($session->ended_at)
                                         <small class="text-muted">
-                                            {{ $session->started_at->diffInMinutes($session->ended_at) }} min
+                                            {{ (int) $session->started_at->diffInMinutes($session->ended_at) }} min
                                         </small>
                                     @else
                                         <small class="text-success">
-                                            {{ $session->started_at->diffInMinutes(now()) }} min (activa)
+                                            {{ (int) $session->started_at->diffInMinutes(now()) }} min (activa)
                                         </small>
                                     @endif
                                 </td>

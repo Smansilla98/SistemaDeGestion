@@ -34,6 +34,8 @@ class SubsectorItem extends Model
 
     /**
      * Relación: Un item pertenece a un subsector
+     *
+     * @return BelongsTo<Sector, $this>
      */
     public function subsector(): BelongsTo
     {
@@ -42,6 +44,8 @@ class SubsectorItem extends Model
 
     /**
      * Relación: Un item puede tener un pedido actual
+     *
+     * @return BelongsTo<Order, $this>
      */
     public function currentOrder(): BelongsTo
     {
@@ -50,6 +54,8 @@ class SubsectorItem extends Model
 
     /**
      * Relación: Un item puede tener una sesión actual
+     *
+     * @return BelongsTo<TableSession, $this>
      */
     public function currentSession(): BelongsTo
     {
@@ -58,6 +64,8 @@ class SubsectorItem extends Model
 
     /**
      * Relación: Un item puede tener muchos pedidos
+     *
+     * @return HasMany<Order, $this>
      */
     public function orders(): HasMany
     {

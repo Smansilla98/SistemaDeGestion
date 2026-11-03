@@ -11,6 +11,7 @@ class WorkshopEvaluation extends Model
 
     protected $casts = ['evaluated_on' => 'date'];
 
+    /** @return BelongsTo<Contact, $this> */
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);

@@ -32,16 +32,19 @@ class StockReset extends Model
         'products_adjusted' => 'integer',
     ];
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<StockResetItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(StockResetItem::class);

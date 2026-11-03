@@ -50,7 +50,8 @@ class MessageController extends Controller
 
     public function show(UserMessage $message): View
     {
-        abort_unless(in_array($this->user()->id, [$message->sender_id, $message->recipient_id], true), 404);
+        $me = (int) $this->user()->id;
+        abort_unless((int) $message->sender_id === $me || (int) $message->recipient_id === $me, 404);
         if ($message->recipient_id === $this->user()->id && $message->read_at === null) {
             $message->update(['read_at' => now()]);
         }

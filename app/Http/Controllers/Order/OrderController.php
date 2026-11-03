@@ -2,20 +2,31 @@
 
 namespace App\Http\Controllers\Order;
 
+use App\Domain\Money\Money;
+use App\Enums\OrderStatus;
+use App\Exceptions\InvalidOrderTransition;
+use App\Exceptions\StaleOrderException;
 use App\Http\Controllers\Controller;
+use App\Jobs\PrintKitchenTicket;
+use App\Models\AuditLog;
 use App\Models\CashRegisterSession;
 use App\Models\DiscountType;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Printer;
 use App\Models\Product;
 use App\Models\Table;
 use App\Services\OrderService;
 use App\Services\PrintService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -257,7 +268,7 @@ class OrderController extends Controller
             ->with('category')
             ->get()
             ->sortBy(function ($p) {
-                $c = $p->category?->name ?? '';
+                $c = $p->category->name ?? '';
 
                 return $c.'|'.$p->name;
             })
@@ -486,12 +497,12 @@ class OrderController extends Controller
             'lock_version' => 'nullable|integer|min:0',
         ]);
 
-        $target = \App\Enums\OrderStatus::from($validated['status']);
-        $from = $order->statusEnum() ?? \App\Enums\OrderStatus::ABIERTO;
+        $target = OrderStatus::from($validated['status']);
+        $from = $order->statusEnum() ?? OrderStatus::ABIERTO;
 
         try {
             if (! $from->canTransitionTo($target)) {
-                throw new \App\Exceptions\InvalidOrderTransition($from, $target);
+                throw new InvalidOrderTransition($from, $target);
             }
 
             if (array_key_exists('lock_version', $validated) && $validated['lock_version'] !== null) {
@@ -501,15 +512,15 @@ class OrderController extends Controller
             } else {
                 $order->transitionTo($target, auth()->user(), 'Cambio de estado');
             }
-        } catch (\App\Exceptions\StaleOrderException $e) {
+        } catch (StaleOrderException $e) {
             return back()->with('error', $e->getMessage());
-        } catch (\App\Exceptions\InvalidOrderTransition $e) {
+        } catch (InvalidOrderTransition $e) {
             return back()->with('error', $e->getMessage());
         }
 
         $order->load(['table']);
 
-        if ($target === \App\Enums\OrderStatus::ENTREGADO || $target === \App\Enums\OrderStatus::LISTO) {
+        if ($target === OrderStatus::ENTREGADO || $target === OrderStatus::LISTO) {
             if ($order->table) {
                 return back()->with('success', "✅ Pedido #{$order->number} listo/entregado en Mesa {$order->table->number}")
                     ->with('order_delivered', [
@@ -566,9 +577,9 @@ class OrderController extends Controller
                 'discount' => $newDiscount,
                 'total' => (float) $order->subtotal - $newDiscount,
             ];
-            if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'discount_cents')) {
-                $payload['discount_cents'] = \App\Domain\Money\Money::fromDecimal($newDiscount)->cents;
-                $payload['subtotal_cents'] = \App\Domain\Money\Money::fromDecimal($order->subtotal)->cents;
+            if (Schema::hasColumn('orders', 'discount_cents')) {
+                $payload['discount_cents'] = Money::fromDecimal($newDiscount)->cents;
+                $payload['subtotal_cents'] = Money::fromDecimal($order->subtotal)->cents;
                 $payload['total_cents'] = max(0, $payload['subtotal_cents'] - $payload['discount_cents']);
             }
             if (isset($validated['lock_version'])) {
@@ -577,11 +588,11 @@ class OrderController extends Controller
             } else {
                 $order->update($payload);
             }
-        } catch (\App\Exceptions\StaleOrderException $e) {
+        } catch (StaleOrderException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        \App\Models\AuditLog::record($order, 'discount.applied', [
+        AuditLog::record($order, 'discount.applied', [
             'discount' => $oldDiscount,
         ], [
             'discount' => $newDiscount,
@@ -617,7 +628,7 @@ class OrderController extends Controller
             $wasQuickOrder = ! $order->table_id;
             $this->orderService->deleteOrder($order, 'Eliminado desde panel');
 
-            if ($wasQuickOrder && \Illuminate\Support\Facades\Route::has('orders.quick.index')) {
+            if ($wasQuickOrder && Route::has('orders.quick.index')) {
                 return redirect()->route('orders.quick.index')
                     ->with('success', 'Pedido eliminado exitosamente');
             }
@@ -859,8 +870,8 @@ class OrderController extends Controller
                 $printOk = false;
                 Log::warning('Error al imprimir ticket: '.$e->getMessage(), ['order_id' => $order->id]);
                 $printMessage .= ' Impresora falló: reintentá desde el ticket.';
-                \Illuminate\Support\Facades\DB::afterCommit(
-                    fn () => \App\Jobs\PrintKitchenTicket::dispatch($order->id)->onQueue('printing')
+                DB::afterCommit(
+                    fn () => PrintKitchenTicket::dispatch($order->id)->onQueue('printing')
                 );
             }
 
@@ -1005,7 +1016,7 @@ class OrderController extends Controller
                 'payments.*.notes' => 'nullable|string|max:500',
                 'discount_type_id' => 'nullable|exists:discount_types,id',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
@@ -1068,7 +1079,7 @@ class OrderController extends Controller
                 try {
                     $printer = $this->printService->getPrinterByType($restaurantId, 'bar');
                     if (! $printer) {
-                        $printer = \App\Models\Printer::where('restaurant_id', $restaurantId)
+                        $printer = Printer::where('restaurant_id', $restaurantId)
                             ->where('is_active', true)
                             ->first();
                     }
@@ -1123,7 +1134,7 @@ class OrderController extends Controller
                 'required',
                 'exists:products,id',
                 function ($attribute, $value, $fail) use ($restaurantId) {
-                    $product = \App\Models\Product::find($value);
+                    $product = Product::find($value);
                     if ($product && $product->restaurant_id !== $restaurantId) {
                         $fail('El producto seleccionado no pertenece a este restaurante.');
                     }
@@ -1170,7 +1181,7 @@ class OrderController extends Controller
 
                 // Validar productos antes de crear el pedido
                 foreach ($validated['items'] as $itemData) {
-                    $product = \App\Models\Product::findOrFail($itemData['product_id']);
+                    $product = Product::findOrFail($itemData['product_id']);
                     if ($product->restaurant_id !== $restaurantId) {
                         throw new \Exception("El producto '{$product->name}' no pertenece a este restaurante");
                     }
@@ -1178,7 +1189,7 @@ class OrderController extends Controller
                         throw new \Exception("El producto '{$product->name}' no está activo");
                     }
                     // Validar stock (producto con has_stock o receta con insumos)
-                    app(\App\Services\StockService::class)->ensureStockForSale($restaurantId, $product->id, (int) $itemData['quantity']);
+                    app(StockService::class)->ensureStockForSale($restaurantId, $product->id, (int) $itemData['quantity']);
                 }
 
                 // Crear pedido rápido atómico (sin mesa)

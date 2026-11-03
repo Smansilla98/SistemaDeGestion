@@ -14,11 +14,13 @@ class OrganizationMembership extends Model
 
     protected $casts = ['is_active' => 'boolean'];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Restaurant, $this> */
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);

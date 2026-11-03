@@ -27,6 +27,8 @@ class Category extends Model
 
     /**
      * Relación: Una categoría pertenece a un restaurante
+     *
+     * @return BelongsTo<Restaurant, $this>
      */
     public function restaurant(): BelongsTo
     {
@@ -35,6 +37,8 @@ class Category extends Model
 
     /**
      * Relación: Una categoría pertenece a un sector
+     *
+     * @return BelongsTo<Sector, $this>
      */
     public function sector(): BelongsTo
     {
@@ -43,6 +47,8 @@ class Category extends Model
 
     /**
      * Relación: Una categoría tiene muchos productos
+     *
+     * @return HasMany<Product, $this>
      */
     public function products(): HasMany
     {

@@ -17,11 +17,13 @@ class MarketStockMovement extends Model
 
     protected $casts = ['quantity' => 'float', 'balance_after' => 'float'];
 
+    /** @return BelongsTo<MarketProduct, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(MarketProduct::class, 'market_product_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

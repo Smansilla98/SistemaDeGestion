@@ -226,7 +226,7 @@ class ModuleUsageService
         $kitchenStatuses = ['ENVIADO', 'EN_PREPARACION', 'LISTO'];
 
         return $query->get()->filter(function (AuditLog $log) use ($kitchenStatuses) {
-            $changes = $log->changes ?? [];
+            $changes = $log->getAttribute('changes') ?? [];
             $newStatus = $changes['status']['new'] ?? null;
 
             return in_array($newStatus, $kitchenStatuses, true);
@@ -266,7 +266,7 @@ class ModuleUsageService
         $this->applyScope($auditQuery, $restaurantId, $from, $to, 'restaurant_id', 'created_at');
 
         $fromAudit = $auditQuery->get()->filter(function (AuditLog $log) {
-            $changes = $log->changes ?? [];
+            $changes = $log->getAttribute('changes') ?? [];
 
             return ($changes['channel'] ?? null) === 'mozo_insumo';
         })->count();
