@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 /** Tokens de Al Toque — paridad con resources/css/conurbania.css */
 export const colors = {
   teal950: '#10262c',
@@ -101,7 +103,8 @@ export function statusTone(status: string): { fg: string; bg: string } {
  * Marca = teal500; neutros + un acento de estado (punto, no relleno).
  */
 export const fx = {
-  brand: colors.teal500,
+  // Una variante de la app (por ejemplo Patuka) puede traer su color de marca en extra.brandColor.
+  brand: ((Constants.expoConfig?.extra as { brandColor?: string } | undefined)?.brandColor) ?? colors.teal500,
   brandSoft: colors.teal50,
   brandInk: colors.teal800,
   canvas: '#F6F8F8',

@@ -74,6 +74,8 @@ export function AppIcon({
 /** Iconos de tabs alineados al bottom-nav / sidebar web. */
 export const tabIcons = {
   dashboard: { active: 'home' as Ion, inactive: 'home-outline' as Ion, bi: 'house-door' },
+  agenda: { active: 'calendar' as Ion, inactive: 'calendar-outline' as Ion, bi: 'calendar-week' },
+  talleres: { active: 'easel' as Ion, inactive: 'easel-outline' as Ion, bi: 'easel' },
   mesas: { active: 'grid' as Ion, inactive: 'grid-outline' as Ion, bi: 'table' },
   pedido: { active: 'add-circle' as Ion, inactive: 'add-circle-outline' as Ion, bi: 'plus-square' },
   pedidos: { active: 'receipt' as Ion, inactive: 'receipt-outline' as Ion, bi: 'receipt' },
