@@ -113,14 +113,17 @@
   color:var(--g800);
   border-color:var(--g300);
 }
+/* Patuka: la acción secundaria va en blanco y negro (la inversa del primario), sin verde. */
 .conurbania-app .btn-success{
-  background:#20c05f !important;
-  border-color:#20c05f !important;
-  color:#fff !important;
+  background:#fff !important;
+  border-color:#111111 !important;
+  color:#111111 !important;
 }
-.conurbania-app .btn-success:hover{
-  background:#1aa652 !important;
-  border-color:#1aa652 !important;
+.conurbania-app .btn-success:hover,
+.conurbania-app .btn-success:focus-visible{
+  background:#111111 !important;
+  border-color:#fff !important;
+  color:#fff !important;
 }
 .conurbania-app .btn-secondary{
   background:#5a6678 !important;
