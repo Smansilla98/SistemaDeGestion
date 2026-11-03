@@ -67,7 +67,7 @@ class UserManual
                     'Controlá el stock bajo y registrá lo que entra.',
                     'Si algo quedó trabado al cierre, usá Puesta a punto.',
                 ],
-                'sections' => ['ingreso', 'mesas_ver', 'tomar_pedido', 'agregar', 'entregar', 'ocupar_reservar', 'plano', 'plano_editar', 'mesas_crear', 'cobrar_mesa', 'stock_ver', 'puesta_a_punto', 'notificaciones', 'estados'],
+                'sections' => ['ingreso', 'mesas_ver', 'tomar_pedido', 'agregar', 'entregar', 'ocupar_reservar', 'plano', 'plano_editar', 'mesas_crear', 'cobrar_mesa', 'stock_ver', 'puesta_a_punto', 'menus_especiales', 'notificaciones', 'estados'],
             ],
             'SUPERVISOR' => [
                 'label' => 'Supervisor',
@@ -92,7 +92,7 @@ class UserManual
                     'Ajustá el plano del salón y las mesas cuando cambie la distribución.',
                     'Gestioná los usuarios del equipo.',
                 ],
-                'sections' => ['ingreso', 'tablero', 'mesas_ver', 'tomar_pedido', 'plano_editar', 'mesas_crear', 'cobrar_mesa', 'caja_abrir', 'caja_movimientos', 'caja_cerrar', 'productos', 'stock_ver', 'puesta_a_punto', 'usuarios', 'medios_cobro', 'eventos', 'notificaciones', 'estados'],
+                'sections' => ['ingreso', 'tablero', 'mesas_ver', 'tomar_pedido', 'plano_editar', 'mesas_crear', 'cobrar_mesa', 'caja_abrir', 'caja_movimientos', 'caja_cerrar', 'productos', 'stock_ver', 'puesta_a_punto', 'usuarios', 'medios_cobro', 'eventos', 'menus_especiales', 'notificaciones', 'estados'],
             ],
             'ADMIN' => [
                 'label' => 'Administrador',
@@ -104,7 +104,7 @@ class UserManual
                     'Todas las semanas: reportes de ventas, productos y personal.',
                     'Cuando haga falta: descuentos, gastos fijos, sucursales y permisos.',
                 ],
-                'sections' => ['ingreso', 'tablero', 'sectores', 'mesas_crear', 'plano_editar', 'mesas_ver', 'tomar_pedido', 'cobrar_mesa', 'categorias', 'productos', 'descuentos', 'stock_ver', 'puesta_a_punto', 'caja_admin', 'caja_abrir', 'caja_cerrar', 'impresoras', 'usuarios', 'sucursales', 'reportes', 'gastos', 'eventos', 'agenda', 'talleres', 'inscripciones', 'contactos', 'finanzas_actividades', 'nodo', 'notificaciones', 'estados'],
+                'sections' => ['ingreso', 'tablero', 'sectores', 'mesas_crear', 'plano_editar', 'mesas_ver', 'tomar_pedido', 'cobrar_mesa', 'categorias', 'productos', 'descuentos', 'stock_ver', 'puesta_a_punto', 'caja_admin', 'caja_abrir', 'caja_cerrar', 'impresoras', 'usuarios', 'sucursales', 'reportes', 'gastos', 'eventos', 'agenda', 'talleres', 'inscripciones', 'contactos', 'finanzas_actividades', 'nodo', 'nodo_web', 'menus_especiales', 'diseno', 'guia', 'notificaciones', 'estados'],
             ],
             'COORDINADOR' => [
                 'label' => 'Coordinación',
@@ -117,7 +117,7 @@ class UserManual
                     'Respondé los Mensajes y corregí lo que haya quedado mal cargado.',
                     'A fin de mes, mirá las Finanzas de cada actividad y liquidá lo que corresponda.',
                 ],
-                'sections' => ['ingreso', 'agenda', 'talleres', 'inscripciones', 'asistencia', 'evaluaciones', 'contactos', 'difusion', 'formularios', 'documentos', 'finanzas_actividades', 'mensajes', 'notificaciones'],
+                'sections' => ['ingreso', 'agenda', 'talleres', 'inscripciones', 'asistencia', 'evaluaciones', 'contactos', 'difusion', 'formularios', 'documentos', 'finanzas_actividades', 'nodo_web', 'diseno', 'guia', 'mensajes', 'notificaciones'],
             ],
             'PROFESOR' => [
                 'label' => 'Profe',
@@ -129,7 +129,7 @@ class UserManual
                     'Si alguien falta varias clases seguidas, te llega un aviso para que lo contactes.',
                     'Cargá las evaluaciones o devoluciones cuando las tengas.',
                 ],
-                'sections' => ['ingreso', 'agenda', 'asistencia', 'evaluaciones', 'documentos', 'mensajes', 'notificaciones'],
+                'sections' => ['ingreso', 'agenda', 'asistencia', 'evaluaciones', 'documentos', 'diseno', 'guia', 'mensajes', 'notificaciones'],
             ],
             'ALUMNO' => [
                 'label' => 'Alumno/a',
@@ -151,7 +151,7 @@ class UserManual
                     'Antes de cada ciclo del nodo, confirmá con el equipo qué vas a ofrecer.',
                     'Cuando se liquida una consignación, te llega el aviso con el detalle.',
                 ],
-                'sections' => ['ingreso', 'feria_propia', 'nodo', 'mi_agenda', 'documentos', 'mensajes', 'notificaciones'],
+                'sections' => ['ingreso', 'feria_propia', 'nodo', 'mi_agenda', 'documentos', 'diseno', 'guia', 'mensajes', 'notificaciones'],
             ],
             'ARTISTA' => [
                 'label' => 'Artista',
@@ -161,7 +161,7 @@ class UserManual
                     'En la Agenda ves tus fechas, ensayos y etapas de cada evento.',
                     'Escribile al equipo desde Mensajes para coordinar.',
                 ],
-                'sections' => ['ingreso', 'mi_agenda', 'eventos', 'documentos', 'mensajes', 'notificaciones'],
+                'sections' => ['ingreso', 'mi_agenda', 'eventos', 'documentos', 'diseno', 'mensajes', 'notificaciones'],
             ],
             'MARKETING' => [
                 'label' => 'Comunicación',
@@ -172,7 +172,7 @@ class UserManual
                     'Mantené los Contactos al día (quién acepta recibir novedades).',
                     'Armá las campañas por grupo desde Difusión.',
                 ],
-                'sections' => ['ingreso', 'agenda', 'contactos', 'difusion', 'formularios', 'documentos', 'mensajes', 'notificaciones'],
+                'sections' => ['ingreso', 'agenda', 'contactos', 'difusion', 'formularios', 'documentos', 'diseno', 'guia', 'mensajes', 'notificaciones'],
             ],
             'INVENTARIO' => [
                 'label' => 'Inventario de la feria',
@@ -744,6 +744,45 @@ class UserManual
                     'Cada ciclo tiene apertura, cierre y día de entrega.',
                     'Al cerrar, el sistema suma qué hay que pedirle a cada productor.',
                     'El día de la entrega se marca cada pedido como entregado.',
+                ],
+            ],
+            'diseno' => [
+                'title' => 'Diseño: flyers e historias',
+                'icon' => 'bi-palette',
+                'route' => 'design.index',
+                'steps' => [
+                    'Empezá desde una plantilla (taller, show, feria, agenda de la semana…) o desde cero.',
+                    'En la pestaña Marca están los logos, la paleta y el kit del espacio (y la tuya, si sos emprendedor/a).',
+                    'Descargá en PNG o JPG con la medida de cada red. Para video o animación, seguí en Canva desde «Canva / IA».',
+                ],
+            ],
+            'guia' => [
+                'title' => 'Guía de comunicación',
+                'icon' => 'bi-journal-text',
+                'route' => 'guide.index',
+                'steps' => [
+                    'Qué publicar, cuándo y cómo escribirlo, con plantillas sugeridas para cada caso.',
+                    'Antes de publicar, repasá la lista «Antes de publicar».',
+                ],
+            ],
+            'menus_especiales' => [
+                'title' => 'Menús especiales por fecha',
+                'icon' => 'bi-stars',
+                'route' => 'special-menus.index',
+                'steps' => [
+                    'Para una fecha patria, un show o una feria: qué se vende, a qué precio y cuánto hace falta preparar.',
+                    'Si es exclusivo, ese día la carta muestra sólo esos productos; si no, sólo cambian sus precios.',
+                    'La ficha muestra el stock previsto de insumos según las cantidades planeadas.',
+                ],
+            ],
+            'nodo_web' => [
+                'title' => 'Pedidos del nodo desde la web',
+                'icon' => 'bi-globe2',
+                'route' => 'market.cycles.index',
+                'steps' => [
+                    'Cargá los productos del ciclo («Productos del ciclo»): sólo eso se puede pedir.',
+                    'Copiá o compartí por WhatsApp el link de la ficha del ciclo: cada vecino hace su pedido sin cuenta.',
+                    'Los pedidos de la web llegan a la lista del ciclo y te avisan.',
                 ],
             ],
             'estados' => [
