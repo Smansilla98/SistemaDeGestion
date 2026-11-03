@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\Order;
 use App\Models\Table;
@@ -18,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
-final class TableOpsController extends Controller
+final class TableOpsController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
@@ -447,7 +446,7 @@ final class TableOpsController extends Controller
             return $restaurantId;
         }
 
-        $role = (string) ($request->user()?->role ?? '');
+        $role = (string) ($request->user()->role ?? '');
         if (! in_array($role, ['SUPERADMIN', 'ADMIN', 'GERENTE', 'MOZO', 'ENCARGADO'], true)) {
             return ApiResponse::error('Sin permiso para editar layout', 403, 'FORBIDDEN');
         }

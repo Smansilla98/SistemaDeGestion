@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Http\Controllers\Api;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 
 /**
- * Controlador base de la capa App\Controllers (API y futuras rutas web migradas).
+ * Controlador base de la API JWT (app móvil).
  */
-abstract class Controller extends BaseController
+abstract class ApiController extends BaseController
 {
     use AuthorizesRequests;
 }

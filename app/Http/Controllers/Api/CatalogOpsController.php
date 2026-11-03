@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\Category;
 use App\Models\DiscountType;
@@ -15,7 +14,7 @@ use Illuminate\Http\Request;
 /**
  * CRUD liviano de catálogo admin (categorías, sectores, descuentos).
  */
-final class CatalogOpsController extends Controller
+final class CatalogOpsController extends ApiController
 {
     public function categories(Request $request): JsonResponse
     {

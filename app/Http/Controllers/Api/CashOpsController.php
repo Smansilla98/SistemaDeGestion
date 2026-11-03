@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\CashMovement;
 use App\Models\CashRegister;
@@ -15,7 +14,7 @@ use App\Services\CashRegisterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class CashOpsController extends Controller
+final class CashOpsController extends ApiController
 {
     public function registers(Request $request): JsonResponse
     {
@@ -346,7 +345,7 @@ final class CashOpsController extends Controller
                     'quantity' => (int) $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) ($item->subtotal ?? ($item->unit_price * $item->quantity)),
-                    'has_stock' => (bool) ($item->product?->has_stock ?? false),
+                    'has_stock' => (bool) ($item->product->has_stock ?? false),
                 ])->values()->all(),
             ])->values()->all();
 

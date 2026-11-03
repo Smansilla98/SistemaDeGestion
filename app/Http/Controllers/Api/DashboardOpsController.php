@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Services\DashboardStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class DashboardOpsController extends Controller
+final class DashboardOpsController extends ApiController
 {
     public function show(Request $request, DashboardStatsService $stats): JsonResponse
     {
@@ -19,7 +18,7 @@ final class DashboardOpsController extends Controller
             return $restaurantId;
         }
 
-        $role = (string) ($request->user()?->role ?? '');
+        $role = (string) ($request->user()->role ?? '');
         $operational = $stats->operational($restaurantId);
 
         $payload = [

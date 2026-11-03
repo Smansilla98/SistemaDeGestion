@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Pagination\PaginationQueryDto;
 use App\Requests\Api\StoreClientRequest;
@@ -17,7 +16,7 @@ use InvalidArgumentException;
 /**
  * CRUD de clientes (entidad clients) por restaurante.
  */
-final class ClientController extends Controller
+final class ClientController extends ApiController
 {
     public function index(Request $request, ClientService $clients): JsonResponse
     {

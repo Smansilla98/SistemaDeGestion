@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Middleware;
+namespace App\Http\Middleware;
 
-use App\Http\Middleware\CheckRole;
 
 /**
  * Alias de capa de aplicación sobre CheckRole (validación de roles en web y API).

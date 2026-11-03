@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Enums\OrderStatus;
 use App\Models\Order;
@@ -13,7 +12,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-final class KitchenOpsController extends Controller
+final class KitchenOpsController extends ApiController
 {
     public function board(Request $request): JsonResponse
     {
@@ -41,14 +40,14 @@ final class KitchenOpsController extends Controller
             'table' => $order->table?->number,
             'place' => $order->table
                 ? $order->table->displayName()
-                : ($order->subsectorItem?->name ?? ($order->customer_name ?: 'Barra')),
+                : ($order->subsectorItem->name ?? ($order->customer_name ?: 'Barra')),
             'sector' => $order->table?->sector?->name,
             'waiter' => $order->user?->name,
             'observations' => $order->observations,
             'items_count' => $order->items->count(),
             'items' => $order->items->map(fn (OrderItem $i) => [
                 'id' => $i->id,
-                'name' => $i->product?->name ?? $i->product_name_snapshot,
+                'name' => $i->product->name ?? $i->product_name_snapshot,
                 'quantity' => $i->quantity,
                 'status' => $i->status,
                 'observations' => $i->observations,

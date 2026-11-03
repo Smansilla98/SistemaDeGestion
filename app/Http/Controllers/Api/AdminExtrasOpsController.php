@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\Models\Event;
 use App\Models\FixedExpense;
@@ -16,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-final class AdminExtrasOpsController extends Controller
+final class AdminExtrasOpsController extends ApiController
 {
     public function reportsSales(Request $request): JsonResponse
     {
@@ -42,9 +41,9 @@ final class AdminExtrasOpsController extends Controller
             ->orderBy('day')
             ->get()
             ->map(fn ($r) => [
-                'day' => (string) $r->day,
-                'total' => (float) $r->total,
-                'count' => (int) $r->count,
+                'day' => (string) $r->getAttribute('day'),
+                'total' => (float) $r->getAttribute('total'),
+                'count' => (int) $r->getAttribute('count'),
             ])
             ->all();
 
@@ -56,7 +55,7 @@ final class AdminExtrasOpsController extends Controller
             ->get()
             ->map(fn ($r) => [
                 'payment_method' => (string) $r->payment_method,
-                'total' => (float) $r->total,
+                'total' => (float) $r->getAttribute('total'),
             ])
             ->all();
 

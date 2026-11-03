@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Auth\LoginCredentialsDto;
 use App\DTO\Auth\RegisterUserDto;
@@ -16,7 +15,7 @@ use Illuminate\Http\Request;
 /**
  * Autenticación stateless con JWT + refresh (web SPA / mobile nativo).
  */
-final class AuthJwtController extends Controller
+final class AuthJwtController extends ApiController
 {
     public function login(Request $request, JwtAuthService $auth): JsonResponse
     {

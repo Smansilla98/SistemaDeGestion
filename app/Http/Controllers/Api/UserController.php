@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Api;
+namespace App\Http\Controllers\Api;
 
-use App\Controllers\Controller;
 use App\Core\ApiResponse;
 use App\DTO\Pagination\PaginationQueryDto;
 use App\Models\User;
@@ -18,7 +17,7 @@ use InvalidArgumentException;
 /**
  * CRUD de usuarios del restaurante (JWT + rol ADMIN/GERENTE + permisos RBAC).
  */
-final class UserController extends Controller
+final class UserController extends ApiController
 {
     public function index(Request $request, UserService $users): JsonResponse
     {

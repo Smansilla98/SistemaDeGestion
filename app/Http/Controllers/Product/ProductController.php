@@ -22,7 +22,7 @@ class ProductController extends Controller
     ) {}
 
     /**
-     * Interfaz web de productos. La API REST CRUD vive en App\Controllers\Api\ProductController
+     * Interfaz web de productos. La API REST CRUD vive en App\Http\Controllers\Api\ProductController
      * y delega en App\Services\ProductService + App\Repositories\ProductRepository (PDO).
      */
 

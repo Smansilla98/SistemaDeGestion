@@ -13,5 +13,3 @@ parameters:
     parallel:
         maximumNumberOfProcesses: 4
 
-    excludePaths:
-        - app/Controllers/Api/*

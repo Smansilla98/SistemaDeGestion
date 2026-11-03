@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Middleware;
+namespace App\Http\Middleware;
 
 use App\Core\ApiResponse;
 use App\Core\JwtTokenService;
