@@ -10,6 +10,7 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Carbon::setTestNow('2026-11-03 10:00'); // martes
+    config(['app.demo_entry' => false]);
     $this->org = communityOrg();
     $this->admin = orgUser($this->org);
 });
