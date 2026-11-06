@@ -21,9 +21,6 @@ return [
     */
     'demo_entry' => (bool) env('DEMO_ENTRY_ENABLED', false),
 
-    // Conurbania es un restaurante: sin talleres, agenda, contactos ni mercado (módulos de centro cultural).
-    'community_modules' => (bool) env('COMMUNITY_MODULES_ENABLED', false),
-
     /*
     |--------------------------------------------------------------------------
     | Branding

@@ -10,8 +10,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Conurbania es un restaurante: sin talleres, agenda, contactos, mercado ni documentos,
- * aunque el producto base (main) los traiga. Ni siquiera el superadmin los ve.
+ * Conurbania es un restaurante: talleres, agenda, contactos, mercado y documentos no aparecen
+ * en el menú ni en el inicio (tampoco al superadmin). Sólo están en el Monitor de módulos,
+ * donde el superadmin puede prenderlos para un local.
  */
 class ConurbaniaSoloRestauranteTest extends TestCase
 {
@@ -20,7 +21,7 @@ class ConurbaniaSoloRestauranteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['app.community_modules' => false, 'app.demo_entry' => false]);
+        config(['app.demo_entry' => false]);
     }
 
     public function test_el_superadmin_no_ve_modulos_de_centro_cultural_en_el_inicio_ni_en_el_menu(): void
@@ -48,18 +49,20 @@ class ConurbaniaSoloRestauranteTest extends TestCase
         $this->actingAs($superadmin)->get(route('events.index'))->assertOk()->assertSee('Calendario de Eventos');
     }
 
-    public function test_ni_una_licencia_guardada_los_prende_y_la_app_los_recibe_apagados(): void
+    public function test_el_superadmin_los_ve_en_el_monitor_y_los_prende_para_un_local(): void
     {
-        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $superadmin = User::factory()->create(['role' => User::ROLE_SUPERADMIN]);
         $licenses = app(ModuleLicenseService::class);
-        $licenses->save($admin->restaurant()->firstOrFail(), ['workshops' => true, 'contacts' => true, 'events' => true, 'tables' => true]);
 
-        $this->assertFalse($licenses->isEnabled($admin->restaurant_id, 'workshops'));
-        $this->assertFalse($licenses->enabledForUser($admin, 'contacts'));
-        $this->assertTrue($licenses->enabledForUser($admin, 'events'));
-        $this->assertArrayNotHasKey('workshops', $licenses->catalog());
-        $this->assertFalse($licenses->mapFor($admin->restaurant_id)['workshops']);
-        $this->assertSame('workshops', $licenses->moduleForWebRoute('workshops.index'));
+        $this->actingAs($superadmin)->get(route('module-usage.index', ['restaurant_id' => $superadmin->restaurant_id]))->assertOk()
+            ->assertSee('Talleres y agenda')->assertSee('Contactos y difusión');
+        $this->assertFalse($licenses->enabledForUser($superadmin, 'workshops'));
+        $this->assertFalse($licenses->mapFor($superadmin->restaurant_id)['workshops']);
+
+        $licenses->save($superadmin->restaurant()->firstOrFail(), array_fill_keys(array_keys($licenses->catalog()), true));
+
+        $this->assertTrue($licenses->enabledForUser($superadmin, 'workshops'));
+        $this->actingAs($superadmin)->get(route('dashboard'))->assertOk()->assertSee('>Agenda<', false);
     }
 
     public function test_la_migracion_borra_el_evento_de_ejemplo_que_cargaba_la_demo(): void

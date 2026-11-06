@@ -19,37 +19,24 @@ final class ModuleLicenseService
      */
     public function catalog(): array
     {
-        return array_filter(
-            $this->fullCatalog(),
-            fn (string $key): bool => ! $this->notInThisInstall($key),
-            ARRAY_FILTER_USE_KEY,
-        );
-    }
-
-    /**
-     * Conurbania es sólo restaurante: los módulos de centro cultural (talleres, agenda, contactos,
-     * mercado, documentos, finanzas de actividades) no existen en esta instalación, ni para el superadmin.
-     * Se reactivan con COMMUNITY_MODULES_ENABLED=true.
-     */
-    public function notInThisInstall(string $key): bool
-    {
-        $module = $this->fullCatalog()[$key] ?? null;
-
-        return $module !== null
-            && ! config('app.community_modules', false)
-            && ($module['community'] ?? false) === true
-            && ($module['default'] ?? true) === false;
-    }
-
-    /**
-     * @return array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}>
-     */
-    private function fullCatalog(): array
-    {
         /** @var array<string, array{label: string, description: string, offered?: bool, default?: bool, community?: bool, web: list<string>, api: list<string>}> $catalog */
         $catalog = config('sellable_modules', []);
 
         return $catalog;
+    }
+
+    /**
+     * Módulos de centro cultural (talleres, agenda, contactos, mercado, documentos, finanzas):
+     * vienen apagados y sólo se prenden por local desde el Monitor de módulos. El superadmin
+     * los ve en el Monitor, pero en el menú y el inicio sigue lo que tenga habilitado el local.
+     */
+    public function isOptIn(string $key): bool
+    {
+        $module = $this->catalog()[$key] ?? null;
+
+        return $module !== null
+            && ($module['community'] ?? false) === true
+            && ($module['default'] ?? true) === false;
     }
 
     /**
@@ -80,7 +67,7 @@ final class ModuleLicenseService
 
     public function enabledForUser(?User $user, string $key): bool
     {
-        if ($user === null || $this->notInThisInstall($key)) {
+        if ($user === null) {
             return false;
         }
 
@@ -92,7 +79,7 @@ final class ModuleLicenseService
             return DemoEntry::allows($key);
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() && ! $this->isOptIn($key)) {
             return true;
         }
 
@@ -101,10 +88,6 @@ final class ModuleLicenseService
 
     public function isEnabled(?int $restaurantId, string $key): bool
     {
-        if ($this->notInThisInstall($key)) {
-            return false;
-        }
-
         if (! array_key_exists($key, $this->catalog())) {
             return true;
         }
@@ -130,10 +113,10 @@ final class ModuleLicenseService
         $stored = $restaurantId !== null ? $this->storedMap($restaurantId) : null;
         $map = [];
 
-        foreach (array_keys($this->fullCatalog()) as $key) {
-            $map[$key] = $this->notInThisInstall($key) ? false : ($stored === null || ! array_key_exists($key, $stored)
+        foreach (array_keys($this->catalog()) as $key) {
+            $map[$key] = $stored === null || ! array_key_exists($key, $stored)
                 ? $this->defaultFor($key)
-                : (bool) $stored[$key]);
+                : (bool) $stored[$key];
         }
 
         return $map;
@@ -161,7 +144,7 @@ final class ModuleLicenseService
             return null;
         }
 
-        foreach ($this->fullCatalog() as $key => $module) {
+        foreach ($this->catalog() as $key => $module) {
             foreach ($module['web'] as $prefix) {
                 if ($routeName === rtrim($prefix, '.') || str_starts_with($routeName, $prefix)) {
                     return $key;
@@ -182,7 +165,7 @@ final class ModuleLicenseService
         $bestKey = null;
         $bestLength = -1;
 
-        foreach ($this->fullCatalog() as $key => $module) {
+        foreach ($this->catalog() as $key => $module) {
             foreach ($module['api'] as $prefix) {
                 if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
                     $length = strlen($prefix);
@@ -202,7 +185,7 @@ final class ModuleLicenseService
      */
     private function defaultFor(string $key): bool
     {
-        return (bool) ($this->fullCatalog()[$key]['default'] ?? true);
+        return (bool) ($this->catalog()[$key]['default'] ?? true);
     }
 
     /**
