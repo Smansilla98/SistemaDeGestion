@@ -23,6 +23,7 @@ class Event extends Model
         'time',
         'expected_attendance',
         'status',
+        'house_sells',
         'distribution_rule_id',
         'activity_category_id',
     ];
@@ -30,6 +31,7 @@ class Event extends Model
     protected $casts = [
         'date' => 'date',
         'expected_attendance' => 'integer',
+        'house_sells' => 'array',
     ];
 
     // Estados del evento
@@ -172,5 +174,15 @@ class Event extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ActivityCategory::class, 'activity_category_id');
+    }
+
+    /**
+     * Puestos de emprendedores que venden en el evento y le dejan un porcentaje al espacio.
+     *
+     * @return HasMany<EventVendor, $this>
+     */
+    public function vendors(): HasMany
+    {
+        return $this->hasMany(EventVendor::class)->orderBy('id');
     }
 }

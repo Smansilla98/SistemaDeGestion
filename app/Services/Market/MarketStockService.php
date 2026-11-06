@@ -86,7 +86,7 @@ final class MarketStockService
                 }
                 $item->update([
                     'qty_sold' => round($item->qty_sold + $take, 3),
-                    'sold_cents' => $item->sold_cents + (int) round($take * $item->unit_price_cents),
+                    'sold_cents' => $item->sold_cents + (int) round($take * $item->salePriceCents()),
                 ]);
                 $movements[] = $this->move($locked, 'VENTA', -$take, $by, $note, $item->id, $cycleOrderId);
                 $remaining = round($remaining - $take, 3);
@@ -100,6 +100,33 @@ final class MarketStockService
             $product->setRawAttributes($locked->fresh()->getAttributes(), true);
 
             return $movements;
+        });
+    }
+
+    /**
+     * Venta de una consignación puntual («tachar» lo vendido en la planilla del emprendedor).
+     * Con cantidad negativa corrige una venta marcada por error.
+     */
+    public function sellFromItem(ConsignmentItem $item, float $quantity, ?User $by, ?string $note = null): MarketStockMovement
+    {
+        return DB::transaction(function () use ($item, $quantity, $by, $note) {
+            $locked = ConsignmentItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+            if ($locked->consignment()->withoutGlobalScopes()->value('status') !== 'ABIERTA') {
+                throw ValidationException::withMessages(['quantity' => 'La consignación está cerrada.']);
+            }
+            if (abs($quantity) < 0.0005 || $quantity > $locked->pending() + 0.0005 || -$quantity > $locked->qty_sold + 0.0005) {
+                throw ValidationException::withMessages(['quantity' => $quantity > 0
+                    ? 'Quedan '.self::qty($locked->pending()).' sin vender.'
+                    : 'Solo se pueden desmarcar '.self::qty($locked->qty_sold).' vendidas.']);
+            }
+            $locked->update([
+                'qty_sold' => round($locked->qty_sold + $quantity, 3),
+                'sold_cents' => max(0, $locked->sold_cents + (int) round($quantity * $locked->salePriceCents())),
+            ]);
+            $item->setRawAttributes($locked->getAttributes(), true);
+            $product = MarketProduct::withoutGlobalScopes()->findOrFail($locked->market_product_id);
+
+            return $this->move($product, $quantity > 0 ? 'VENTA' : 'AJUSTE', -$quantity, $by, $note ?? ($quantity > 0 ? null : 'Corrección: venta desmarcada'), $locked->id);
         });
     }
 

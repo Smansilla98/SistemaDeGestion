@@ -46,12 +46,13 @@ class ProductController extends Controller
         $this->requirePermission('market.create');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:60'], 'unit' => ['required', 'string', 'max:20'],
-            'price' => ['required', 'string', 'max:20'], 'min_stock' => ['nullable', 'numeric', 'min:0'],
+            'price' => ['required', 'string', 'max:20'], 'entrepreneur_price' => ['nullable', 'string', 'max:20'], 'min_stock' => ['nullable', 'numeric', 'min:0'],
             'entrepreneur_id' => ['nullable', 'integer', Rule::exists('entrepreneurs', 'id')->where('restaurant_id', $this->org())],
         ]);
         $product = MarketProduct::query()->create([
             'restaurant_id' => $this->org(), 'entrepreneur_id' => $data['entrepreneur_id'] ?? null, 'name' => $data['name'],
             'category' => $data['category'] ?? null, 'unit' => $data['unit'], 'price_cents' => ActivityFinanceService::toCents($data['price']),
+            'entrepreneur_price_cents' => filled($data['entrepreneur_price'] ?? null) ? ActivityFinanceService::toCents($data['entrepreneur_price']) : null,
             'min_stock' => $data['min_stock'] ?? null, 'is_active' => true,
         ]);
 
@@ -78,10 +79,13 @@ class ProductController extends Controller
         $this->requirePermission('market.update');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:60'], 'unit' => ['required', 'string', 'max:20'],
-            'price' => ['required', 'string', 'max:20'], 'min_stock' => ['nullable', 'numeric', 'min:0'], 'is_active' => ['nullable', 'boolean'],
+            'price' => ['required', 'string', 'max:20'], 'entrepreneur_price' => ['nullable', 'string', 'max:20'],
+            'min_stock' => ['nullable', 'numeric', 'min:0'], 'is_active' => ['nullable', 'boolean'],
         ]);
         $product->update(['name' => $data['name'], 'category' => $data['category'] ?? null, 'unit' => $data['unit'],
-            'price_cents' => ActivityFinanceService::toCents($data['price']), 'min_stock' => $data['min_stock'] ?? null, 'is_active' => $request->boolean('is_active')]);
+            'price_cents' => ActivityFinanceService::toCents($data['price']),
+            'entrepreneur_price_cents' => filled($data['entrepreneur_price'] ?? null) ? ActivityFinanceService::toCents($data['entrepreneur_price']) : null,
+            'min_stock' => $data['min_stock'] ?? null, 'is_active' => $request->boolean('is_active')]);
 
         return back()->with('success', 'Producto actualizado.');
     }

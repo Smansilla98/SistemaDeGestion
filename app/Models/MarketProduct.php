@@ -15,9 +15,9 @@ class MarketProduct extends Model
 {
     use BelongsToRestaurant;
 
-    protected $fillable = ['restaurant_id', 'entrepreneur_id', 'category', 'name', 'unit', 'price_cents', 'min_stock', 'is_active'];
+    protected $fillable = ['restaurant_id', 'entrepreneur_id', 'category', 'name', 'unit', 'price_cents', 'entrepreneur_price_cents', 'min_stock', 'is_active'];
 
-    protected $casts = ['price_cents' => 'integer', 'stock_quantity' => 'float', 'min_stock' => 'float', 'is_active' => 'boolean'];
+    protected $casts = ['price_cents' => 'integer', 'entrepreneur_price_cents' => 'integer', 'stock_quantity' => 'float', 'min_stock' => 'float', 'is_active' => 'boolean'];
 
     /** @return BelongsTo<Entrepreneur, $this> */
     public function entrepreneur(): BelongsTo

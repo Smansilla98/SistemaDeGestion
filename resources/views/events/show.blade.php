@@ -168,5 +168,6 @@
     </div>
 </div>
 
+@include('events._vendors')
 @include('events._stages')
 @endsection

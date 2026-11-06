@@ -257,6 +257,11 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::post('/{event}/etapas', [\App\Http\Controllers\Event\EventStageController::class, 'store'])->name('stages.store');
         Route::put('/{event}/etapas/{stage}', [\App\Http\Controllers\Event\EventStageController::class, 'update'])->name('stages.update');
         Route::delete('/{event}/etapas/{stage}', [\App\Http\Controllers\Event\EventStageController::class, 'destroy'])->name('stages.destroy');
+        Route::put('/{event}/que-vende-la-casa', [\App\Http\Controllers\Event\EventVendorController::class, 'houseSells'])->name('house-sells');
+        Route::post('/{event}/puestos', [\App\Http\Controllers\Event\EventVendorController::class, 'store'])->name('vendors.store');
+        Route::put('/{event}/puestos/{vendor}', [\App\Http\Controllers\Event\EventVendorController::class, 'update'])->name('vendors.update');
+        Route::post('/{event}/puestos/{vendor}/cobrar', [\App\Http\Controllers\Event\EventVendorController::class, 'collect'])->name('vendors.collect');
+        Route::delete('/{event}/puestos/{vendor}', [\App\Http\Controllers\Event\EventVendorController::class, 'destroy'])->name('vendors.destroy');
     });
 
     /*
@@ -635,6 +640,7 @@ Route::middleware(['auth', 'detect.mobile', 'entry.choice', 'module.license'])->
         Route::get('/consignaciones/nueva', [$k, 'create'])->name('consignments.create');
         Route::post('/consignaciones', [$k, 'store'])->name('consignments.store');
         Route::get('/consignaciones/{consignment}', [$k, 'show'])->name('consignments.show');
+        Route::post('/consignaciones/{consignment}/items/{item}/vendido', [$k, 'sellItem'])->name('consignments.sell');
         Route::post('/consignaciones/{consignment}/items/{item}/devolver', [$k, 'returnItem'])->name('consignments.return');
         Route::post('/consignaciones/{consignment}/liquidar', [$k, 'settle'])->name('consignments.settle');
 

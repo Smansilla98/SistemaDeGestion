@@ -25,7 +25,11 @@ final class ConsignmentService
     public function __construct(private readonly MarketStockService $stock, private readonly Notifier $notifier) {}
 
     /**
-     * @param  list<array{market_product_id: int, quantity: float|int|string, unit_price_cents?: int|null}>  $items
+     * Cada ítem lleva el precio del emprendedor (lo que se le paga por unidad vendida) y el precio al que
+     * vende el espacio. Si el emprendedor fija el precio de venta y deja un porcentaje, son iguales y se
+     * usa la comisión; si deja su precio y el espacio le suma el suyo, la comisión suele ser 0.
+     *
+     * @param  list<array{market_product_id: int, quantity: float|int|string, unit_price_cents?: int|null, sale_price_cents?: int|null}>  $items
      */
     public function receive(Entrepreneur $entrepreneur, string $receivedOn, float $commissionPercent, array $items, User $by, ?string $notes = null): Consignment
     {
@@ -49,9 +53,14 @@ final class ConsignmentService
                     throw ValidationException::withMessages(['items' => 'Hay un producto que no es de este emprendedor.']);
                 }
                 $qty = round((float) $i['quantity'], 3);
+                $entrepreneurPrice = isset($i['unit_price_cents']) ? (int) $i['unit_price_cents'] : ($product->entrepreneur_price_cents ?? $product->price_cents);
+                // Sin precio de venta propio: si el producto tiene los dos precios cargados se usa el del espacio;
+                // si no, se vende al precio del emprendedor (modelo de comisión porcentual).
+                $salePrice = isset($i['sale_price_cents']) ? (int) $i['sale_price_cents']
+                    : ($product->entrepreneur_price_cents !== null ? $product->price_cents : $entrepreneurPrice);
                 $item = $consignment->items()->create([
-                    'market_product_id' => $product->id, 'qty_delivered' => $qty,
-                    'unit_price_cents' => isset($i['unit_price_cents']) ? (int) $i['unit_price_cents'] : $product->price_cents,
+                    'market_product_id' => $product->id, 'qty_delivered' => $qty, 'unit_price_cents' => $entrepreneurPrice,
+                    'sale_price_cents' => $salePrice !== $entrepreneurPrice ? $salePrice : null,
                 ]);
                 $this->stock->move($product, 'CONSIGNACION', $qty, $by, "Consignación #{$consignment->id}", $item->id);
             }
@@ -75,8 +84,11 @@ final class ConsignmentService
     public function balance(Consignment $consignment): array
     {
         $items = $consignment->items()->get();
+        // Vendido: lo que cobró el espacio. Al emprendedor le corresponde su precio por lo vendido, menos la comisión;
+        // lo demás queda para el espacio (comisión + diferencia entre su precio y el de venta).
         $gross = (int) $items->sum('sold_cents');
-        $commission = (int) round($gross * (float) $consignment->commission_percent / 100);
+        $toEntrepreneur = (int) round($items->sum(fn (ConsignmentItem $i) => $i->entrepreneurCents()) * (1 - (float) $consignment->commission_percent / 100));
+        $commission = $gross - $toEntrepreneur;
         $settlements = $consignment->settlements()->get();
         $paid = (int) $settlements->sum('paid_cents');
 
@@ -87,11 +99,11 @@ final class ConsignmentService
             'pending_qty' => round((float) $items->sum(fn (ConsignmentItem $i) => $i->pending()), 3),
             'gross_cents' => $gross,
             'commission_cents' => $commission,
-            'net_cents' => $gross - $commission,
+            'net_cents' => $toEntrepreneur,
             'settled_gross_cents' => (int) $settlements->sum('gross_cents'),
             'settled_commission_cents' => (int) $settlements->sum('commission_cents'),
             'paid_cents' => $paid,
-            'owed_cents' => $gross - $commission - $paid,
+            'owed_cents' => $toEntrepreneur - $paid,
         ];
     }
 

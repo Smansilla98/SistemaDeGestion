@@ -14,18 +14,32 @@
         <div class="card mb-4">
             <div class="card-header"><h5 class="mb-0">Productos</h5></div>
             <div class="table-responsive"><table class="table mb-0 align-middle">
-                <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th></tr></thead>
+                <thead><tr><th>Producto</th><th class="text-end">Su precio</th><th class="text-end">Mi precio</th><th class="text-end">Stock en el local</th></tr></thead>
                 <tbody>
                 @forelse($products as $p)
                 <tr><td><a href="{{ route('market.products.show', $p) }}">{{ $p->name }}</a> <span class="small text-muted">{{ $p->category }}</span></td>
-                    <td>{{ $money($p->price_cents) }} / {{ $p->unit }}</td>
-                    <td class="{{ $p->isLow() ? 'text-danger fw-bold' : '' }}">{{ \App\Services\Market\MarketStockService::qty($p->stock_quantity) }}</td></tr>
+                    <td class="text-end">{{ $p->entrepreneur_price_cents !== null ? $money($p->entrepreneur_price_cents) : '—' }}</td>
+                    <td class="text-end fw-semibold">{{ $money($p->price_cents) }} / {{ $p->unit }}</td>
+                    <td class="text-end {{ $p->isLow() ? 'text-danger fw-bold' : '' }}">{{ \App\Services\Market\MarketStockService::qty($p->stock_quantity) }}</td></tr>
                 @empty
-                <tr><td colspan="3" class="text-muted text-center py-4">Sin productos. Cargalos desde «Productos y stock».</td></tr>
+                <tr><td colspan="4" class="text-muted text-center py-4">Sin productos. Cargalos desde «Productos y stock».</td></tr>
                 @endforelse
                 </tbody>
             </table></div>
         </div>
+        @if($stalls->isNotEmpty())
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Puestos en eventos</h5></div>
+            <ul class="list-group list-group-flush">
+            @foreach($stalls as $st)
+                <a href="{{ route('events.show', $st->event_id) }}#puestos" class="list-group-item list-group-item-action d-flex justify-content-between small">
+                    <span>{{ $st->event?->date?->format('d/m/Y') }} · {{ $st->event?->name }} · {{ \App\Models\EventVendor::CATEGORIES[$st->category] ?? $st->category }} · {{ rtrim(rtrim(number_format($st->percent, 2, ',', ''), '0'), ',') }}%</span>
+                    <span>@if($st->sales_cents !== null)vendió {{ $money($st->sales_cents) }} · para el espacio {{ $money($st->commissionCents()) }}@if($st->pendingCents() > 0) · <strong>falta cobrar {{ $money($st->pendingCents()) }}</strong>@endif @else sin cargar la venta @endif</span>
+                </a>
+            @endforeach
+            </ul>
+        </div>
+        @endif
         <div class="card">
             <div class="card-header"><h5 class="mb-0">Consignaciones</h5></div>
             <ul class="list-group list-group-flush">

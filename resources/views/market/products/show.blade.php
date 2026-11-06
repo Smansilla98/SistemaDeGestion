@@ -37,7 +37,8 @@
                 <div class="col-12"><input name="name" class="form-control" value="{{ $product->name }}" required></div>
                 <div class="col-6"><input name="category" class="form-control" value="{{ $product->category }}" placeholder="Categoría"></div>
                 <div class="col-6"><input name="unit" class="form-control" value="{{ $product->unit }}" required></div>
-                <div class="col-6"><input name="price" class="form-control" value="{{ number_format($product->price_cents / 100, 2, ',', '.') }}" required></div>
+                <div class="col-6"><label class="form-label small mb-0" for="mp_price">Mi precio de venta</label><input id="mp_price" name="price" class="form-control" value="{{ number_format($product->price_cents / 100, 2, ',', '.') }}" required></div>
+                <div class="col-6"><label class="form-label small mb-0" for="mp_eprice">Precio del emprendedor</label><input id="mp_eprice" name="entrepreneur_price" class="form-control" value="{{ $product->entrepreneur_price_cents !== null ? number_format($product->entrepreneur_price_cents / 100, 2, ',', '.') : '' }}" placeholder="—"></div>
                 <div class="col-6"><input name="min_stock" type="number" step="0.001" min="0" class="form-control" value="{{ $product->min_stock }}" placeholder="Mínimo"></div>
                 <div class="col-12 form-check ms-1"><input type="hidden" name="is_active" value="0"><input type="checkbox" class="form-check-input" name="is_active" value="1" id="ia" @checked($product->is_active)><label for="ia" class="form-check-label">Activo</label></div>
                 <div class="col-12"><button class="btn btn-outline-primary w-100">Guardar</button></div>

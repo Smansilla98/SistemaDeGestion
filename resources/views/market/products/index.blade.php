@@ -17,17 +17,18 @@
 </div></div>
 
 <div class="card mb-4"><div class="table-responsive"><table class="table mb-0 align-middle">
-    <thead><tr><th>Producto</th><th>Emprendedor</th><th>Precio</th><th>Stock</th></tr></thead>
+    <thead><tr><th>Producto</th><th>Emprendedor</th><th>Su precio</th><th>Mi precio</th><th>Stock</th></tr></thead>
     <tbody>
     @forelse($products as $p)
     <tr class="{{ $p->is_active ? '' : 'text-muted' }}">
         <td><a href="{{ route('market.products.show', $p) }}">{{ $p->name }}</a> <span class="small text-muted">{{ $p->category }}</span></td>
         <td>{{ $p->entrepreneur?->business_name ?? 'Propio' }}</td>
+        <td>{{ $p->entrepreneur_price_cents !== null ? $money($p->entrepreneur_price_cents) : '—' }}</td>
         <td>{{ $money($p->price_cents) }} / {{ $p->unit }}</td>
         <td class="{{ $p->isLow() ? 'text-danger fw-bold' : '' }}">{{ \App\Services\Market\MarketStockService::qty($p->stock_quantity) }} {{ $p->unit }}</td>
     </tr>
     @empty
-    <tr><td colspan="4" class="text-center text-muted py-5">No hay productos.</td></tr>
+    <tr><td colspan="5" class="text-center text-muted py-5">No hay productos.</td></tr>
     @endforelse
     </tbody>
 </table></div><div class="card-footer">{{ $products->links() }}</div></div>
@@ -40,7 +41,8 @@
         <div class="col-md-3"><select name="entrepreneur_id" class="form-select"><option value="">De la organización</option>@foreach($entrepreneurs as $e)<option value="{{ $e->id }}">{{ $e->business_name }}</option>@endforeach</select></div>
         <div class="col-md-2"><input name="category" class="form-control" placeholder="Categoría"></div>
         <div class="col-md-3"><select name="unit" class="form-select"><option>unidad</option><option>kg</option><option>g</option><option>litro</option><option>docena</option><option>bolsón</option><option>frasco</option></select></div>
-        <div class="col-md-3"><input name="price" class="form-control" placeholder="Precio $" required></div>
+        <div class="col-md-3"><input name="price" class="form-control" placeholder="Mi precio de venta $" required aria-label="Mi precio de venta"></div>
+        <div class="col-md-3"><input name="entrepreneur_price" class="form-control" placeholder="Precio del emprendedor $" aria-label="Precio del emprendedor"></div>
         <div class="col-md-3"><input name="min_stock" type="number" step="0.001" min="0" class="form-control" placeholder="Stock mínimo (alerta)"></div>
         <div class="col-md-2"><button class="btn btn-primary w-100">Crear</button></div>
     </form>
