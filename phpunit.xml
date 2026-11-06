@@ -22,6 +22,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Los tests del producto base cubren también los módulos de centro cultural; ConurbaniaSoloRestauranteTest los apaga. -->
+        <env name="COMMUNITY_MODULES_ENABLED" value="true"/>
         <env name="APP_KEY" value="base64:d1Kv/0yZygLFAyye/Skclrij2theptUsnIJ1Jkad5b4="/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>

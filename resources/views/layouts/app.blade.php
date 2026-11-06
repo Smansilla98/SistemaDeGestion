@@ -366,7 +366,7 @@
                 @if($navUnreadMessages > 0)<span class="sb-badge sb-ba">{{ $navUnreadMessages }}</span>@endif
             </a>
             @endif
-            @if($navUser && $navUser->isAdminLevel())
+            @if($navUser && $navUser->isAdminLevel() && config('app.community_modules'))
             <a href="{{ route('organization.show') }}" class="sb-link {{ request()->routeIs('organization.*') ? 'active' : '' }}">
                 <i class="bi bi-diagram-3 sb-ico"></i>
                 <span>Organización y miembros</span>
