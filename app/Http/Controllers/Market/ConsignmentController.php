@@ -56,10 +56,12 @@ class ConsignmentController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array'], 'items.*.market_product_id' => ['required', 'integer'],
             'items.*.quantity' => ['nullable', 'numeric', 'min:0'], 'items.*.price' => ['nullable', 'string', 'max:20'],
+            'items.*.sale_price' => ['nullable', 'string', 'max:20'],
         ]);
         $items = collect($data['items'])->map(fn ($i) => [
             'market_product_id' => (int) $i['market_product_id'], 'quantity' => (float) ($i['quantity'] ?? 0),
             'unit_price_cents' => filled($i['price'] ?? null) ? ActivityFinanceService::toCents($i['price']) : null,
+            'sale_price_cents' => filled($i['sale_price'] ?? null) ? ActivityFinanceService::toCents($i['sale_price']) : null,
         ])->all();
         $consignment = $this->service->receive(Entrepreneur::query()->findOrFail($data['entrepreneur_id']), $data['received_on'],
             (float) $data['commission_percent'], $items, $this->user(), $data['notes'] ?? null);
@@ -80,6 +82,21 @@ class ConsignmentController extends Controller
             'canMove' => $this->can('market.update'),
             'canSettle' => $this->can('market.settle'),
         ]);
+    }
+
+    /** «Tachar» lo vendido desde la planilla de la consignación (o desmarcar con cantidad negativa). */
+    public function sellItem(Request $request, Consignment $consignment, ConsignmentItem $item, MarketStockService $stock): RedirectResponse
+    {
+        $this->ensureOrg($consignment);
+        $this->requirePermission('market.update');
+        abort_unless($item->consignment_id === $consignment->id, 404);
+        $data = $request->validate(['quantity' => ['required', 'numeric', 'not_in:0', 'between:-100000,100000']]);
+        $qty = (float) $data['quantity'];
+        $stock->sellFromItem($item, $qty, $this->user());
+
+        return back()->with('success', $qty > 0
+            ? 'Vendido: '.MarketStockService::qty($qty).' × '.$item->product?->name.'.'
+            : 'Venta desmarcada.');
     }
 
     public function returnItem(Request $request, Consignment $consignment, ConsignmentItem $item, MarketStockService $stock): RedirectResponse

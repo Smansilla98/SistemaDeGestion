@@ -67,6 +67,8 @@ class EntrepreneurController extends Controller
             'products' => $entrepreneur->products()->orderBy('name')->get(),
             'consignments' => $entrepreneur->consignments()->latest('received_on')->get()->map(fn ($c) => ['c' => $c, 'b' => $consignments->balance($c)]),
             'documents' => Document::query()->where('restaurant_id', $this->org())->where('entrepreneur_id', $entrepreneur->id)->with('versions')->latest()->get(),
+            'stalls' => \App\Models\EventVendor::query()->where('restaurant_id', $this->org())->where('entrepreneur_id', $entrepreneur->id)
+                ->with('event')->latest('id')->limit(20)->get(),
             'canEdit' => $this->can('market.update'),
             'canDocs' => $this->can('documents.create'),
         ]);
