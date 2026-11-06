@@ -10,6 +10,7 @@ use App\Support\CommercialQuote;
 use App\Support\DemoCommunityData;
 use App\Support\DemoEntry;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,6 +18,19 @@ use Illuminate\View\View;
 
 class EntryController extends Controller
 {
+    /**
+     * La elección de entrada es del demo público. En una instalación de cliente (Conurbania)
+     * no existe: si no, "Ver la demo" habilitaría en la sesión módulos que el local no tiene.
+     */
+    public function __construct()
+    {
+        $this->middleware(function (Request $request, Closure $next) {
+            abort_unless((bool) config('app.demo_entry', false), 404);
+
+            return $next($request);
+        });
+    }
+
     public function choose(): View
     {
         return view('entry.choose');

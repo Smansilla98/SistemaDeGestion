@@ -1,4 +1,4 @@
-# Al Toque — Design tokens
+# Conurbania — Design tokens
 
 Fuente de verdad: `conurbania.css` (clase raíz `.conurbania-app`).
 

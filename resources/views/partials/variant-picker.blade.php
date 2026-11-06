@@ -48,7 +48,7 @@ window.AlToqueVariants = (function () {
             showCancelButton: true,
             confirmButtonText: 'Agregar',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#4e8d99',
+            confirmButtonColor: '#1e8081',
             customClass: { input: 'at-variant-options' },
         });
 

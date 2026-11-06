@@ -34,7 +34,7 @@
     <meta name="restaurant-id" content="{{ auth()->check() ? auth()->user()->restaurant_id : '' }}">
     <meta name="route-name" content="{{ \Illuminate\Support\Facades\Route::currentRouteName() }}">
     <meta name="user-role" content="{{ auth()->check() ? auth()->user()->role : '' }}">
-    <title>@yield('title', 'Al Toque')</title>
+    <title>@yield('title', 'Conurbania')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -61,7 +61,7 @@
             --conurbania-primary: {{ $colors['primary'] }};
             --conurbania-secondary: {{ $colors['secondary'] }};
             --conurbania-accent: {{ $colors['accent'] }};
-            --conurbania-dark: #16343b;
+            --conurbania-dark: #262c3b;
             --conurbania-medium: #7b7d84;
             --conurbania-light: #cfcecd;
             --conurbania-success: {{ $colors['primary'] }};
@@ -72,8 +72,8 @@
             --conurbania-info-end: {{ $colors['secondary'] }};
             --conurbania-danger: {{ $colors['accent'] }};
             --conurbania-danger-end: #e67e51;
-            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #16343b 100%);
-            --mosaic-sidebar-bg: linear-gradient(180deg, #16343b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
+            --mosaic-bg: linear-gradient(135deg, {{ $colors['primary'] }} 0%, {{ $colors['secondary'] }} 50%, #262c3b 100%);
+            --mosaic-sidebar-bg: linear-gradient(180deg, #262c3b 0%, {{ $colors['secondary'] }} 50%, {{ $colors['primary'] }} 100%);
             --mosaic-card-bg: #ffffff;
             --mosaic-text-primary: #1a2326;
             --mosaic-text-secondary: #7b7d84;
@@ -444,7 +444,7 @@
             <button type="button" class="btn btn-g btn-sm d-md-none me-2" id="novaSidebarToggle" onclick="toggleSidebar()" aria-label="Abrir menú de navegación" aria-controls="novaSidebar" aria-expanded="false">
                 <i class="bi bi-list"></i>
             </button>
-            <span class="tb-title">@yield('title', 'Al Toque')</span>
+            <span class="tb-title">@yield('title', 'Conurbania')</span>
             <div class="tb-sp"></div>
             @auth
             @php
@@ -523,8 +523,8 @@
                     timer: 4000,
                     timerProgressBar: true,
                     background: '#e6ffed',
-                    color: '#4e8d99',
-                    iconColor: '#4e8d99',
+                    color: '#1e8081',
+                    iconColor: '#1e8081',
                 });
             @endif
 
@@ -599,9 +599,9 @@
             const configs = {
                 success: {
                     icon: 'success',
-                    iconColor: '#4e8d99',
+                    iconColor: '#1e8081',
                     background: '#e6ffed',
-                    color: '#4e8d99'
+                    color: '#1e8081'
                 },
                 error: {
                     icon: 'error',
@@ -645,7 +645,7 @@
         };
         
         // Helper global para confirmaciones
-        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#4e8d99') {
+        window.showConfirm = function(title, message, confirmText = 'Sí', cancelText = 'Cancelar', confirmColor = '#1e8081') {
             return Swal.fire({
                 icon: 'question',
                 title: title,

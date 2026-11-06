@@ -364,7 +364,7 @@
             icon: 'success',
             title: 'Éxito',
             text: '{{ session('success') }}',
-            confirmButtonColor: '#4e8d99',
+            confirmButtonColor: '#1e8081',
             confirmButtonText: 'Entendido'
         });
     @endif

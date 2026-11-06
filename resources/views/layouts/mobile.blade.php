@@ -1,5 +1,5 @@
 {{--
-  Layout mobile Al Toque.
+  Layout mobile Conurbania.
   Se mantiene separado de layouts/app.blade.php a propósito:
   - Bottom navigation + safe-area (iOS notch)
   - Flujo PWA / detect.mobile distinto al sidebar desktop

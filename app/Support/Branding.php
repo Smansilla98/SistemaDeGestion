@@ -8,12 +8,12 @@ class Branding
 {
     public static function name(): string
     {
-        return (string) config('app.brand.name', config('app.name', 'Al Toque'));
+        return (string) config('app.brand.name', config('app.name', 'Conurbania'));
     }
 
     public static function tagline(): string
     {
-        return (string) config('app.brand.tagline', 'Gestión gastronómica simple.');
+        return (string) config('app.brand.tagline', 'Restaurante');
     }
 
     public static function modulesLine(): string
@@ -22,34 +22,25 @@ class Branding
     }
 
     /**
-     * Paleta visible. Los verdes de la marca anterior se leen como la base de Al Toque.
+     * Paleta visible: la de Conurbania, o la que el local guardó en Configuración.
+     * Los azules de la demo (Al Toque) que hayan quedado guardados vuelven a la base de Conurbania.
      *
      * @param  array<string, mixed>|null  $settings
      * @return array{primary: string, secondary: string, accent: string}
      */
     public static function palette(?array $settings = null): array
     {
-        $legacy = [
-            '#1e8081' => '#4e8d99',
-            '#22565e' => '#2a5c68',
-            '#1d9e75' => '#4e8d99',
-            '#155240' => '#2a5c68',
-            '#082822' => '#16343b',
-            '#d06a1f' => '#4e8d99',
-            '#6b3a1e' => '#2a5c68',
-            '#24160f' => '#16343b',
+        $defaults = ['primary' => '#1e8081', 'secondary' => '#22565e', 'accent' => '#c94a2d'];
+        $demo = [
+            '#4e8d99' => '#1e8081',
+            '#2a5c68' => '#22565e',
+            '#16343b' => '#22565e',
         ];
         $stored = is_array($settings['colors'] ?? null) ? $settings['colors'] : [];
-        $colors = [
-            'primary' => (string) ($stored['primary'] ?? '#4e8d99'),
-            'secondary' => (string) ($stored['secondary'] ?? '#2a5c68'),
-            'accent' => (string) ($stored['accent'] ?? '#c94a2d'),
-        ];
-        foreach (['primary', 'secondary'] as $key) {
-            $needle = strtolower($colors[$key]);
-            if (isset($legacy[$needle])) {
-                $colors[$key] = $legacy[$needle];
-            }
+        $colors = [];
+        foreach ($defaults as $key => $default) {
+            $value = (string) ($stored[$key] ?? $default);
+            $colors[$key] = $demo[strtolower($value)] ?? $value;
         }
 
         return $colors;

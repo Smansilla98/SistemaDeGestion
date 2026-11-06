@@ -1,4 +1,4 @@
-# Store readiness — Al Toque
+# Store readiness — Conurbania
 
 ## Android (Play)
 

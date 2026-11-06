@@ -1,10 +1,10 @@
 {
-  "name": "Al Toque",
-  "short_name": "Al Toque",
+  "name": "Conurbania",
+  "short_name": "Conurbania",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#4e8d99",
-  "theme_color": "#4e8d99",
+  "background_color": "#1e8081",
+  "theme_color": "#1e8081",
   "orientation": "portrait-primary",
   "icons": [
     {

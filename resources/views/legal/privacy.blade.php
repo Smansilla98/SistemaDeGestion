@@ -12,7 +12,7 @@
             --ink: #131a18;
             --muted: #4a5e59;
             --faint: #6b7f7a;
-            --brand: #4e8d99;
+            --brand: #1e8081;
             --canvas: #f6f8f8;
             --surface: #ffffff;
             --line: rgba(19, 26, 24, 0.08);
@@ -84,7 +84,7 @@
         }
         .callout {
             border-left: 4px solid var(--brand);
-            background: #f4fafa;
+            background: #edf9f4;
             padding: 14px 16px;
             margin: 0 0 28px;
             font-family: system-ui, -apple-system, sans-serif;

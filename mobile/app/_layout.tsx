@@ -60,10 +60,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>A</Text>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800' }}>C</Text>
         </View>
         <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>
-          Al Toque
+          Conurbania
         </Text>
         <ActivityIndicator color="#fff" size="large" />
         <Text style={{ color: colors.teal200, fontSize: 13 }}>Cargando…</Text>

@@ -68,11 +68,9 @@ use App\Http\Controllers\Table\TableController;
 Route::get('/privacidad', [PrivacyPolicyController::class, 'show'])->name('privacy');
 Route::get('/privacidad.pdf', [PrivacyPolicyController::class, 'pdf'])->name('privacy.pdf');
 
-// Portada pública: presenta el sistema a quien no inició sesión.
+// Conurbania es una instalación de cliente: sin portada comercial (la del demo es landing.blade.php en main).
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : view('landing');
+    return redirect()->route(auth()->check() ? 'dashboard' : 'login');
 })->name('home');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');

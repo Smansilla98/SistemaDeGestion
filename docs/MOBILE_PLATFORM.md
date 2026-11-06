@@ -1,4 +1,4 @@
-# Al Toque — plataforma Web + App nativa
+# Conurbania — plataforma Web + App nativa
 
 ## Decisiones
 
@@ -59,7 +59,7 @@ mobile/                  Expo app (Android + iOS)
 
 | Campo | Valor |
 |-------|-------|
-| Nombre | Al Toque |
+| Nombre | Conurbania |
 | Android package | `com.conurbania.app` |
 | iOS bundle | `com.conurbania.app` |
 | Scheme | `conurbania` |
